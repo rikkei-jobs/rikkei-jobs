@@ -1,0 +1,255 @@
+### ====================================================================
+### Rikkei Jobs - Mock External Systems & Testing Tools API Test Suite
+### Base URL: http://localhost:9000
+### Service Key: dev-key
+### ====================================================================
+
+@baseUrl = http://localhost:9000
+@serviceKey = dev-key
+
+### --------------------------------------------------------------------
+### 1. SSO Tickets & Verification (NT-01)
+### --------------------------------------------------------------------
+
+### 1.1 Cấp vé SSO cho sinh viên lms-sv-001 (Expect: 201 Created)
+# @name issueTicket
+POST {{baseUrl}}/lms/sso/tickets
+Content-Type: application/json
+X-Service-Key: {{serviceKey}}
+
+{
+  "lmsUserId": "lms-sv-001"
+}
+
+### 1.2 Xác thực vé SSO vừa cấp (Expect: 200 OK)
+@ticketValue = {{issueTicket.response.body.ticket}}
+
+POST {{baseUrl}}/lms/sso/verify
+Content-Type: application/json
+X-Service-Key: {{serviceKey}}
+
+{
+  "ticket": "{{ticketValue}}"
+}
+
+### 1.3 Xác thực lại vé cũ lần 2 (Mock không chặn vé cũ, trả 200; Backend NT-01 sẽ chặn)
+POST {{baseUrl}}/lms/sso/verify
+Content-Type: application/json
+X-Service-Key: {{serviceKey}}
+
+{
+  "ticket": "{{ticketValue}}"
+}
+
+### 1.4 Xác thực vé không tồn tại (Expect: 404 NOT_FOUND)
+POST {{baseUrl}}/lms/sso/verify
+Content-Type: application/json
+X-Service-Key: {{serviceKey}}
+
+{
+  "ticket": "invalid-ticket-1234567890abcdef"
+}
+
+### 1.5 Cấp vé cho user không tồn tại (Expect: 404 NOT_FOUND)
+POST {{baseUrl}}/lms/sso/tickets
+Content-Type: application/json
+X-Service-Key: {{serviceKey}}
+
+{
+  "lmsUserId": "lms-sv-999"
+}
+
+### --------------------------------------------------------------------
+### 2. LMS Student Profile & Results (HS-01, HS-02, NT-05)
+### --------------------------------------------------------------------
+
+### 2.1 Lấy thông tin sinh viên lms-sv-001 (Expect: 200 OK)
+GET {{baseUrl}}/lms/students/lms-sv-001
+X-Service-Key: {{serviceKey}}
+
+### 2.2 Lấy thông tin tài khoản không phải CANDIDATE (Expect: 404 NOT_FOUND)
+GET {{baseUrl}}/lms/students/lms-mt-001
+X-Service-Key: {{serviceKey}}
+
+### 2.3 Lấy thông tin sinh viên không tồn tại (Expect: 404 NOT_FOUND)
+GET {{baseUrl}}/lms/students/lms-sv-999
+X-Service-Key: {{serviceKey}}
+
+### 2.4 Lấy danh sách kết quả học tập lms-sv-001 (Expect: 200 OK mảng kết quả)
+GET {{baseUrl}}/lms/students/lms-sv-001/results
+X-Service-Key: {{serviceKey}}
+
+### 2.5 Lấy kết quả học tập sinh viên chưa có môn nào (Expect: 200 OK mảng rỗng [])
+GET {{baseUrl}}/lms/students/lms-sv-999/results
+X-Service-Key: {{serviceKey}}
+
+### --------------------------------------------------------------------
+### 3. LMS Courses & Enrollments (DT-02, DT-03)
+### --------------------------------------------------------------------
+
+### 3.1 Lấy toàn bộ 6 khóa học LMS (Expect: 200 OK)
+GET {{baseUrl}}/lms/courses
+X-Service-Key: {{serviceKey}}
+
+### 3.2 Lấy khóa học lọc theo skill=JAVA (Expect: 200 OK)
+GET {{baseUrl}}/lms/courses?skill=JAVA
+X-Service-Key: {{serviceKey}}
+
+### 3.3 Lấy khóa học với skill không tồn tại (Expect: 200 OK mảng rỗng [])
+GET {{baseUrl}}/lms/courses?skill=NON_EXISTENT_SKILL
+X-Service-Key: {{serviceKey}}
+
+### 3.4 Ghi danh sinh viên vào khóa học (Expect: 201 Created)
+POST {{baseUrl}}/lms/enrollments
+Content-Type: application/json
+X-Service-Key: {{serviceKey}}
+
+{
+  "lmsUserId": "lms-sv-001",
+  "courseId": "LMS-C-JAVA-02"
+}
+
+### 3.5 Ghi danh lại cùng khóa học lần 2 (Expect: 409 ALREADY_ENROLLED)
+POST {{baseUrl}}/lms/enrollments
+Content-Type: application/json
+X-Service-Key: {{serviceKey}}
+
+{
+  "lmsUserId": "lms-sv-001",
+  "courseId": "LMS-C-JAVA-02"
+}
+
+### 3.6 Ghi danh với khóa học không tồn tại (Expect: 404 NOT_FOUND)
+POST {{baseUrl}}/lms/enrollments
+Content-Type: application/json
+X-Service-Key: {{serviceKey}}
+
+{
+  "lmsUserId": "lms-sv-001",
+  "courseId": "LMS-C-UNKNOWN"
+}
+
+### 3.7 Lấy danh sách ghi danh của lms-sv-001 (Expect: 200 OK)
+GET {{baseUrl}}/lms/enrollments/lms-sv-001
+X-Service-Key: {{serviceKey}}
+
+### 3.8 Lấy danh sách ghi danh của sinh viên chưa ghi danh (Expect: 200 OK mảng rỗng [])
+GET {{baseUrl}}/lms/enrollments/lms-sv-002
+X-Service-Key: {{serviceKey}}
+
+### --------------------------------------------------------------------
+### 4. Exam & Internship Endpoints (HS-01, NT-05, TT-01, TT-02)
+### --------------------------------------------------------------------
+
+### 4.1 Lấy điểm thi khảo thí của lms-sv-001 (Expect: 200 OK)
+GET {{baseUrl}}/exam/students/lms-sv-001/results
+X-Service-Key: {{serviceKey}}
+
+### 4.2 Lấy điểm thi của sinh viên không có dữ liệu thi (Expect: 200 OK mảng rỗng [])
+GET {{baseUrl}}/exam/students/lms-sv-999/results
+X-Service-Key: {{serviceKey}}
+
+### 4.3 Lấy lịch sử thực tập của lms-sv-001 (Expect: 200 OK)
+GET {{baseUrl}}/pm/students/lms-sv-001/internships
+X-Service-Key: {{serviceKey}}
+
+### 4.4 Lấy lịch sử thực tập của sinh viên chưa thực tập (Expect: 200 OK mảng rỗng [])
+GET {{baseUrl}}/pm/students/lms-sv-002/internships
+X-Service-Key: {{serviceKey}}
+
+### 4.5 Thêm sinh viên vào đợt thực tập IOC-JB-2026-09 (Expect: 201 Created)
+POST {{baseUrl}}/pm/batches/IOC-JB-2026-09/members
+Content-Type: application/json
+X-Service-Key: {{serviceKey}}
+
+{
+  "lmsUserId": "lms-sv-001"
+}
+
+### 4.6 Thêm lại cùng sinh viên vào cùng đợt lần 2 (Expect: 409 ALREADY_MEMBER)
+POST {{baseUrl}}/pm/batches/IOC-JB-2026-09/members
+Content-Type: application/json
+X-Service-Key: {{serviceKey}}
+
+{
+  "lmsUserId": "lms-sv-001"
+}
+
+### 4.7 Thêm sinh viên vào đợt không tồn tại (Expect: 404 NOT_FOUND)
+POST {{baseUrl}}/pm/batches/IOC-UNKNOWN/members
+Content-Type: application/json
+X-Service-Key: {{serviceKey}}
+
+{
+  "lmsUserId": "lms-sv-001"
+}
+
+### --------------------------------------------------------------------
+### 5. Meet Rooms (UT-06)
+### --------------------------------------------------------------------
+
+### 5.1 Tạo phòng họp hợp lệ (Expect: 201 Created)
+POST {{baseUrl}}/meet/rooms
+Content-Type: application/json
+X-Service-Key: {{serviceKey}}
+
+{
+  "title": "Phỏng vấn Java Backend - candidate1",
+  "startAt": "2026-11-15T09:00:00+07:00",
+  "endAt": "2026-11-15T10:00:00+07:00"
+}
+
+### 5.2 Tạo phòng họp thiếu trường bắt buộc (Expect: 400 VALIDATION_ERROR)
+POST {{baseUrl}}/meet/rooms
+Content-Type: application/json
+X-Service-Key: {{serviceKey}}
+
+{
+  "title": "Phòng họp thiếu startAt và endAt"
+}
+
+### --------------------------------------------------------------------
+### 6. Security & Authentication Checks
+### --------------------------------------------------------------------
+
+### 6.1 Gọi endpoint không có header X-Service-Key (Expect: 401 INVALID_SERVICE_KEY)
+GET {{baseUrl}}/lms/courses
+
+### 6.2 Gọi endpoint với header X-Service-Key sai (Expect: 401 INVALID_SERVICE_KEY)
+GET {{baseUrl}}/lms/courses
+X-Service-Key: wrong-key-12345
+
+### --------------------------------------------------------------------
+### 7. Testing Tools (/mock/* - Không cần X-Service-Key)
+### --------------------------------------------------------------------
+
+### 7.1 Lấy danh sách 100 request gần nhất (Expect: 200 OK)
+GET {{baseUrl}}/mock/requests
+
+### 7.2 Cập nhật tiến độ khóa học cho lms-sv-001 (Expect: 200 OK)
+PATCH {{baseUrl}}/mock/enrollments
+Content-Type: application/json
+
+{
+  "lmsUserId": "lms-sv-001",
+  "courseId": "LMS-C-JAVA-02",
+  "progress": 100,
+  "score": 9.0,
+  "status": "COMPLETED"
+}
+
+### 7.3 Cập nhật tiến độ khóa học chưa từng ghi danh (Expect: 404 NOT_FOUND)
+PATCH {{baseUrl}}/mock/enrollments
+Content-Type: application/json
+
+{
+  "lmsUserId": "lms-sv-003",
+  "courseId": "LMS-C-JAVA-02",
+  "progress": 50
+}
+
+### 7.4 Tải lại dữ liệu data.json vào bộ nhớ (Expect: 200 OK)
+POST {{baseUrl}}/mock/reload
+
+### 7.5 Reset toàn bộ trạng thái bộ nhớ (Expect: 200 OK)
+POST {{baseUrl}}/mock/reset
