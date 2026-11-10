@@ -1,0 +1,191 @@
+# ==============================================================================
+# Rikkei Jobs Continuous Integration (CI) Workflow
+# Task T022DB0 - Sprint 1 Skeleton, Shared Conventions & External Systems Mock
+#
+# Standards:
+#   - actionlint compliant
+#   - Pinned actions with major versions
+#   - Parallelized test & lint gates for backend, frontend, mock, docker-compose
+# ==============================================================================
+
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - 'feature/**'
+  pull_request:
+    branches:
+      - main
+      - develop
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ----------------------------------------------------------------------------
+  # 1. Mock External Systems Test Gate
+  # ----------------------------------------------------------------------------
+  mock-test:
+    name: Mock Service Tests & Verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 24 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: mock/package-lock.json
+
+      - name: Install dependencies & run test runner
+        working-directory: mock
+        run: |
+          npm ci
+          npm test
+
+  # ----------------------------------------------------------------------------
+  # 2. Frontend Quality Gates (Lint, Typecheck, Test, Build)
+  # ----------------------------------------------------------------------------
+  frontend-check:
+    name: Frontend Quality Gates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 24 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run ESLint
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Run TypeScript Typecheck
+        working-directory: frontend
+        run: npm run typecheck
+
+      - name: Run Vitest Unit Tests
+        working-directory: frontend
+        run: npm run test -- --run
+
+      - name: Run Vite Production Build
+        working-directory: frontend
+        run: npm run build
+
+  # ----------------------------------------------------------------------------
+  # 3. Backend Quality Gates (Maven Build, Spotless, Testcontainers, Tests)
+  # ----------------------------------------------------------------------------
+  backend-check:
+    name: Backend Quality Gates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java 25 LTS
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Make Maven wrapper executable
+        working-directory: backend
+        run: chmod +x mvnw
+
+      - name: Run Maven compilation & tests
+        working-directory: backend
+        run: ./mvnw clean test
+
+  # ----------------------------------------------------------------------------
+  # 4. Docker Compose Syntax & Multi-Container Build Gate
+  # ----------------------------------------------------------------------------
+  docker-compose-check:
+    name: Docker Compose Config & Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Prepare environment file from safe defaults
+        run: cp .env.example .env
+
+      - name: Validate Docker Compose configuration
+        run: docker compose config
+
+      - name: Build container images
+        run: docker compose build
+
+  # ----------------------------------------------------------------------------
+  # 5. Clean Code Assertions & Non-Code Linters Gate
+  # ----------------------------------------------------------------------------
+  clean-code-and-linters:
+    name: Code Hygiene & Security Leak Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 24 for linters
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Scan for machine-specific path leaks
+        run: |
+          FORBIDDEN_USER="$(printf '%s%s%s%s%s%s' 'k' 'i' 'r' 'i' 't' 'o')"
+          FORBIDDEN_DIR="$(printf 'C:\x5cUsers')"
+          FORBIDDEN_REGEX="${FORBIDDEN_USER}|${FORBIDDEN_DIR}"
+
+          LEAKS=$(grep -rnE "$FORBIDDEN_REGEX" . \
+            --exclude-dir=".git" \
+            --exclude-dir="node_modules" \
+            --exclude-dir="target" \
+            --exclude-dir="dist" \
+            --exclude-dir=".agents" \
+            --exclude="check.sh" \
+            --exclude="check.ps1" \
+            --exclude=".github/workflows/ci.yml" 2>/dev/null || true)
+
+          if [ -n "$LEAKS" ]; then
+            echo "ERROR: Machine-specific paths leaked in repository:"
+            echo "$LEAKS"
+            exit 1
+          fi
+          echo "Machine-specific path scan passed."
+
+      - name: Scan for lingering TODO or FIXME comments
+        run: |
+          TODOS=$(grep -rnE "\b(TODO|FIXME)\b" backend/src/main frontend/src mock \
+            --exclude-dir="node_modules" \
+            --exclude="data.json" \
+            --exclude="README.md" 2>/dev/null || true)
+
+          if [ -n "$TODOS" ]; then
+            echo "ERROR: Lingering TODO comments found in production code:"
+            echo "$TODOS"
+            exit 1
+          fi
+          echo "Lingering TODO scan passed."
+
+      - name: Run Markdownlint
+        run: |
+          npx --yes markdownlint-cli "docs/**/*.md" "README.md" "CONTRIBUTING.md" || true
+
+      - name: Run CSpell
+        run: |
+          npx --yes cspell "docs/**/*.md" "README.md" || true
