@@ -54,6 +54,7 @@ coverage/
 **/coverage/
 .nyc_output/
 *.lcov
+*.tsbuildinfo
 
 # Logs & Runtime Diagnostics
 logs/

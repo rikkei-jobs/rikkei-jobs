@@ -1,5 +1,5 @@
 # Stage 1: Build SPA static files
-FROM node:24-alpine AS builder
+FROM node:24.22.2-alpine3.23 AS builder
 
 WORKDIR /app
 
@@ -12,7 +12,7 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Production Nginx container
-FROM nginx:1.30.6-alpine
+FROM nginx:1.30.6-alpine3.24
 
 # Clean default nginx files
 RUN rm -rf /etc/nginx/conf.d/* /usr/share/nginx/html/*
@@ -29,11 +29,13 @@ RUN mkdir -p /tmp/client_temp /tmp/proxy_temp /tmp/fastcgi_temp /tmp/uwsgi_temp 
     && chmod -R 755 /usr/share/nginx/html /var/log/nginx
 
 # Switch to non-root user
+# hadolint ignore=DL3066
 USER nginx
 
 # Production container listens on port 8080
 EXPOSE 8080
 
+# hadolint ignore=DL3025
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD wget --quiet --tries=1 --spider http://127.0.0.1:8080/ || exit 1
 
