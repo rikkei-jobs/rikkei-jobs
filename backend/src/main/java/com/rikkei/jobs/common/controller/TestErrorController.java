@@ -9,6 +9,7 @@ import com.rikkei.jobs.common.exception.ValidationException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.util.Map;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,9 +20,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Controller providing test endpoints for error handling and external client wiring verification.
+ * Restricted strictly to the 'dev' profile for security.
  */
 @RestController
 @RequestMapping("/api/v1/test")
+@Profile("dev")
 public class TestErrorController {
 
     private final ExternalApiClient externalApiClient;

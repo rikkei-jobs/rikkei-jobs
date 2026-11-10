@@ -1,5 +1,7 @@
 package com.rikkei.jobs.common.client;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rikkei.jobs.common.exception.ConflictException;
 import com.rikkei.jobs.common.exception.ExternalResourceNotFoundException;
 import com.rikkei.jobs.common.exception.ExternalUnavailableException;
@@ -7,10 +9,13 @@ import com.rikkei.jobs.common.exception.InvalidServiceKeyException;
 import com.rikkei.jobs.common.exception.ValidationException;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -29,9 +34,11 @@ public class ExternalApiClient {
 
     private final ExternalApiProperties properties;
     private final HttpClient httpClient;
+    private final ObjectMapper objectMapper;
 
-    public ExternalApiClient(ExternalApiProperties properties) {
+    public ExternalApiClient(ExternalApiProperties properties, ObjectMapper objectMapper) {
         this.properties = properties;
+        this.objectMapper = objectMapper;
         this.httpClient =
                 HttpClient.newBuilder()
                         .connectTimeout(Duration.ofSeconds(properties.getTimeoutSeconds()))
@@ -40,20 +47,31 @@ public class ExternalApiClient {
 
     /**
      * Verifies an SSO ticket via POST /lms/sso/verify. Wiring verification method as required by
-     * T022DB0.
+     * T022DB0. Uses ObjectMapper to build the JSON payload securely and avoid JSON injection.
      */
     public String verifySsoTicket(String ticket) {
-        String jsonPayload = String.format("{\"ticket\":\"%s\"}", ticket);
-        return executeRequest("POST", "/lms/sso/verify", jsonPayload, null);
+        try {
+            String jsonPayload = objectMapper.writeValueAsString(Map.of("ticket", ticket));
+            return executeRequest("POST", "/lms/sso/verify", jsonPayload, null);
+        } catch (JsonProcessingException e) {
+            log.warn("Failed to serialize SSO ticket payload: {}", e.getMessage());
+            throw new ValidationException("Định dạng vé xác thực SSO không hợp lệ");
+        }
     }
 
     /**
      * Gets courses filtered by skill via GET /lms/courses?skill=... Wiring verification method as
-     * required by T022DB0.
+     * required by T022DB0. URL-encodes skill query parameter to handle spaces and special
+     * characters.
      */
     public String getCourses(String skill) {
-        String path =
-                (skill == null || skill.isBlank()) ? "/lms/courses" : "/lms/courses?skill=" + skill;
+        String path;
+        if (skill == null || skill.isBlank()) {
+            path = "/lms/courses";
+        } else {
+            String encodedSkill = URLEncoder.encode(skill.trim(), StandardCharsets.UTF_8);
+            path = "/lms/courses?skill=" + encodedSkill;
+        }
         return executeRequest("GET", path, null, null);
     }
 
@@ -121,22 +139,31 @@ public class ExternalApiClient {
                 }
 
                 if (status == 404) {
+                    log.warn("External API 404 Not Found at {}: {}", fullUrl, response.body());
                     throw new ExternalResourceNotFoundException(
-                            "Tài nguyên không tìm thấy trên hệ thống ngoài: " + response.body());
+                            "Tài nguyên không tìm thấy trên hệ thống ngoài");
                 }
                 if (status == 401) {
+                    log.warn("External API 401 Unauthorized at {}: {}", fullUrl, response.body());
                     throw new InvalidServiceKeyException(
-                            "Khóa dịch vụ không hợp lệ: " + response.body());
+                            "Khóa dịch vụ hệ thống ngoài không hợp lệ");
                 }
                 if (status == 409) {
+                    log.warn("External API 409 Conflict at {}: {}", fullUrl, response.body());
                     throw new ConflictException(
-                            "CONFLICT", "Xung đột dữ liệu trên hệ thống ngoài: " + response.body());
+                            "CONFLICT", "Dữ liệu bị xung đột trên hệ thống ngoài");
                 }
                 if (status == 400) {
+                    log.warn("External API 400 Bad Request at {}: {}", fullUrl, response.body());
                     throw new ValidationException(
-                            "Hệ thống ngoài từ chối dữ liệu yêu cầu: " + response.body());
+                            "Dữ liệu yêu cầu không hợp lệ trên hệ thống ngoài");
                 }
 
+                log.warn(
+                        "External API unexpected status HTTP {} at {}: {}",
+                        status,
+                        fullUrl,
+                        response.body());
                 throw new ExternalUnavailableException(
                         "Hệ thống ngoài phản hồi mã lỗi không mong đợi HTTP " + status);
 

@@ -1,6 +1,7 @@
 package com.rikkei.jobs.client;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -9,6 +10,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rikkei.jobs.common.client.ExternalApiClient;
 import com.rikkei.jobs.common.client.ExternalApiProperties;
+import com.rikkei.jobs.common.exception.ExternalResourceNotFoundException;
 import com.rikkei.jobs.common.exception.ExternalUnavailableException;
 import com.rikkei.jobs.common.exception.InvalidServiceKeyException;
 import java.io.File;
@@ -25,9 +27,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 @SpringBootTest
 @Testcontainers
@@ -35,7 +37,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 public class ExternalApiClientIntegrationTest {
 
     @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:18.6-alpine");
+    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18.6-alpine");
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
@@ -49,29 +51,38 @@ public class ExternalApiClientIntegrationTest {
     @BeforeAll
     static void startMockProcess() throws Exception {
         File mockDir = new File("../mock");
-        if (new File(mockDir, "server.js").exists()) {
-            ProcessBuilder pb = new ProcessBuilder("node", "server.js");
-            pb.directory(mockDir);
-            mockProcess = pb.start();
+        File serverJs = new File(mockDir, "server.js");
+        if (!serverJs.exists()) {
+            throw new IllegalStateException(
+                    "Mock external service file not found: " + serverJs.getAbsolutePath());
+        }
+        ProcessBuilder pb = new ProcessBuilder("node", "server.js");
+        pb.directory(mockDir);
+        mockProcess = pb.start();
 
-            HttpClient checkClient = HttpClient.newHttpClient();
-            long start = System.currentTimeMillis();
-            while (System.currentTimeMillis() - start < 5000) {
-                try {
-                    HttpRequest req =
-                            HttpRequest.newBuilder()
-                                    .uri(URI.create("http://localhost:9000/mock/requests"))
-                                    .GET()
-                                    .build();
-                    HttpResponse<String> resp =
-                            checkClient.send(req, HttpResponse.BodyHandlers.ofString());
-                    if (resp.statusCode() == 200) {
-                        break;
-                    }
-                } catch (Exception ignored) {
+        HttpClient checkClient = HttpClient.newHttpClient();
+        long start = System.currentTimeMillis();
+        boolean started = false;
+        while (System.currentTimeMillis() - start < 5000) {
+            try {
+                HttpRequest req =
+                        HttpRequest.newBuilder()
+                                .uri(URI.create("http://localhost:9000/mock/requests"))
+                                .GET()
+                                .build();
+                HttpResponse<String> resp =
+                        checkClient.send(req, HttpResponse.BodyHandlers.ofString());
+                if (resp.statusCode() == 200) {
+                    started = true;
+                    break;
                 }
-                Thread.sleep(100);
+            } catch (Exception ignored) {
             }
+            Thread.sleep(100);
+        }
+        if (!started) {
+            throw new IllegalStateException(
+                    "Mock external service failed to start on port 9000 within 5 seconds");
         }
     }
 
@@ -95,6 +106,15 @@ public class ExternalApiClientIntegrationTest {
         String response = externalApiClient.getCourses("JAVA");
         assertNotNull(response, "Response from live mock must not be null");
         assertTrue(response.contains("LMS-C-JAVA-02"), "Response must contain Java course ID");
+    }
+
+    @Test
+    @DisplayName(
+            "Real Mock: Calling GET /lms/courses with special characters in skill query param is properly URL encoded")
+    void testLiveMockCoursesWithSpecialCharactersInSkill() {
+        // "JAVA & SPRING" contains space and ampersand which must be URL-encoded
+        String response = externalApiClient.getCourses("JAVA & SPRING");
+        assertNotNull(response, "Response from live mock must not be null");
     }
 
     @Test
@@ -128,14 +148,46 @@ public class ExternalApiClientIntegrationTest {
     }
 
     @Test
-    @DisplayName("Real Mock: Calling with invalid X-Service-Key throws InvalidServiceKeyException")
+    @DisplayName(
+            "Security: SSO Ticket with JSON injection characters is safely serialized by ObjectMapper")
+    void testSsoTicketSpecialCharactersNoJsonInjection() {
+        // Injected characters that would break String.format JSON construction
+        String maliciousTicket = "ticket\"}{\"injectedField\":\"malicious\",\"drop\":\"";
+
+        ExternalResourceNotFoundException ex =
+                assertThrows(
+                        ExternalResourceNotFoundException.class,
+                        () -> externalApiClient.verifySsoTicket(maliciousTicket),
+                        "Should cleanly handle ticket via ObjectMapper and receive 404 from mock");
+
+        assertEquals(
+                "Tài nguyên không tìm thấy trên hệ thống ngoài",
+                ex.getMessage(),
+                "Exception message must be sanitized and not contain raw upstream error");
+        assertFalse(
+                ex.getMessage().contains("ticket không tồn tại"),
+                "Exception message must not echo raw upstream response body");
+    }
+
+    @Test
+    @DisplayName(
+            "Real Mock: Calling with invalid X-Service-Key throws InvalidServiceKeyException with sanitized message")
     void testLiveMockInvalidKey() {
-        assertThrows(
-                InvalidServiceKeyException.class,
-                () ->
-                        externalApiClient.executeRequest(
-                                "GET", "/lms/courses", null, "invalid-key-xyz"),
-                "Must throw InvalidServiceKeyException when key is rejected by mock");
+        InvalidServiceKeyException ex =
+                assertThrows(
+                        InvalidServiceKeyException.class,
+                        () ->
+                                externalApiClient.executeRequest(
+                                        "GET", "/lms/courses", null, "invalid-key-xyz"),
+                        "Must throw InvalidServiceKeyException when key is rejected by mock");
+
+        assertEquals(
+                "Khóa dịch vụ hệ thống ngoài không hợp lệ",
+                ex.getMessage(),
+                "Exception message must be sanitized");
+        assertFalse(
+                ex.getMessage().contains("Thiếu hoặc sai X-Service-Key"),
+                "Exception message must not echo raw upstream response body");
     }
 
     @Test
@@ -148,7 +200,7 @@ public class ExternalApiClientIntegrationTest {
         deadProperties.setTimeoutSeconds(1);
         deadProperties.setMaxRetries(1);
 
-        ExternalApiClient deadClient = new ExternalApiClient(deadProperties);
+        ExternalApiClient deadClient = new ExternalApiClient(deadProperties, objectMapper);
 
         ExternalUnavailableException ex =
                 assertThrows(
