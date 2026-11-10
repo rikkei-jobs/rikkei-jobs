@@ -17,16 +17,21 @@ Our branching model is based on Git Flow optimized for task-driven sprints:
   - *Rule*: Never push directly to `main` or `develop`.
 
 ### Pull Requests (PR) Conventions
+
 - **Target Branch**: Every PR MUST target `develop`. Merging directly to `main` is strictly forbidden.
 - **PR Title Format**: Must begin with the uppercase Task ID:
+
   ```text
   [TASK_ID]: <Concise description of the change>
   Example: T022DB0: Set up project skeleton, conventions and external mocks
   ```
+
 - **PR Description**: Fill out all sections in `.github/pull_request_template.md`.
 
 ### Commit Message Conventions
+
 Every commit message must be written in English and begin with the Task ID:
+
 ```text
 <TASK_ID>: <type>(<scope>): <short summary>
 
@@ -36,6 +41,7 @@ Every commit message must be written in English and begin with the Task ID:
 ```
 
 **Allowed Types**:
+
 - `feat`: A new user-facing or technical capability.
 - `fix`: A bug fix.
 - `docs`: Documentation updates only.
@@ -45,6 +51,7 @@ Every commit message must be written in English and begin with the Task ID:
 - `chore`: Build process, dependency updates, tooling configuration.
 
 *Examples*:
+
 - `T022DB0: feat(backend): initialize modular monolith skeleton with Spring Boot 4`
 - `T022DB0: docs(conventions): specify API error formats and 20 skills catalogue`
 - `T022DB0: test(backend): add Testcontainers migration mutation check`
@@ -59,7 +66,7 @@ Consistency across code, data, and APIs is essential:
 |---|---|---|---|
 | **Database** | Table names | `snake_case` (plural) | `users`, `roles`, `internship_batches` |
 | **Database** | Column names | `snake_case` | `full_name`, `lms_user_id`, `created_at` |
-| **Database** | Primary Keys | `id` (UUIDv7 or BIGINT) | `id` |
+| **Database** | Primary Keys | `id` (BIGINT identity / BIGSERIAL) | `id` |
 | **Backend (Java)** | Package names | lowercase dot-separated | `com.rikkei.jobs.identity.domain` |
 | **Backend (Java)** | Class / Interface | `PascalCase` | `ExternalApiClient`, `SkillProfileService` |
 | **Backend (Java)** | Method / Variable | `camelCase` | `verifyTicket()`, `assessmentScore` |
@@ -94,42 +101,58 @@ Rikkei Jobs is built as a single deployable Modular Monolith. To prevent archite
 Before opening a pull request, run local quality checks for each affected component:
 
 ### Backend (`backend/`)
+
 - **Formatting**: Spotless with Google Java Format.
+
   ```bash
   # Check formatting
   ./mvnw spotless:check
   # Auto-format
   ./mvnw spotless:apply
   ```
+
 - **Compilation & Static Analysis**: Zero compiler warnings (`-Xlint:all -Werror`).
+
   ```bash
   ./mvnw clean compile
   ```
+
 - **Automated Tests**:
+
   ```bash
   ./mvnw test
   ```
 
 ### Frontend (`frontend/`)
+
 - **Linting & Code Style**:
+
   ```bash
   npm run lint
   ```
+
 - **Type Checking**:
+
   ```bash
   npm run typecheck
   ```
+
 - **Unit Testing**:
+
   ```bash
   npm run test
   ```
+
 - **Production Build**:
+
   ```bash
   npm run build
   ```
 
 ### External Systems Mock (`mock/`)
+
 - **Syntax & Execution**:
+
   ```bash
   cd mock
   npm install
@@ -137,7 +160,9 @@ Before opening a pull request, run local quality checks for each affected compon
   ```
 
 ### Full Repository Quality Script
+
 You can verify the entire repository with a single command:
+
 ```bash
 # On Linux / macOS
 ./check.sh
@@ -160,6 +185,7 @@ You can verify the entire repository with a single command:
 ## 6. Definition of Done (DoD)
 
 A task or pull request is considered complete ONLY when:
+
 1. All functional requirements specified in the task description are implemented.
 2. Code strictly adheres to the Modular Monolith rules and naming conventions.
 3. Automated unit and integration tests are written and pass with 100% green status on real test environments (no facade mocks).

@@ -5,12 +5,14 @@
 ## Part 1: English Section
 
 ### Overview
+
 During the in-depth architectural and specification analysis of the 7 project reference documents, the engineering team identified several functional ambiguities and specification gaps. This document presents 6 concrete business questions with citations, options, and architectural impacts to be reviewed and confirmed by the Product Owner and Team Lead.
 
 ---
 
 ### Question 1: Default Weighting Formula for Aggregate Competency Index
-- **Citation**: `Rikkei Jobs — Rikkei Project.pdf` (Page 6, section "Cần chốt") & `Rikkei Jobs — Rikkei Project3.pdf` (Page 1, lines 31–34).
+
+- **Citation**: `Rikkei Jobs — Rikkei Project.pdf` (Page 6, Section "Cần chốt") & `Rikkei Jobs — Rikkei Project3.pdf` (Page 1, Section "Chỉ số năng lực" and Section "Bằng chứng").
 - **Context**: The specifications state that each skill index (0–100) is a weighted average of four primary evidence sources: LMS courses (grades, attendance, homework), Examination system results, IOC Internship project tasks, and Mentor assessment evaluations ("Chỉ số = trung bình có trọng số của các nguồn; trọng số do quản trị cấu hình, chốt ở DG-03"). However, the initial default weights among these 4 sources are not defined in the documentation.
 - **Proposed Options**:
   - *Option A (Code Constants)*: Hardcode initial default weights in the application layer (e.g., LMS: 30%, Exams: 30%, IOC Internship: 20%, Mentor: 20%).
@@ -21,8 +23,9 @@ During the in-depth architectural and specification analysis of the 7 project re
 ---
 
 ### Question 2: Inconsistency in Skill Level Band Definitions
-- **Citation**: `Rikkei Jobs — Rikkei Project3.pdf` (Page 1, line 32) vs. `Hướng dẫn dựng mock hệ thống ngoài – Rikkei Jobs.pdf` (Page 3, line 80) and `PROMPT_VONG1_EN.txt` (Section 2.2, item 5).
-- **Context**: Project Document 3 specifies four level bands named: *"Cơ bản, Khá, Vững, Nâng cao"*. Conversely, the latest authoritative Mock Guide (issued 10/11/2026) and Sprint 1 prompt define the official bands as: *"0–39 Cơ bản, 40–69 Khá, 70–84 Tốt, 85–100 Xuất sắc"*.
+
+- **Citation**: `Rikkei Jobs — Rikkei Project3.pdf` (Page 1, Section "Chỉ số năng lực") vs. `Hướng dẫn dựng mock hệ thống ngoài – Rikkei Jobs.pdf` (Page 3, Section 2 "Dữ liệu mẫu dùng chung").
+- **Context**: Project Document 3 specifies four level bands named: *"Cơ bản, Khá, Vững, Nâng cao"*. Conversely, the latest authoritative Mock Guide (issued 10/11/2026) defines the official bands as: *"0–39 Cơ bản, 40–69 Khá, 70–84 Tốt, 85–100 Xuất sắc"*.
 - **Proposed Options**:
   - *Option A (Authoritative Precedence)*: Strictly adopt the 4 bands from the authoritative Mock Guide (`0–39 Cơ bản`, `40–69 Khá`, `70–84 Tốt`, `85–100 Xuất sắc`).
   - *Option B (Dual Alias Compatibility)*: Support localization aliases mapping internal codes (`BASIC`, `INTERMEDIATE`, `ADVANCED`, `EXPERT`) to both terminology sets.
@@ -31,7 +34,8 @@ During the in-depth architectural and specification analysis of the 7 project re
 ---
 
 ### Question 3: First-Time Password Change Policy for HR Accounts
-- **Citation**: `Rikkei Jobs — Rikkei Project1.pdf` (Page 2, lines 154–155) & `Hướng dẫn dựng mock hệ thống ngoài – Rikkei Jobs.pdf` (Page 3, lines 84–85).
+
+- **Citation**: `Rikkei Jobs — Rikkei Project1.pdf` (Page 2, Section "Đăng nhập") & `Hướng dẫn dựng mock hệ thống ngoài – Rikkei Jobs.pdf` (Page 3, Section 2 "Dữ liệu mẫu dùng chung").
 - **Context**: Document 1 dictates that HR accounts are provisioned by Staff and must be forced to change their password upon first login (*"Doanh nghiệp: tài khoản HR do cán bộ cấp. Bắt đổi mật khẩu lần đầu"*). However, in the development environment seed, `hr1@rikkeijobs.test` and `hr2@rikkeijobs.test` are provisioned with default password `Test@123` to facilitate immediate automated integration testing.
 - **Proposed Options**:
   - *Option A*: Add a `must_change_password` boolean column to the `users` table. Seed dev accounts with `must_change_password = FALSE`, while accounts created via staff admin APIs default to `TRUE`.
@@ -40,18 +44,21 @@ During the in-depth architectural and specification analysis of the 7 project re
 
 ---
 
-### Question 4: Retention and Cleanup Strategy for Used SSO Tickets
-- **Citation**: `Hướng dẫn dựng mock hệ thống ngoài – Rikkei Jobs.pdf` (Pages 8–9, lines 368–388) & `Rikkei Jobs — Rikkei Project4.pdf` (Page 1, line 22).
-- **Context**: The mock returns HTTP 200 on repeated calls. The backend must enforce single-use by recording used tickets in a `used_sso_tickets` table and rejecting tickets older than 60 seconds. In a production environment with thousands of daily student logins, unbounded growth of `used_sso_tickets` could impact query performance.
+### Question 4: Candidate Matching Score Calculation and Ineligibility Rules for Missing Mandatory Job Skills
+
+- **Citation**: `Rikkei Jobs — Rikkei Project3.pdf` (Page 2, Section "Điểm khớp với JD" and Section "Khoảng thiếu hụt") & `Rikkei Jobs — Rikkei Project2.pdf` (Page 1, Section "Ứng tuyển").
+- **Context**: The specification mandates: *"JD declares mandatory and preferred skills, each with a minimum proficiency level. Matching score is on a 0–100 scale; if a candidate lacks a mandatory skill, it must be explicitly shown and never hidden"*. However, the documents do not define whether lacking a mandatory skill caps/nullifies the total matching score or merely triggers a separate warning flag.
 - **Proposed Options**:
-  - *Option A (Periodic TTL Pruning)*: Deploy a scheduled cron job (`@Scheduled`) to purge tickets older than 24 hours (since tickets expire after 60 seconds, an expired ticket older than 24h cannot be accepted regardless).
-  - *Option B (Permanent Audit Retention)*: Retain all ticket records indefinitely for compliance and login forensics, relying on a B-Tree index on `(ticket, issued_at)`.
-- **Architectural Impact**: Affects index design on PostgreSQL and background task scheduling in the `identity` module.
+  - *Option A (Hard Ineligibility Gate)*: The matching score is either forced to 0% or an `INELIGIBLE` status is assigned, segregating the candidate into a non-qualified group to alert HR immediately.
+  - *Option B (Penalty Factor)*: The matching score is calculated across remaining skills but penalized by a severe deduction (e.g., 30–50% reduction of overall score) alongside an explicit red badge `Missing Mandatory Skills`.
+  - *Option C (Independent Two-Tier Indicator)*: The numerical skill match score is computed independently (e.g., 75%), displayed in parallel with a distinct mandatory requirement fulfillment indicator (e.g., `Mandatory Skills: 2/3 passed`).
+- **Architectural Impact**: Determines the matching calculation algorithm in the `recruitment`/`job` module, matching score schema attributes, and candidate filtering rules for the employer portal in Sprint 3.
 
 ---
 
 ### Question 5: Contact Information Visibility upon Application Withdrawal
-- **Citation**: `Rikkei Jobs — Rikkei Project5.pdf` (Page 1, lines 7–12) & `Rikkei Jobs — Rikkei Project1.pdf` (Page 2, lines 89–96).
+
+- **Citation**: `Rikkei Jobs — Rikkei Project5.pdf` (Page 1, Section 5 "Quyền riêng tư và an toàn dữ liệu") & `Rikkei Jobs — Rikkei Project1.pdf` (Page 1, Table "Việc" & Page 2, Row "Thấy email, điện thoại ứng viên").
 - **Context**: The policy mandates that candidate profiles are private by default, and HR cannot view email or phone numbers until the candidate applies to their JD or Staff explicitly approves access. If a candidate subsequently withdraws their job application or the JD is closed, does the employer retain visibility of the candidate's phone/email in historical records?
 - **Proposed Options**:
   - *Option A (Dynamic Revocation)*: Contact details are dynamically masked the instant an application is withdrawn or deleted.
@@ -61,7 +68,8 @@ During the in-depth architectural and specification analysis of the 7 project re
 ---
 
 ### Question 6: Synchronization Conflicts on Externally Overridden Evidence
-- **Citation**: `Rikkei Jobs — Rikkei Project3.pdf` (Page 1, lines 23–30).
+
+- **Citation**: `Rikkei Jobs — Rikkei Project3.pdf` (Page 1, Section "Bằng chứng" and Section "Chỉ số năng lực").
 - **Context**: The spec states: *"Đồng bộ mỗi đêm và khi ứng viên mở hồ sơ; không ghi đè phần cán bộ đã sửa tay... Cán bộ: Bằng chứng thiếu ở nguồn, giá trị điều chỉnh, có lý do, lưu lịch sử"*. If an external LMS later corrects an erroneous course grade that had previously been manually overridden by Staff, how should the nightly sync handle the discrepancy?
 - **Proposed Options**:
   - *Option A (Manual Lock Flag)*: Set a `manually_locked = true` flag on overridden records; the automated sync flags discrepancies for Staff review in an admin queue rather than updating automatically.
@@ -73,12 +81,14 @@ During the in-depth architectural and specification analysis of the 7 project re
 ## Part 2: Vietnamese Section / Bản dịch Tiếng Việt
 
 ### Tổng quan
+
 Trong quá trình khảo sát chuyên sâu kiến trúc và đặc tả từ 7 tài liệu dự án, đội ngũ kỹ thuật đã phát hiện một số điểm mơ hồ và câu hỏi nghiệp vụ cần làm rõ. Tài liệu này tổng hợp 6 câu hỏi nghiệp vụ then chốt kèm trích dẫn văn bản, các phương án khả thi và đánh giá tác động kiến trúc để gửi Product Owner và Team Lead phê duyệt.
 
 ---
 
 ### Câu hỏi 1: Công thức và Trọng số Mặc định Tính Chỉ số Năng lực Tổng hợp
-- **Trích dẫn**: `Rikkei Jobs — Rikkei Project.pdf` (Trang 6, mục "Cần chốt") & `Rikkei Jobs — Rikkei Project3.pdf` (Trang 1, dòng 31–34).
+
+- **Trích dẫn**: `Rikkei Jobs — Rikkei Project.pdf` (Trang 6, Mục "Cần chốt") & `Rikkei Jobs — Rikkei Project3.pdf` (Trang 1, Mục "Chỉ số năng lực" và Mục "Bằng chứng").
 - **Ngữ cảnh**: Đặc tả quy định: *"Chỉ số = trung bình có trọng số của các nguồn; trọng số do quản trị cấu hình, chốt ở DG-03"*. Chỉ số kỹ năng (0–100) được tính từ 4 nguồn bằng chứng: Điểm môn LMS, Kết quả Khảo thí, Điểm nghiệm thu task thực tập IOC, và Phiếu đánh giá của Mentor. Tuy nhiên, tài liệu chưa định nghĩa tỷ lệ phần trăm mặc định ban đầu giữa 4 nguồn này.
 - **Các phương án đề xuất**:
   - *Phương án A (Cố định ở tầng code)*: Đặt bộ trọng số mặc định ban đầu trong mã nguồn (ví dụ: LMS 30%, Khảo thí 30%, Thực tập 20%, Mentor 20%).
@@ -89,17 +99,19 @@ Trong quá trình khảo sát chuyên sâu kiến trúc và đặc tả từ 7 t
 ---
 
 ### Câu hỏi 2: Sự Không Nhất quán trong Định nghĩa Bậc Kỹ năng (Level Bands)
-- **Trích dẫn**: `Rikkei Jobs — Rikkei Project3.pdf` (Trang 1, dòng 32) đối chiếu với `Hướng dẫn dựng mock hệ thống ngoài – Rikkei Jobs.pdf` (Trang 3, dòng 80) và `PROMPT_VONG1_EN.txt` (Mục 2.2, điều 5).
-- **Ngữ cảnh**: Tài liệu dự án 3 quy định 4 bậc kỹ năng gồm: *"Cơ bản, Khá, Vững, Nâng cao"*. Ngược lại, Tài liệu Hướng dẫn Mock mới nhất (10/11/2026) và Prompt Vòng 1 lại chuẩn hóa: *"0–39 Cơ bản, 40–69 Khá, 70–84 Tốt, 85–100 Xuất sắc"*.
+
+- **Trích dẫn**: `Rikkei Jobs — Rikkei Project3.pdf` (Trang 1, Mục "Chỉ số năng lực") đối chiếu với `Hướng dẫn dựng mock hệ thống ngoài – Rikkei Jobs.pdf` (Trang 3, Mục 2 "Dữ liệu mẫu dùng chung").
+- **Ngữ cảnh**: Tài liệu dự án 3 quy định 4 bậc kỹ năng gồm: *"Cơ bản, Khá, Vững, Nâng cao"*. Ngược lại, Tài liệu Hướng dẫn Mock mới nhất (10/11/2026) định nghĩa: *"0–39 Cơ bản, 40–69 Khá, 70–84 Tốt, 85–100 Xuất sắc"*.
 - **Các phương án đề xuất**:
-  - *Phương án A (Tuân thủ tài liệu mới nhất)*: Áp dụng triệt để định nghĩa theo Tài liệu Mock hướng dẫn mới nhất (`0–39 Cơ bản`, `40–69 Khá`, `70–84 Tốt`, `85–100 Xuất sắc`) vì tài liệu này có thẩm quyền cao nhất.
+  - *Phương án A (Tuân thủ tài liệu mới nhất)*: Áp dụng triệt để định nghĩa theo Tài liệu Mock hướng dẫn mới nhất (`0–39 Cơ bản`, `40–69 Khá`, `70–84 Tốt`, `85–100 Xuất sắc`) vì tài liệu này có tính khả thi và tương thích cao nhất với các hệ thống mock hiện hữu.
   - *Phương án B (Ánh xạ song song)*: Hỗ trợ cấu hình ánh xạ linh hoạt giữa mã nội bộ (`BASIC`, `INTERMEDIATE`, `ADVANCED`, `EXPERT`) với cả hai cách gọi hiển thị.
 - **Tác động kiến trúc**: Thống nhất định dạng Enum trong TypeScript frontend, huy hiệu năng lực hiển thị và các bài test kiểm thử.
 
 ---
 
 ### Câu hỏi 3: Quy định Đổi Mật khẩu Lần đầu Đối với Tài khoản Doanh nghiệp (HR)
-- **Trích dẫn**: `Rikkei Jobs — Rikkei Project1.pdf` (Trang 2, dòng 154–155) & `Hướng dẫn dựng mock hệ thống ngoài – Rikkei Jobs.pdf` (Trang 3, dòng 84–85).
+
+- **Trích dẫn**: `Rikkei Jobs — Rikkei Project1.pdf` (Trang 2, Mục "Đăng nhập") & `Hướng dẫn dựng mock hệ thống ngoài – Rikkei Jobs.pdf` (Trang 3, Mục 2 "Dữ liệu mẫu dùng chung").
 - **Ngữ cảnh**: Tài liệu 1 quy định: *"Doanh nghiệp: tài khoản HR do cán bộ cấp. Bắt đổi mật khẩu lần đầu"*. Tuy nhiên trong môi trường dev, 2 tài khoản mẫu `hr1@rikkeijobs.test` và `hr2@rikkeijobs.test` được seed sẵn với mật khẩu `Test@123` để phục vụ kiểm thử tích hợp tự động.
 - **Các phương án đề xuất**:
   - *Phương án A*: Bổ sung cột boolean `must_change_password` vào bảng `users`. Tài khoản seed môi trường dev đặt giá trị `FALSE`, trong khi tài khoản do cán bộ cấp sau này mặc định là `TRUE`.
@@ -108,18 +120,21 @@ Trong quá trình khảo sát chuyên sâu kiến trúc và đặc tả từ 7 t
 
 ---
 
-### Câu hỏi 4: Chính sách Lưu trữ và Dọn dẹp Vé SSO Đã Sử dụng (`used_sso_tickets`)
-- **Trích dẫn**: `Hướng dẫn dựng mock hệ thống ngoài – Rikkei Jobs.pdf` (Trang 8–9, dòng 368–388) & `Rikkei Jobs — Rikkei Project4.pdf` (Trang 1, dòng 22).
-- **Ngữ cảnh**: Mock trả về HTTP 200 cho mọi vé. Backend Rikkei Jobs có trách nhiệm lưu vé vào bảng `used_sso_tickets` và chặn nếu vé đã dùng hoặc quá 60 giây. Trong môi trường thực tế với hàng nghìn sinh viên đăng nhập mỗi ngày, bảng `used_sso_tickets` sẽ tăng trưởng liên tục.
+### Câu hỏi 4: Quy tắc Tính Điểm Khớp Tuyển Dụng (Matching Score) và Xử Lý Khi Ứng Viên Thiếu Kỹ Năng Bắt Buộc Trong JD
+
+- **Trích dẫn**: `Rikkei Jobs — Rikkei Project3.pdf` (Trang 2, Mục "Điểm khớp với JD" và Mục "Khoảng thiếu hụt") đối chiếu `Rikkei Jobs — Rikkei Project2.pdf` (Trang 1, Mục "Ứng tuyển").
+- **Ngữ cảnh**: Đặc tả quy định: *"JD khai kỹ năng bắt buộc và ưu tiên, mỗi kỹ năng có mức tối thiểu. Điểm khớp 0–100; thiếu một kỹ năng bắt buộc thì ghi rõ, không ẩn"*. Tuy nhiên, tài liệu chưa định rõ công thức tính điểm khớp tổng thể khi thiếu kỹ năng bắt buộc: điểm có bị về 0 hay vẫn tính điểm nhưng gắn nhãn cảnh báo.
 - **Các phương án đề xuất**:
-  - *Phương án A (Dọn dẹp định kỳ sau 24h)*: Thiết lập tác vụ ngầm định kỳ (`@Scheduled`) xóa các vé có thời gian tạo quá 24 giờ (vì vé hết hạn sau 60s nên vé cũ sau 24h chắc chắn không thể tái sử dụng).
-  - *Phương án B (Lưu vĩnh viễn)*: Lưu trữ toàn bộ vé vĩnh viễn để phục vụ đối soát an ninh, đánh chỉ mục B-Tree trên cặp `(ticket, issued_at)`.
-- **Tác động kiến trúc**: Quyết định cấu trúc chỉ mục trên PostgreSQL và nhu cầu xây dựng tác vụ dọn dẹp nền trong module `identity`.
+  - *Phương án A (Hard Ineligibility Gate - Chặn cứng)*: Điểm khớp bị gán về 0% hoặc gán trạng thái `INELIGIBLE` (Không đủ điều kiện), tự động tách vào nhóm riêng để cảnh báo HR.
+  - *Phương án B (Penalty Factor - Hệ số phạt)*: Điểm khớp vẫn được tính dựa trên các kỹ năng còn lại nhưng bị áp dụng hệ số phạt (trừ 30–50% tổng điểm) và gắn nhãn cảnh báo đỏ `Missing Mandatory Skills`.
+  - *Phương án C (Independent Two-Tier Indicator - Hai chỉ số độc lập)*: Điểm khớp kỹ năng tính toán độc lập (ví dụ đạt 75%), hiển thị song song với chỉ số đáp ứng điều kiện bắt buộc (ví dụ `Mandatory Skills: 2/3 passed`).
+- **Tác động kiến trúc**: Quyết định logic thuật toán module `recruitment`/`job`, cấu trúc dữ liệu lưu điểm khớp và bộ lọc ứng viên trên giao diện doanh nghiệp ở Sprint 3.
 
 ---
 
 ### Câu hỏi 5: Quyền Xem Thông tin Liên hệ Khi Ứng viên Rút Đơn Ứng tuyển
-- **Trích dẫn**: `Rikkei Jobs — Rikkei Project5.pdf` (Trang 1, dòng 7–12) & `Rikkei Jobs — Rikkei Project1.pdf` (Trang 2, dòng 89–96).
+
+- **Trích dẫn**: `Rikkei Jobs — Rikkei Project5.pdf` (Trang 1, Mục 5 "Quyền riêng tư và an toàn dữ liệu") đối chiếu `Rikkei Jobs — Rikkei Project1.pdf` (Trang 1, Bảng "Việc" & Trang 2, Hàng "Thấy email, điện thoại ứng viên").
 - **Ngữ cảnh**: Quy định nêu rõ: *"Hồ sơ mặc định riêng tư... Doanh nghiệp không thấy email, số điện thoại cho tới khi ứng viên ứng tuyển JD của họ, hoặc cán bộ duyệt mở liên hệ"*. Nếu ứng viên sau đó quyết định rút đơn ứng tuyển (withdraw application) hoặc JD bị đóng lại, doanh nghiệp đó có quyền tiếp tục thấy email/SĐT trong danh sách lịch sử hay không?
 - **Các phương án đề xuất**:
   - *Phương án A (Che lại tức thì)*: Thông tin liên hệ ngay lập tức bị che (mask) trở lại khi đơn ứng tuyển bị rút hoặc hủy.
@@ -129,7 +144,8 @@ Trong quá trình khảo sát chuyên sâu kiến trúc và đặc tả từ 7 t
 ---
 
 ### Câu hỏi 6: Xử lý Bất đồng bộ Khi Điểm Nguồn Bên Ngoài Thay Đổi Sau Khi Cán Bộ Đã Sửa Tay
-- **Trích dẫn**: `Rikkei Jobs — Rikkei Project3.pdf` (Trang 1, dòng 23–30).
+
+- **Trích dẫn**: `Rikkei Jobs — Rikkei Project3.pdf` (Trang 1, Mục "Bằng chứng" và Mục "Chỉ số năng lực").
 - **Ngữ cảnh**: Tài liệu quy định: *"Đồng bộ mỗi đêm và khi ứng viên mở hồ sơ; không ghi đè phần cán bộ đã sửa tay... Cán bộ: Bằng chứng thiếu ở nguồn, giá trị điều chỉnh, có lý do, lưu lịch sử"*. Trong trường hợp cán bộ sửa tay một điểm môn vì LMS gặp sự cố; sau đó LMS chính thức cập nhật điểm đúng. Làm thế nào hệ thống phân biệt được dữ liệu mới từ LMS là bản cập nhật hợp lệ hay là dữ liệu cũ bị ghi đè?
 - **Các phương án đề xuất**:
   - *Phương án A (Khóa thủ công)*: Đánh dấu cờ `manually_locked = true` cho bản ghi; khi tiến trình đồng bộ ban đêm phát hiện sai khác, hệ thống sẽ đưa vào hàng đợi cảnh báo cho Cán bộ duyệt thay vì tự động ghi đè.

@@ -7,11 +7,13 @@ This document provides the authoritative interface specification and contract fo
 ## 1. Overview & Operational Principles
 
 ### 1.1 Architecture & Process Separation
+
 - The mock service runs as an independent Node.js + Express process listening on port `9000` (`http://localhost:9000` or `http://mock:9000` inside Docker).
 - **In-Memory State**: Runtime data (generated SSO tickets, dynamic course enrollments, batch members, request logs) is held entirely in memory. It initializes from `data.json` on startup. No persistent database is used.
 - **Frontend Isolation**: The frontend client MUST NEVER call the mock service directly. The `X-Service-Key` must never be exposed to browser environments. The Nginx reverse proxy configuration strictly prevents routing `/mock` or external endpoints to the public internet.
 
 ### 1.2 Authentication & Security Header
+
 All functional endpoints under `/lms`, `/exam`, `/pm`, and `/meet` require authentication via a secret pre-shared service key header:
 
 ```http
@@ -21,15 +23,18 @@ X-Service-Key: dev-key
 - **Missing or Invalid Key Response**:
   - HTTP Status: `401 Unauthorized`
   - Response Body:
+
     ```json
     {
       "code": "INVALID_SERVICE_KEY",
       "message": "Thiếu hoặc sai header X-Service-Key"
     }
     ```
+
 - **Public Testing Tools**: Endpoints under the `/mock/*` path are administrative testing utilities and DO NOT require the `X-Service-Key` header.
 
 ### 1.3 SSO Ticket Expiration & Single-Use Enforcement Rule
+
 - **Mock Behavior**: The mock server deliberately DOES NOT block expired or already-used SSO tickets, and does NOT enforce the 60-second expiration window. Repeated calls to `POST /lms/sso/verify` with the same ticket will return `200 OK`.
 - **Backend Responsibility (Task NT-01)**: The Rikkei Jobs **Backend** is strictly responsible for enforcing single-use and the 60-second TTL window during user login in task `NT-01`:
   1. The backend stores verified ticket IDs in a `used_sso_tickets` table; duplicate submissions return HTTP `401 UNAUTHORIZED`.
@@ -61,22 +66,29 @@ X-Service-Key: dev-key
 ## 3. Business Endpoints Specification & Examples
 
 ### 3.1 `POST /lms/sso/tickets`
+
 Generates an SSO ticket for a valid user in `data.json`.
+
 - **Request Headers**: `X-Service-Key: dev-key`, `Content-Type: application/json`
 - **Request Body**:
+
   ```json
   {
     "lmsUserId": "lms-sv-001"
   }
   ```
+
 - **Response `201 Created`**:
+
   ```json
   {
     "ticket": "ticket-lms-sv-001-1731234567890",
     "issuedAt": "2026-11-10T09:00:00+07:00"
   }
   ```
+
 - **Response `404 Not Found`** (user does not exist):
+
   ```json
   {
     "code": "NOT_FOUND",
@@ -87,15 +99,20 @@ Generates an SSO ticket for a valid user in `data.json`.
 ---
 
 ### 3.2 `POST /lms/sso/verify`
+
 Verifies an SSO ticket and resolves the authenticated user profile.
+
 - **Request Headers**: `X-Service-Key: dev-key`, `Content-Type: application/json`
 - **Request Body**:
+
   ```json
   {
     "ticket": "ticket-lms-sv-001-1731234567890"
   }
   ```
+
 - **Response `200 OK`**:
+
   ```json
   {
     "lmsUserId": "lms-sv-001",
@@ -105,7 +122,9 @@ Verifies an SSO ticket and resolves the authenticated user profile.
     "issuedAt": "2026-11-10T09:00:00+07:00"
   }
   ```
+
 - **Response `404 Not Found`** (invalid or unissued ticket):
+
   ```json
   {
     "code": "NOT_FOUND",
@@ -116,9 +135,12 @@ Verifies an SSO ticket and resolves the authenticated user profile.
 ---
 
 ### 3.3 `GET /lms/students/{lmsUserId}`
+
 Retrieves candidate profile information.
+
 - **Request Headers**: `X-Service-Key: dev-key`
 - **Response `200 OK`**:
+
   ```json
   {
     "lmsUserId": "lms-sv-001",
@@ -129,7 +151,9 @@ Retrieves candidate profile information.
     "role": "CANDIDATE"
   }
   ```
+
 - **Response `404 Not Found`** (absent or user role is not `CANDIDATE`):
+
   ```json
   {
     "code": "NOT_FOUND",
@@ -140,9 +164,12 @@ Retrieves candidate profile information.
 ---
 
 ### 3.4 `GET /lms/students/{lmsUserId}/results`
+
 Retrieves academic course results and attendance metrics from the LMS.
+
 - **Request Headers**: `X-Service-Key: dev-key`
 - **Response `200 OK`**:
+
   ```json
   [
     {
@@ -160,9 +187,12 @@ Retrieves academic course results and attendance metrics from the LMS.
 ---
 
 ### 3.5 `GET /lms/courses?skill={skill}`
+
 Retrieves courses covering a specific skill code (e.g., `?skill=JAVA`). If the `skill` parameter is omitted, returns all available courses.
+
 - **Request Headers**: `X-Service-Key: dev-key`
 - **Response `200 OK`**:
+
   ```json
   [
     {
@@ -178,16 +208,21 @@ Retrieves courses covering a specific skill code (e.g., `?skill=JAVA`). If the `
 ---
 
 ### 3.6 `POST /lms/enrollments`
+
 Enrolls a student in a supplementary training course.
+
 - **Request Headers**: `X-Service-Key: dev-key`, `Content-Type: application/json`
 - **Request Body**:
+
   ```json
   {
     "lmsUserId": "lms-sv-002",
     "courseId": "LMS-C-JAVA-02"
   }
   ```
+
 - **Response `201 Created`**:
+
   ```json
   {
     "lmsUserId": "lms-sv-002",
@@ -198,7 +233,9 @@ Enrolls a student in a supplementary training course.
     "enrolledAt": "2026-11-10T10:00:00+07:00"
   }
   ```
+
 - **Response `409 Conflict`** (already enrolled):
+
   ```json
   {
     "code": "ALREADY_ENROLLED",
@@ -209,9 +246,12 @@ Enrolls a student in a supplementary training course.
 ---
 
 ### 3.7 `GET /lms/enrollments/{lmsUserId}`
+
 Retrieves all current course enrollments for a given student.
+
 - **Request Headers**: `X-Service-Key: dev-key`
 - **Response `200 OK`**:
+
   ```json
   [
     {
@@ -227,9 +267,12 @@ Retrieves all current course enrollments for a given student.
 ---
 
 ### 3.8 `GET /exam/students/{lmsUserId}/results`
+
 Retrieves standardized certification or placement examination results.
+
 - **Request Headers**: `X-Service-Key: dev-key`
 - **Response `200 OK`**:
+
   ```json
   [
     {
@@ -245,9 +288,12 @@ Retrieves standardized certification or placement examination results.
 ---
 
 ### 3.9 `GET /pm/students/{lmsUserId}/internships`
+
 Retrieves internship project history, completed tasks, and evaluation scores from the IOC project management tool (`lms-pm`).
+
 - **Request Headers**: `X-Service-Key: dev-key`
 - **Response `200 OK`**:
+
   ```json
   [
     {
@@ -266,15 +312,20 @@ Retrieves internship project history, completed tasks, and evaluation scores fro
 ---
 
 ### 3.10 `POST /pm/batches/{batchId}/members`
+
 Adds a student to an IOC internship batch.
+
 - **Request Headers**: `X-Service-Key: dev-key`, `Content-Type: application/json`
 - **Request Body**:
+
   ```json
   {
     "lmsUserId": "lms-sv-002"
   }
   ```
+
 - **Response `201 Created`**:
+
   ```json
   {
     "batchId": "IOC-JB-2026-09",
@@ -282,7 +333,9 @@ Adds a student to an IOC internship batch.
     "addedAt": "2026-11-10T10:15:00+07:00"
   }
   ```
+
 - **Response `409 Conflict`** (already in batch):
+
   ```json
   {
     "code": "ALREADY_MEMBER",
@@ -293,9 +346,12 @@ Adds a student to an IOC internship batch.
 ---
 
 ### 3.11 `POST /meet/rooms`
+
 Provisions a virtual meeting room for interview schedules via Rikkei Meet.
+
 - **Request Headers**: `X-Service-Key: dev-key`, `Content-Type: application/json`
 - **Request Body**:
+
   ```json
   {
     "title": "Phỏng vấn Vòng 1 - Ứng viên Nguyễn Văn An",
@@ -303,7 +359,9 @@ Provisions a virtual meeting room for interview schedules via Rikkei Meet.
     "endAt": "2026-11-15T10:00:00+07:00"
   }
   ```
+
 - **Response `201 Created`**:
+
   ```json
   {
     "roomId": "meet-room-uuid-001",
@@ -313,7 +371,9 @@ Provisions a virtual meeting room for interview schedules via Rikkei Meet.
     "endAt": "2026-11-15T10:00:00+07:00"
   }
   ```
+
 - **Response `400 Bad Request`** (missing required fields):
+
   ```json
   {
     "code": "BAD_REQUEST",
@@ -328,8 +388,11 @@ Provisions a virtual meeting room for interview schedules via Rikkei Meet.
 These endpoints are strictly for automated integration testing and development diagnostics. They require NO `X-Service-Key`. The backend never calls them in production.
 
 ### 4.1 `POST /mock/reload`
+
 Re-reads `data.json` from disk into memory without requiring a server process restart.
+
 - **Response `200 OK`**:
+
   ```json
   {
     "status": "RELOADED",
@@ -338,8 +401,11 @@ Re-reads `data.json` from disk into memory without requiring a server process re
   ```
 
 ### 4.2 `GET /mock/requests`
+
 Returns an array of the last 100 HTTP requests received by the mock server (excluding calls to `/mock/*`).
+
 - **Response `200 OK`**:
+
   ```json
   [
     {
@@ -353,8 +419,11 @@ Returns an array of the last 100 HTTP requests received by the mock server (excl
   ```
 
 ### 4.3 `PATCH /mock/enrollments`
+
 Dynamically mutates an existing course enrollment in memory (progress, score, status).
+
 - **Request Body**:
+
   ```json
   {
     "lmsUserId": "lms-sv-002",
@@ -364,7 +433,9 @@ Dynamically mutates an existing course enrollment in memory (progress, score, st
     "status": "COMPLETED"
   }
   ```
+
 - **Response `200 OK`**:
+
   ```json
   {
     "lmsUserId": "lms-sv-002",
@@ -377,8 +448,11 @@ Dynamically mutates an existing course enrollment in memory (progress, score, st
   ```
 
 ### 4.4 `POST /mock/reset`
+
 Resets runtime in-memory state: clears generated tickets, runtime enrollments, batch members, and the request log, restoring state to the original `data.json`.
+
 - **Response `200 OK`**:
+
   ```json
   {
     "status": "RESET",
@@ -395,6 +469,7 @@ Resets runtime in-memory state: clears generated tickets, runtime enrollments, b
 - **Workflow**:
   1. Reads interns belonging to `<batchId>` from `mock/data.json`.
   2. For each intern, calls backend endpoint:
+
      ```http
      POST http://localhost:8080/api/v1/integrations/pm/evaluation-links
      X-Service-Key: dev-key
@@ -406,4 +481,5 @@ Resets runtime in-memory state: clears generated tickets, runtime enrollments, b
        "batchId": "IOC-JB-2026-09"
      }
      ```
+
   3. Gracefully handles scenarios where the backend is unreachable or returns `404 Not Found` (as this endpoint is implemented in task `TT-04`).

@@ -9,19 +9,24 @@ This document establishes the mandatory engineering standards, API design contra
 All application programming interfaces developed for Rikkei Jobs must adhere to the standardized REST specifications outlined below.
 
 ### 1.1 Base URI & Transport
+
 - **Base URI Prefix**: All business endpoints MUST start with `/api/v1` (e.g., `https://api.rikkeijobs.vn/api/v1/...` or `http://localhost:8080/api/v1/...`).
 - **Data Format**: Payload requests and responses must use `application/json; charset=utf-8`.
 - **Security & Authentication Header**:
   - Client-to-Backend: Requests requiring user authentication MUST include the standard HTTP header:
+
     ```http
     Authorization: Bearer <JWT_TOKEN>
     ```
+
   - Backend-to-Mock / External Integrations: System-to-system requests MUST include:
+
     ```http
     X-Service-Key: dev-key
     ```
 
 ### 1.2 Unified Error Response Format
+
 All HTTP error responses (HTTP status codes 4xx and 5xx) must return a consistent JSON body with exactly two fields: `code` (an uppercase machine-readable string) and `message` (a human-readable description). Stack traces or internal exceptions must NEVER leak to callers.
 
 ```json
@@ -32,6 +37,7 @@ All HTTP error responses (HTTP status codes 4xx and 5xx) must return a consisten
 ```
 
 #### Allowed Status Codes & Permitted Error Codes
+
 | HTTP Status | Trigger Condition | Allowed Error Codes | Example Message |
 |---|---|---|---|
 | **400 Bad Request** | Invalid payload syntax, missing required fields, boundary validation failures. | `VALIDATION_ERROR`, `BAD_REQUEST` | `"Trường email không đúng định dạng"` |
@@ -45,7 +51,8 @@ All HTTP error responses (HTTP status codes 4xx and 5xx) must return a consisten
 
 #### Concrete JSON Error Examples
 
-##### 400 Bad Request Example:
+##### 400 Bad Request Example
+
 ```json
 {
   "code": "VALIDATION_ERROR",
@@ -53,7 +60,8 @@ All HTTP error responses (HTTP status codes 4xx and 5xx) must return a consisten
 }
 ```
 
-##### 401 Unauthorized Example:
+##### 401 Unauthorized Example
+
 ```json
 {
   "code": "UNAUTHORIZED",
@@ -61,7 +69,8 @@ All HTTP error responses (HTTP status codes 4xx and 5xx) must return a consisten
 }
 ```
 
-##### 401 Invalid Service Key Example (External Mock):
+##### 401 Invalid Service Key Example (External Mock)
+
 ```json
 {
   "code": "INVALID_SERVICE_KEY",
@@ -69,7 +78,8 @@ All HTTP error responses (HTTP status codes 4xx and 5xx) must return a consisten
 }
 ```
 
-##### 403 Forbidden Example:
+##### 403 Forbidden Example
+
 ```json
 {
   "code": "FORBIDDEN",
@@ -77,7 +87,8 @@ All HTTP error responses (HTTP status codes 4xx and 5xx) must return a consisten
 }
 ```
 
-##### 404 Not Found Example:
+##### 404 Not Found Example
+
 ```json
 {
   "code": "NOT_FOUND",
@@ -85,7 +96,8 @@ All HTTP error responses (HTTP status codes 4xx and 5xx) must return a consisten
 }
 ```
 
-##### 405 Method Not Allowed Example:
+##### 405 Method Not Allowed Example
+
 ```json
 {
   "code": "METHOD_NOT_ALLOWED",
@@ -93,7 +105,8 @@ All HTTP error responses (HTTP status codes 4xx and 5xx) must return a consisten
 }
 ```
 
-##### 409 Conflict Example:
+##### 409 Conflict Example
+
 ```json
 {
   "code": "ALREADY_ENROLLED",
@@ -101,7 +114,8 @@ All HTTP error responses (HTTP status codes 4xx and 5xx) must return a consisten
 }
 ```
 
-##### 429 Too Many Requests Example:
+##### 429 Too Many Requests Example
+
 ```json
 {
   "code": "RATE_LIMITED",
@@ -109,7 +123,8 @@ All HTTP error responses (HTTP status codes 4xx and 5xx) must return a consisten
 }
 ```
 
-##### 503 Service Unavailable Example:
+##### 503 Service Unavailable Example
+
 ```json
 {
   "code": "EXTERNAL_UNAVAILABLE",
@@ -118,11 +133,14 @@ All HTTP error responses (HTTP status codes 4xx and 5xx) must return a consisten
 ```
 
 ### 1.3 Pagination Format (1-Based)
+
 List endpoints returning multiple records must support 1-based pagination via query parameters:
+
 - **Query Parameters**:
   - `page`: Page index starting from `1` (Default: `1`). If `page < 1`, return `400 VALIDATION_ERROR`.
   - `size`: Number of items per page (Default: `20`, Maximum permitted: `100`). If `size <= 0` or `size > 100`, return `400 VALIDATION_ERROR`.
 - **Response Structure**:
+
   ```json
   {
     "items": [
@@ -139,6 +157,7 @@ List endpoints returning multiple records must support 1-based pagination via qu
   ```
 
 ### 1.4 Timestamps & Timezone Conventions
+
 - **Format**: All timestamps exposed in JSON APIs MUST follow **ISO 8601** format with explicit timezone offsets.
   - *Standard representation*: `YYYY-MM-DDTHH:mm:ssXXX` (e.g., `2026-10-20T08:00:00+07:00` or `2026-11-10T09:15:02.311Z`).
 - **Database Storage**: In PostgreSQL, all datetime columns MUST be stored as `TIMESTAMPTZ` (Timestamp with Time Zone in UTC).
@@ -199,6 +218,7 @@ Full details and schema examples are documented in [`docs/mock-contract.md`](moc
 The Rikkei Jobs competency framework defines exactly 20 standardized skill codes. The `assessment` module owns the `skills` table in the database.
 
 ### 5.1 Complete 20 Skills Table
+
 | # | Skill Code | English Display Name | Tên hiển thị Tiếng Việt | Category |
 |:---:|:---|:---|:---|:---|
 | 1 | `JAVA` | Java Programming | Lập trình Java | Backend / Core |
@@ -223,6 +243,7 @@ The Rikkei Jobs competency framework defines exactly 20 standardized skill codes
 | 20 | `CLOUD` | Cloud Computing | Điện toán đám mây | Infrastructure |
 
 ### 5.2 Skill Level Bands (0–100 Scale)
+
 Every evaluated skill produces an index score from `0` to `100`, mapped to 4 standardized proficiency bands:
 
 - **`0 – 39`**: **Cơ bản** (*Basic / Elementary*) — Has foundational knowledge, requires continuous guidance.
@@ -231,6 +252,7 @@ Every evaluated skill produces an index score from `0` to `100`, mapped to 4 sta
 - **`85 – 100`**: **Xuất sắc** (*Expert / Excellent*) — Deep architectural insight, mentors others, exemplary performance.
 
 ### 5.3 Data Source Scale & Conversion Rules
+
 - **LMS & Exam Scores**: Raw scores from LMS and Exam modules are reported on a **0–10 scale** (e.g., `score: 8.5`). To convert to the Rikkei Jobs 0–100 skill index, multiply by **10**:
   $$\text{Skill Index} = \text{score} \times 10$$
 - **Percentages**: Attendance rate (`attendanceRate`), homework rate (`homeworkRate`), and study progress (`progress`) are recorded as integer percentages on a **0–100 scale**.
@@ -249,6 +271,7 @@ Every evaluated skill produces an index score from `0` to `100`, mapped to 4 sta
 To preserve architectural integrity across sprints, the following rules are non-negotiable:
 
 ### 6.1 Module Table Ownership
+
 1. Each database table is strictly and exclusively owned by exactly **one domain module**.
 2. **Table Ownership Mapping**:
    - `identity`: `roles`, `users`, `used_sso_tickets`
@@ -261,11 +284,13 @@ To preserve architectural integrity across sprints, the following rules are non-
    - `ai`: Stateless assistant sessions, no persistent domain tables.
 
 ### 6.2 No Cross-Module Foreign Keys or SQL Joins
+
 - **No Physical Foreign Keys**: Never declare a `FOREIGN KEY` between a table in Module A and a table in Module B. Store only raw identifiers (e.g., `UUID candidate_id` in recruitment tables).
 - **No Cross-Module Joins**: Never execute SQL queries containing `JOIN` clauses across module boundaries.
 - **Inter-Module Communication**: Modules must communicate exclusively via typed Java Service Interfaces (returning immutable Java Records/DTOs) or asynchronous Spring Application Events (`ApplicationEventPublisher`).
 
 ### 6.3 Centralized External API Client
+
 - Domain modules must never construct raw HTTP clients (such as `RestClient`, `HttpClient`, or `WebClient`) to call external services directly.
 - All external interactions with LMS, Exam, PM, and Meet must be dispatched through the unified `ExternalApiClient` located in the shared infrastructure package.
 
@@ -274,6 +299,7 @@ To preserve architectural integrity across sprints, the following rules are non-
 ## 7. Definition of Done (DoD)
 
 A task, feature, or pull request achieves "Done" status when:
+
 1. All functional criteria from the issue specification are fully satisfied.
 2. Code follows naming conventions: database `snake_case`, Java `PascalCase`/`camelCase`, API JSON `camelCase`.
 3. Unit and integration tests pass with 100% green status on real running dependencies (using Testcontainers; zero facade tests).

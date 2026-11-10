@@ -11,9 +11,9 @@ This repository represents the initial foundation (Sprint 1 — Task T022DB0): M
 The project is structured as a **Modular Monolith** to deliver high developer velocity, transactional consistency, and clean domain boundaries without the network overhead of premature microservices.
 
 - **Backend**: Java 25 LTS, Spring Boot 4.1.2, Maven Wrapper, Flyway Database Migrations (`spring-boot-starter-flyway`), Testcontainers.
-- **Frontend**: React 19.3.1, TypeScript 6.0.3, Vite 8.3.7, TailwindCSS, Vitest, Nginx 1.30.6 (Production container).
-- **External Systems Mock**: Node.js 24 LTS, Express 4.19.2 (Simulates LMS, Exam System, Project Management IOC, Rikkei Meet).
-- **Database & Services**: PostgreSQL 18.6 (native `uuidv7()`), Mailpit (Mock SMTP & Webmail UI).
+- **Frontend**: React 19.3.1, TypeScript 6.0.3, Vite 8.3.7, Vanilla CSS (Design Tokens & CSS Variables), Vitest, Nginx 1.30.6 (Production container).
+- **External Systems Mock**: Node.js 24 LTS, Express 5.3.0 (Simulates LMS, Exam System, Project Management IOC, Rikkei Meet).
+- **Database & Services**: PostgreSQL 18.6 (bigint identity primary keys), Mailpit (Mock SMTP & Webmail UI).
 
 ---
 
@@ -57,10 +57,12 @@ rikkei-jobs/
 To spin up the entire application stack on a clean machine with a single command:
 
 ### Prerequisites
+
 - **Docker Engine** 26.0+ & **Docker Compose** v2.26+
 - Port availability on `127.0.0.1`: `3000`, `8080`, `9000`, `5433`, `8025`.
 
 ### Setup & Run
+
 ```bash
 # 1. Clone repository (or navigate to working directory)
 cd rikkei-jobs
@@ -73,6 +75,7 @@ docker compose up -d --build --wait
 ```
 
 ### Access Points
+
 | Service | URL | Description | Default Credentials |
 |---|---|---|---|
 | **Frontend Web** | [http://127.0.0.1:3000](http://127.0.0.1:3000) | React Home Page showing Backend Health | None |
@@ -80,9 +83,10 @@ docker compose up -d --build --wait
 | **API Swagger UI** | [http://127.0.0.1:8080/swagger-ui.html](http://127.0.0.1:8080/swagger-ui.html) | Springdoc OpenAPI UI (dev profile only) | None |
 | **External Mock** | [http://127.0.0.1:9000](http://127.0.0.1:9000) | Mock external LMS/Exam/PM/Meet APIs | `X-Service-Key: dev-key` |
 | **Mailpit Web UI**| [http://127.0.0.1:8025](http://127.0.0.1:8025) | Email inspection & fake inbox | None |
-| **PostgreSQL DB** | `127.0.0.1:5433` | Database (Database: `rikkei_jobs`) | User: `rikkei_user` / Pass: `rikkei_pass` |
+| **PostgreSQL DB** | `127.0.0.1:5433` | Database (Database: `rikkeijobs`) | User: `rikkei_app` / Pass: `rikkei_secret` |
 
 ### Stopping & Cleaning Up
+
 ```bash
 # Stop all services and remove containers, networks, and named volumes
 docker compose down -v
@@ -95,11 +99,23 @@ docker compose down -v
 You can run each component directly on your host machine for active development:
 
 ### 1. Prerequisites on Host
+
 - **JDK 25** (OpenJDK / Eclipse Temurin)
 - **Node.js 24 LTS** & **npm 10+**
-- PostgreSQL 18 instance running (or run only postgres via Docker: `docker compose up -d postgres mailpit`)
+- PostgreSQL 18 instance running (or spin up support services via Docker: `docker compose up -d postgres mailpit`)
 
-### 2. External Mock Service
+### 2. Supporting Infrastructure (Docker)
+
+Start the PostgreSQL and Mailpit containers:
+
+```bash
+docker compose up -d postgres mailpit
+# PostgreSQL is ready on 127.0.0.1:5433 (DB: rikkeijobs, User: rikkei_app, Pass: rikkei_secret)
+# Mailpit Web UI is ready on http://127.0.0.1:8025
+```
+
+### 3. External Mock Service
+
 ```bash
 cd mock
 npm install
@@ -107,20 +123,51 @@ npm start
 # Output: "Mock chạy ở http://localhost:9000"
 ```
 
-### 3. Backend (Spring Boot)
+### 4. Backend (Spring Boot)
+
+Ensure PostgreSQL is running on port 5433 with database `rikkeijobs`.
+
+If your machine's `JAVA_HOME` environment variable points to another JDK version (e.g., JDK 21 or JDK 17) while JDK 25 is on `PATH`, override `JAVA_HOME` before executing the Maven Wrapper (as `mvnw` prioritizes `JAVA_HOME` over `PATH`):
+
+- **Linux / macOS**:
+
+  ```bash
+  export JAVA_HOME=/path/to/jdk-25
+  ```
+
+- **Windows PowerShell**:
+
+  ```powershell
+  $env:JAVA_HOME = "C:\path\to\jdk-25"
+  ```
+
+Run the backend with the `dev` profile:
+
 ```bash
 cd backend
-# Ensure PostgreSQL is accessible on port 5433 (or configured in application-dev.yml)
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 # API available at http://localhost:8080
 ```
 
-### 4. Frontend (React + Vite)
+### 5. Frontend (React + Vite)
+
 ```bash
 cd frontend
 npm install
 npm run dev
 # Vite dev server running at http://localhost:5173 (or http://localhost:3000)
+```
+
+### 6. Full Project Verification Scripts
+
+You can run automated quality checks (linting, tests, static analysis, formatting) across all services:
+
+```bash
+# On Linux / macOS
+./check.sh
+
+# On Windows PowerShell
+.\check.ps1
 ```
 
 ---
@@ -157,8 +204,10 @@ Run all linting, static analysis, unit tests, and security path checks using the
 ```
 
 Individual checks:
+
 - **Backend Lint & Format**: `cd backend && ./mvnw spotless:check`
 - **Frontend Lint & Test**: `cd frontend && npm run lint && npm run test`
+- **End-to-End Integration Suite**: `node e2e/run-all.mjs` (Requires running stack via `docker compose up -d --build --wait`)
 - **Forbidden Path Verification**: Clean grep check ensuring zero machine-specific paths or local user folders are committed (Must return zero matches).
 
 ---
