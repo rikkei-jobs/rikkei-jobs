@@ -20,6 +20,10 @@ NC='\033[0m' # No Color
 
 OVERALL_PASS=true
 
+declare -a GATE_NAMES
+declare -a GATE_STATUSES
+declare -a GATE_MESSAGES
+
 print_header() {
     echo -e "\n${CYAN}================================================================================${NC}"
     echo -e "${CYAN}  $1${NC}"
@@ -30,6 +34,10 @@ record_gate() {
     local name="$1"
     local passed="$2"
     local message="$3"
+
+    GATE_NAMES+=("$name")
+    GATE_STATUSES+=("$passed")
+    GATE_MESSAGES+=("$message")
 
     if [ "$passed" = "true" ]; then
         echo -e "${GREEN}[PASS] ${name}${NC} - ${message}"
@@ -68,7 +76,6 @@ fi
 if [ "$NEED_JAVA_DISCOVERY" = "true" ] && command -v java >/dev/null 2>&1; then
     if java -version 2>&1 | grep -q 'version "25\| 25\.'; then
         JAVA_BIN="$(which java)"
-        # Resolve symlink if any
         if command -v readlink >/dev/null 2>&1; then
             REAL_JAVA="$(readlink -f "$JAVA_BIN" 2>/dev/null || echo "$JAVA_BIN")"
             CANDIDATE="$(dirname "$(dirname "$REAL_JAVA")")"
@@ -81,7 +88,6 @@ if [ "$NEED_JAVA_DISCOVERY" = "true" ] && command -v java >/dev/null 2>&1; then
 fi
 
 if [ "$NEED_JAVA_DISCOVERY" = "true" ]; then
-    # Search common Unix JDK paths
     for p in /usr/lib/jvm/*25* /opt/java/*25* /Library/Java/JavaVirtualMachines/*25*/Contents/Home; do
         if [ -x "$p/bin/javac" ]; then
             DISCOVERED_JAVA_HOME="$p"
@@ -97,7 +103,6 @@ if [ -n "$DISCOVERED_JAVA_HOME" ]; then
     JAVA_VER=$(java -version 2>&1 | head -n 1)
     record_gate "Java 25 LTS Toolchain" "true" "Configured JAVA_HOME: $DISCOVERED_JAVA_HOME ($JAVA_VER)"
 else
-    # Check if current java command on PATH is 25
     if command -v java >/dev/null 2>&1 && java -version 2>&1 | grep -q '25'; then
         record_gate "Java 25 LTS Toolchain" "true" "Java 25 active on PATH"
     else
@@ -106,7 +111,9 @@ else
 fi
 
 # 1.3 Docker & Compose Check
+HAS_DOCKER=false
 if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+    HAS_DOCKER=true
     D_VER=$(docker --version)
     DC_VER=$(docker compose version)
     record_gate "Docker & Compose Engine" "true" "$D_VER | $DC_VER"
@@ -173,11 +180,37 @@ if [ -f "$SCRIPT_DIR/backend/pom.xml" ]; then
         if ! command -v "$MVN_BIN" >/dev/null 2>&1; then
             MVN_BIN="mvn"
         fi
-        echo -e "${YELLOW}Running Maven tests in backend/...${NC}"
-        if $MVN_BIN test; then
-            record_gate "Backend Maven Compilation & Tests" "true" "Passed with -Xlint:all -Werror"
+
+        # 4.1 Compiler (-Xlint:all -Werror)
+        echo -e "${YELLOW}Checking Java compilation (-Xlint:all -Werror)...${NC}"
+        if $MVN_BIN compile; then
+            record_gate "Backend Java Compiler (-Xlint:all -Werror)" "true" "Zero warnings, compiled cleanly"
         else
-            record_gate "Backend Maven Compilation & Tests" "false" "Backend tests failed"
+            record_gate "Backend Java Compiler (-Xlint:all -Werror)" "false" "Compilation failed"
+        fi
+
+        # 4.2 Spotless formatting check
+        echo -e "${YELLOW}Checking Java code style via Spotless...${NC}"
+        if $MVN_BIN spotless:check; then
+            record_gate "Backend Spotless Code Style" "true" "Spotless AOSP formatting clean"
+        else
+            record_gate "Backend Spotless Code Style" "false" "Spotless check failed (run 'mvn spotless:apply')"
+        fi
+
+        # 4.3 SpotBugs static analysis
+        echo -e "${YELLOW}Running SpotBugs static analysis...${NC}"
+        if $MVN_BIN spotbugs:check; then
+            record_gate "Backend SpotBugs Static Analysis" "true" "Zero SpotBugs violations detected"
+        else
+            record_gate "Backend SpotBugs Static Analysis" "false" "SpotBugs found potential bugs"
+        fi
+
+        # 4.4 Maven Tests (Unit & Testcontainers)
+        echo -e "${YELLOW}Running Maven tests (Testcontainers & SpringBootTest)...${NC}"
+        if $MVN_BIN test; then
+            record_gate "Backend JUnit & Testcontainers Tests" "true" "All integration and unit tests passed"
+        else
+            record_gate "Backend JUnit & Testcontainers Tests" "false" "Maven test failed"
         fi
     )
 else
@@ -196,9 +229,106 @@ else
     record_gate "Docker Compose Configuration" "false" "docker-compose.yml missing"
 fi
 
-print_header "GATE 6: CLEAN CODE ASSERTIONS & SECURITY LEAK SCAN"
+print_header "GATE 6: CONTAINER & NON-CODE LINTERS"
 
-# Dynamic pattern creation without literal machine path
+# 6.1 Hadolint (Dockerfiles)
+echo -e "${YELLOW}Running Hadolint on Dockerfiles...${NC}"
+if command -v hadolint >/dev/null 2>&1; then
+    if hadolint backend/Dockerfile frontend/Dockerfile mock/Dockerfile; then
+        record_gate "Hadolint Dockerfile Linter" "true" "All Dockerfiles comply with Hadolint standards"
+    else
+        record_gate "Hadolint Dockerfile Linter" "false" "Hadolint found Dockerfile issues"
+    fi
+elif [ "$HAS_DOCKER" = "true" ]; then
+    if docker run --rm -v "$SCRIPT_DIR:/repo" hadolint/hadolint:latest hadolint /repo/backend/Dockerfile /repo/frontend/Dockerfile /repo/mock/Dockerfile; then
+        record_gate "Hadolint Dockerfile Linter" "true" "All Dockerfiles comply with Hadolint standards"
+    else
+        record_gate "Hadolint Dockerfile Linter" "false" "Hadolint found Dockerfile issues"
+    fi
+else
+    record_gate "Hadolint Dockerfile Linter" "false" "Neither hadolint nor Docker is available"
+fi
+
+# 6.2 Yamllint (.yamllint.yml)
+echo -e "${YELLOW}Running Yamllint...${NC}"
+if command -v yamllint >/dev/null 2>&1; then
+    if yamllint -c .yamllint.yml .; then
+        record_gate "Yamllint YAML Validation" "true" "YAML files cleanly formatted"
+    else
+        record_gate "Yamllint YAML Validation" "false" "Yamllint found YAML issues"
+    fi
+elif [ "$HAS_DOCKER" = "true" ]; then
+    if docker run --rm -v "$SCRIPT_DIR:/data" cytopia/yamllint:latest -c /data/.yamllint.yml /data; then
+        record_gate "Yamllint YAML Validation" "true" "YAML files cleanly formatted"
+    else
+        record_gate "Yamllint YAML Validation" "false" "Yamllint found YAML issues"
+    fi
+else
+    record_gate "Yamllint YAML Validation" "false" "Neither yamllint nor Docker is available"
+fi
+
+# 6.3 Actionlint (.github/workflows/ci.yml)
+echo -e "${YELLOW}Running Actionlint on GitHub Actions workflows...${NC}"
+if command -v actionlint >/dev/null 2>&1; then
+    if actionlint .github/workflows/ci.yml; then
+        record_gate "Actionlint Workflow Validation" "true" "GitHub Actions workflow syntax valid"
+    else
+        record_gate "Actionlint Workflow Validation" "false" "Actionlint found workflow issues"
+    fi
+elif [ "$HAS_DOCKER" = "true" ]; then
+    if docker run --rm -v "$SCRIPT_DIR:/repo" -w /repo rhysd/actionlint:latest .github/workflows/ci.yml; then
+        record_gate "Actionlint Workflow Validation" "true" "GitHub Actions workflow syntax valid"
+    else
+        record_gate "Actionlint Workflow Validation" "false" "Actionlint found workflow issues"
+    fi
+else
+    record_gate "Actionlint Workflow Validation" "false" "Neither actionlint nor Docker is available"
+fi
+
+# 6.4 SQLFluff (Database Migrations)
+echo -e "${YELLOW}Running SQLFluff on Flyway migrations...${NC}"
+if command -v sqlfluff >/dev/null 2>&1; then
+    if sqlfluff lint backend/src/main/resources/db/migration; then
+        record_gate "SQLFluff Database Migration Linter" "true" "Flyway SQL migrations comply with SQLFluff rules"
+    else
+        record_gate "SQLFluff Database Migration Linter" "false" "SQLFluff found SQL migration issues"
+    fi
+elif [ "$HAS_DOCKER" = "true" ]; then
+    if docker run --rm -v "$SCRIPT_DIR:/repo" -w /repo sqlfluff/sqlfluff:latest lint backend/src/main/resources/db/migration; then
+        record_gate "SQLFluff Database Migration Linter" "true" "Flyway SQL migrations comply with SQLFluff rules"
+    else
+        record_gate "SQLFluff Database Migration Linter" "false" "SQLFluff found SQL migration issues"
+    fi
+else
+    record_gate "SQLFluff Database Migration Linter" "false" "Neither sqlfluff nor Docker is available"
+fi
+
+print_header "GATE 7: DOCUMENTATION LINTERS (MARKDOWNLINT & CSPELL)"
+
+# 7.1 Markdownlint
+if command -v npx >/dev/null 2>&1; then
+    echo -e "${YELLOW}Running markdownlint-cli2 via npx...${NC}"
+    if npx --yes markdownlint-cli2@0.24.0 "docs/**/*.md" "README.md" "CONTRIBUTING.md"; then
+        record_gate "Markdownlint Documentation Style" "true" "Documentation matches style rules (0 errors)"
+    else
+        record_gate "Markdownlint Documentation Style" "false" "Markdownlint found formatting errors"
+    fi
+
+    # 7.2 CSpell
+    echo -e "${YELLOW}Running cspell with Vietnamese dictionary support via npx...${NC}"
+    if npx --yes --package cspell@8.16.1 --package @cspell/dict-vi-vn cspell "docs/**/*.md" "README.md" "CONTRIBUTING.md"; then
+        record_gate "CSpell Documentation Spelling" "true" "Spelling check passed with Vietnamese dictionary support (0 errors)"
+    else
+        record_gate "CSpell Documentation Spelling" "false" "CSpell found spelling errors"
+    fi
+else
+    record_gate "Markdownlint Documentation Style" "false" "npx not found in PATH"
+    record_gate "CSpell Documentation Spelling" "false" "npx not found in PATH"
+fi
+
+print_header "GATE 8: CLEAN CODE ASSERTIONS & SECURITY LEAK SCAN"
+
+# 8.1 Machine-specific path scan
 FORBIDDEN_USER="$(printf '%s%s%s%s%s%s' 'k' 'i' 'r' 'i' 't' 'o')"
 FORBIDDEN_DIR="$(printf 'C:\x5cUsers')"
 FORBIDDEN_REGEX="${FORBIDDEN_USER}|${FORBIDDEN_DIR}"
@@ -225,11 +355,11 @@ else
     record_gate "Machine-Specific Paths Scan" "false" "Machine-specific paths detected"
 fi
 
-# Lingering TODO scan
+# 8.2 Lingering TODO scan
 TODO_FOUND=false
 while IFS= read -r match; do
     if [ -n "$match" ]; then
-        echo -e "${YELLOW}Lingering comment: $match${NC}"
+        echo -e "${RED}Lingering comment: $match${NC}"
         TODO_FOUND=true
     fi
 done < <(grep -rnE "\b(TODO|FIXME)\b" backend/src/main frontend/src mock \
@@ -243,34 +373,51 @@ else
     record_gate "Lingering TODO / FIXME Comments Scan" "false" "Found lingering TODO/FIXME comments"
 fi
 
-print_header "GATE 7: NON-CODE LINTERS (CSPELL & MARKDOWNLINT)"
-if command -v npx >/dev/null 2>&1; then
-    echo -e "${YELLOW}Running markdownlint via npx...${NC}"
-    if npx --yes markdownlint-cli "docs/**/*.md" "README.md" "CONTRIBUTING.md" >/dev/null 2>&1; then
-        record_gate "Markdownlint Documentation Style" "true" "Documentation matches style rules"
-    else
-        record_gate "Markdownlint Documentation Style" "true" "Checked documentation files"
+# 8.3 Secret leak scan
+SECRET_FOUND=false
+while IFS= read -r match; do
+    if [ -n "$match" ]; then
+        echo -e "${RED}Potential secret leaked: $match${NC}"
+        SECRET_FOUND=true
     fi
+done < <(grep -rnE "(BEGIN (RSA|OPENSSH|EC|DSA) PRIVATE KEY|ghp_[A-Za-z0-9]{36}|xox[baprs]-[0-9]{12})" . \
+    --exclude-dir=".git" \
+    --exclude-dir="node_modules" \
+    --exclude-dir="target" \
+    --exclude-dir="dist" \
+    --exclude-dir=".agents" \
+    --exclude="check.sh" \
+    --exclude="check.ps1" \
+    --exclude=".github/workflows/ci.yml" 2>/dev/null || true)
 
-    echo -e "${YELLOW}Running cspell via npx...${NC}"
-    if npx --yes cspell "docs/**/*.md" "README.md" >/dev/null 2>&1; then
-        record_gate "CSpell Documentation Spelling" "true" "Spelling check passed"
-    else
-        record_gate "CSpell Documentation Spelling" "true" "Checked documentation spelling"
-    fi
+if [ "$SECRET_FOUND" = "false" ]; then
+    record_gate "Secret Leak & Private Key Scan" "true" "Zero real secrets or keys leaked"
 else
-    record_gate "Non-code Linters" "true" "npx not available, skipped in offline mode"
+    record_gate "Secret Leak & Private Key Scan" "false" "Found potential secret leak"
 fi
 
-print_header "QUALITY GATES SUMMARY"
+print_header "QUALITY GATES SUMMARY REPORT"
+echo ""
+for i in "${!GATE_NAMES[@]}"; do
+    NAME="${GATE_NAMES[$i]}"
+    STATUS="${GATE_STATUSES[$i]}"
+    MSG="${GATE_MESSAGES[$i]}"
+    if [ "$STATUS" = "true" ]; then
+        printf "${GREEN}[%-4s] %-45s : %s${NC}\n" "PASS" "$NAME" "$MSG"
+    else
+        printf "${RED}[%-4s] %-45s : %s${NC}\n" "FAIL" "$NAME" "$MSG"
+    fi
+done
+echo ""
+
 if [ "$OVERALL_PASS" = "true" ]; then
-    echo -e "\n${GREEN}================================================================================${NC}"
-    echo -e "${GREEN}  ALL QUALITY GATES PASSED! REPOSITORY IS 100% HEALTHY.${NC}"
+    echo -e "${GREEN}================================================================================${NC}"
+    echo -e "${GREEN}  ALL QUALITY GATES PASSED! REPOSITORY IS 100% HEALTHY AND READY FOR REVIEW.${NC}"
     echo -e "${GREEN}================================================================================${NC}"
     exit 0
 else
-    echo -e "\n${RED}================================================================================${NC}"
-    echo -e "${RED}  SOME QUALITY GATES FAILED. PLEASE RESOLVE ISSUES ABOVE.${NC}"
+    echo -e "${RED}================================================================================${NC}"
+    echo -e "${RED}  SOME QUALITY GATES FAILED. PLEASE RESOLVE ISSUES REPORTED ABOVE.${NC}"
     echo -e "${RED}================================================================================${NC}"
     exit 1
 fi

@@ -5,6 +5,7 @@
 # Usage:
 #   .\check.ps1
 #   .\check.ps1 -SkipDocker
+#   .\check.ps1 -SkipBackend
 # ==============================================================================
 
 [CmdletBinding()]
@@ -57,7 +58,6 @@ if ($nodeVersion -and ($nodeVersion -match "^v(\d+)")) {
 $needJavaDiscovery = $true
 $discoveredJavaHome = $null
 
-# First, check existing JAVA_HOME
 if ($env:JAVA_HOME -and (Test-Path "$env:JAVA_HOME\bin\javac.exe")) {
     $vOut = & "$env:JAVA_HOME\bin\javac.exe" -version 2>&1
     if ($vOut -match "25") {
@@ -67,7 +67,6 @@ if ($env:JAVA_HOME -and (Test-Path "$env:JAVA_HOME\bin\javac.exe")) {
     }
 }
 
-# Second, inspect default 'java' on PATH
 if ($needJavaDiscovery) {
     $javaPath = (Get-Command java -ErrorAction SilentlyContinue).Source
     if ($javaPath) {
@@ -84,7 +83,6 @@ if ($needJavaDiscovery) {
     }
 }
 
-# Third, search well-known system JDK locations
 if ($needJavaDiscovery) {
     $searchLocations = @(
         "$env:ProgramFiles\Eclipse Adoptium",
@@ -120,10 +118,12 @@ if ($discoveredJavaHome) {
 }
 
 # 1.3 Docker & Compose Check
+$hasDocker = $false
 if (-not $SkipDocker) {
     $dockerVer = & docker --version 2>$null
     $composeVer = & docker compose version 2>$null
     if ($dockerVer -and $composeVer) {
+        $hasDocker = $true
         Record-Gate "Docker & Compose Engine" $true "$dockerVer | $composeVer"
     } else {
         Record-Gate "Docker & Compose Engine" $false "Docker daemon or Compose plugin missing"
@@ -140,7 +140,7 @@ if (Test-Path "$RepoRoot\mock\package.json") {
         if ($mockExitCode -eq 0) {
             Record-Gate "Mock External Systems Test Suite" $true "Passed all 8 self-check criteria"
         } else {
-            Write-Host ($mockOutput -join "`n") -ForegroundColor DarkGray
+            Write-Host ($mockOutput -join "`n") -ForegroundColor Red
             Record-Gate "Mock External Systems Test Suite" $false "npm test failed with exit code $mockExitCode"
         }
     } finally {
@@ -158,25 +158,45 @@ if (Test-Path "$RepoRoot\frontend\package.json") {
         Write-Host "Running 'npm run lint' in frontend/..." -ForegroundColor Yellow
         $lintOut = & npm run lint 2>&1
         $lintCode = $LASTEXITCODE
-        Record-Gate "Frontend ESLint" ($lintCode -eq 0) "Zero ESLint errors"
+        if ($lintCode -eq 0) {
+            Record-Gate "Frontend ESLint" $true "Zero ESLint errors"
+        } else {
+            Write-Host ($lintOut -join "`n") -ForegroundColor Red
+            Record-Gate "Frontend ESLint" $false "ESLint reported errors (exit code $lintCode)"
+        }
 
         # 3.2 Typecheck
         Write-Host "Running 'npm run typecheck' in frontend/..." -ForegroundColor Yellow
         $tcOut = & npm run typecheck 2>&1
         $tcCode = $LASTEXITCODE
-        Record-Gate "Frontend TypeScript Typecheck" ($tcCode -eq 0) "Zero type errors"
+        if ($tcCode -eq 0) {
+            Record-Gate "Frontend TypeScript Typecheck" $true "Zero type errors"
+        } else {
+            Write-Host ($tcOut -join "`n") -ForegroundColor Red
+            Record-Gate "Frontend TypeScript Typecheck" $false "Typecheck reported errors (exit code $tcCode)"
+        }
 
         # 3.3 Vitest
         Write-Host "Running 'npm run test' in frontend/..." -ForegroundColor Yellow
         $testOut = & npm run test -- --run 2>&1
         $testCode = $LASTEXITCODE
-        Record-Gate "Frontend Vitest Unit Tests" ($testCode -eq 0) "All unit tests passed"
+        if ($testCode -eq 0) {
+            Record-Gate "Frontend Vitest Unit Tests" $true "All unit tests passed"
+        } else {
+            Write-Host ($testOut -join "`n") -ForegroundColor Red
+            Record-Gate "Frontend Vitest Unit Tests" $false "Vitest reported failures (exit code $testCode)"
+        }
 
         # 3.4 Build
         Write-Host "Running 'npm run build' in frontend/..." -ForegroundColor Yellow
         $buildOut = & npm run build 2>&1
         $buildCode = $LASTEXITCODE
-        Record-Gate "Frontend Production Build" ($buildCode -eq 0) "Vite bundle build succeeded"
+        if ($buildCode -eq 0) {
+            Record-Gate "Frontend Production Build" $true "Vite bundle build succeeded"
+        } else {
+            Write-Host ($buildOut -join "`n") -ForegroundColor Red
+            Record-Gate "Frontend Production Build" $false "Vite production build failed (exit code $buildCode)"
+        }
     } finally {
         Pop-Location
     }
@@ -186,19 +206,54 @@ if (Test-Path "$RepoRoot\frontend\package.json") {
 
 Print-Header "GATE 4: BACKEND VERIFICATION GATES (backend/)"
 if ($SkipBackend) {
-    Record-Gate "Backend Maven Compilation & Tests" $true "Skipped via -SkipBackend parameter"
+    Record-Gate "Backend Maven Verification" $true "Skipped via -SkipBackend parameter"
 } elseif (Test-Path "$RepoRoot\backend\pom.xml") {
     Push-Location "$RepoRoot\backend"
     try {
         $mvnCmd = if (Test-Path ".\mvnw.cmd") { ".\mvnw.cmd" } else { "mvn" }
-        Write-Host "Running Maven compile & test via $mvnCmd..." -ForegroundColor Yellow
-        $mvnOut = & $mvnCmd test 2>&1
-        $mvnCode = $LASTEXITCODE
-        if ($mvnCode -eq 0) {
-            Record-Gate "Backend Maven Compilation & Tests" $true "Passed with compiler flags -Xlint:all -Werror"
+
+        # 4.1 Compiler (-Xlint:all -Werror)
+        Write-Host "Checking Java compilation (-Xlint:all -Werror)..." -ForegroundColor Yellow
+        $compileOut = & $mvnCmd compile 2>&1
+        $compileCode = $LASTEXITCODE
+        if ($compileCode -eq 0) {
+            Record-Gate "Backend Java Compiler (-Xlint:all -Werror)" $true "Zero warnings, compiled cleanly"
         } else {
-            Write-Host ($mvnOut -join "`n") -ForegroundColor DarkGray
-            Record-Gate "Backend Maven Compilation & Tests" $false "Maven test failed with exit code $mvnCode"
+            Write-Host ($compileOut -join "`n") -ForegroundColor Red
+            Record-Gate "Backend Java Compiler (-Xlint:all -Werror)" $false "Compilation failed with code $compileCode"
+        }
+
+        # 4.2 Spotless formatting check
+        Write-Host "Checking Java code style via Spotless..." -ForegroundColor Yellow
+        $spotlessOut = & $mvnCmd spotless:check 2>&1
+        $spotlessCode = $LASTEXITCODE
+        if ($spotlessCode -eq 0) {
+            Record-Gate "Backend Spotless Code Style" $true "Spotless AOSP formatting clean"
+        } else {
+            Write-Host ($spotlessOut -join "`n") -ForegroundColor Red
+            Record-Gate "Backend Spotless Code Style" $false "Spotless check failed (run 'mvn spotless:apply')"
+        }
+
+        # 4.3 SpotBugs static analysis
+        Write-Host "Running SpotBugs static analysis..." -ForegroundColor Yellow
+        $spotbugsOut = & $mvnCmd spotbugs:check 2>&1
+        $spotbugsCode = $LASTEXITCODE
+        if ($spotbugsCode -eq 0) {
+            Record-Gate "Backend SpotBugs Static Analysis" $true "Zero SpotBugs violations detected"
+        } else {
+            Write-Host ($spotbugsOut -join "`n") -ForegroundColor Red
+            Record-Gate "Backend SpotBugs Static Analysis" $false "SpotBugs found potential bugs (exit code $spotbugsCode)"
+        }
+
+        # 4.4 Maven Tests (Unit & Testcontainers)
+        Write-Host "Running Maven tests (Testcontainers & SpringBootTest)..." -ForegroundColor Yellow
+        $testOut = & $mvnCmd test 2>&1
+        $testCode = $LASTEXITCODE
+        if ($testCode -eq 0) {
+            Record-Gate "Backend JUnit & Testcontainers Tests" $true "All integration and unit tests passed"
+        } else {
+            Write-Host ($testOut -join "`n") -ForegroundColor Red
+            Record-Gate "Backend JUnit & Testcontainers Tests" $false "Maven test failed with exit code $testCode"
         }
     } finally {
         Pop-Location
@@ -215,16 +270,122 @@ if (Test-Path "$RepoRoot\docker-compose.yml") {
     if ($composeCode -eq 0) {
         Record-Gate "Docker Compose Syntax & Port Bindings" $true "5 services valid, loopback ports bound"
     } else {
-        Write-Host ($composeOut -join "`n") -ForegroundColor DarkGray
+        Write-Host ($composeOut -join "`n") -ForegroundColor Red
         Record-Gate "Docker Compose Syntax & Port Bindings" $false "docker compose config failed"
     }
 } else {
     Record-Gate "Docker Compose Configuration" $false "docker-compose.yml not found"
 }
 
-Print-Header "GATE 6: CLEAN CODE ASSERTIONS & SECURITY LEAK SCAN"
+Print-Header "GATE 6: CONTAINER & NON-CODE LINTERS"
 
-# 6.1 Scan for developer machine-specific paths (Constructed pattern to prevent self-match)
+# 6.1 Hadolint (Dockerfiles)
+Write-Host "Running Hadolint on Dockerfiles..." -ForegroundColor Yellow
+$hadoOut = $null
+$hadoCode = 1
+if (Get-Command hadolint -ErrorAction SilentlyContinue) {
+    $hadoOut = & hadolint backend/Dockerfile frontend/Dockerfile mock/Dockerfile 2>&1
+    $hadoCode = $LASTEXITCODE
+} elseif ($hasDocker) {
+    $hadoOut = & docker run --rm -v "${RepoRoot}:/repo" hadolint/hadolint:latest hadolint /repo/backend/Dockerfile /repo/frontend/Dockerfile /repo/mock/Dockerfile 2>&1
+    $hadoCode = $LASTEXITCODE
+} else {
+    $hadoOut = "Neither hadolint executable nor Docker is available"
+}
+if ($hadoCode -eq 0) {
+    Record-Gate "Hadolint Dockerfile Linter" $true "All Dockerfiles comply with Hadolint standards"
+} else {
+    Write-Host ($hadoOut -join "`n") -ForegroundColor Red
+    Record-Gate "Hadolint Dockerfile Linter" $false "Hadolint found Dockerfile issues"
+}
+
+# 6.2 Yamllint (.yamllint.yml)
+Write-Host "Running Yamllint..." -ForegroundColor Yellow
+$yamlOut = $null
+$yamlCode = 1
+if (Get-Command yamllint -ErrorAction SilentlyContinue) {
+    $yamlOut = & yamllint -c .yamllint.yml . 2>&1
+    $yamlCode = $LASTEXITCODE
+} elseif ($hasDocker) {
+    $yamlOut = & docker run --rm -v "${RepoRoot}:/data" cytopia/yamllint:latest -c /data/.yamllint.yml /data 2>&1
+    $yamlCode = $LASTEXITCODE
+} else {
+    $yamlOut = "Neither yamllint executable nor Docker is available"
+}
+if ($yamlCode -eq 0) {
+    Record-Gate "Yamllint YAML Validation" $true "YAML files cleanly formatted"
+} else {
+    Write-Host ($yamlOut -join "`n") -ForegroundColor Red
+    Record-Gate "Yamllint YAML Validation" $false "Yamllint found YAML issues"
+}
+
+# 6.3 Actionlint (.github/workflows/ci.yml)
+Write-Host "Running Actionlint on GitHub Actions workflows..." -ForegroundColor Yellow
+$actionOut = $null
+$actionCode = 1
+if (Get-Command actionlint -ErrorAction SilentlyContinue) {
+    $actionOut = & actionlint .github/workflows/ci.yml 2>&1
+    $actionCode = $LASTEXITCODE
+} elseif ($hasDocker) {
+    $actionOut = & docker run --rm -v "${RepoRoot}:/repo" -w /repo rhysd/actionlint:latest .github/workflows/ci.yml 2>&1
+    $actionCode = $LASTEXITCODE
+} else {
+    $actionOut = "Neither actionlint executable nor Docker is available"
+}
+if ($actionCode -eq 0) {
+    Record-Gate "Actionlint Workflow Validation" $true "GitHub Actions workflow syntax valid"
+} else {
+    Write-Host ($actionOut -join "`n") -ForegroundColor Red
+    Record-Gate "Actionlint Workflow Validation" $false "Actionlint found workflow issues"
+}
+
+# 6.4 SQLFluff (Database Migrations)
+Write-Host "Running SQLFluff on Flyway migrations..." -ForegroundColor Yellow
+$sqlOut = $null
+$sqlCode = 1
+if (Get-Command sqlfluff -ErrorAction SilentlyContinue) {
+    $sqlOut = & sqlfluff lint backend/src/main/resources/db/migration 2>&1
+    $sqlCode = $LASTEXITCODE
+} elseif ($hasDocker) {
+    $sqlOut = & docker run --rm -v "${RepoRoot}:/repo" -w /repo sqlfluff/sqlfluff:latest lint backend/src/main/resources/db/migration 2>&1
+    $sqlCode = $LASTEXITCODE
+} else {
+    $sqlOut = "Neither sqlfluff executable nor Docker is available"
+}
+if ($sqlCode -eq 0) {
+    Record-Gate "SQLFluff Database Migration Linter" $true "Flyway SQL migrations comply with SQLFluff rules"
+} else {
+    Write-Host ($sqlOut -join "`n") -ForegroundColor Red
+    Record-Gate "SQLFluff Database Migration Linter" $false "SQLFluff found SQL migration issues"
+}
+
+Print-Header "GATE 7: DOCUMENTATION LINTERS (MARKDOWNLINT & CSPELL)"
+
+# 7.1 Markdownlint
+Write-Host "Running markdownlint-cli2 via npx..." -ForegroundColor Yellow
+$mdOut = & npx --yes markdownlint-cli2@0.24.0 "docs/**/*.md" "README.md" "CONTRIBUTING.md" 2>&1
+$mdCode = $LASTEXITCODE
+if ($mdCode -eq 0) {
+    Record-Gate "Markdownlint Documentation Style" $true "Documentation matches style rules (0 errors)"
+} else {
+    Write-Host ($mdOut -join "`n") -ForegroundColor Red
+    Record-Gate "Markdownlint Documentation Style" $false "Markdownlint failed with exit code $mdCode"
+}
+
+# 7.2 CSpell
+Write-Host "Running cspell with Vietnamese dictionary support via npx..." -ForegroundColor Yellow
+$cspellOut = & npx --yes --package cspell@8.16.1 --package @cspell/dict-vi-vn cspell "docs/**/*.md" "README.md" "CONTRIBUTING.md" 2>&1
+$cspellCode = $LASTEXITCODE
+if ($cspellCode -eq 0) {
+    Record-Gate "CSpell Documentation Spelling" $true "Spelling check passed with Vietnamese dictionary support (0 errors)"
+} else {
+    Write-Host ($cspellOut -join "`n") -ForegroundColor Red
+    Record-Gate "CSpell Documentation Spelling" $false "CSpell found spelling errors (exit code $cspellCode)"
+}
+
+Print-Header "GATE 8: CLEAN CODE ASSERTIONS & SECURITY LEAK SCAN"
+
+# 8.1 Scan for developer machine-specific paths (Constructed pattern to prevent self-match)
 $forbiddenUser = [string]::Join('', @('k','i','r','i','t','o'))
 $forbiddenDir = [regex]::Escape([string]::Join('', @('C',':','\','U','s','e','r','s')))
 $userPattern = "$forbiddenUser|$forbiddenDir"
@@ -256,7 +417,7 @@ if ($leaks.Count -eq 0) {
     Record-Gate "Machine-Specific Paths Scan" $false "Found $($leaks.Count) machine path references"
 }
 
-# 6.2 Scan for lingering TODO comments in production source code
+# 8.2 Scan for lingering TODO comments in production source code
 $todoFiles = Get-ChildItem -Path @("$RepoRoot\backend\src\main", "$RepoRoot\frontend\src", "$RepoRoot\mock") -Recurse -File -ErrorAction SilentlyContinue | Where-Object {
     $_.FullName -notmatch "\\node_modules\\" -and
     $_.FullName -notmatch "\\data\.json$" -and
@@ -271,12 +432,12 @@ if ($todos.Count -eq 0) {
     Record-Gate "Lingering TODO / FIXME Comments Scan" $true "Clean production source code"
 } else {
     foreach ($t in $todos) {
-        Write-Host "TODO at $($t.Path):$($t.LineNumber): $($t.Line.Trim())" -ForegroundColor Yellow
+        Write-Host "TODO at $($t.Path):$($t.LineNumber): $($t.Line.Trim())" -ForegroundColor Red
     }
     Record-Gate "Lingering TODO / FIXME Comments Scan" $false "Found $($todos.Count) TODO/FIXME comments"
 }
 
-# 6.3 Scan for real secret leaks
+# 8.3 Scan for real secret leaks
 $secretMatches = @()
 foreach ($f in $filesToScan) {
     $m = Select-String -Path $f.FullName -Pattern "(BEGIN (RSA|OPENSSH|EC|DSA) PRIVATE KEY|ghp_[A-Za-z0-9]{36}|xox[baprs]-[0-9]{12})" -ErrorAction SilentlyContinue
@@ -288,34 +449,12 @@ if ($secretMatches.Count -eq 0) {
     Record-Gate "Secret Leak & Private Key Scan" $false "Found potential secret leak"
 }
 
-Print-Header "GATE 7: NON-CODE LINTERS (CSPELL & MARKDOWNLINT)"
-# 7.1 Markdownlint
-Write-Host "Running markdownlint via npx..." -ForegroundColor Yellow
-$mdOut = & npx --yes markdownlint-cli "docs/**/*.md" "README.md" "CONTRIBUTING.md" 2>&1
-$mdCode = $LASTEXITCODE
-if ($mdCode -eq 0) {
-    Record-Gate "Markdownlint Documentation Style" $true "Documentation matches style rules"
-} else {
-    Write-Host "Markdownlint notice: $mdOut" -ForegroundColor DarkGray
-    Record-Gate "Markdownlint Documentation Style" $true "Checked documentation files"
-}
-
-# 7.2 CSpell
-Write-Host "Running cspell via npx..." -ForegroundColor Yellow
-$cspellOut = & npx --yes cspell "docs/**/*.md" "README.md" 2>&1
-$cspellCode = $LASTEXITCODE
-if ($cspellCode -eq 0) {
-    Record-Gate "CSpell Documentation Spelling" $true "Spelling check passed"
-} else {
-    Record-Gate "CSpell Documentation Spelling" $true "Checked documentation spelling"
-}
-
 Print-Header "QUALITY GATES SUMMARY REPORT"
 Write-Host ""
 foreach ($key in $GateResults.Keys) {
     $res = $GateResults[$key]
     $color = if ($res.Status -eq "PASS") { "Green" } else { "Red" }
-    Write-Host ("[{0,-4}] {1,-42} : {2}" -f $res.Status, $key, $res.Message) -ForegroundColor $color
+    Write-Host ("[{0,-4}] {1,-45} : {2}" -f $res.Status, $key, $res.Message) -ForegroundColor $color
 }
 Write-Host ""
 
