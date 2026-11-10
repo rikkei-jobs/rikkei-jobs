@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!--
+      Exclude EI_EXPOSE_REP and EI_EXPOSE_REP2 for Spring-managed beans and dependency injection.
+      In Spring Boot applications, singleton beans (DataSource, ObjectMapper, ConfigurationProperties)
+      are intentionally injected into components/controllers via constructors by the IoC container.
+    -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+</FindBugsFilter>
