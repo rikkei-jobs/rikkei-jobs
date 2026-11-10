@@ -1,0 +1,50 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# Top-most EditorConfig file
+root = true
+
+# Default settings for all files
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Java source code
+[*.java]
+indent_size = 4
+max_line_length = 120
+
+# Web, React, TypeScript, JavaScript
+[*.{js,jsx,ts,tsx,json,css,scss,html}]
+indent_size = 2
+max_line_length = 100
+
+# Configuration files
+[*.{yml,yaml}]
+indent_size = 2
+
+# Markdown documentation
+[*.md]
+trim_trailing_whitespace = false
+max_line_length = off
+
+# SQL migration scripts
+[*.sql]
+indent_size = 4
+
+# Shell scripts
+[*.sh]
+end_of_line = lf
+indent_size = 2
+
+# PowerShell scripts
+[*.ps1]
+indent_size = 2
+
+# Makefiles & Dockerfiles
+[{Makefile,Dockerfile}]
+indent_style = space
+indent_size = 2

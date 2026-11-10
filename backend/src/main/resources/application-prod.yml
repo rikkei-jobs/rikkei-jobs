@@ -1,0 +1,26 @@
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+  flyway:
+    locations: classpath:db/migration
+
+springdoc:
+  swagger-ui:
+    enabled: false
+  api-docs:
+    enabled: false
+
+logging:
+  structured:
+    format:
+      console: ecs
+  level:
+    com.rikkei.jobs: INFO
+    org.springframework: WARN
+
+management:
+  endpoint:
+    health:
+      show-details: never
