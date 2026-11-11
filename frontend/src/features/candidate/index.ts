@@ -18,3 +18,7 @@ export const candidateModuleConfig = {
   roleTarget: 'CANDIDATE (Sinh viên / Thực tập sinh IOC)',
   badge: 'Module 1',
 };
+
+export * from './types';
+export * from './api';
+export * from './JobRecommendationsSection';
