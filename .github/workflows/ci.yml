@@ -104,9 +104,8 @@ jobs:
           java-version: '25'
           cache: maven
 
-      - name: Make Maven wrapper executable
-        working-directory: backend
-        run: chmod +x mvnw
+      - name: Ensure executable permissions
+        run: chmod +x backend/mvnw check.sh
 
       - name: Check Java code formatting with Spotless
         working-directory: backend
@@ -154,6 +153,16 @@ jobs:
         with:
           node-version: 24
 
+      - name: Setup Java 25 LTS for dynamic version resolution
+        uses: actions/setup-java@v4.7.0
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Ensure executable permissions
+        run: chmod +x backend/mvnw check.sh
+
       - name: Scan for machine-specific path leaks
         run: |
           FORBIDDEN_USER="$(printf '%s%s%s%s%s%s' 'k' 'i' 'r' 'i' 't' 'o')"
@@ -191,29 +200,54 @@ jobs:
           fi
           echo "Lingering TODO scan passed."
 
+      - name: Scan for secret leaks & private keys
+        run: |
+          SECRETS=$(grep -rnE "(BEGIN (RSA|OPENSSH|EC|DSA) PRIVATE KEY|ghp_[A-Za-z0-9]{36}|xox[baprs]-[0-9]{12})" . \
+            --exclude-dir=".git" \
+            --exclude-dir="node_modules" \
+            --exclude-dir="target" \
+            --exclude-dir="dist" \
+            --exclude-dir=".agents" \
+            --exclude="check.sh" \
+            --exclude="check.ps1" \
+            --exclude=".github/workflows/ci.yml" 2>/dev/null || true)
+
+          if [ -n "$SECRETS" ]; then
+            echo "ERROR: Potential secrets or private keys leaked in repository:"
+            echo "$SECRETS"
+            exit 1
+          fi
+          echo "Secret leak scan passed."
+
       - name: Run Markdownlint
         run: |
-          npx --yes markdownlint-cli2@0.24.0 "docs/**/*.md" "README.md" "CONTRIBUTING.md"
+          npx --yes markdownlint-cli2@0.24.0 "**/*.md" "#**/node_modules/**" "#**/target/**" "#**/dist/**" "#**/.agents/**"
 
       - name: Run CSpell with Vietnamese Dictionary
         run: |
-          npx --yes --package cspell@8.16.1 --package @cspell/dict-vi-vn cspell "docs/**/*.md" "README.md" "CONTRIBUTING.md"
+          npx --yes --package cspell@10.4.1 --package @cspell/dict-vi-vn@3.0.7 cspell "**/*.{md,java,ts,tsx,js,mjs,sql,yml,json,jsonc}"
+
+      - name: Run Version Table Drift Check
+        run: node scripts/check-version-drift.mjs
+
+      - name: Run Quality Gate Synchronization Check
+        run: node scripts/check-gate-sync.mjs
 
       - name: Run Yamllint
         run: |
-          docker run --rm -v "$PWD:/data" cytopia/yamllint:latest -c /data/.yamllint.yml /data
+          docker run --rm -v "$PWD:/data" cytopia/yamllint:1-0.14 -c /data/.yamllint.yml /data
 
       - name: Run Hadolint
         run: |
-          docker run --rm -v "$PWD:/repo" hadolint/hadolint:latest hadolint /repo/backend/Dockerfile /repo/frontend/Dockerfile /repo/mock/Dockerfile
+          docker run --rm -v "$PWD:/repo" hadolint/hadolint:v2.15.1 hadolint /repo/backend/Dockerfile /repo/frontend/Dockerfile /repo/mock/Dockerfile
 
       - name: Run Actionlint
         run: |
-          docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:latest .github/workflows/ci.yml
+          docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 .github/workflows/ci.yml
 
       - name: Run SQLFluff on Flyway Migrations
         run: |
-          docker run --rm -v "$PWD:/repo" -w /repo sqlfluff/sqlfluff:latest lint backend/src/main/resources/db/migration
+          docker run --rm -v "$PWD:/repo" -w /repo sqlfluff/sqlfluff:4.5.0 lint backend/src/main/resources/db/migration
 
   # ----------------------------------------------------------------------------
   # 6. CI Smoke & Integration Test Gate

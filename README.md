@@ -155,7 +155,7 @@ cd backend
 cd frontend
 npm install
 npm run dev
-# Vite dev server running at http://localhost:5173 (or http://localhost:3000)
+# Vite dev server running at http://localhost:3000
 ```
 
 ### 6. Full Project Verification Scripts
@@ -209,6 +209,27 @@ Individual checks:
 - **Frontend Lint & Test**: `cd frontend && npm run lint && npm run test`
 - **End-to-End Integration Suite**: `node e2e/run-all.mjs` (Requires running stack via `docker compose up -d --build --wait`)
 - **Forbidden Path Verification**: Clean grep check ensuring zero machine-specific paths or local user folders are committed (Must return zero matches).
+
+---
+
+## 🐳 Clean Isolated CI Runner in Docker (Defect D8 Verification)
+
+To execute the entire GitHub Actions workflow (`.github/workflows/ci.yml` — all 6 jobs) inside a clean, hermetic Ubuntu 22.04 container completely isolated from host state:
+
+```bash
+# On Linux / macOS
+./scripts/run-ci-in-docker.sh
+
+# On Windows PowerShell
+.\scripts\run-ci-in-docker.ps1
+```
+
+This harness:
+
+- Builds a hermetic Ubuntu 22.04 runner image (`scripts/ci-runner.Dockerfile`) equipped with Node.js 24 LTS, Temurin Java 25 LTS, and Docker CLI/Compose.
+- Mounts the repository read-only (`:ro`) and synchronizes it into an ephemeral workspace volume, strictly excluding host `node_modules`, `backend/target`, and `.m2` caches.
+- Runs all 6 quality gate jobs in sequence: `mock-test`, `frontend-check`, `backend-check` (Spotless, SpotBugs, Testcontainers), `docker-compose-check`, `clean-code-and-linters` (11 hygiene checks), and `smoke-test` (multi-container stack, Flyway assertions, seed data, health, mock security gates, and 9/9 E2E test suites).
+- Automatically tears down compose services and cleans up ephemeral volumes upon completion.
 
 ---
 

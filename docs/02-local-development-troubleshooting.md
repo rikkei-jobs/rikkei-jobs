@@ -82,7 +82,7 @@ export EXTERNAL_SERVICE_KEY="dev-key"
 cd frontend
 npm install
 npm run dev
-# Vite dev server running at http://localhost:5173 (or http://localhost:3000)
+# Vite dev server running at http://localhost:3000
 ```
 
 ---
@@ -96,9 +96,29 @@ npm run dev
 | **`mvnw` Fails with Java Compilation / Bytecode Error (Incompatible JDK Version)** | `JAVA_HOME` is set on the host machine pointing to an older JDK (e.g., JDK 21, 17, or 11), and `mvnw` invokes `$JAVA_HOME/bin/java` instead of JDK 25 on `PATH`. | Override `JAVA_HOME` in the current terminal session before running `./mvnw`:<br>• Linux/macOS: `export JAVA_HOME=/path/to/jdk-25`<br>• Windows PowerShell: `$env:JAVA_HOME = "C:\path\to\jdk-25"` |
 | **Backend Standalone DB Authentication Failure (`password authentication failed for user "postgres"`)** | Connecting to database with default postgres superuser credentials instead of application credentials. | Ensure database connection parameters match Docker Compose defaults: URL `jdbc:postgresql://localhost:5433/rikkeijobs`, User `rikkei_app`, Password `rikkei_secret`. Set `SPRING_DATASOURCE_USERNAME=rikkei_app` and `SPRING_DATASOURCE_PASSWORD=rikkei_secret`. |
 | **Mock Returns 401 `INVALID_SERVICE_KEY`** | The request to `/lms`, `/exam`, `/pm`, or `/meet` is missing the `X-Service-Key` header or passed an incorrect value. | Add `X-Service-Key: dev-key` to your HTTP request headers. (Note: `/mock/*` routes do not require this key). |
-| **CORS Blocked in Browser** | Frontend origin (`http://localhost:3000` or `http://localhost:5173`) is not listed in backend CORS configuration. | Configure `CORS_ALLOWED_ORIGINS` in `.env` (comma-separated list, e.g. `http://localhost:3000,http://127.0.0.1:3000`). Wildcard `*` with credentials is strictly disallowed. In production, `CORS_ALLOWED_ORIGINS` is mandatory and fails fast on startup if empty. |
+| **CORS Blocked in Browser** | Frontend origin (`http://localhost:3000`) is not listed in backend CORS configuration. | Configure `CORS_ALLOWED_ORIGINS` in `.env` (comma-separated list, e.g. `http://localhost:3000,http://127.0.0.1:3000`). Wildcard `*` with credentials is strictly disallowed. In production, `CORS_ALLOWED_ORIGINS` is mandatory and fails fast on startup if empty. |
 | **Backend Returns 503 `EXTERNAL_UNAVAILABLE`** | The mock server on port 9000 is stopped, crashed, or taking longer than 5 seconds to respond. | Verify the mock process is running with `curl -i http://localhost:9000/mock/requests`. If down, start it with `npm start` in the `mock/` folder. |
 | **Frontend Nginx Proxy Crashes on Startup** | Nginx cannot resolve the `backend` container hostname when backend starts slower than frontend. | Use a dynamic variable proxy with resolver directive `resolver 127.0.0.11 valid=30s;` in `nginx.conf` so Nginx starts smoothly even if backend is temporarily down. |
+
+---
+
+### 4. Clean Isolated CI Runner in Docker (Workflow Replication)
+
+To guarantee that the codebase passes all quality gates identically to GitHub Actions without any machine-specific dependencies or dirty host state:
+
+```bash
+# On Linux / macOS
+./scripts/run-ci-in-docker.sh
+
+# On Windows PowerShell
+.\scripts\run-ci-in-docker.ps1
+```
+
+**Architecture & DooD (Docker-outside-of-Docker) Handling**:
+
+- **Testcontainers**: Automatically detects and configures `TESTCONTAINERS_HOST_OVERRIDE` (`host.docker.internal` or gateway IP) and `.testcontainers.properties` to ensure Testcontainers and ephemeral mock containers communicate reliably in `--network host` mode.
+- **Linter Volume Mapping**: A Docker CLI wrapper transparently translates `/ci-workspace` and `$PWD` bind paths to the isolated named workspace volume for containerized linters (yamllint, hadolint, actionlint, sqlfluff).
+- **Hermetic Isolation**: Host artifacts (`node_modules`, `target`, `dist`, `.m2`) are excluded via read-only rsync into a clean throwaway volume.
 
 ---
 
@@ -182,7 +202,7 @@ export EXTERNAL_SERVICE_KEY="dev-key"
 cd frontend
 npm install
 npm run dev
-# Máy chủ phát triển Vite chạy tại http://localhost:5173 (hoặc http://localhost:3000)
+# Máy chủ phát triển Vite chạy tại http://localhost:3000
 ```
 
 ---
@@ -196,6 +216,26 @@ npm run dev
 | **`mvnw` báo lỗi biên dịch Java (Sai phiên bản JDK)** | Biến `JAVA_HOME` trên máy host trỏ tới JDK cũ (JDK 21, 17, 11), và `mvnw` gọi `$JAVA_HOME/bin/java` thay vì JDK 25 trên `PATH`. | Ghi đè `JAVA_HOME` trong terminal hiện tại trước khi gọi `./mvnw`:<br>• Linux/macOS: `export JAVA_HOME=/path/to/jdk-25`<br>• Windows PowerShell: `$env:JAVA_HOME = "C:\path\to\jdk-25"` |
 | **Lỗi xác thực CSDL khi chạy Standalone (`password authentication failed for user "postgres"`)** | Ứng dụng kết nối bằng tài khoản mặc định `postgres` thay vì tài khoản ứng dụng `rikkei_app`. | Đảm bảo thông số kết nối CSDL khớp với Docker Compose: URL `jdbc:postgresql://localhost:5433/rikkeijobs`, User `rikkei_app`, Password `rikkei_secret`. Thiết lập biến `SPRING_DATASOURCE_USERNAME=rikkei_app` và `SPRING_DATASOURCE_PASSWORD=rikkei_secret`. |
 | **Mock báo lỗi 401 `INVALID_SERVICE_KEY`** | Lời gọi API tới `/lms`, `/exam`, `/pm`, hoặc `/meet` bị thiếu header `X-Service-Key` hoặc truyền sai giá trị. | Bổ sung header `X-Service-Key: dev-key` vào HTTP request. (Lưu ý: Các route tiện ích `/mock/*` không đòi hỏi header này). |
-| **Trình duyệt báo lỗi chặn CORS** | Tên miền frontend (`http://localhost:3000` hoặc `http://localhost:5173`) chưa được khai báo trong danh sách origin cho phép của Backend. | Cấu hình biến `CORS_ALLOWED_ORIGINS` trong `.env` (danh sách phân tách bởi dấu phẩy, ví dụ `http://localhost:3000,http://127.0.0.1:3000`). Tuyệt đối không dùng wildcard `*` kèm credentials. Trên production, biến này là bắt buộc và server sẽ fail-fast từ chối khởi động nếu bị bỏ trống. |
+| **Trình duyệt báo lỗi chặn CORS** | Tên miền frontend (`http://localhost:3000`) chưa được khai báo trong danh sách origin cho phép của Backend. | Cấu hình biến `CORS_ALLOWED_ORIGINS` trong `.env` (danh sách phân tách bởi dấu phẩy, ví dụ `http://localhost:3000,http://127.0.0.1:3000`). Tuyệt đối không dùng wildcard `*` kèm credentials. Trên production, biến này là bắt buộc và server sẽ fail-fast từ chối khởi động nếu bị bỏ trống. |
 | **Backend trả về lỗi 503 `EXTERNAL_UNAVAILABLE`** | Mock server trên cổng 9000 bị tắt, bị treo hoặc phản hồi quá thời gian timeout (5 giây). | Kiểm tra xem tiến trình Mock có đang chạy hay không bằng lệnh `curl -i http://localhost:9000/mock/requests`. Nếu chưa chạy, thực hiện `npm start` trong thư mục `mock/`. |
 | **Nginx Proxy ở Frontend bị crash khi khởi động** | Nginx không thể phân giải tên miền container `backend` nếu container backend khởi động chậm hơn container frontend. | Sử dụng biến proxy động kết hợp chỉ thị resolver nội bộ Docker: `resolver 127.0.0.11 valid=30s;` trong `nginx.conf` để Nginx khởi động ổn định ngay cả khi Backend chưa sẵn sàng. |
+
+---
+
+### 4. Chạy Kiểm Thử Toàn Diện CI Trong Docker Cách Ly (Mô phỏng GitHub Actions)
+
+Để đảm bảo toàn bộ mã nguồn vượt qua 100% các cổng chất lượng giống hệt môi trường GitHub Actions Ubuntu runner mà không bị ảnh hưởng bởi trạng thái máy host:
+
+```bash
+# Trên Linux / macOS
+./scripts/run-ci-in-docker.sh
+
+# Trên Windows PowerShell
+.\scripts\run-ci-in-docker.ps1
+```
+
+**Cơ chế Kỹ thuật & Môi trường DooD (Docker-outside-of-Docker)**:
+
+- **Testcontainers**: Tự động phát hiện và cấu hình `TESTCONTAINERS_HOST_OVERRIDE` (IP của `host.docker.internal` hoặc gateway) và file `.testcontainers.properties` để Testcontainers kết nối tin cậy tới daemon và các container dịch vụ trên chế độ `--network host`.
+- **Ánh xạ Volume cho Linters**: Tích hợp wrapper cho lệnh Docker CLI để chuyển đổi đường dẫn `/ci-workspace` và `$PWD` sang tên volume độc lập, giúp các công cụ linter (yamllint, hadolint, actionlint, sqlfluff) đọc file chính xác trong môi trường container lồng.
+- **Cô lập Tuyệt đối**: Thư mục repo máy host được mount dạng chỉ đọc (`:ro`) và sao chép qua rsync loại trừ hoàn toàn các tệp rác, thư viện `node_modules`, `target`, `dist`, và cache `.m2` của máy host.
