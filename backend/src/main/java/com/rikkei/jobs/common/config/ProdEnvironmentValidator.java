@@ -1,23 +1,23 @@
 package com.rikkei.jobs.common.config;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
-import org.springframework.context.annotation.Profile;
+import org.springframework.boot.context.event.ApplicationPreparedEvent;
+import org.springframework.context.ApplicationListener;
+import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
-import org.springframework.stereotype.Component;
 
 /**
  * Fail-fast validator for mandatory production environment variables. Enforces strict presence and
- * non-default/secure values when running under the "prod" profile. Rejects startup with
- * IllegalStateException if any required variable is missing, blank, or insecure.
+ * non-default/secure values when running under the "prod" profile. Listens to
+ * ApplicationPreparedEvent to run BEFORE context refresh, ensuring validation completes before
+ * DataSource initialization or Flyway migrations. Rejects startup with IllegalStateException if any
+ * required variable is missing, blank, or insecure.
  */
-@Component
-@Profile("prod")
-public class ProdEnvironmentValidator implements ApplicationRunner {
+public class ProdEnvironmentValidator implements ApplicationListener<ApplicationPreparedEvent> {
 
     private static final Logger log = LoggerFactory.getLogger(ProdEnvironmentValidator.class);
 
@@ -44,15 +44,23 @@ public class ProdEnvironmentValidator implements ApplicationRunner {
                     "admin",
                     "root");
 
-    private final Environment environment;
+    private Environment environment;
+
+    public ProdEnvironmentValidator() {
+        this.environment = null;
+    }
 
     public ProdEnvironmentValidator(Environment environment) {
         this.environment = environment;
     }
 
     @Override
-    public void run(ApplicationArguments args) {
-        validateEnvironment();
+    public void onApplicationEvent(ApplicationPreparedEvent event) {
+        ConfigurableEnvironment env = event.getApplicationContext().getEnvironment();
+        if (Arrays.asList(env.getActiveProfiles()).contains("prod")) {
+            this.environment = env;
+            validateEnvironment();
+        }
     }
 
     /**
@@ -92,6 +100,9 @@ public class ProdEnvironmentValidator implements ApplicationRunner {
     }
 
     private String resolveProperty(String varName) {
+        if (environment == null) {
+            return null;
+        }
         String value = environment.getProperty(varName);
         if (value != null && !value.isBlank()) {
             return value;

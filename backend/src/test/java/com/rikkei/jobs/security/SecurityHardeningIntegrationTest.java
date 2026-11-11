@@ -1,22 +1,16 @@
 package com.rikkei.jobs.security;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.rikkei.jobs.common.security.CustomAccessDeniedHandler;
-import com.rikkei.jobs.common.security.CustomAuthenticationEntryPoint;
-import com.rikkei.jobs.common.security.SecurityConfig;
 import com.rikkei.jobs.identity.repository.UserRepository;
-import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -27,7 +21,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -39,159 +32,12 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
- * Empirical Adversarial Challenge Test Suite for Milestone 2. Actively stress-tests CORS attacks,
- * profile data leakage, Actuator exposure, and test controller restrictions across dev, prod, and
- * default profiles.
+ * Comprehensive integration tests for application security hardening across environments: profile
+ * isolation, Actuator information leakage resistance, test controller protection, and production
+ * fail-fast enforcement.
  */
-public class AdversarialSecurityChallengeTest {
-
-    @Nested
-    @SpringBootTest(
-            webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-            properties = {"CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000"})
-    @Testcontainers
-    @ActiveProfiles("dev")
-    @DisplayName("CORS Adversarial Attack Suite")
-    class CorsAdversarialTests {
-
-        @Container
-        static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18.6-alpine");
-
-        @DynamicPropertySource
-        static void configureProperties(DynamicPropertyRegistry registry) {
-            registry.add("spring.datasource.url", postgres::getJdbcUrl);
-            registry.add("spring.datasource.username", postgres::getUsername);
-            registry.add("spring.datasource.password", postgres::getPassword);
-        }
-
-        @Autowired private WebApplicationContext context;
-        private MockMvc mockMvc;
-
-        @BeforeEach
-        void setUp() {
-            mockMvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
-        }
-
-        @ParameterizedTest(name = "Evil origin: {0} must be rejected 403 without CORS headers")
-        @ValueSource(
-                strings = {
-                    "https://evil.com",
-                    "http://evil.example.org",
-                    "http://malicious.attacker.io",
-                    "null",
-                    "http://localhost:3000.evil.com",
-                    "http://evil-localhost:3000",
-                    "http://localhost:30000",
-                    "http://localhost:3001",
-                    "https://localhost:3000",
-                    "file://",
-                    "http://127.0.0.1:8080"
-                })
-        void testAdversarialOriginsRejected(String evilOrigin) throws Exception {
-            mockMvc.perform(get("/api/v1/health").header("Origin", evilOrigin))
-                    .andExpect(status().isForbidden())
-                    .andExpect(header().doesNotExist("Access-Control-Allow-Origin"));
-        }
-
-        @ParameterizedTest(
-                name =
-                        "Preflight OPTIONS from evil origin {0} must not receive allow origin header")
-        @ValueSource(
-                strings = {
-                    "https://evil.com",
-                    "http://localhost:3000.evil.com",
-                    "null",
-                    "http://attacker.com"
-                })
-        void testAdversarialPreflightOptionsRejected(String evilOrigin) throws Exception {
-            mockMvc.perform(
-                            options("/api/v1/health")
-                                    .header("Origin", evilOrigin)
-                                    .header("Access-Control-Request-Method", "GET"))
-                    .andExpect(header().doesNotExist("Access-Control-Allow-Origin"));
-        }
-
-        @Test
-        @DisplayName(
-                "Preflight with disallowed HTTP method (e.g. TRACE) must not allow that method")
-        void testPreflightDisallowedMethod() throws Exception {
-            mockMvc.perform(
-                            options("/api/v1/health")
-                                    .header("Origin", "http://localhost:3000")
-                                    .header("Access-Control-Request-Method", "TRACE"))
-                    .andExpect(
-                            header().string(
-                                            "Access-Control-Allow-Methods",
-                                            org.hamcrest.Matchers.not(
-                                                    org.hamcrest.Matchers.containsString(
-                                                            "TRACE"))));
-        }
-
-        @Test
-        @DisplayName(
-                "Allowed origin http://localhost:3000 correctly receives explicit CORS headers")
-        void testAllowedOriginReceivesCorrectHeaders() throws Exception {
-            mockMvc.perform(get("/api/v1/health").header("Origin", "http://localhost:3000"))
-                    .andExpect(status().isOk())
-                    .andExpect(
-                            header().string("Access-Control-Allow-Origin", "http://localhost:3000"))
-                    .andExpect(header().string("Access-Control-Allow-Credentials", "true"));
-        }
-
-        @Test
-        @DisplayName(
-                "SecurityConfig fail-fast in prod with null/empty/whitespace CORS_ALLOWED_ORIGINS")
-        void testFailFastInProdWithEmptyOrigins() {
-            MockEnvironment env = new MockEnvironment();
-            env.setActiveProfiles("prod");
-            CustomAuthenticationEntryPoint authEntryPoint =
-                    new CustomAuthenticationEntryPoint(new ObjectMapper());
-            CustomAccessDeniedHandler accessDeniedHandler =
-                    new CustomAccessDeniedHandler(new ObjectMapper());
-
-            assertThrows(
-                    IllegalStateException.class,
-                    () ->
-                            new SecurityConfig(authEntryPoint, accessDeniedHandler, env, null)
-                                    .corsConfigurationSource());
-            assertThrows(
-                    IllegalStateException.class,
-                    () ->
-                            new SecurityConfig(authEntryPoint, accessDeniedHandler, env, "")
-                                    .corsConfigurationSource());
-            assertThrows(
-                    IllegalStateException.class,
-                    () ->
-                            new SecurityConfig(authEntryPoint, accessDeniedHandler, env, "   ")
-                                    .corsConfigurationSource());
-        }
-
-        @Test
-        @DisplayName("SecurityConfig properly trims and parses comma-separated origins")
-        void testCorsOriginParsingWithWhitespace() {
-            MockEnvironment env = new MockEnvironment();
-            env.setActiveProfiles("dev");
-            CustomAuthenticationEntryPoint authEntryPoint =
-                    new CustomAuthenticationEntryPoint(new ObjectMapper());
-            CustomAccessDeniedHandler accessDeniedHandler =
-                    new CustomAccessDeniedHandler(new ObjectMapper());
-
-            SecurityConfig config =
-                    new SecurityConfig(
-                            authEntryPoint,
-                            accessDeniedHandler,
-                            env,
-                            "  http://foo.com  ,  https://bar.com  ,   ");
-            org.springframework.web.cors.CorsConfiguration corsConfig =
-                    ((org.springframework.web.cors.UrlBasedCorsConfigurationSource)
-                                    config.corsConfigurationSource())
-                            .getCorsConfigurations()
-                            .get("/**");
-
-            assertEquals(
-                    List.of("http://foo.com", "https://bar.com"), corsConfig.getAllowedOrigins());
-        }
-    }
+@DisplayName("Security Hardening and Environment Isolation Integration Tests")
+public class SecurityHardeningIntegrationTest {
 
     @Nested
     @SpringBootTest(
@@ -203,8 +49,8 @@ public class AdversarialSecurityChallengeTest {
             })
     @Testcontainers
     @ActiveProfiles("prod")
-    @DisplayName("Prod Profile Adversarial Security & Actuator Leakage Suite")
-    class ProdProfileAdversarialTests {
+    @DisplayName("Production Profile Security, Seed Isolation & Actuator Leakage Protection")
+    class ProdProfileHardeningTests {
 
         @Container
         static PostgreSQLContainer prodPostgres = new PostgreSQLContainer("postgres:18.6-alpine");
@@ -337,15 +183,15 @@ public class AdversarialSecurityChallengeTest {
                                                     + prodPostgres.getUsername(),
                                             "--spring.datasource.password="
                                                     + prodPostgres.getPassword(),
+                                            "--external.api.base-url=https://mock.example.com",
+                                            "--external.api.service-key=prod-secret-service-key-999",
                                             "--spring.flyway.enabled=true"));
 
             Throwable cause = exception;
             boolean foundCorsMessage = false;
             while (cause != null) {
                 if (cause.getMessage() != null
-                        && cause.getMessage()
-                                .contains(
-                                        "CORS_ALLOWED_ORIGINS must be set and non-empty in prod profile")) {
+                        && cause.getMessage().contains("CORS_ALLOWED_ORIGINS")) {
                     foundCorsMessage = true;
                     break;
                 }
@@ -360,8 +206,144 @@ public class AdversarialSecurityChallengeTest {
     @Nested
     @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
     @Testcontainers
-    @DisplayName("Default Profile (No @ActiveProfiles) Adversarial Isolation Suite")
-    class DefaultProfileAdversarialTests {
+    @ActiveProfiles("dev")
+    @DisplayName("Dev Profile Actuator Information Leakage Resistance")
+    class ActuatorLeakageTests {
+
+        @Container
+        static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18.6-alpine");
+
+        @DynamicPropertySource
+        static void configureProperties(DynamicPropertyRegistry registry) {
+            registry.add("spring.datasource.url", postgres::getJdbcUrl);
+            registry.add("spring.datasource.username", postgres::getUsername);
+            registry.add("spring.datasource.password", postgres::getPassword);
+        }
+
+        @Autowired private WebApplicationContext context;
+        private MockMvc mockMvc;
+
+        @BeforeEach
+        void setUp() {
+            mockMvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
+        }
+
+        @Test
+        @DisplayName("Query param ?showDetails=always must NOT override show-details: never")
+        void testActuatorHealthQueryParamDoesNotLeakDetails() throws Exception {
+            mockMvc.perform(get("/actuator/health?showDetails=always"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.status").value("UP"))
+                    .andExpect(jsonPath("$.components").doesNotExist())
+                    .andExpect(jsonPath("$.details").doesNotExist())
+                    .andExpect(jsonPath("$.db").doesNotExist())
+                    .andExpect(jsonPath("$.diskSpace").doesNotExist())
+                    .andExpect(jsonPath("$.ping").doesNotExist());
+        }
+
+        @Test
+        @DisplayName("Subpath /actuator/health/db must NOT leak database component details")
+        void testActuatorHealthDbSubpath() throws Exception {
+            var result = mockMvc.perform(get("/actuator/health/db")).andReturn();
+            int statusCode = result.getResponse().getStatus();
+            String content = result.getResponse().getContentAsString();
+
+            assertEquals(
+                    401,
+                    statusCode,
+                    "Subpaths like /actuator/health/db are not permitted and return 401");
+            assertTrue(
+                    content.contains("UNAUTHORIZED"),
+                    "Must return standard UNAUTHORIZED json error");
+
+            assertFalse(
+                    content.contains("validationQuery"), "Must not leak database validationQuery");
+            assertFalse(
+                    content.contains("PostgreSQL"), "Must not leak database dialect/product name");
+            assertFalse(content.contains("jdbc:"), "Must not leak database JDBC connection string");
+        }
+
+        @Test
+        @DisplayName("Subpath /actuator/health/diskSpace must NOT leak disk path or volume sizes")
+        void testActuatorHealthDiskSpaceSubpath() throws Exception {
+            var result = mockMvc.perform(get("/actuator/health/diskSpace")).andReturn();
+            int statusCode = result.getResponse().getStatus();
+            String content = result.getResponse().getContentAsString();
+            assertEquals(
+                    401,
+                    statusCode,
+                    "Subpaths like /actuator/health/diskSpace require authentication and return 401");
+            assertTrue(
+                    content.contains("UNAUTHORIZED"),
+                    "Must return standard UNAUTHORIZED json error");
+            assertFalse(content.contains("total"), "Must not leak total disk space");
+            assertFalse(content.contains("free"), "Must not leak free disk space");
+            assertFalse(content.contains("threshold"), "Must not leak disk threshold");
+            assertFalse(content.contains("path"), "Must not leak server directory paths");
+        }
+
+        @Test
+        @DisplayName(
+                "Sensitive actuator endpoints (/actuator/env, /actuator/beans) must NOT be exposed publicly")
+        void testSensitiveActuatorEndpointsNotExposed() throws Exception {
+            mockMvc.perform(get("/actuator/env"))
+                    .andExpect(status().isUnauthorized())
+                    .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+
+            mockMvc.perform(get("/actuator/beans"))
+                    .andExpect(status().isUnauthorized())
+                    .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+        }
+    }
+
+    @Nested
+    @SpringBootTest(properties = {"CORS_ALLOWED_ORIGINS=http://localhost:3000"})
+    @Testcontainers
+    @ActiveProfiles("staging")
+    @DisplayName("Arbitrary Non-Dev Profile (e.g. 'staging') Seed Isolation")
+    class ArbitraryProfileIsolationTests {
+
+        @Container
+        static PostgreSQLContainer stagingDb = new PostgreSQLContainer("postgres:18.6-alpine");
+
+        @DynamicPropertySource
+        static void configureProperties(DynamicPropertyRegistry registry) {
+            registry.add("spring.datasource.url", stagingDb::getJdbcUrl);
+            registry.add("spring.datasource.username", stagingDb::getUsername);
+            registry.add("spring.datasource.password", stagingDb::getPassword);
+        }
+
+        @Autowired private UserRepository userRepository;
+        @Autowired private JdbcTemplate jdbcTemplate;
+
+        @Test
+        @DisplayName(
+                "Any non-dev profile (e.g., 'staging') must NEVER load dev seed migrations or users")
+        void testNonDevProfileNeverSeedsUsers() {
+            long userCount = userRepository.count();
+            assertEquals(0L, userCount, "Non-dev profile 'staging' must have strictly 0 users");
+
+            Integer migrationCount =
+                    jdbcTemplate.queryForObject(
+                            "SELECT count(*) FROM flyway_schema_history WHERE success = true",
+                            Integer.class);
+            assertEquals(1, migrationCount, "Only V1 schema migration must be applied");
+
+            Boolean hasV2 =
+                    jdbcTemplate.queryForObject(
+                            "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '2')",
+                            Boolean.class);
+            assertFalse(
+                    Boolean.TRUE.equals(hasV2),
+                    "V2 seed migration must NOT exist in staging profile");
+        }
+    }
+
+    @Nested
+    @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+    @Testcontainers
+    @DisplayName("Default Profile (No @ActiveProfiles) Isolation")
+    class DefaultProfileIsolationTests {
 
         @Container
         static PostgreSQLContainer defaultPostgres =

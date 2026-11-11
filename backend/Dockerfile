@@ -33,6 +33,6 @@ EXPOSE 8080
 
 # Environment variables with safe defaults
 ENV SERVER_PORT=8080 \
-    JAVA_OPTS="-XX:+UseZGC -XX:+ZGenerational -Xms256m -Xmx512m"
+    JAVA_OPTS="-XX:+UseZGC -Xms256m -Xmx512m"
 
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

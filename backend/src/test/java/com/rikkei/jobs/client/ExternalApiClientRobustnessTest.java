@@ -1,4 +1,4 @@
-package com.rikkei.jobs.adversarial;
+package com.rikkei.jobs.client;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -42,21 +42,20 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 /**
- * Adversarial Stress Testing for Milestone 3 (A5, A7). Conducted by Challenger 1
- * (teamwork_challenger).
+ * Robustness and stress testing for HealthController and ExternalApiClient.
  *
  * <p>Validates: 1. Strict resistance against JSON injection attacks on SSO tickets. 2. URL encoding
  * boundary behaviors on external API query params. 3. Zero information leakage in exception
  * messages across all HTTP error codes. 4. HealthController edge-case responses under corrupted DB
  * states using clean Java dynamic proxies.
  */
-@DisplayName("Adversarial Stress Testing — Milestone 3 (Health Check & ExternalApiClient)")
-public class ExternalApiAndHealthAdversarialTest {
+@DisplayName("ExternalApiClient and Health Robustness Integration Tests")
+public class ExternalApiClientRobustnessTest {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     // =========================================================================
-    // 1. JSON Injection Attack Stress-Testing (A5)
+    // 1. JSON Injection Resistance Stress-Testing
     // =========================================================================
     @Nested
     @DisplayName("1. JSON Injection Resistance on verifySsoTicket")
@@ -79,13 +78,9 @@ public class ExternalApiAndHealthAdversarialTest {
         @DisplayName(
                 "Verify ObjectMapper prevents structure alteration and creates valid RFC 8259 single-key JSON")
         void testSsoTicketJsonStructureIntegrity(String payload) throws Exception {
-            // Test the exact serialization logic used inside ExternalApiClient.verifySsoTicket
             String jsonOutput = OBJECT_MAPPER.writeValueAsString(Map.of("ticket", payload));
-
-            // Parse back the generated JSON
             JsonNode root = OBJECT_MAPPER.readTree(jsonOutput);
 
-            // Assertions proving zero JSON injection is possible
             assertTrue(root.isObject(), "Output must be a valid JSON object");
             assertEquals(
                     1,
@@ -102,7 +97,7 @@ public class ExternalApiAndHealthAdversarialTest {
     }
 
     // =========================================================================
-    // 2. URL Encoding & Special Characters Stress-Testing (A5)
+    // 2. URL Encoding & Special Characters Stress-Testing
     // =========================================================================
     @Nested
     @DisplayName("2. URL Parameter Encoding & Query String Boundaries")
@@ -118,22 +113,18 @@ public class ExternalApiAndHealthAdversarialTest {
 
             ExternalApiClient client = new ExternalApiClient(props, OBJECT_MAPPER);
 
-            // Test null and whitespace parameters
             assertEquals("/lms/courses", extractPath(client, null));
             assertEquals("/lms/courses", extractPath(client, ""));
             assertEquals("/lms/courses", extractPath(client, "   \t\n  "));
 
-            // Test Vietnamese characters and symbols
             String rawSkill = "Kỹ sư Cầu nối & Lập trình viên C# / C++";
             String path = extractPath(client, rawSkill);
             assertTrue(path.startsWith("/lms/courses?skill="));
 
-            // Verify that decoding restores the exact original string
             String queryPart = path.substring("/lms/courses?skill=".length());
             String decoded = URLDecoder.decode(queryPart, StandardCharsets.UTF_8);
             assertEquals(rawSkill.trim(), decoded, "Decoded query parameter must match input");
 
-            // Verify dangerous URL breaking characters are encoded
             assertFalse(
                     queryPart.contains("&"),
                     "Query param value must not contain unencoded ampersand");
@@ -151,7 +142,7 @@ public class ExternalApiAndHealthAdversarialTest {
     }
 
     // =========================================================================
-    // 3. Information Leakage & Sanitized Exceptions Stress-Testing (A5)
+    // 3. Information Leakage & Sanitized Exceptions Stress-Testing
     // =========================================================================
     @Nested
     @DisplayName("3. Zero Information Leakage on External API Errors (400, 401, 404, 409, 500)")
@@ -304,7 +295,7 @@ public class ExternalApiAndHealthAdversarialTest {
     }
 
     // =========================================================================
-    // 4. HealthController Database Edge-Cases Stress-Testing (A7)
+    // 4. HealthController Database Edge-Cases Stress-Testing
     // =========================================================================
     @Nested
     @DisplayName("4. HealthController Edge Cases under Corrupted / Degraded DB State")
