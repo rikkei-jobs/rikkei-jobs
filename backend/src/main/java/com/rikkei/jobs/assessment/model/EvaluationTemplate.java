@@ -1,10 +1,8 @@
 package com.rikkei.jobs.assessment.model;
 
 import jakarta.persistence.*;
-import lombok.*;
-
-import java.util.ArrayList;
 import java.util.List;
+import lombok.*;
 
 @Entity
 @Table(name = "evaluation_templates")
@@ -30,10 +28,6 @@ public class EvaluationTemplate {
     @Column(nullable = false)
     private Boolean active;
 
-    @OneToMany(
-        mappedBy = "template",
-        cascade = CascadeType.ALL,
-        orphanRemoval = true
-    )
+    @OneToMany(mappedBy = "template", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<EvaluationCriteria> criteria;
 }

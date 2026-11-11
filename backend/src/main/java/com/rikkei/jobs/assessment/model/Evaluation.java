@@ -2,14 +2,12 @@ package com.rikkei.jobs.assessment.model;
 
 import com.rikkei.jobs.identity.model.User;
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(name = "evaluations")
@@ -54,10 +52,6 @@ public class Evaluation {
     @Column(name = "submitted_at")
     private LocalDateTime submittedAt;
 
-    @OneToMany(
-        mappedBy = "evaluation",
-        cascade = CascadeType.ALL,
-        orphanRemoval = true
-    )
+    @OneToMany(mappedBy = "evaluation", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<EvaluationScore> scores;
 }
