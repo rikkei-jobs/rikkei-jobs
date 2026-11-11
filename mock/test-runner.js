@@ -8,7 +8,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const PORT = 9000;
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 9000;
 const BASE_URL = `http://localhost:${PORT}`;
 const SERVICE_KEY = 'dev-key';
 const DATA_FILE = path.join(__dirname, 'data.json');
@@ -72,7 +72,8 @@ async function runTests() {
   console.log('1. Khởi chạy tiến trình server.js...');
   const serverProcess = spawn('node', ['server.js'], {
     cwd: __dirname,
-    stdio: ['ignore', 'pipe', 'pipe']
+    stdio: ['ignore', 'pipe', 'pipe'],
+    env: { ...process.env, PORT: String(PORT) }
   });
 
   let serverStarted = false;
@@ -81,7 +82,7 @@ async function runTests() {
   serverProcess.stdout.on('data', chunk => {
     const msg = chunk.toString();
     startOutput += msg;
-    if (msg.includes('Mock chạy ở http://localhost:9000')) {
+    if (msg.includes(`Mock chạy ở http://localhost:${PORT}`)) {
       serverStarted = true;
     }
   });
