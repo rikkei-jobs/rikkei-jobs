@@ -19,6 +19,24 @@ $ErrorActionPreference = "Continue"
 $RepoRoot = $PSScriptRoot
 Set-Location $RepoRoot
 
+# Load centralized pinned tool versions
+$toolVersionsFile = Join-Path $RepoRoot "scripts\tool-versions.env"
+if (Test-Path $toolVersionsFile) {
+    Get-Content $toolVersionsFile | ForEach-Object {
+        if ($_ -match '^\s*([A-Za-z0-9_]+)\s*=\s*(.*?)\s*$') {
+            Set-Item -Path "env:$($matches[1])" -Value $matches[2]
+        }
+    }
+}
+
+$hadolintVer = if ($env:HADOLINT_VERSION) { $env:HADOLINT_VERSION } else { "v2.15.1" }
+$yamllintVer = if ($env:YAMLLINT_VERSION) { $env:YAMLLINT_VERSION } else { "1-0.14" }
+$actionlintVer = if ($env:ACTIONLINT_VERSION) { $env:ACTIONLINT_VERSION } else { "1.7.12" }
+$sqlfluffVer = if ($env:SQLFLUFF_VERSION) { $env:SQLFLUFF_VERSION } else { "4.5.0" }
+$markdownlintVer = if ($env:MARKDOWNLINT_VERSION) { $env:MARKDOWNLINT_VERSION } else { "0.24.0" }
+$cspellVer = if ($env:CSPELL_VERSION) { $env:CSPELL_VERSION } else { "10.4.1" }
+$cspellDictViVer = if ($env:CSPELL_DICT_VI_VERSION) { $env:CSPELL_DICT_VI_VERSION } else { "3.0.7" }
+
 $GateResults = [ordered]@{}
 $OverallPassed = $true
 
@@ -99,7 +117,7 @@ if ($needJavaDiscovery) {
                 if (Test-Path "$($cand.FullName)\bin\javac.exe") {
                     $discoveredJavaHome = $cand.FullName
                     $needJavaDiscovery = $false
-                    Write-Host "Auto-discovered JDK 25 in system library: $discoveredJavaHome" -ForegroundColor Gray
+                    Write-Host "Auto-discovered JDK 25 from search: $discoveredJavaHome" -ForegroundColor Gray
                     break
                 }
             }
@@ -110,24 +128,32 @@ if ($needJavaDiscovery) {
 
 if ($discoveredJavaHome) {
     $env:JAVA_HOME = $discoveredJavaHome
-    $env:PATH = "$discoveredJavaHome\bin;" + $env:PATH
-    $javaVer = & java -version 2>&1 | Select-Object -First 1
-    Record-Gate "Java 25 LTS Toolchain" $true "Configured JAVA_HOME: $discoveredJavaHome ($javaVer)"
+    $env:PATH = "$discoveredJavaHome\bin;$env:PATH"
+    $vOut = & "$discoveredJavaHome\bin\java.exe" -version 2>&1 | Select-Object -First 1
+    Record-Gate "Java 25 LTS Toolchain" $true "Configured JAVA_HOME: $discoveredJavaHome ($vOut)"
 } else {
-    Record-Gate "Java 25 LTS Toolchain" $false "JDK 25 not detected. Please install JDK 25 LTS"
+    $curJava = & java -version 2>&1
+    if ($curJava -match "25") {
+        Record-Gate "Java 25 LTS Toolchain" $true "Java 25 active on PATH"
+    } else {
+        Record-Gate "Java 25 LTS Toolchain" $false "JDK 25 not detected"
+    }
 }
 
-# 1.3 Docker & Compose Check
+# 1.3 Docker & Docker Compose Check
 $hasDocker = $false
 if (-not $SkipDocker) {
-    $dockerVer = & docker --version 2>$null
-    $composeVer = & docker compose version 2>$null
-    if ($dockerVer -and $composeVer) {
+    $dockerCheck = & docker compose version 2>$null
+    if ($LASTEXITCODE -eq 0) {
         $hasDocker = $true
-        Record-Gate "Docker & Compose Engine" $true "$dockerVer | $composeVer"
+        $dVer = (& docker --version 2>$null) -replace "`r?`n",""
+        $dcVer = (& docker compose version 2>$null) -replace "`r?`n",""
+        Record-Gate "Docker & Compose Engine" $true "$dVer | $dcVer"
     } else {
-        Record-Gate "Docker & Compose Engine" $false "Docker daemon or Compose plugin missing"
+        Record-Gate "Docker & Compose Engine" $false "Docker or Docker Compose not available"
     }
+} else {
+    Record-Gate "Docker & Compose Engine" $true "Skipped via -SkipDocker flag"
 }
 
 Print-Header "GATE 2: MOCK EXTERNAL SYSTEMS TESTS (mock/)"
@@ -135,13 +161,13 @@ if (Test-Path "$RepoRoot\mock\package.json") {
     Push-Location "$RepoRoot\mock"
     try {
         Write-Host "Running 'npm test' in mock/..." -ForegroundColor Yellow
-        $mockOutput = & npm test 2>&1
-        $mockExitCode = $LASTEXITCODE
-        if ($mockExitCode -eq 0) {
+        $mockOut = & npm test 2>&1
+        $mockCode = $LASTEXITCODE
+        if ($mockCode -eq 0) {
             Record-Gate "Mock External Systems Test Suite" $true "Passed all 8 self-check criteria"
         } else {
-            Write-Host ($mockOutput -join "`n") -ForegroundColor Red
-            Record-Gate "Mock External Systems Test Suite" $false "npm test failed with exit code $mockExitCode"
+            Write-Host ($mockOut -join "`n") -ForegroundColor Red
+            Record-Gate "Mock External Systems Test Suite" $false "Mock test suite failed"
         }
     } finally {
         Pop-Location
@@ -154,48 +180,48 @@ Print-Header "GATE 3: FRONTEND VERIFICATION GATES (frontend/)"
 if (Test-Path "$RepoRoot\frontend\package.json") {
     Push-Location "$RepoRoot\frontend"
     try {
-        # 3.1 Lint
-        Write-Host "Running 'npm run lint' in frontend/..." -ForegroundColor Yellow
+        # 3.1 ESLint
+        Write-Host "Running ESLint in frontend/..." -ForegroundColor Yellow
         $lintOut = & npm run lint 2>&1
         $lintCode = $LASTEXITCODE
         if ($lintCode -eq 0) {
             Record-Gate "Frontend ESLint" $true "Zero ESLint errors"
         } else {
             Write-Host ($lintOut -join "`n") -ForegroundColor Red
-            Record-Gate "Frontend ESLint" $false "ESLint reported errors (exit code $lintCode)"
+            Record-Gate "Frontend ESLint" $false "ESLint violations found"
         }
 
-        # 3.2 Typecheck
-        Write-Host "Running 'npm run typecheck' in frontend/..." -ForegroundColor Yellow
+        # 3.2 TypeScript Typecheck
+        Write-Host "Running Typecheck in frontend/..." -ForegroundColor Yellow
         $tcOut = & npm run typecheck 2>&1
         $tcCode = $LASTEXITCODE
         if ($tcCode -eq 0) {
             Record-Gate "Frontend TypeScript Typecheck" $true "Zero type errors"
         } else {
             Write-Host ($tcOut -join "`n") -ForegroundColor Red
-            Record-Gate "Frontend TypeScript Typecheck" $false "Typecheck reported errors (exit code $tcCode)"
+            Record-Gate "Frontend TypeScript Typecheck" $false "Type errors found"
         }
 
-        # 3.3 Vitest
-        Write-Host "Running 'npm run test' in frontend/..." -ForegroundColor Yellow
+        # 3.3 Vitest Unit Tests
+        Write-Host "Running Vitest in frontend/..." -ForegroundColor Yellow
         $testOut = & npm run test -- --run 2>&1
         $testCode = $LASTEXITCODE
         if ($testCode -eq 0) {
             Record-Gate "Frontend Vitest Unit Tests" $true "All unit tests passed"
         } else {
             Write-Host ($testOut -join "`n") -ForegroundColor Red
-            Record-Gate "Frontend Vitest Unit Tests" $false "Vitest reported failures (exit code $testCode)"
+            Record-Gate "Frontend Vitest Unit Tests" $false "Vitest failures"
         }
 
-        # 3.4 Build
-        Write-Host "Running 'npm run build' in frontend/..." -ForegroundColor Yellow
+        # 3.4 Production Build
+        Write-Host "Running Build in frontend/..." -ForegroundColor Yellow
         $buildOut = & npm run build 2>&1
         $buildCode = $LASTEXITCODE
         if ($buildCode -eq 0) {
             Record-Gate "Frontend Production Build" $true "Vite bundle build succeeded"
         } else {
             Write-Host ($buildOut -join "`n") -ForegroundColor Red
-            Record-Gate "Frontend Production Build" $false "Vite production build failed (exit code $buildCode)"
+            Record-Gate "Frontend Production Build" $false "Build failed"
         }
     } finally {
         Pop-Location
@@ -206,13 +232,13 @@ if (Test-Path "$RepoRoot\frontend\package.json") {
 
 Print-Header "GATE 4: BACKEND VERIFICATION GATES (backend/)"
 if ($SkipBackend) {
-    Record-Gate "Backend Maven Verification" $true "Skipped via -SkipBackend parameter"
+    Record-Gate "Backend Verification Gates" $true "Skipped via -SkipBackend flag"
 } elseif (Test-Path "$RepoRoot\backend\pom.xml") {
     Push-Location "$RepoRoot\backend"
     try {
         $mvnCmd = if (Test-Path ".\mvnw.cmd") { ".\mvnw.cmd" } else { "mvn" }
 
-        # 4.1 Compiler (-Xlint:all -Werror)
+        # 4.1 Compiler
         Write-Host "Checking Java compilation (-Xlint:all -Werror)..." -ForegroundColor Yellow
         $compileOut = & $mvnCmd compile 2>&1
         $compileCode = $LASTEXITCODE
@@ -220,7 +246,7 @@ if ($SkipBackend) {
             Record-Gate "Backend Java Compiler (-Xlint:all -Werror)" $true "Zero warnings, compiled cleanly"
         } else {
             Write-Host ($compileOut -join "`n") -ForegroundColor Red
-            Record-Gate "Backend Java Compiler (-Xlint:all -Werror)" $false "Compilation failed with code $compileCode"
+            Record-Gate "Backend Java Compiler (-Xlint:all -Werror)" $false "Compilation failed with warnings/errors"
         }
 
         # 4.2 Spotless formatting check
@@ -242,10 +268,10 @@ if ($SkipBackend) {
             Record-Gate "Backend SpotBugs Static Analysis" $true "Zero SpotBugs violations detected"
         } else {
             Write-Host ($spotbugsOut -join "`n") -ForegroundColor Red
-            Record-Gate "Backend SpotBugs Static Analysis" $false "SpotBugs found potential bugs (exit code $spotbugsCode)"
+            Record-Gate "Backend SpotBugs Static Analysis" $false "SpotBugs found potential bugs"
         }
 
-        # 4.4 Maven Tests (Unit & Testcontainers)
+        # 4.4 Maven Tests
         Write-Host "Running Maven tests (Testcontainers & SpringBootTest)..." -ForegroundColor Yellow
         $testOut = & $mvnCmd test 2>&1
         $testCode = $LASTEXITCODE
@@ -287,7 +313,7 @@ if (Get-Command hadolint -ErrorAction SilentlyContinue) {
     $hadoOut = & hadolint backend/Dockerfile frontend/Dockerfile mock/Dockerfile 2>&1
     $hadoCode = $LASTEXITCODE
 } elseif ($hasDocker) {
-    $hadoOut = & docker run --rm -v "${RepoRoot}:/repo" hadolint/hadolint:latest hadolint /repo/backend/Dockerfile /repo/frontend/Dockerfile /repo/mock/Dockerfile 2>&1
+    $hadoOut = & docker run --rm -v "${RepoRoot}:/repo" "hadolint/hadolint:${hadolintVer}" hadolint /repo/backend/Dockerfile /repo/frontend/Dockerfile /repo/mock/Dockerfile 2>&1
     $hadoCode = $LASTEXITCODE
 } else {
     $hadoOut = "Neither hadolint executable nor Docker is available"
@@ -307,7 +333,7 @@ if (Get-Command yamllint -ErrorAction SilentlyContinue) {
     $yamlOut = & yamllint -c .yamllint.yml . 2>&1
     $yamlCode = $LASTEXITCODE
 } elseif ($hasDocker) {
-    $yamlOut = & docker run --rm -v "${RepoRoot}:/data" cytopia/yamllint:latest -c /data/.yamllint.yml /data 2>&1
+    $yamlOut = & docker run --rm -v "${RepoRoot}:/data" "cytopia/yamllint:${yamllintVer}" -c /data/.yamllint.yml /data 2>&1
     $yamlCode = $LASTEXITCODE
 } else {
     $yamlOut = "Neither yamllint executable nor Docker is available"
@@ -327,7 +353,7 @@ if (Get-Command actionlint -ErrorAction SilentlyContinue) {
     $actionOut = & actionlint .github/workflows/ci.yml 2>&1
     $actionCode = $LASTEXITCODE
 } elseif ($hasDocker) {
-    $actionOut = & docker run --rm -v "${RepoRoot}:/repo" -w /repo rhysd/actionlint:latest .github/workflows/ci.yml 2>&1
+    $actionOut = & docker run --rm -v "${RepoRoot}:/repo" -w /repo "rhysd/actionlint:${actionlintVer}" .github/workflows/ci.yml 2>&1
     $actionCode = $LASTEXITCODE
 } else {
     $actionOut = "Neither actionlint executable nor Docker is available"
@@ -347,7 +373,7 @@ if (Get-Command sqlfluff -ErrorAction SilentlyContinue) {
     $sqlOut = & sqlfluff lint backend/src/main/resources/db/migration 2>&1
     $sqlCode = $LASTEXITCODE
 } elseif ($hasDocker) {
-    $sqlOut = & docker run --rm -v "${RepoRoot}:/repo" -w /repo sqlfluff/sqlfluff:latest lint backend/src/main/resources/db/migration 2>&1
+    $sqlOut = & docker run --rm -v "${RepoRoot}:/repo" -w /repo "sqlfluff/sqlfluff:${sqlfluffVer}" lint backend/src/main/resources/db/migration 2>&1
     $sqlCode = $LASTEXITCODE
 } else {
     $sqlOut = "Neither sqlfluff executable nor Docker is available"
@@ -359,11 +385,11 @@ if ($sqlCode -eq 0) {
     Record-Gate "SQLFluff Database Migration Linter" $false "SQLFluff found SQL migration issues"
 }
 
-Print-Header "GATE 7: DOCUMENTATION LINTERS (MARKDOWNLINT & CSPELL)"
+Print-Header "GATE 7: DOCUMENTATION LINTERS & VERSION DRIFT"
 
-# 7.1 Markdownlint
+# 7.1 Markdownlint (Full scope: every tracked *.md file)
 Write-Host "Running markdownlint-cli2 via npx..." -ForegroundColor Yellow
-$mdOut = & npx --yes markdownlint-cli2@0.24.0 "docs/**/*.md" "README.md" "CONTRIBUTING.md" 2>&1
+$mdOut = & npx --yes "markdownlint-cli2@${markdownlintVer}" "**/*.md" "#**/node_modules/**" "#**/target/**" "#**/dist/**" "#**/.agents/**" 2>&1
 $mdCode = $LASTEXITCODE
 if ($mdCode -eq 0) {
     Record-Gate "Markdownlint Documentation Style" $true "Documentation matches style rules (0 errors)"
@@ -372,15 +398,37 @@ if ($mdCode -eq 0) {
     Record-Gate "Markdownlint Documentation Style" $false "Markdownlint failed with exit code $mdCode"
 }
 
-# 7.2 CSpell
+# 7.2 CSpell (Full scope: docs, markdown, and full source code)
 Write-Host "Running cspell with Vietnamese dictionary support via npx..." -ForegroundColor Yellow
-$cspellOut = & npx --yes --package cspell@8.16.1 --package @cspell/dict-vi-vn cspell "docs/**/*.md" "README.md" "CONTRIBUTING.md" 2>&1
+$cspellOut = & npx --yes --package "cspell@${cspellVer}" --package "@cspell/dict-vi-vn@${cspellDictViVer}" cspell "**/*.{md,java,ts,tsx,js,mjs,sql,yml,json,jsonc}" 2>&1
 $cspellCode = $LASTEXITCODE
 if ($cspellCode -eq 0) {
     Record-Gate "CSpell Documentation Spelling" $true "Spelling check passed with Vietnamese dictionary support (0 errors)"
 } else {
     Write-Host ($cspellOut -join "`n") -ForegroundColor Red
     Record-Gate "CSpell Documentation Spelling" $false "CSpell found spelling errors (exit code $cspellCode)"
+}
+
+# 7.3 Version Table Drift Check (docs/03)
+Write-Host "Running version drift check (docs/03-version-table.md vs manifests)..." -ForegroundColor Yellow
+$driftOut = & node scripts/check-version-drift.mjs 2>&1
+$driftCode = $LASTEXITCODE
+if ($driftCode -eq 0) {
+    Record-Gate "Version Table Drift Check (docs/03)" $true "All 29 table versions match manifest files exactly across both languages"
+} else {
+    Write-Host ($driftOut -join "`n") -ForegroundColor Red
+    Record-Gate "Version Table Drift Check (docs/03)" $false "Version drift detected between docs/03 and manifests"
+}
+
+# 7.4 Quality Gate Synchronization Check
+Write-Host "Running Quality Gate synchronization check..." -ForegroundColor Yellow
+$syncOut = & node scripts/check-gate-sync.mjs 2>&1
+$syncCode = $LASTEXITCODE
+if ($syncCode -eq 0) {
+    Record-Gate "Quality Gate Synchronization Check" $true "All gates synchronized across check.sh, check.ps1, and CI"
+} else {
+    Write-Host ($syncOut -join "`n") -ForegroundColor Red
+    Record-Gate "Quality Gate Synchronization Check" $false "Quality gates mismatch detected"
 }
 
 Print-Header "GATE 8: CLEAN CODE ASSERTIONS & SECURITY LEAK SCAN"

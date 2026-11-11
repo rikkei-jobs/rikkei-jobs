@@ -147,7 +147,7 @@ List endpoints returning multiple records must support 1-based pagination via qu
       {
         "id": "018e3a2b-8a71-7000-8000-000000000001",
         "title": "Kỹ sư Java Backend",
-        "companyName": "Công ty Cổ phần Rikkeisoft"
+        "companyName": "Công ty Cổ phần Ví dụ"
       }
     ],
     "total": 125,

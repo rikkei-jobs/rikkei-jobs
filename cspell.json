@@ -7,7 +7,6 @@
   "words": [
     "rikkei",
     "rikkeijobs",
-    "rikkeisoft",
     "mailpit",
     "springdoc",
     "mvnw",
@@ -51,13 +50,33 @@
     "dockerized",
     "jdbc",
     "dockerfiles",
-    "aosp"
+    "aosp",
+    "vite",
+    "flywaydb",
+    "hikari",
+    "setval",
+    "psql",
+    "isready",
+    "healthcheck",
+    "configprops",
+    "configurer",
+    "configurers",
+    "subpaths",
+    "unmigrated",
+    "unkeyed",
+    "lifecycles",
+    "cntt",
+    "rpoint",
+    "changeme",
+    "cand",
+    "springframework"
   ],
   "ignorePaths": [
-    "node_modules/**",
-    "target/**",
-    "dist/**",
-    ".git/**",
-    ".agents/**"
+    "**/node_modules/**",
+    "**/target/**",
+    "**/dist/**",
+    "**/.git/**",
+    "**/.agents/**",
+    "**/package-lock.json"
   ]
 }

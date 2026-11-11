@@ -12,6 +12,26 @@ set -o pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+# Resolve host directory path for Docker volume mounting across Linux and Git Bash
+DOCKER_MOUNT_DIR="$SCRIPT_DIR"
+if command -v pwd >/dev/null 2>&1 && pwd -W >/dev/null 2>&1; then
+    DOCKER_MOUNT_DIR="$(pwd -W)"
+fi
+
+# Source centralized pinned tool versions
+if [ -f "$SCRIPT_DIR/scripts/tool-versions.env" ]; then
+    # shellcheck disable=SC1091
+    source "$SCRIPT_DIR/scripts/tool-versions.env"
+fi
+
+HADOLINT_VERSION="${HADOLINT_VERSION:-v2.15.1}"
+YAMLLINT_VERSION="${YAMLLINT_VERSION:-1-0.14}"
+ACTIONLINT_VERSION="${ACTIONLINT_VERSION:-1.7.12}"
+SQLFLUFF_VERSION="${SQLFLUFF_VERSION:-4.5.0}"
+MARKDOWNLINT_VERSION="${MARKDOWNLINT_VERSION:-0.24.0}"
+CSPELL_VERSION="${CSPELL_VERSION:-10.4.1}"
+CSPELL_DICT_VI_VERSION="${CSPELL_DICT_VI_VERSION:-3.0.7}"
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -135,84 +155,90 @@ fi
 
 print_header "GATE 3: FRONTEND VERIFICATION GATES (frontend/)"
 if [ -f "$SCRIPT_DIR/frontend/package.json" ]; then
-    (
-        cd "$SCRIPT_DIR/frontend"
-        echo -e "${YELLOW}Running ESLint in frontend/...${NC}"
-        if npm run lint; then
-            record_gate "Frontend ESLint" "true" "Zero ESLint errors"
-        else
-            record_gate "Frontend ESLint" "false" "ESLint violations found"
-        fi
+    pushd "$SCRIPT_DIR/frontend" >/dev/null
 
-        echo -e "${YELLOW}Running Typecheck in frontend/...${NC}"
-        if npm run typecheck; then
-            record_gate "Frontend TypeScript Typecheck" "true" "Zero type errors"
-        else
-            record_gate "Frontend TypeScript Typecheck" "false" "Type errors found"
-        fi
+    echo -e "${YELLOW}Running ESLint in frontend/...${NC}"
+    if npm run lint; then
+        record_gate "Frontend ESLint" "true" "Zero ESLint errors"
+    else
+        record_gate "Frontend ESLint" "false" "ESLint violations found"
+    fi
 
-        echo -e "${YELLOW}Running Vitest in frontend/...${NC}"
-        if npm run test -- --run; then
-            record_gate "Frontend Vitest Unit Tests" "true" "All unit tests passed"
-        else
-            record_gate "Frontend Vitest Unit Tests" "false" "Vitest failures"
-        fi
+    echo -e "${YELLOW}Running Typecheck in frontend/...${NC}"
+    if npm run typecheck; then
+        record_gate "Frontend TypeScript Typecheck" "true" "Zero type errors"
+    else
+        record_gate "Frontend TypeScript Typecheck" "false" "Type errors found"
+    fi
 
-        echo -e "${YELLOW}Running Build in frontend/...${NC}"
-        if npm run build; then
-            record_gate "Frontend Production Build" "true" "Vite bundle build succeeded"
-        else
-            record_gate "Frontend Production Build" "false" "Build failed"
-        fi
-    )
+    echo -e "${YELLOW}Running Vitest in frontend/...${NC}"
+    if npm run test -- --run; then
+        record_gate "Frontend Vitest Unit Tests" "true" "All unit tests passed"
+    else
+        record_gate "Frontend Vitest Unit Tests" "false" "Vitest failures"
+    fi
+
+    echo -e "${YELLOW}Running Build in frontend/...${NC}"
+    if npm run build; then
+        record_gate "Frontend Production Build" "true" "Vite bundle build succeeded"
+    else
+        record_gate "Frontend Production Build" "false" "Build failed"
+    fi
+
+    popd >/dev/null
 else
     record_gate "Frontend Verification Gates" "false" "frontend/package.json missing"
 fi
 
 print_header "GATE 4: BACKEND VERIFICATION GATES (backend/)"
 if [ -f "$SCRIPT_DIR/backend/pom.xml" ]; then
-    (
-        cd "$SCRIPT_DIR/backend"
-        MVN_BIN="./mvnw"
-        if [ ! -x "$MVN_BIN" ]; then
-            chmod +x "$MVN_BIN" 2>/dev/null || true
-        fi
-        if ! command -v "$MVN_BIN" >/dev/null 2>&1; then
-            MVN_BIN="mvn"
-        fi
+    pushd "$SCRIPT_DIR/backend" >/dev/null
 
-        # 4.1 Compiler (-Xlint:all -Werror)
-        echo -e "${YELLOW}Checking Java compilation (-Xlint:all -Werror)...${NC}"
-        if $MVN_BIN compile; then
-            record_gate "Backend Java Compiler (-Xlint:all -Werror)" "true" "Zero warnings, compiled cleanly"
-        else
-            record_gate "Backend Java Compiler (-Xlint:all -Werror)" "false" "Compilation failed"
-        fi
+    MVN_BIN="./mvnw"
+    if [ ! -x "$MVN_BIN" ]; then
+        chmod +x "$MVN_BIN" 2>/dev/null || true
+    fi
+    if [ -f "$MVN_BIN" ]; then
+        MVN_CMD="sh $MVN_BIN"
+    elif command -v mvn >/dev/null 2>&1; then
+        MVN_CMD="mvn"
+    else
+        MVN_CMD="./mvnw"
+    fi
 
-        # 4.2 Spotless formatting check
-        echo -e "${YELLOW}Checking Java code style via Spotless...${NC}"
-        if $MVN_BIN spotless:check; then
-            record_gate "Backend Spotless Code Style" "true" "Spotless AOSP formatting clean"
-        else
-            record_gate "Backend Spotless Code Style" "false" "Spotless check failed (run 'mvn spotless:apply')"
-        fi
+    # 4.1 Compiler (-Xlint:all -Werror)
+    echo -e "${YELLOW}Checking Java compilation (-Xlint:all -Werror)...${NC}"
+    if $MVN_CMD compile; then
+        record_gate "Backend Java Compiler (-Xlint:all -Werror)" "true" "Zero warnings, compiled cleanly"
+    else
+        record_gate "Backend Java Compiler (-Xlint:all -Werror)" "false" "Compilation failed"
+    fi
 
-        # 4.3 SpotBugs static analysis
-        echo -e "${YELLOW}Running SpotBugs static analysis...${NC}"
-        if $MVN_BIN spotbugs:check; then
-            record_gate "Backend SpotBugs Static Analysis" "true" "Zero SpotBugs violations detected"
-        else
-            record_gate "Backend SpotBugs Static Analysis" "false" "SpotBugs found potential bugs"
-        fi
+    # 4.2 Spotless formatting check
+    echo -e "${YELLOW}Checking Java code style via Spotless...${NC}"
+    if $MVN_CMD spotless:check; then
+        record_gate "Backend Spotless Code Style" "true" "Spotless AOSP formatting clean"
+    else
+        record_gate "Backend Spotless Code Style" "false" "Spotless check failed (run 'mvn spotless:apply')"
+    fi
 
-        # 4.4 Maven Tests (Unit & Testcontainers)
-        echo -e "${YELLOW}Running Maven tests (Testcontainers & SpringBootTest)...${NC}"
-        if $MVN_BIN test; then
-            record_gate "Backend JUnit & Testcontainers Tests" "true" "All integration and unit tests passed"
-        else
-            record_gate "Backend JUnit & Testcontainers Tests" "false" "Maven test failed"
-        fi
-    )
+    # 4.3 SpotBugs static analysis
+    echo -e "${YELLOW}Running SpotBugs static analysis...${NC}"
+    if $MVN_CMD spotbugs:check; then
+        record_gate "Backend SpotBugs Static Analysis" "true" "Zero SpotBugs violations detected"
+    else
+        record_gate "Backend SpotBugs Static Analysis" "false" "SpotBugs found potential bugs"
+    fi
+
+    # 4.4 Maven Tests (Unit & Testcontainers)
+    echo -e "${YELLOW}Running Maven tests (Testcontainers & SpringBootTest)...${NC}"
+    if $MVN_CMD test; then
+        record_gate "Backend JUnit & Testcontainers Tests" "true" "All integration and unit tests passed"
+    else
+        record_gate "Backend JUnit & Testcontainers Tests" "false" "Maven test failed"
+    fi
+
+    popd >/dev/null
 else
     record_gate "Backend Verification Gates" "false" "backend/pom.xml missing"
 fi
@@ -240,7 +266,7 @@ if command -v hadolint >/dev/null 2>&1; then
         record_gate "Hadolint Dockerfile Linter" "false" "Hadolint found Dockerfile issues"
     fi
 elif [ "$HAS_DOCKER" = "true" ]; then
-    if docker run --rm -v "$SCRIPT_DIR:/repo" hadolint/hadolint:latest hadolint /repo/backend/Dockerfile /repo/frontend/Dockerfile /repo/mock/Dockerfile; then
+    if MSYS_NO_PATHCONV=1 docker run --rm -v "$DOCKER_MOUNT_DIR:/repo" "hadolint/hadolint:${HADOLINT_VERSION}" hadolint /repo/backend/Dockerfile /repo/frontend/Dockerfile /repo/mock/Dockerfile; then
         record_gate "Hadolint Dockerfile Linter" "true" "All Dockerfiles comply with Hadolint standards"
     else
         record_gate "Hadolint Dockerfile Linter" "false" "Hadolint found Dockerfile issues"
@@ -258,7 +284,7 @@ if command -v yamllint >/dev/null 2>&1; then
         record_gate "Yamllint YAML Validation" "false" "Yamllint found YAML issues"
     fi
 elif [ "$HAS_DOCKER" = "true" ]; then
-    if docker run --rm -v "$SCRIPT_DIR:/data" cytopia/yamllint:latest -c /data/.yamllint.yml /data; then
+    if MSYS_NO_PATHCONV=1 docker run --rm -v "$DOCKER_MOUNT_DIR:/data" "cytopia/yamllint:${YAMLLINT_VERSION}" -c /data/.yamllint.yml /data; then
         record_gate "Yamllint YAML Validation" "true" "YAML files cleanly formatted"
     else
         record_gate "Yamllint YAML Validation" "false" "Yamllint found YAML issues"
@@ -276,7 +302,7 @@ if command -v actionlint >/dev/null 2>&1; then
         record_gate "Actionlint Workflow Validation" "false" "Actionlint found workflow issues"
     fi
 elif [ "$HAS_DOCKER" = "true" ]; then
-    if docker run --rm -v "$SCRIPT_DIR:/repo" -w /repo rhysd/actionlint:latest .github/workflows/ci.yml; then
+    if MSYS_NO_PATHCONV=1 docker run --rm -v "$DOCKER_MOUNT_DIR:/repo" -w /repo "rhysd/actionlint:${ACTIONLINT_VERSION}" .github/workflows/ci.yml; then
         record_gate "Actionlint Workflow Validation" "true" "GitHub Actions workflow syntax valid"
     else
         record_gate "Actionlint Workflow Validation" "false" "Actionlint found workflow issues"
@@ -294,7 +320,7 @@ if command -v sqlfluff >/dev/null 2>&1; then
         record_gate "SQLFluff Database Migration Linter" "false" "SQLFluff found SQL migration issues"
     fi
 elif [ "$HAS_DOCKER" = "true" ]; then
-    if docker run --rm -v "$SCRIPT_DIR:/repo" -w /repo sqlfluff/sqlfluff:latest lint backend/src/main/resources/db/migration; then
+    if MSYS_NO_PATHCONV=1 docker run --rm -v "$DOCKER_MOUNT_DIR:/repo" -w /repo "sqlfluff/sqlfluff:${SQLFLUFF_VERSION}" lint backend/src/main/resources/db/migration; then
         record_gate "SQLFluff Database Migration Linter" "true" "Flyway SQL migrations comply with SQLFluff rules"
     else
         record_gate "SQLFluff Database Migration Linter" "false" "SQLFluff found SQL migration issues"
@@ -303,20 +329,20 @@ else
     record_gate "SQLFluff Database Migration Linter" "false" "Neither sqlfluff nor Docker is available"
 fi
 
-print_header "GATE 7: DOCUMENTATION LINTERS (MARKDOWNLINT & CSPELL)"
+print_header "GATE 7: DOCUMENTATION LINTERS & VERSION DRIFT"
 
-# 7.1 Markdownlint
+# 7.1 Markdownlint (Full scope: every tracked *.md file)
 if command -v npx >/dev/null 2>&1; then
     echo -e "${YELLOW}Running markdownlint-cli2 via npx...${NC}"
-    if npx --yes markdownlint-cli2@0.24.0 "docs/**/*.md" "README.md" "CONTRIBUTING.md"; then
+    if npx --yes "markdownlint-cli2@${MARKDOWNLINT_VERSION}" "**/*.md" "#**/node_modules/**" "#**/target/**" "#**/dist/**" "#**/.agents/**"; then
         record_gate "Markdownlint Documentation Style" "true" "Documentation matches style rules (0 errors)"
     else
         record_gate "Markdownlint Documentation Style" "false" "Markdownlint found formatting errors"
     fi
 
-    # 7.2 CSpell
+    # 7.2 CSpell (Full scope: docs, markdown, and full source code)
     echo -e "${YELLOW}Running cspell with Vietnamese dictionary support via npx...${NC}"
-    if npx --yes --package cspell@8.16.1 --package @cspell/dict-vi-vn cspell "docs/**/*.md" "README.md" "CONTRIBUTING.md"; then
+    if npx --yes --package "cspell@${CSPELL_VERSION}" --package "@cspell/dict-vi-vn@${CSPELL_DICT_VI_VERSION}" cspell "**/*.{md,java,ts,tsx,js,mjs,sql,yml,json,jsonc}"; then
         record_gate "CSpell Documentation Spelling" "true" "Spelling check passed with Vietnamese dictionary support (0 errors)"
     else
         record_gate "CSpell Documentation Spelling" "false" "CSpell found spelling errors"
@@ -324,6 +350,27 @@ if command -v npx >/dev/null 2>&1; then
 else
     record_gate "Markdownlint Documentation Style" "false" "npx not found in PATH"
     record_gate "CSpell Documentation Spelling" "false" "npx not found in PATH"
+fi
+
+# 7.3 Version Table Drift Check (docs/03)
+if command -v node >/dev/null 2>&1; then
+    echo -e "${YELLOW}Running version drift check (docs/03-version-table.md vs manifests)...${NC}"
+    if node scripts/check-version-drift.mjs; then
+        record_gate "Version Table Drift Check (docs/03)" "true" "All 29 table versions match manifest files exactly across both languages"
+    else
+        record_gate "Version Table Drift Check (docs/03)" "false" "Version drift detected between docs/03 and manifests"
+    fi
+
+    # 7.4 Quality Gate Synchronization Check
+    echo -e "${YELLOW}Running Quality Gate synchronization check...${NC}"
+    if node scripts/check-gate-sync.mjs; then
+        record_gate "Quality Gate Synchronization Check" "true" "All gates synchronized across check.sh, check.ps1, and CI"
+    else
+        record_gate "Quality Gate Synchronization Check" "false" "Quality gates mismatch detected"
+    fi
+else
+    record_gate "Version Table Drift Check (docs/03)" "false" "node not found in PATH"
+    record_gate "Quality Gate Synchronization Check" "false" "node not found in PATH"
 fi
 
 print_header "GATE 8: CLEAN CODE ASSERTIONS & SECURITY LEAK SCAN"
