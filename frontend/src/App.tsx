@@ -5,6 +5,7 @@ import { HealthBadge } from './shared/components/HealthBadge';
 import { ModuleCard } from './shared/components/ModuleCard';
 import { fetchBackendHealth, type BackendHealthStatus } from './shared/api/health';
 import { BUSINESS_MODULES } from './features';
+import { JobRecommendationsSection } from './features/candidate';
 
 export const APP_NAME = 'Rikkei Jobs - Nền tảng kết nối việc làm theo năng lực đã xác thực';
 export const APP_VERSION = 'v1.0.0-sprint1';
@@ -75,6 +76,8 @@ export const App: React.FC = () => {
             isLoading={isChecking}
           />
         </section>
+
+        <JobRecommendationsSection />
 
         <section className="section-modules">
           <div className="section-header">

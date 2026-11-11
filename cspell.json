@@ -69,7 +69,10 @@
     "rpoint",
     "changeme",
     "cand",
-    "springframework"
+    "springframework",
+    "rikkeisoft",
+    "dtos",
+    "hamcrest"
   ],
   "ignorePaths": [
     "**/node_modules/**",
