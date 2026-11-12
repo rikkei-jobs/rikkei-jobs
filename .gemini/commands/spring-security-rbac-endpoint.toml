@@ -1,0 +1,8 @@
+# Auto-generated fallback command for Gemini CLI / Antigravity
+# Skill: spring-security-rbac-endpoint
+description = "Use when securing backend REST endpoints, configuring role-based access control (RBAC), or implementing authentication policies."
+prompt = """
+You are activating the 'spring-security-rbac-endpoint' skill.
+Follow all instructions and rules defined in:
+.gemini/skills/spring-security-rbac-endpoint/SKILL.md
+"""

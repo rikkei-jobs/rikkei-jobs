@@ -1,0 +1,8 @@
+# Auto-generated fallback command for Gemini CLI / Antigravity
+# Skill: receiving-code-review
+description = "Use when receiving, evaluating, and addressing code review feedback, critique, or change requests from the Team Lead or automated reviewers."
+prompt = """
+You are activating the 'receiving-code-review' skill.
+Follow all instructions and rules defined in:
+.gemini/skills/receiving-code-review/SKILL.md
+"""

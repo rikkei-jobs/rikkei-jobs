@@ -1,0 +1,8 @@
+# Auto-generated fallback command for Gemini CLI / Antigravity
+# Skill: frontend-feature-slice
+description = "Use when creating, refactoring, or extending a frontend feature slice under frontend/src/features/ or designing feature-level state, components, and async states."
+prompt = """
+You are activating the 'frontend-feature-slice' skill.
+Follow all instructions and rules defined in:
+.gemini/skills/frontend-feature-slice/SKILL.md
+"""

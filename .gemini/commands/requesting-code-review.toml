@@ -1,0 +1,8 @@
+# Auto-generated fallback command for Gemini CLI / Antigravity
+# Skill: requesting-code-review
+description = "Use when preparing changes for code review, summarizing modifications, architectural decisions, and verification evidence."
+prompt = """
+You are activating the 'requesting-code-review' skill.
+Follow all instructions and rules defined in:
+.gemini/skills/requesting-code-review/SKILL.md
+"""

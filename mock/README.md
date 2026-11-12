@@ -9,12 +9,14 @@ Dịch vụ này chạy độc lập trên **Node.js + Express** ở cổng `900
 ## 1. Giới Thiệu Các Hệ Thống Được Giả Lập
 
 Mock Service giả lập 4 hệ thống nghiệp vụ ngoài:
+
 1. **LMS Core**: Xác thực SSO Ticket, hồ sơ sinh viên, điểm quá trình học tập, danh mục khóa học đào tạo bổ sung và ghi danh khóa học.
 2. **Exam System (Khảo thí)**: Điểm thi các môn và chứng chỉ chuyên môn.
 3. **LMS Project Management (lms-pm)**: Quản lý đợt thực tập tốt nghiệp IOC, danh sách sinh viên, điểm đánh giá dự án và nghiệm thu task.
 4. **Rikkei Meet**: Giả lập API tạo phòng phỏng vấn trực tuyến.
 
 ### Đặc Điểm Kiến Trúc Cốt Lõi
+
 - **Không sử dụng Cơ sở dữ liệu (Database)**: Dữ liệu cố định được đọc từ `data.json` khi khởi động.
 - **Trạng thái lưu hoàn toàn trên RAM (In-Memory State)**: Vé SSO, danh sách ghi danh khóa học, danh sách thành viên đợt thực tập và log request được lưu trong bộ nhớ tạm thời (`Map`, `Array`). Khi tắt tiến trình mock, dữ liệu runtime này sẽ tự động biến mất.
 - **Bảo mật dịch vụ**: Mọi request tới các route nghiệp vụ (`/lms/*`, `/exam/*`, `/pm/*`, `/meet/*`) bắt buộc phải có header `X-Service-Key: dev-key`. Các route công cụ kiểm thử `/mock/*` không yêu cầu key.
@@ -25,15 +27,17 @@ Mock Service giả lập 4 hệ thống nghiệp vụ ngoài:
 ## 2. Hướng Dẫn Khởi Chạy
 
 ### Yêu Cầu Môi Trường
+
 - **Node.js**: Phiên bản 18+ (khuyến nghị phiên bản 24 LTS).
 - **npm**: Đi kèm với Node.js.
 
 ### Lệnh Chạy Trên Máy Host
+
 ```bash
 # 1. Di chuyển vào thư mục mock
 cd mock
 
-# 2. Cài đặt các thư viện phụ thuộc (chỉ có Express 4.19.2)
+# 2. Cài đặt các thư viện phụ thuộc (chỉ có Express 5.3.0)
 npm install
 
 # 3. Khởi chạy Mock Service
@@ -41,11 +45,13 @@ npm start
 ```
 
 Khi khởi chạy thành công, console sẽ in ra chính xác:
+
 ```text
 Mock chạy ở http://localhost:9000
 ```
 
 ### Chạy Với Docker Container
+
 ```bash
 # Build image
 docker build -t rikkei-jobs-mock .
@@ -68,6 +74,7 @@ docker run -d -p 9000:9000 --name rikkei-jobs-mock rikkei-jobs-mock
 ## 4. Bảng Hợp Đồng 11 Endpoint Nghiệp Vụ
 
 Tất cả các endpoint này **bắt buộc** phải có header `X-Service-Key: dev-key`. Nếu thiếu hoặc sai, Mock trả về HTTP `401 Unauthorized`:
+
 ```json
 {
   "code": "INVALID_SERVICE_KEY",
@@ -98,6 +105,7 @@ Tất cả các endpoint này **bắt buộc** phải có header `X-Service-Key:
 ## 5. Bảng 4 Công Cụ Kiểm Thử Cho Mentor (`/mock/*`)
 
 Các công cụ này:
+
 - Nằm dưới tiền tố `/mock/*`.
 - **Không yêu cầu header `X-Service-Key`**.
 - **Không bị ghi log** vào nhật ký `requestLog`.
@@ -116,18 +124,22 @@ Các công cụ này:
 Script này giả lập hệ thống lms-pm gọi sang Rikkei Jobs để lấy đường link phiếu đánh giá cho mentor (dùng cho kịch bản kiểm thử tác vụ TT-04).
 
 ### Cú Pháp Lệnh
+
 ```bash
 node mock/send-evaluation-links.js <batchId>
 ```
 
 ### Ví Dụ Thực Tế
+
 ```bash
 # Gửi yêu cầu link đánh giá cho đợt thực tập IOC-JB-2026-09
 node mock/send-evaluation-links.js IOC-JB-2026-09
 ```
 
 ### Xử Lý An Toàn Trong Sprint 1
+
 Trong Sprint 1, Backend chưa triển khai endpoint `/api/v1/integrations/pm/evaluation-links` (tính năng sẽ hoàn thành ở TT-04). Do đó, script được tích hợp khối `try-catch` an toàn:
+
 - Nếu Backend chưa chạy hoặc trả về 404/503: Script in thông báo cảnh báo rõ ràng ra console và kết thúc êm thấm mà không crash.
 
 ---

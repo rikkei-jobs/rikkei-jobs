@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 .gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar
@@ -38,10 +38,8 @@ out/
 *.log
 .DS_Store
 Thumbs.db
-=======
-# ==============================================================================
+
 # Rikkei Jobs Monorepo - Git Ignore Configuration
-# ==============================================================================
 
 # Operating System Files
 .DS_Store
@@ -137,4 +135,25 @@ temp/
 *.bak
 *.swp
 *~
->>>>>>> ab2d61d335da2a1bd496dc14a7c5eefae568bcc8
+ feature/T022863-dang-nhap
+ ab2d61d335da2a1bd496dc14a7c5eefae568bcc8
+
+# AI Coding Agent Configuration (.claude & .gemini mirrors)
+# Track only rules, skills, commands, and project-level settings.
+
+.claude/*
+!.claude/rules/
+!.claude/skills/
+!.claude/settings.json
+.claude/*.local.*
+.claude/**/*.local.*
+
+.gemini/*
+!.gemini/rules/
+!.gemini/skills/
+!.gemini/commands/
+!.gemini/settings.json
+.gemini/*.local.*
+.gemini/**/*.local.*
+
+develop

@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 # Mini API Tuyển Dụng (Spring Boot 3 + Gradle)
 
 Dự án RESTful API quản lý tuyển dụng ứng viên theo yêu cầu thực hành:
@@ -62,7 +62,7 @@ recruitment-api/
 │   └── test/java/com/example/recruitment/service/
 │       ├── ApplicationServiceImplTest.java
 │       └── JobServiceImplTest.java
-=======
+
 # Rikkei Jobs — Competency-Verified Hiring Platform
 
 **Rikkei Jobs** is a modern modular monolith platform engineered by **Rikkei Education** to connect technology students and interns with hiring enterprises based on **verifiable competency data** (collected from LMS, Examination Systems, IOC Internship Projects, and Mentors).
@@ -113,12 +113,11 @@ rikkei-jobs/
 ├── CONTRIBUTING.md     # Git workflow, PR templates, and coding standards
 ├── check.sh            # Complete quality verification script (Linux / macOS)
 └── check.ps1           # Complete quality verification script (Windows PowerShell)
->>>>>>> ab2d61d335da2a1bd496dc14a7c5eefae568bcc8
+ ab2d61d335da2a1bd496dc14a7c5eefae568bcc8
 ```
 
 ---
 
-<<<<<<< HEAD
 ## 2. Thiết kế bảng cơ sở dữ liệu (`schema.sql`)
 
 Dự án hỗ trợ MySQL hoặc PostgreSQL. Script chi tiết có trong file `src/main/resources/schema.sql`:
@@ -189,7 +188,7 @@ spring:
 ### 3.3. Chạy Unit Test
 ```bash
 ./gradlew test
-=======
+
 ## ⚡ Quick Start with Docker (Recommended)
 
 To spin up the entire application stack on a clean machine with a single command:
@@ -228,12 +227,10 @@ docker compose up -d --build --wait
 ```bash
 # Stop all services and remove containers, networks, and named volumes
 docker compose down -v
->>>>>>> ab2d61d335da2a1bd496dc14a7c5eefae568bcc8
+ab2d61d335da2a1bd496dc14a7c5eefae568bcc8
 ```
 
 ---
-
-<<<<<<< HEAD
 ## 4. Tài liệu và ví dụ Request API
 
 ### 4.1. Quản lý Company (CRUD)
@@ -376,8 +373,8 @@ Tất cả các lỗi đều được xử lý qua `@RestControllerAdvice` trả
 5. `feat: implement Job search, filter by location & status, pagination and sort`
 6. `feat: implement apply job API with closed status check and duplicate email validation`
 7. `test: add 7 unit tests for ApplicationService and JobService`
-8. `docs: add comprehensive README with API examples and setup instructions`
-=======
+8. `docs: add comprehensive README with API examples and setup instruction
+
 ## 💻 Running Components Standalone (Without Full Docker)
 
 You can run each component directly on your host machine for active development:
@@ -439,7 +436,7 @@ cd backend
 cd frontend
 npm install
 npm run dev
-# Vite dev server running at http://localhost:5173 (or http://localhost:3000)
+# Vite dev server running at http://localhost:3000
 ```
 
 ### 6. Full Project Verification Scripts
@@ -489,10 +486,32 @@ Run all linting, static analysis, unit tests, and security path checks using the
 
 Individual checks:
 
+- **Agent Configuration Validation**: `node scripts/validate-agent-config.mjs` and `node scripts/sync-agent-config.mjs --check` (Quality Gate 25: validates frontmatter schema, line caps, forbidden patterns, mirror parity, and real repository citations).
 - **Backend Lint & Format**: `cd backend && ./mvnw spotless:check`
 - **Frontend Lint & Test**: `cd frontend && npm run lint && npm run test`
 - **End-to-End Integration Suite**: `node e2e/run-all.mjs` (Requires running stack via `docker compose up -d --build --wait`)
 - **Forbidden Path Verification**: Clean grep check ensuring zero machine-specific paths or local user folders are committed (Must return zero matches).
+
+---
+
+## 🐳 Clean Isolated CI Runner in Docker (Defect D8 Verification)
+
+To execute the entire GitHub Actions workflow (`.github/workflows/ci.yml` — all 6 jobs) inside a clean, hermetic Ubuntu 22.04 container completely isolated from host state:
+
+```bash
+# On Linux / macOS
+./scripts/run-ci-in-docker.sh
+
+# On Windows PowerShell
+.\scripts\run-ci-in-docker.ps1
+```
+
+This harness:
+
+- Builds a hermetic Ubuntu 22.04 runner image (`scripts/ci-runner.Dockerfile`) equipped with Node.js 24 LTS, Temurin Java 25 LTS, and Docker CLI/Compose.
+- Mounts the repository read-only (`:ro`) and synchronizes it into an ephemeral workspace volume, strictly excluding host `node_modules`, `backend/target`, and `.m2` caches.
+- Runs all 6 quality gate jobs in sequence: `mock-test`, `frontend-check`, `backend-check` (Spotless, SpotBugs, Testcontainers), `docker-compose-check`, `clean-code-and-linters` (11 hygiene checks), and `smoke-test` (multi-container stack, Flyway assertions, seed data, health, mock security gates, and 9/9 E2E test suites).
+- Automatically tears down compose services and cleans up ephemeral volumes upon completion.
 
 ---
 
@@ -508,4 +527,8 @@ For detailed architectural decisions and operational guides, consult the `docs/`
 - [04 — Security & Secrets Policy](docs/04-security-secrets-policy.md) *(Bilingual)* — Zero real secrets rules and RBAC matrix.
 - [05 — Open Business Questions](docs/05-open-business-questions.md) *(Bilingual)* — Critical questions with citations from project PDFs.
 - [Contributing Guidelines](CONTRIBUTING.md) — Git workflow and pull request process.
->>>>>>> ab2d61d335da2a1bd496dc14a7c5eefae568bcc8
+ feature/T022863-dang-nhap
+ ab2d61d335da2a1bd496dc14a7c5eefae568bcc8
+
+- [AI Agent Configuration & Skills](docs/agent-config/README.md) *(Bilingual)* — Architecture, 16 enterprise rules, 28 task-triggered skills, validation tooling, and open-source attribution.
+ develop

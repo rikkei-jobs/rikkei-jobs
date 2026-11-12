@@ -147,7 +147,7 @@ List endpoints returning multiple records must support 1-based pagination via qu
       {
         "id": "018e3a2b-8a71-7000-8000-000000000001",
         "title": "Kỹ sư Java Backend",
-        "companyName": "Công ty Cổ phần Rikkeisoft"
+        "companyName": "Công ty Cổ phần Ví dụ"
       }
     ],
     "total": 125,
@@ -306,3 +306,14 @@ A task, feature, or pull request achieves "Done" status when:
 4. Automated linters pass with zero warnings (`spotless:check`, `npm run lint`, `markdownlint`).
 5. Security requirements are validated: zero hardcoded secrets, no machine-specific paths or personal home directories, no lingering `TODO` markers.
 6. Local Docker Compose verification completes successfully via `docker compose up -d --build --wait`.
+
+---
+
+## 8. AI Agent Engineering Standards Cross-Reference
+
+For detailed AI coding agent specifications, architectural rules, and design guidelines, consult:
+
+- [AI Agent Configuration Guide](agent-config/README.md) — Architectural principles, 16 enterprise rules, 28 task-triggered skills in `agent-config/` mirrored to `.claude/` and `.gemini/`.
+- [Frontend Design System](design/DESIGN_SYSTEM.md) — Comprehensive design tokens, calculated WCAG 2.2 AA contrast matrix, Vietnamese typography rules, and anti-AI design bar (Rule 09).
+- [Third-Party Attribution](agent-config/THIRD_PARTY_NOTICES.md) — Open-source MIT licenses and adaptation details for referenced upstream repositories.
+- [Authoritative Sources Inventory](agent-config/SOURCES.md) — Complete catalogue of external specifications, standards, verified URLs, and access dates.

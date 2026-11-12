@@ -1,0 +1,51 @@
+{
+  "$schema": "https://raw.githubusercontent.com/google-gemini/gemini-cli/main/schemas/settings.schema.json",
+  "context": {
+    "fileFiltering": {
+      "respectGitIgnore": true,
+      "respectGeminiIgnore": true
+    }
+  },
+  "security": {
+    "disableYoloMode": true,
+    "disableAlwaysAllow": true,
+    "environmentVariableRedaction": {
+      "enabled": true,
+      "blocked": [
+        "DB_PASSWORD",
+        "POSTGRES_PASSWORD",
+        "SPRING_DATASOURCE_PASSWORD",
+        "JWT_SECRET",
+        "EXTERNAL_SERVICE_KEY",
+        "MAIL_PASSWORD"
+      ]
+    }
+  },
+  "tools": {
+    "exclude": [
+      "run_shell_command(git commit)",
+      "run_shell_command(git push)",
+      "run_shell_command(git reset --hard)",
+      "run_shell_command(git rebase)",
+      "run_shell_command(git stash)",
+      "run_shell_command(git clean -fd)",
+      "run_shell_command(rm -rf)"
+    ],
+    "confirmationRequired": [
+      "run_shell_command(git checkout)",
+      "run_shell_command(git restore)",
+      "run_shell_command(git reset)",
+      "run_shell_command(git clean)"
+    ],
+    "allowed": [
+      "run_shell_command(git status)",
+      "run_shell_command(git diff)",
+      "run_shell_command(git log)",
+      "run_shell_command(git show)",
+      "run_shell_command(git ls-files)",
+      "run_shell_command(git ls-tree)",
+      "run_shell_command(git check-ignore)",
+      "run_shell_command(git rev-parse)"
+    ]
+  }
+}

@@ -13,13 +13,17 @@ import com.rikkei.jobs.common.client.ExternalApiProperties;
 import com.rikkei.jobs.common.exception.ExternalResourceNotFoundException;
 import com.rikkei.jobs.common.exception.ExternalUnavailableException;
 import com.rikkei.jobs.common.exception.InvalidServiceKeyException;
-import java.io.File;
+import java.io.IOException;
+import java.net.ServerSocket;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Duration;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +31,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.DockerClientFactory;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.images.builder.ImageFromDockerfile;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
@@ -36,61 +44,79 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 @ActiveProfiles("dev")
 public class ExternalApiClientIntegrationTest {
 
+    static {
+        if (!DockerClientFactory.instance().isDockerAvailable()) {
+            throw new IllegalStateException(
+                    "CRITICAL: Docker daemon is required for hermetic execution of ExternalApiClientIntegrationTest, but Docker is not available!");
+        }
+    }
+
+    private static Path resolveMockDir() {
+        Path direct = Paths.get("../mock");
+        if (Files.exists(direct.resolve("Dockerfile"))) {
+            return direct;
+        }
+        Path fromRoot = Paths.get("mock");
+        if (Files.exists(fromRoot.resolve("Dockerfile"))) {
+            return fromRoot;
+        }
+        throw new IllegalStateException(
+                "Mock external service directory with Dockerfile not found relative to "
+                        + Paths.get(".").toAbsolutePath());
+    }
+
+    private static final Path MOCK_DIR = resolveMockDir();
+
     @Container
     static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18.6-alpine");
+
+    @Container
+    static GenericContainer<?> mockContainer =
+            new GenericContainer<>(
+                            new ImageFromDockerfile()
+                                    .withFileFromPath("Dockerfile", MOCK_DIR.resolve("Dockerfile"))
+                                    .withFileFromPath(
+                                            "package.json", MOCK_DIR.resolve("package.json"))
+                                    .withFileFromPath(
+                                            "package-lock.json",
+                                            MOCK_DIR.resolve("package-lock.json"))
+                                    .withFileFromPath("server.js", MOCK_DIR.resolve("server.js"))
+                                    .withFileFromPath("data.json", MOCK_DIR.resolve("data.json"))
+                                    .withFileFromPath(
+                                            "send-evaluation-links.js",
+                                            MOCK_DIR.resolve("send-evaluation-links.js")))
+                    .withExposedPorts(9000)
+                    .withLogConsumer(
+                            frame -> System.out.print("[MOCK-LOG] " + frame.getUtf8String()))
+                    .waitingFor(
+                            Wait.forLogMessage(".*Mock chạy ở.*\\n", 1)
+                                    .withStartupTimeout(Duration.ofSeconds(60)));
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
-    }
-
-    private static Process mockProcess;
-
-    @BeforeAll
-    static void startMockProcess() throws Exception {
-        File mockDir = new File("../mock");
-        File serverJs = new File(mockDir, "server.js");
-        if (!serverJs.exists()) {
-            throw new IllegalStateException(
-                    "Mock external service file not found: " + serverJs.getAbsolutePath());
-        }
-        ProcessBuilder pb = new ProcessBuilder("node", "server.js");
-        pb.directory(mockDir);
-        mockProcess = pb.start();
-
-        HttpClient checkClient = HttpClient.newHttpClient();
-        long start = System.currentTimeMillis();
-        boolean started = false;
-        while (System.currentTimeMillis() - start < 5000) {
-            try {
-                HttpRequest req =
-                        HttpRequest.newBuilder()
-                                .uri(URI.create("http://localhost:9000/mock/requests"))
-                                .GET()
-                                .build();
-                HttpResponse<String> resp =
-                        checkClient.send(req, HttpResponse.BodyHandlers.ofString());
-                if (resp.statusCode() == 200) {
-                    started = true;
-                    break;
-                }
-            } catch (Exception ignored) {
-            }
-            Thread.sleep(100);
-        }
-        if (!started) {
-            throw new IllegalStateException(
-                    "Mock external service failed to start on port 9000 within 5 seconds");
-        }
-    }
-
-    @AfterAll
-    static void stopMockProcess() {
-        if (mockProcess != null && mockProcess.isAlive()) {
-            mockProcess.destroyForcibly();
-        }
+        registry.add(
+                "external.api.base-url",
+                () -> {
+                    try {
+                        return new URI(
+                                        "http",
+                                        null,
+                                        mockContainer.getHost(),
+                                        mockContainer.getMappedPort(9000),
+                                        null,
+                                        null,
+                                        null)
+                                .toString();
+                    } catch (URISyntaxException e) {
+                        throw new IllegalStateException(
+                                "Failed to construct external API base URL for host="
+                                        + mockContainer.getHost(),
+                                e);
+                    }
+                });
     }
 
     @Autowired private ExternalApiClient externalApiClient;
@@ -193,9 +219,14 @@ public class ExternalApiClientIntegrationTest {
     @Test
     @DisplayName(
             "Fault Tolerance: Dead mock/timeout throws ExternalUnavailableException (HTTP 503)")
-    void testExternalUnavailableWhenMockDown() {
+    void testExternalUnavailableWhenMockDown() throws IOException {
+        int deadPort;
+        try (ServerSocket s = new ServerSocket(0)) {
+            deadPort = s.getLocalPort();
+        }
+
         ExternalApiProperties deadProperties = new ExternalApiProperties();
-        deadProperties.setBaseUrl("http://localhost:59999");
+        deadProperties.setBaseUrl("http://127.0.0.1:" + deadPort);
         deadProperties.setServiceKey("dev-key");
         deadProperties.setTimeoutSeconds(1);
         deadProperties.setMaxRetries(1);

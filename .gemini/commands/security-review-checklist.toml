@@ -1,0 +1,8 @@
+# Auto-generated fallback command for Gemini CLI / Antigravity
+# Skill: security-review-checklist
+description = "Use when conducting security reviews on features, endpoints, dependencies, database migrations, or agent configuration files."
+prompt = """
+You are activating the 'security-review-checklist' skill.
+Follow all instructions and rules defined in:
+.gemini/skills/security-review-checklist/SKILL.md
+"""

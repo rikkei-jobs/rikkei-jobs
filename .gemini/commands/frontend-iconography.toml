@@ -1,0 +1,8 @@
+# Auto-generated fallback command for Gemini CLI / Antigravity
+# Skill: frontend-iconography
+description = "Use when adding, curating, or rendering SVG icons, designing the unified icon system, or ensuring icon accessibility in the frontend."
+prompt = """
+You are activating the 'frontend-iconography' skill.
+Follow all instructions and rules defined in:
+.gemini/skills/frontend-iconography/SKILL.md
+"""
