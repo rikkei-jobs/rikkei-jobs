@@ -36,17 +36,40 @@ try {
     Write-Host "  LAUNCHING CLEAN DOCKER CI RUNNER HARNESS" -ForegroundColor Cyan
     Write-Host "================================================================================" -ForegroundColor Cyan
 
-    docker run --rm `
-        --network host `
-        -v /var/run/docker.sock:/var/run/docker.sock `
-        -v "${RepoRoot}:/host-repo:ro" `
-        -v "${VolName}:/ci-workspace" `
-        -e "CI_VOLUME_NAME=${VolName}" `
-        $ImageTag
+    $dockerArgs = @(
+        "run", "--rm",
+        "--network", "host",
+        "-v", "/var/run/docker.sock:/var/run/docker.sock",
+        "-v", "${RepoRoot}:/host-repo:ro",
+        "-v", "${VolName}:/ci-workspace",
+        "-e", "CI_VOLUME_NAME=${VolName}"
+    )
+    if ($env:TESTCONTAINERS_HOST_OVERRIDE) {
+        $dockerArgs += "-e"
+        $dockerArgs += "TESTCONTAINERS_HOST_OVERRIDE=$($env:TESTCONTAINERS_HOST_OVERRIDE)"
+    }
+    $dockerArgs += $ImageTag
+
+    & docker @dockerArgs
     $exitCode = $LASTEXITCODE
 } finally {
     Write-Host "Cleaning up workspace volume: $VolName" -ForegroundColor Cyan
-    docker volume rm $VolName 2>$null | Out-Null
+    # Ensure any lingering compose containers are torn down
+    docker compose down -v 2>$null | Out-Null
+
+    # Robust volume deletion with retry loop to handle Docker daemon unmount delay
+    $removed = $false
+    for ($i = 0; $i -lt 5; $i++) {
+        docker volume rm $VolName 2>$null | Out-Null
+        if ($LASTEXITCODE -eq 0) {
+            $removed = $true
+            break
+        }
+        Start-Sleep -Milliseconds 500
+    }
+    if (-not $removed) {
+        docker volume rm -f $VolName 2>$null | Out-Null
+    }
 }
 
 exit $exitCode

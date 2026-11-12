@@ -1,0 +1,122 @@
+/* ==============================================================================
+ * Rikkei Jobs — Enterprise Motion Design Tokens
+ * Task: T022DB0 | Milestone 1 (B2)
+ * Pure CSS Easing Level 2 & WAAPI compatible tokens
+ * ============================================================================== */
+
+:root {
+  /* ----------------------------------------------------------------------------
+   * 1. Duration Scale (Purpose-Based Budgets)
+   * ---------------------------------------------------------------------------- */
+  --rj-duration-instant:    0ms;     /* Logic state swap, instant toggles */
+  --rj-duration-micro:      100ms;   /* Active button depression, badge count bump */
+  --rj-duration-fast:       150ms;   /* Tooltip reveal, hover lift, admin transitions */
+  --rj-duration-normal:     200ms;   /* Dropdown expand, tab slider, popover */
+  --rj-duration-moderate:   300ms;   /* Modal dialog enter, slide-over drawer */
+  --rj-duration-slow:       400ms;   /* Route view transition, hero block reveal */
+  --rj-duration-deliberate: 600ms;   /* SVG stroke draw-in, data-viz chart reveal */
+
+  /* ----------------------------------------------------------------------------
+   * 2. Custom Cubic-Bezier Curves
+   * ---------------------------------------------------------------------------- */
+  --rj-ease-entrance: cubic-bezier(0.16, 1, 0.3, 1);  /* Strong deceleration */
+  --rj-ease-exit:     cubic-bezier(0.7, 0, 0.84, 0);   /* Rapid acceleration */
+  --rj-ease-hover:    cubic-bezier(0.2, 0, 0, 1);      /* Immediate responsive lift */
+  --rj-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);    /* Balanced spatial morph */
+
+  /* ----------------------------------------------------------------------------
+   * 3. CSS linear() Spring Approximations (Zero-JS Runtime Physics)
+   * ---------------------------------------------------------------------------- */
+  /* Snappy: m:1, k:400, c:30, zeta:0.75, settling ~260ms, overshoot ~2.8% */
+  /* Usage: Toggle switches, active buttons, tab sliders */
+  --rj-ease-spring-snappy: linear(
+    0, 0.006, 0.025 2.8%, 0.101 6.1%, 0.539 18.9%, 0.721 24.4%, 
+    0.852 30.2%, 0.941 37%, 0.985 44.5%, 1.006 52.8%, 1.011 59.8%, 
+    1 76.5%, 1
+  );
+
+  /* Gentle: m:1, k:170, c:26, zeta:0.997, critically damped, 0% overshoot */
+  /* Usage: Modal dialog enter, slide-over drawer, expansive sheets */
+  --rj-ease-spring-gentle: linear(
+    0, 0.003, 0.012 2.1%, 0.05 4.6%, 0.287 14.8%, 0.548 24.4%, 
+    0.738 34.1%, 0.865 44.2%, 0.938 54.7%, 0.976 65.6%, 0.993 77.2%, 
+    1
+  );
+
+  /* Stiff: m:1, k:380, c:32, zeta:0.821, settling ~250ms, overshoot ~1.2% */
+  /* Usage: Tooltip pop-ins, badge counters, focus indicators */
+  --rj-ease-spring-stiff: linear(
+    0, 0.009, 0.038 2.5%, 0.156 5.8%, 0.652 16.5%, 0.835 21.8%, 
+    0.938 27.2%, 0.987 33.5%, 1.007 41.2%, 1.008 48.5%, 1 65%, 1
+  );
+
+  /* Bouncy-subtle: m:1, k:220, c:18, zeta:0.607, settling ~440ms, overshoot ~8.9% */
+  /* Usage: Verified badge checkmark, bookmark saved celebration */
+  --rj-ease-spring-bouncy: linear(
+    0, 0.005, 0.021 2.3%, 0.084 5.1%, 0.462 16.2%, 0.655 21.3%, 
+    0.814 27%, 0.929 33.3%, 0.998 40.5%, 1.034 48.2%, 1.042 55.6%, 
+    1.03 63.8%, 1.009 73.1%, 0.998 83.2%, 1
+  );
+
+  /* ----------------------------------------------------------------------------
+   * 4. Distance Scale (Compositor Translation Offsets)
+   * ---------------------------------------------------------------------------- */
+  --rj-motion-dist-2xs: 2px;   /* Micro button depression */
+  --rj-motion-dist-xs:  4px;   /* Card hover lift, skeleton settling */
+  --rj-motion-dist-sm:  8px;   /* Dropdown descent, tooltip pop-up */
+  --rj-motion-dist-md:  16px;  /* Toast notification entrance */
+  --rj-motion-dist-lg:  24px;  /* Modal / slide drawer entrance */
+
+  /* ----------------------------------------------------------------------------
+   * 5. Stagger Intervals
+   * ---------------------------------------------------------------------------- */
+  --rj-motion-stagger-fast:   20ms;  /* Dense lists (> 10 items) */
+  --rj-motion-stagger-normal: 35ms;  /* Standard grids (4-8 items) */
+  --rj-motion-stagger-slow:   50ms;  /* Hero highlights (3-4 items) */
+
+  /* ----------------------------------------------------------------------------
+   * 6. Composite Transition Shortcuts
+   * ---------------------------------------------------------------------------- */
+  --rj-transition-hover:    transform var(--rj-duration-fast) var(--rj-ease-hover),
+                            opacity var(--rj-duration-fast) var(--rj-ease-hover);
+  --rj-transition-entrance: transform var(--rj-duration-moderate) var(--rj-ease-entrance),
+                            opacity var(--rj-duration-moderate) var(--rj-ease-entrance);
+  --rj-transition-exit:     transform var(--rj-duration-fast) var(--rj-ease-exit),
+                            opacity var(--rj-duration-fast) var(--rj-ease-exit);
+  --rj-transition-dialog:   transform var(--rj-duration-moderate) var(--rj-ease-spring-gentle),
+                            opacity var(--rj-duration-normal) var(--rj-ease-entrance);
+}
+
+/* ------------------------------------------------------------------------------
+ * 7. Prefers-Reduced-Motion Accessibility Overrides (WCAG 2.2 AA & WebKit 0.001ms)
+ * ------------------------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --rj-duration-instant:    0.001ms;
+    --rj-duration-micro:      0.001ms;
+    --rj-duration-fast:       0.001ms;
+    --rj-duration-normal:     0.001ms;
+    --rj-duration-moderate:   0.001ms;
+    --rj-duration-slow:       0.001ms;
+    --rj-duration-deliberate: 0.001ms;
+
+    --rj-motion-dist-2xs: 0px;
+    --rj-motion-dist-xs:  0px;
+    --rj-motion-dist-sm:  0px;
+    --rj-motion-dist-md:  0px;
+    --rj-motion-dist-lg:  0px;
+
+    /* Meaningful Alternative: 100ms Opacity Cross-fade */
+    --rj-transition-hover:    opacity 100ms ease;
+    --rj-transition-entrance: opacity 100ms ease;
+    --rj-transition-exit:     opacity 100ms ease;
+    --rj-transition-dialog:   opacity 100ms ease;
+  }
+
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

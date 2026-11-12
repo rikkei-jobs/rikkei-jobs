@@ -1,0 +1,8 @@
+# Auto-generated fallback command for Gemini CLI / Antigravity
+# Skill: dispatching-parallel-agents
+description = "Use when decomposing large tasks and coordinating multiple parallel subagents on orthogonal, decoupled subtasks."
+prompt = """
+You are activating the 'dispatching-parallel-agents' skill.
+Follow all instructions and rules defined in:
+.gemini/skills/dispatching-parallel-agents/SKILL.md
+"""

@@ -1,0 +1,8 @@
+# Auto-generated fallback command for Gemini CLI / Antigravity
+# Skill: backend-module-boundaries
+description = "Use when designing inter-module interactions, defining public module APIs, or verifying modular monolith isolation boundaries."
+prompt = """
+You are activating the 'backend-module-boundaries' skill.
+Follow all instructions and rules defined in:
+.gemini/skills/backend-module-boundaries/SKILL.md
+"""

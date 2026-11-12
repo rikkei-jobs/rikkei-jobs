@@ -1,0 +1,8 @@
+# Auto-generated fallback command for Gemini CLI / Antigravity
+# Skill: backend-module-feature
+description = "Use when implementing or modifying a backend domain feature, REST controller, service, or repository in a Spring Boot module."
+prompt = """
+You are activating the 'backend-module-feature' skill.
+Follow all instructions and rules defined in:
+.gemini/skills/backend-module-feature/SKILL.md
+"""

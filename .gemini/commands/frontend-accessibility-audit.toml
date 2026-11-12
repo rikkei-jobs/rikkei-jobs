@@ -1,0 +1,8 @@
+# Auto-generated fallback command for Gemini CLI / Antigravity
+# Skill: frontend-accessibility-audit
+description = "Use when auditing, verifying, or remediating web accessibility (a11y) to meet WCAG 2.2 AA standards in the frontend application."
+prompt = """
+You are activating the 'frontend-accessibility-audit' skill.
+Follow all instructions and rules defined in:
+.gemini/skills/frontend-accessibility-audit/SKILL.md
+"""

@@ -1,0 +1,8 @@
+# Auto-generated fallback command for Gemini CLI / Antigravity
+# Skill: verification-before-completion
+description = "Use when completing any task, feature, refactoring, or bug fix before declaring completion or handing off to the Team Lead."
+prompt = """
+You are activating the 'verification-before-completion' skill.
+Follow all instructions and rules defined in:
+.gemini/skills/verification-before-completion/SKILL.md
+"""
