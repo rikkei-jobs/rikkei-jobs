@@ -56,7 +56,7 @@ public class EvaluationServiceImpl implements EvaluationService {
             .map(EvaluationScoreRequest::getCriterionId)
             .toList();
 
-        
+        return
     }
 }
 

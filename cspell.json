@@ -70,6 +70,7 @@
     "changeme",
     "cand",
     "springframework",
+<<<<<<< HEAD
     "ambiently",
     "antipattern",
     "antipatterns",
@@ -135,6 +136,11 @@
     "wakeups",
     "wcag",
     "webmvc"
+=======
+    "rikkeisoft",
+    "dtos",
+    "hamcrest"
+>>>>>>> origin/feat/AI-recommendation
   ],
   "ignorePaths": [
     "**/node_modules/**",
