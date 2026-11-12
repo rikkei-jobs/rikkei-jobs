@@ -96,3 +96,23 @@ temp/
 *.bak
 *.swp
 *~
+
+# ==============================================================================
+# AI Coding Agent Configuration (.claude & .gemini mirrors)
+# Track only rules, skills, commands, and project-level settings.
+# ==============================================================================
+.claude/*
+!.claude/rules/
+!.claude/skills/
+!.claude/settings.json
+.claude/*.local.*
+.claude/**/*.local.*
+
+.gemini/*
+!.gemini/rules/
+!.gemini/skills/
+!.gemini/commands/
+!.gemini/settings.json
+.gemini/*.local.*
+.gemini/**/*.local.*
+
