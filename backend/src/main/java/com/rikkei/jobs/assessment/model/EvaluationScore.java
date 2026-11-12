@@ -35,7 +35,7 @@ public class EvaluationScore {
 
     @Min(0)
     @Max(100)
-    @Column(nullable = false)
+    @Column
     private Integer score;
 
     @Column(columnDefinition = "TEXT")
