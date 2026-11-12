@@ -69,7 +69,10 @@
     "rpoint",
     "changeme",
     "cand",
-    "springframework"
+    "springframework",
+    "jjwt",
+    "jsonwebtoken",
+    "bcrypt"
   ],
   "ignorePaths": [
     "**/node_modules/**",
