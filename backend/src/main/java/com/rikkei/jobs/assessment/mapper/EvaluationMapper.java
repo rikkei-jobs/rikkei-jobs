@@ -10,7 +10,7 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface EvaluationMapper {
     @Mapping(source = "template.id", target = "templateId")
-    @Mapping(source = "template.name", target = "templateName")
+    @Mapping(source = "user.id", target = "userId")
     @Mapping(source = "mentor.id", target = "mentorId")
     EvaluationResponse toResponse(Evaluation evaluation);
 

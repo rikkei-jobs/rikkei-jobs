@@ -70,7 +70,8 @@ public class SecurityConfig {
                                                 "/api/v1/test/**",
                                                 "/api/v1/me/job-recommendations",
                                                 "/api/v1/candidates/me/job-recommendations",
-                                                "/me/job-recommendations")
+                                                "/me/job-recommendations",
+                                                "/api/v1/evaluation-templates")
                                         .permitAll();
                             }
                             auth.anyRequest().authenticated();

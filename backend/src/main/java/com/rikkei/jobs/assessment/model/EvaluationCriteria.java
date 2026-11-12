@@ -21,8 +21,9 @@ public class EvaluationCriteria {
     @JoinColumn(name = "template_id", nullable = false)
     private EvaluationTemplate template;
 
-    @Column(name = "skill_id")
-    private Long skillId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "skill_id", nullable = false)
+    private Skill skill;
 
     @Column(nullable = false, length = 500)
     private String description;

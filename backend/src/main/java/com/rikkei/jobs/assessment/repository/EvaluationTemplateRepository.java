@@ -12,13 +12,18 @@ import org.springframework.stereotype.Repository;
 public interface EvaluationTemplateRepository extends JpaRepository<EvaluationTemplate, Long> {
     @Query(
             """
-        SELECT DISTINCT et
-                    FROM EvaluationTemplate et
-                    LEFT JOIN FETCH et.criteria
-                    WHERE et.active = true
-                      AND (:position IS NULL OR LOWER(et.position) LIKE LOWER(CONCAT('%', :position, '%')))
-                      AND (:context IS NULL OR et.context = :context)
-        """)
+
+                        SELECT DISTINCT et
+                                                                                     FROM EvaluationTemplate et
+                                                                                     LEFT JOIN FETCH et.criteria
+                                                                                     WHERE et.active = true
+                                                                                       AND (
+                                                                                           LOWER(et.position) LIKE LOWER(CONCAT('%', COALESCE(:position, ''), '%'))
+                                                                                       )
+                                                                                       AND (
+                                                                                           et.context = COALESCE(:context, et.context)
+                                                                                       )
+                """)
     List<EvaluationTemplate> findActiveTemplates(
             @Param("position") String position, @Param("context") EvaluationContext context);
 }

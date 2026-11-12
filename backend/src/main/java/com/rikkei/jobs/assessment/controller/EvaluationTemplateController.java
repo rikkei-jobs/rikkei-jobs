@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/evaluation-templates")
+@RequestMapping("/api/v1/evaluation-templates")
 @RequiredArgsConstructor
 public class EvaluationTemplateController {
     private final EvaluationTemplateService templateService;
