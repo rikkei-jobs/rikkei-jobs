@@ -19,6 +19,11 @@ export const candidateModuleConfig = {
   badge: 'Module 1',
 };
 
+<<<<<<< HEAD
 export * from './types';
 export * from './api';
 export * from './JobRecommendationsSection';
+=======
+export { SkillProfilePage } from './components/SkillProfilePage';
+export { fetchMySkills } from './api/skillProfile';
+>>>>>>> origin/feature/hs-01-skill-profile
