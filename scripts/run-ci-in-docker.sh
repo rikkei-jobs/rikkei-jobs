@@ -25,9 +25,20 @@ if [ ! -d "/host-repo" ]; then
 
     cleanup_host() {
         echo "Cleaning up workspace volume: ${VOL_NAME}"
-        docker volume rm "${VOL_NAME}" 2>/dev/null || true
+        docker compose down -v 2>/dev/null || true
+        local removed=false
+        for i in {1..5}; do
+            if docker volume rm "${VOL_NAME}" >/dev/null 2>&1; then
+                removed=true
+                break
+            fi
+            sleep 0.5
+        done
+        if [ "$removed" = false ]; then
+            docker volume rm -f "${VOL_NAME}" 2>/dev/null || true
+        fi
     }
-    trap cleanup_host EXIT
+    trap cleanup_host EXIT INT TERM
 
     echo "================================================================================"
     echo "  LAUNCHING CLEAN DOCKER CI RUNNER HARNESS"
@@ -62,12 +73,63 @@ rsync -a --delete \
 cd /ci-workspace
 
 # 2. Configure Testcontainers and Docker wrapper for volume mounts in DooD environment
-if getent hosts host.docker.internal >/dev/null 2>&1; then
-    TC_HOST="$(getent hosts host.docker.internal | awk '{ print $1 }')"
-elif [ -n "$(ip route show default 2>/dev/null)" ]; then
-    TC_HOST="$(ip route show default | awk '{ print $3 }')"
-else
-    TC_HOST="172.17.0.1"
+TC_HOST=""
+
+# Step 2a: Honor pre-configured TESTCONTAINERS_HOST_OVERRIDE from environment if present
+if [ -n "${TESTCONTAINERS_HOST_OVERRIDE:-}" ]; then
+    echo "[CI HARNESS] Using pre-configured TESTCONTAINERS_HOST_OVERRIDE: ${TESTCONTAINERS_HOST_OVERRIDE}"
+    TC_HOST="${TESTCONTAINERS_HOST_OVERRIDE}"
+fi
+
+# Step 2b: Query host.docker.internal, strictly preferring valid IPv4 address
+if [ -z "$TC_HOST" ] && getent hosts host.docker.internal >/dev/null 2>&1; then
+    # When multiple records (e.g. IPv6 ULA fdc4:... and IPv4 192.168.65.254) are returned, filter for IPv4
+    TC_HOST="$(getent hosts host.docker.internal 2>/dev/null | awk '{ print $1 }' | grep -E '^([0-9]{1,3}\.){3}[0-9]{1,3}$' | head -n 1 || true)"
+    if [ -z "$TC_HOST" ]; then
+        # Fallback to first entry under host.docker.internal if only IPv6 exists
+        TC_HOST="$(getent hosts host.docker.internal 2>/dev/null | awk '{ print $1 }' | head -n 1 || true)"
+    fi
+fi
+
+# Step 2c: Query default gateway (via 'ip route' if available, or /proc/net/route)
+if [ -z "$TC_HOST" ]; then
+    if command -v ip >/dev/null 2>&1; then
+        TC_HOST="$(ip -4 route show default 2>/dev/null | awk '{ for(i=1;i<=NF;i++) if($i=="via") print $(i+1) }' | head -n 1 || true)"
+        if [ -z "$TC_HOST" ]; then
+            TC_HOST="$(ip route show default 2>/dev/null | awk '{ for(i=1;i<=NF;i++) if($i=="via") print $(i+1) }' | grep -E '^([0-9]{1,3}\.){3}[0-9]{1,3}$' | head -n 1 || true)"
+        fi
+    elif [ -f /proc/net/route ]; then
+        HEX_GW="$(awk '$2 == "00000000" && $3 != "00000000" { print $3; exit }' /proc/net/route 2>/dev/null || true)"
+        if [ -n "$HEX_GW" ] && [ ${#HEX_GW} -eq 8 ]; then
+            TC_HOST="$((0x${HEX_GW:6:2})).$((0x${HEX_GW:4:2})).$((0x${HEX_GW:2:2})).$((0x${HEX_GW:0:2}))"
+        fi
+    fi
+fi
+
+# Step 2d: Validate resolution with loud failure diagnostics
+if [ -z "$TC_HOST" ]; then
+    echo "================================================================================" >&2
+    echo "  FATAL ERROR: [CI HARNESS] Could not resolve Testcontainers host IP (TC_HOST)!" >&2
+    echo "================================================================================" >&2
+    echo "Diagnostic information:" >&2
+    echo "  - getent hosts host.docker.internal:" >&2
+    getent hosts host.docker.internal 2>&1 | sed 's/^/      /' >&2 || echo "      (command failed or empty)" >&2
+    echo "  - ip route show default:" >&2
+    if command -v ip >/dev/null 2>&1; then
+        ip route show default 2>&1 | sed 's/^/      /' >&2 || echo "      (command failed or empty)" >&2
+    else
+        echo "      (ip command not installed in container image)" >&2
+    fi
+    echo "  - /proc/net/route content:" >&2
+    if [ -f /proc/net/route ]; then
+        cat /proc/net/route | sed 's/^/      /' >&2
+    else
+        echo "      (/proc/net/route not available)" >&2
+    fi
+    echo "  - /etc/hosts content:" >&2
+    cat /etc/hosts 2>&1 | sed 's/^/      /' >&2
+    echo "================================================================================" >&2
+    exit 1
 fi
 echo "[CI HARNESS] Configured Testcontainers Docker Host: ${TC_HOST}"
 export TESTCONTAINERS_HOST_OVERRIDE="${TC_HOST}"
@@ -283,16 +345,20 @@ execute_clean_code_and_linters() {
     echo "7. Running Quality Gate Synchronization Check..."
     node scripts/check-gate-sync.mjs
 
-    echo "8. Running Yamllint..."
+    echo "8. Running Agent Configuration Sync & Validation Check..."
+    node scripts/sync-agent-config.mjs --check
+    node scripts/validate-agent-config.mjs
+
+    echo "9. Running Yamllint..."
     docker run --rm -v "$PWD:/data" cytopia/yamllint:1-0.14 -c /data/.yamllint.yml /data
 
-    echo "9. Running Hadolint..."
+    echo "10. Running Hadolint..."
     docker run --rm -v "$PWD:/repo" hadolint/hadolint:v2.15.1 hadolint /repo/backend/Dockerfile /repo/frontend/Dockerfile /repo/mock/Dockerfile
 
-    echo "10. Running Actionlint..."
+    echo "11. Running Actionlint..."
     docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 .github/workflows/ci.yml
 
-    echo "11. Running SQLFluff on Flyway Migrations..."
+    echo "12. Running SQLFluff on Flyway Migrations..."
     docker run --rm -v "$PWD:/repo" -w /repo sqlfluff/sqlfluff:4.5.0 lint backend/src/main/resources/db/migration
 }
 run_job "clean-code-and-linters" "Code Hygiene & Security Leak Scan" execute_clean_code_and_linters
@@ -308,7 +374,7 @@ execute_smoke_test() {
         echo "Tearing down Docker Compose environment..."
         docker compose down -v 2>/dev/null || true
     }
-    trap cleanup_compose EXIT
+    trap cleanup_compose EXIT INT TERM
 
     echo "1. Spinning up multi-container stack with health gates..."
     docker compose up -d --build --wait
@@ -369,7 +435,7 @@ execute_smoke_test() {
     node e2e/run-all.mjs || e2e_exit=$?
 
     cleanup_compose
-    trap - EXIT
+    trap - EXIT INT TERM
 
     if [ "$e2e_exit" -ne 0 ]; then
         echo "ERROR: End-to-End test suite failed with exit code $e2e_exit"

@@ -16,6 +16,7 @@ import com.rikkei.jobs.common.exception.InvalidServiceKeyException;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -98,11 +99,24 @@ public class ExternalApiClientIntegrationTest {
         registry.add("spring.datasource.password", postgres::getPassword);
         registry.add(
                 "external.api.base-url",
-                () ->
-                        "http://"
-                                + mockContainer.getHost()
-                                + ":"
-                                + mockContainer.getMappedPort(9000));
+                () -> {
+                    try {
+                        return new URI(
+                                        "http",
+                                        null,
+                                        mockContainer.getHost(),
+                                        mockContainer.getMappedPort(9000),
+                                        null,
+                                        null,
+                                        null)
+                                .toString();
+                    } catch (URISyntaxException e) {
+                        throw new IllegalStateException(
+                                "Failed to construct external API base URL for host="
+                                        + mockContainer.getHost(),
+                                e);
+                    }
+                });
     }
 
     @Autowired private ExternalApiClient externalApiClient;
