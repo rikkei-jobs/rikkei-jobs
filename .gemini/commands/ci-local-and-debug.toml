@@ -1,0 +1,8 @@
+# Auto-generated fallback command for Gemini CLI / Antigravity
+# Skill: ci-local-and-debug
+description = "Use when running quality gates locally, reproducing GitHub Actions CI failures in Docker, or investigating build, test, and lint issues."
+prompt = """
+You are activating the 'ci-local-and-debug' skill.
+Follow all instructions and rules defined in:
+.gemini/skills/ci-local-and-debug/SKILL.md
+"""

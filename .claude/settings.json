@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(.env*)",
+      "Read(*.pem)",
+      "Read(*.key)",
+      "Read(**/.env*)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Read(//**/.env)",
+      "Read(//**/*.pem)",
+      "Read(//**/*.key)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(git reset --hard *)",
+      "Bash(git rebase *)",
+      "Bash(git stash *)",
+      "Bash(git clean -fd *)",
+      "Bash(rm -rf *)"
+    ],
+    "ask": [
+      "Bash(git checkout *)",
+      "Bash(git restore *)",
+      "Bash(git reset *)",
+      "Bash(git clean *)"
+    ],
+    "allow": [
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(git ls-files *)",
+      "Bash(git ls-tree *)",
+      "Bash(git check-ignore *)",
+      "Bash(git rev-parse *)"
+    ]
+  }
+}

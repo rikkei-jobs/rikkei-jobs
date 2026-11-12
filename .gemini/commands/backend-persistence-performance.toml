@@ -1,0 +1,8 @@
+# Auto-generated fallback command for Gemini CLI / Antigravity
+# Skill: backend-persistence-performance
+description = "Use when optimizing database queries, resolving JPA N+1 issues, running EXPLAIN ANALYZE on PostgreSQL 18.6, or designing database indexes."
+prompt = """
+You are activating the 'backend-persistence-performance' skill.
+Follow all instructions and rules defined in:
+.gemini/skills/backend-persistence-performance/SKILL.md
+"""

@@ -1,0 +1,8 @@
+# Auto-generated fallback command for Gemini CLI / Antigravity
+# Skill: handoff-to-team-lead
+description = "Use when preparing completed work for handoff to the human Team Lead for review, staging, and commit."
+prompt = """
+You are activating the 'handoff-to-team-lead' skill.
+Follow all instructions and rules defined in:
+.gemini/skills/handoff-to-team-lead/SKILL.md
+"""

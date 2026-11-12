@@ -1,0 +1,8 @@
+# Auto-generated fallback command for Gemini CLI / Antigravity
+# Skill: docs-bilingual-update
+description = "Use when authoring, translating, or maintaining bilingual documentation across docs/ and verifying synchronization scripts and linters."
+prompt = """
+You are activating the 'docs-bilingual-update' skill.
+Follow all instructions and rules defined in:
+.gemini/skills/docs-bilingual-update/SKILL.md
+"""

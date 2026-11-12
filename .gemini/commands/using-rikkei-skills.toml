@@ -1,0 +1,8 @@
+# Auto-generated fallback command for Gemini CLI / Antigravity
+# Skill: using-rikkei-skills
+description = "Use when starting any new task, subtask, or user request to discover, evaluate, and invoke relevant project skills."
+prompt = """
+You are activating the 'using-rikkei-skills' skill.
+Follow all instructions and rules defined in:
+.gemini/skills/using-rikkei-skills/SKILL.md
+"""
