@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 @Data
 @Builder
 public class EvaluationScoreResponse {
+    private Long id;
     private Long criterionId;
     private Integer score;
     private String comment;
