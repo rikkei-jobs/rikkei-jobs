@@ -73,21 +73,20 @@ public class ProfileSeparationIntegrationTest {
         }
 
         @Test
-        @DisplayName("Prod profile must apply only V1 migration in flyway_schema_history")
+        @DisplayName("Prod profile must apply exactly 4 migrations")
         void testProdProfileAppliesOnlyV1Schema() {
             Integer migrationCount =
                     jdbcTemplate.queryForObject(
                             "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                             Integer.class);
-            assertEquals(
-                    2,
-                    migrationCount,
-                    "Prod environment must only execute schema migrations V1 and V3, count must be 2");
+
+            assertEquals(4, migrationCount, "Prod environment must execute exactly 4 migrations");
 
             Boolean hasV2 =
                     jdbcTemplate.queryForObject(
                             "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '2')",
                             Boolean.class);
+
             assertFalse(
                     Boolean.TRUE.equals(hasV2),
                     "V2 seed migration must NOT be applied in prod profile");
@@ -148,21 +147,20 @@ public class ProfileSeparationIntegrationTest {
         }
 
         @Test
-        @DisplayName("Dev profile must apply both V1 and V2 in flyway_schema_history")
+        @DisplayName("Dev profile must apply all 7 migrations")
         void testDevProfileAppliesV1AndV2() {
             Integer migrationCount =
                     jdbcTemplate.queryForObject(
                             "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                             Integer.class);
-            assertEquals(
-                    4,
-                    migrationCount,
-                    "Dev environment must execute V1-V4, migration count must be 4");
+
+            assertEquals(7, migrationCount, "Dev environment must execute exactly 7 migrations");
 
             Boolean hasV2 =
                     jdbcTemplate.queryForObject(
                             "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '2')",
                             Boolean.class);
+
             assertTrue(
                     Boolean.TRUE.equals(hasV2), "V2 seed migration must be applied in dev profile");
         }

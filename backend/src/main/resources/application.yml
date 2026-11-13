@@ -9,8 +9,8 @@ spring:
 
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/rikkeijobs}
-    username: ${SPRING_DATASOURCE_USERNAME:postgres}
-    password: ${SPRING_DATASOURCE_PASSWORD:Ngocmai@1004}
+    username: ${SPRING_DATASOURCE_USERNAME:rikkei_app}
+    password: ${SPRING_DATASOURCE_PASSWORD:rikkei_secret}
     driver-class-name: org.postgresql.Driver
     hikari:
       connection-timeout: 5000

@@ -69,7 +69,19 @@
     "rpoint",
     "changeme",
     "cand",
-    "springframework"
+    "springframework",
+    "WCAG",
+    "Pageable",
+    "pageable",
+    "webmvc",
+    "JPQL",
+    "Modulith",
+    "antipatterns",
+    "Antipattern",
+    "frontmatter",
+    "geminiignore",
+    "Dtest",
+    "gradlew"
   ],
   "ignorePaths": [
     "**/node_modules/**",
