@@ -1,0 +1,271 @@
+.candidate-profile {
+  width: 100%;
+  padding: 10px 0 40px;
+}
+
+.candidate-profile__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 32px;
+}
+
+.candidate-profile__title {
+  margin: 0 0 12px;
+  font-size: 30px;
+  font-weight: 700;
+  color: #172033;
+}
+
+.candidate-profile__description {
+  margin: 0;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+.candidate-evaluations {
+  width: 100%;
+}
+
+.candidate-evaluations__heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.candidate-evaluations__heading h3 {
+  margin: 0 0 8px;
+  font-size: 21px;
+  color: #172033;
+}
+
+.candidate-evaluations__heading p {
+  margin: 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.candidate-evaluations__count {
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.candidate-evaluations__layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.85fr) minmax(0, 1.5fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.candidate-evaluations__list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.candidate-evaluation-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 18px;
+  border: 1px solid #dbe3ef;
+  border-radius: 10px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+}
+
+.candidate-evaluation-card:hover {
+  border-color: #7aa7ed;
+  background: #f8fbff;
+}
+
+.candidate-evaluation-card--active {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.candidate-evaluation-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  color: #172033;
+}
+
+.candidate-evaluation-card__context {
+  padding: 5px 9px;
+  border-radius: 20px;
+  background: #eaf2ff;
+  color: #2563eb;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.candidate-evaluation-card__meta {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.candidate-evaluation-card__action {
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.candidate-evaluation-detail {
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid #dbe3ef;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.candidate-evaluation-detail__placeholder {
+  padding: 30px 10px;
+  text-align: center;
+}
+
+.candidate-evaluation-detail__placeholder h4 {
+  margin: 0 0 10px;
+  color: #172033;
+}
+
+.candidate-evaluation-detail__placeholder p {
+  margin: 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.candidate-evaluation-detail__header {
+  padding-bottom: 18px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.candidate-evaluation-detail__header h3 {
+  margin: 0 0 14px;
+  color: #172033;
+  font-size: 20px;
+}
+
+.candidate-evaluation-detail__header p {
+  margin: 7px 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.candidate-evaluation-detail__scores {
+  padding: 20px 0;
+}
+
+.candidate-evaluation-detail__scores h4,
+.candidate-evaluation-detail__overall h4 {
+  margin: 0 0 16px;
+  color: #172033;
+  font-size: 16px;
+}
+
+.candidate-score {
+  padding: 16px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.candidate-score__heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.candidate-score__heading strong {
+  color: #334155;
+  line-height: 1.5;
+}
+
+.candidate-score__heading span {
+  flex-shrink: 0;
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.candidate-score p,
+.candidate-evaluation-detail__overall p {
+  margin: 10px 0 0;
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.candidate-evaluation-detail__overall {
+  padding: 18px;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.candidate-evaluations__status,
+.candidate-evaluations__error {
+  padding: 18px;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #64748b;
+}
+
+.candidate-evaluations__error {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.candidate-evaluations__empty {
+  padding: 48px 20px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.candidate-evaluations__empty h4 {
+  margin: 0 0 10px;
+  color: #334155;
+}
+
+.candidate-evaluations__empty p {
+  margin: 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .candidate-evaluations__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .candidate-evaluation-detail {
+    padding: 18px;
+  }
+
+  .candidate-evaluation-card__top {
+    align-items: flex-start;
+  }
+}
+
+.candidate-profile__logout {
+  padding: 10px 20px;
+  border: 1px solid #3b82f6;
+  border-radius: 6px;
+  background: #fff;
+  color: #3b82f6;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.candidate-profile__logout:hover {
+  background: #eff6ff;
+}
