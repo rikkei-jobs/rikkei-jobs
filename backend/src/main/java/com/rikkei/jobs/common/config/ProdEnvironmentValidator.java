@@ -1,5 +1,6 @@
 package com.rikkei.jobs.common.config;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -28,7 +29,8 @@ public class ProdEnvironmentValidator implements ApplicationListener<Application
                     "SPRING_DATASOURCE_PASSWORD",
                     "EXTERNAL_BASE_URL",
                     "EXTERNAL_SERVICE_KEY",
-                    "CORS_ALLOWED_ORIGINS");
+                    "CORS_ALLOWED_ORIGINS",
+                    "JWT_SECRET");
 
     private static final Set<String> INSECURE_DEFAULT_VALUES =
             Set.of(
@@ -41,6 +43,7 @@ public class ProdEnvironmentValidator implements ApplicationListener<Application
                     "secret",
                     "rikkei_secret",
                     "default-key",
+                    "local-dev-jwt-secret-change-before-production",
                     "admin",
                     "root");
 
@@ -83,9 +86,7 @@ public class ProdEnvironmentValidator implements ApplicationListener<Application
                 throw new IllegalStateException(
                         "CẤU HÌNH PRODUCTION THẤT BẠI: Biến môi trường bắt buộc bị thiếu hoặc không an toàn: "
                                 + varName
-                                + " chứa giá trị mặc định không an toàn ("
-                                + trimmedValue
-                                + ")");
+                                + " chứa giá trị mặc định không an toàn");
             }
 
             if ("CORS_ALLOWED_ORIGINS".equals(varName) && trimmedValue.contains("*")) {
@@ -93,6 +94,12 @@ public class ProdEnvironmentValidator implements ApplicationListener<Application
                         "CẤU HÌNH PRODUCTION THẤT BẠI: Biến môi trường bắt buộc bị thiếu hoặc không an toàn: "
                                 + varName
                                 + " không được chứa ký tự wildcard (*)");
+            }
+
+            if ("JWT_SECRET".equals(varName)
+                    && trimmedValue.getBytes(StandardCharsets.UTF_8).length < 32) {
+                throw new IllegalStateException(
+                        "CẤU HÌNH PRODUCTION THẤT BẠI: JWT_SECRET phải dài ít nhất 32 byte");
             }
         }
         log.info(
@@ -118,6 +125,7 @@ public class ProdEnvironmentValidator implements ApplicationListener<Application
             case "EXTERNAL_BASE_URL" -> environment.getProperty("external.api.base-url");
             case "EXTERNAL_SERVICE_KEY" -> environment.getProperty("external.api.service-key");
             case "CORS_ALLOWED_ORIGINS" -> environment.getProperty("cors.allowed-origins");
+            case "JWT_SECRET" -> environment.getProperty("app.security.jwt.secret");
             default -> null;
         };
     }

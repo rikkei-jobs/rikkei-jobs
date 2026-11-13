@@ -7,6 +7,7 @@ describe('App Component', () => {
 
   beforeEach(() => {
     vi.restoreAllMocks();
+    sessionStorage.clear();
   });
 
   afterEach(() => {
@@ -181,5 +182,39 @@ describe('App Component', () => {
     await waitFor(() => {
       expect(screen.getByTestId('backend-status-badge')).toHaveTextContent('UP');
     });
+  });
+
+  it('lets an existing authenticated user open the recruitment portal', async () => {
+    sessionStorage.setItem(
+      'rikkei-jobs-auth-session',
+      JSON.stringify({
+        accessToken: 'issued-test-token',
+        tokenType: 'Bearer',
+        expiresAt: '2027-01-01T00:00:00Z',
+        userId: 1,
+        fullName: 'Candidate',
+        role: 'CANDIDATE',
+      }),
+    );
+    globalThis.fetch = vi.fn().mockImplementation((input: RequestInfo | URL) => {
+      if (String(input).endsWith('/api/v1/health')) {
+        return Promise.resolve(
+          new Response(JSON.stringify({ status: 'UP' }), {
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        );
+      }
+      return Promise.resolve(
+        new Response(JSON.stringify({ code: 'UNAUTHORIZED', message: 'Login required' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+    });
+
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: 'Cổng tuyển dụng' }));
+
+    expect(await screen.findByRole('heading', { name: 'Vị trí đang tuyển' })).toBeInTheDocument();
   });
 });

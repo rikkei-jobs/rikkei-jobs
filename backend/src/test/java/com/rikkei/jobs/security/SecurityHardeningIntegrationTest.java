@@ -45,7 +45,8 @@ public class SecurityHardeningIntegrationTest {
             properties = {
                 "CORS_ALLOWED_ORIGINS=http://localhost:3000",
                 "EXTERNAL_BASE_URL=https://mock.example.com",
-                "EXTERNAL_SERVICE_KEY=prod-secret-service-key-999"
+                "EXTERNAL_SERVICE_KEY=prod-secret-service-key-999",
+                "JWT_SECRET=production-jwt-signing-secret-with-adequate-length"
             })
     @Testcontainers
     @ActiveProfiles("prod")
@@ -185,6 +186,7 @@ public class SecurityHardeningIntegrationTest {
                                                     + prodPostgres.getPassword(),
                                             "--external.api.base-url=https://mock.example.com",
                                             "--external.api.service-key=prod-secret-service-key-999",
+                                            "--JWT_SECRET=production-jwt-signing-secret-with-adequate-length",
                                             "--spring.flyway.enabled=true"));
 
             Throwable cause = exception;

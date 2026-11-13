@@ -24,6 +24,7 @@ public class ProdEnvironmentValidatorTest {
         env.setProperty("EXTERNAL_SERVICE_KEY", "prod-external-service-key-xyz-789");
         env.setProperty(
                 "CORS_ALLOWED_ORIGINS", "https://rikkeijobs.com,https://admin.rikkeijobs.com");
+        env.setProperty("JWT_SECRET", "production-jwt-signing-secret-with-adequate-length");
         return env;
     }
 
@@ -48,6 +49,8 @@ public class ProdEnvironmentValidatorTest {
         env.setProperty("external.api.base-url", "https://api.external-partner.com");
         env.setProperty("external.api.service-key", "prod-external-service-key-xyz-789");
         env.setProperty("cors.allowed-origins", "https://rikkeijobs.com");
+        env.setProperty(
+                "app.security.jwt.secret", "production-jwt-signing-secret-with-adequate-length");
 
         ProdEnvironmentValidator validator = new ProdEnvironmentValidator(env);
         assertDoesNotThrow(validator::validateEnvironment);
@@ -61,7 +64,8 @@ public class ProdEnvironmentValidatorTest {
                 "SPRING_DATASOURCE_PASSWORD",
                 "EXTERNAL_BASE_URL",
                 "EXTERNAL_SERVICE_KEY",
-                "CORS_ALLOWED_ORIGINS"
+                "CORS_ALLOWED_ORIGINS",
+                "JWT_SECRET"
             })
     @DisplayName("Fail-fast: Startup rejected when any mandatory variable is missing")
     void testFailFastWhenVariableMissing(String missingVar) {
@@ -129,5 +133,18 @@ public class ProdEnvironmentValidatorTest {
                 ex.getMessage().contains("CORS_ALLOWED_ORIGINS"),
                 "Error message must mention CORS_ALLOWED_ORIGINS");
         assertTrue(ex.getMessage().contains("wildcard"), "Error message must mention wildcard");
+    }
+
+    @Test
+    @DisplayName("Fail-fast: Startup rejected when JWT_SECRET is shorter than 32 bytes")
+    void testFailFastWhenJwtSecretIsTooShort() {
+        MockEnvironment env = createValidEnvironment();
+        env.setProperty("JWT_SECRET", "short-secret");
+
+        ProdEnvironmentValidator validator = new ProdEnvironmentValidator(env);
+        IllegalStateException ex =
+                assertThrows(IllegalStateException.class, validator::validateEnvironment);
+
+        assertTrue(ex.getMessage().contains("JWT_SECRET"));
     }
 }

@@ -17,6 +17,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -47,6 +48,24 @@ public class FlywayMigrationIntegrationTest {
     @Autowired private UserRepository userRepository;
 
     @Autowired private PasswordEncoder passwordEncoder;
+
+    @Autowired private JdbcTemplate jdbcTemplate;
+
+    @Test
+    @DisplayName("Development seed data must include PDF snapshots for sample applications")
+    void testSampleApplicationSnapshotsSeeded() {
+        Integer snapshotCount =
+                jdbcTemplate.queryForObject(
+                        "SELECT count(*) FROM application_cv_snapshots", Integer.class);
+        assertEquals(5, snapshotCount);
+
+        String pdfHeader =
+                jdbcTemplate.queryForObject(
+                        "SELECT encode(substring(file_data FROM 1 FOR 5), 'hex') "
+                                + "FROM application_cv_snapshots WHERE application_id = 1",
+                        String.class);
+        assertEquals("255044462d", pdfHeader);
+    }
 
     @Test
     @DisplayName("Dev profile must seed exactly 5 roles")

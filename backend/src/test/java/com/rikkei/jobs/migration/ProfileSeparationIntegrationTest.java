@@ -26,10 +26,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
- * Validates strict separation between prod and dev profiles. - Prod profile: ONLY V1 applied,
- * exactly 0 users seeded, /api/v1/test/** blocked. - Dev profile: both V1 and V2 applied, exactly 8
- * users seeded. - Mutation/negative test: verifies that seed data isolation holds and fails if
- * inverted.
+ * Validates strict separation between prod and dev profiles. Production applies schema migrations
+ * without dev-only seed data; development applies both schema and development seed migrations. Both
+ * profiles retain the expected endpoint security boundaries.
  */
 public class ProfileSeparationIntegrationTest {
 
@@ -38,7 +37,8 @@ public class ProfileSeparationIntegrationTest {
             properties = {
                 "CORS_ALLOWED_ORIGINS=http://localhost:3000",
                 "EXTERNAL_BASE_URL=https://mock.example.com",
-                "EXTERNAL_SERVICE_KEY=prod-secret-service-key-999"
+                "EXTERNAL_SERVICE_KEY=prod-secret-service-key-999",
+                "JWT_SECRET=production-jwt-signing-secret-with-adequate-length"
             })
     @Testcontainers
     @ActiveProfiles("prod")
@@ -63,7 +63,7 @@ public class ProfileSeparationIntegrationTest {
         @Autowired private WebApplicationContext context;
 
         @Test
-        @DisplayName("Prod profile must apply only V1 schema and have 0 seeded users")
+        @DisplayName("Prod profile must apply schema migrations and have 0 seeded users")
         void testProdProfileHasZeroUsers() {
             long userCount = userRepository.count();
             assertEquals(
@@ -73,16 +73,15 @@ public class ProfileSeparationIntegrationTest {
         }
 
         @Test
-        @DisplayName("Prod profile must apply only V1 migration in flyway_schema_history")
+        @DisplayName("Prod profile must apply production migrations without V2 dev seed")
         void testProdProfileAppliesOnlyV1Schema() {
             Integer migrationCount =
                     jdbcTemplate.queryForObject(
                             "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                             Integer.class);
-            assertEquals(
-                    1,
-                    migrationCount,
-                    "Prod environment must only execute V1 schema, migration count must be 1");
+            assertTrue(
+                    migrationCount >= 1,
+                    "Prod environment must execute production schema migrations");
 
             Boolean hasV2 =
                     jdbcTemplate.queryForObject(
@@ -91,6 +90,13 @@ public class ProfileSeparationIntegrationTest {
             assertFalse(
                     Boolean.TRUE.equals(hasV2),
                     "V2 seed migration must NOT be applied in prod profile");
+            Boolean hasDevelopmentSnapshotSeed =
+                    jdbcTemplate.queryForObject(
+                            "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '8.1')",
+                            Boolean.class);
+            assertFalse(
+                    Boolean.TRUE.equals(hasDevelopmentSnapshotSeed),
+                    "Development-only CV snapshot fixtures must NOT be applied in prod profile");
         }
 
         @Test
@@ -138,7 +144,7 @@ public class ProfileSeparationIntegrationTest {
         @Autowired private JdbcTemplate jdbcTemplate;
 
         @Test
-        @DisplayName("Dev profile must apply both V1 and V2, resulting in exactly 8 seeded users")
+        @DisplayName("Dev profile must load development seeds, resulting in exactly 8 seeded users")
         void testDevProfileHasEightUsers() {
             long userCount = userRepository.count();
             assertEquals(
@@ -148,16 +154,15 @@ public class ProfileSeparationIntegrationTest {
         }
 
         @Test
-        @DisplayName("Dev profile must apply both V1 and V2 in flyway_schema_history")
+        @DisplayName("Dev profile must apply schema and seed migrations in flyway_schema_history")
         void testDevProfileAppliesV1AndV2() {
             Integer migrationCount =
                     jdbcTemplate.queryForObject(
                             "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                             Integer.class);
-            assertEquals(
-                    2,
-                    migrationCount,
-                    "Dev environment must execute both V1 and V2, migration count must be 2");
+            assertTrue(
+                    migrationCount >= 2,
+                    "Dev environment must execute both schema and seed migrations");
 
             Boolean hasV2 =
                     jdbcTemplate.queryForObject(
@@ -165,6 +170,13 @@ public class ProfileSeparationIntegrationTest {
                             Boolean.class);
             assertTrue(
                     Boolean.TRUE.equals(hasV2), "V2 seed migration must be applied in dev profile");
+            Boolean hasSnapshotFixtures =
+                    jdbcTemplate.queryForObject(
+                            "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '8.1')",
+                            Boolean.class);
+            assertTrue(
+                    Boolean.TRUE.equals(hasSnapshotFixtures),
+                    "Development-only CV snapshot fixtures must be applied in dev profile");
         }
     }
 }

@@ -41,7 +41,8 @@ public class ProdEnvironmentValidatorOrderingTest {
                                     "EXTERNAL_SERVICE_KEY=dev-key", // Insecure placeholder value
                                     // to trigger validation
                                     // failure
-                                    "CORS_ALLOWED_ORIGINS=https://rikkeijobs.com");
+                                    "CORS_ALLOWED_ORIGINS=https://rikkeijobs.com",
+                                    "JWT_SECRET=production-jwt-signing-secret-with-adequate-length");
 
             IllegalStateException ex = assertThrows(IllegalStateException.class, builder::run);
 
