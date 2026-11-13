@@ -27,9 +27,9 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
  * Validates strict separation between prod and dev profiles. - Prod profile: ONLY schema migrations
- * V1 and V3 applied, exactly 0 users seeded, /api/v1/test/** blocked. - Dev profile: all of V1-V4
- * applied, exactly 8 users seeded. - Mutation/negative test: verifies that seed data isolation
- * holds and fails if inverted.
+ * V1, V3 and V5 applied, exactly 0 users seeded, /api/v1/test/** blocked. - Dev profile: all of
+ * V1-V6 applied, exactly 8 users seeded. - Mutation/negative test: verifies that seed data
+ * isolation holds and fails if inverted.
  */
 public class ProfileSeparationIntegrationTest {
 
@@ -80,9 +80,10 @@ public class ProfileSeparationIntegrationTest {
                             "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                             Integer.class);
             assertEquals(
-                    2,
+                    3,
                     migrationCount,
-                    "Prod environment must only execute schema migrations V1 and V3, count must be 2");
+                    "Prod environment must only execute schema migrations V1, V3 and V5, count must"
+                            + " be 3");
 
             Boolean hasV2 =
                     jdbcTemplate.queryForObject(
@@ -155,9 +156,9 @@ public class ProfileSeparationIntegrationTest {
                             "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                             Integer.class);
             assertEquals(
-                    4,
+                    6,
                     migrationCount,
-                    "Dev environment must execute V1-V4, migration count must be 4");
+                    "Dev environment must execute all of V1-V6, migration count must be 6");
 
             Boolean hasV2 =
                     jdbcTemplate.queryForObject(

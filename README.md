@@ -191,6 +191,40 @@ The database seed migration automatically provisions 8 sample testing accounts w
 
 ---
 
+## 🤖 AI Conventions & Career Assistant
+
+The Rikkei Jobs system incorporates an AI Assistant designed to provide personalized job recommendations based on **verified competency data** (sourced from the LMS, examination systems, IOC internship programs, and mentors).
+
+### 1. General AI Conventions
+
+- **`AI_PROVIDER` Environment Variable**: Supports four modes: `openai`, `gemini`, `claude`, and `mock` (default: `mock`).
+- **`mock` Mode**: Always returns a standardized response, allowing mentors and developers to test the entire workflow without requiring an API key.
+- **`openai` / `gemini` / `claude` Modes**: Integrate directly with Large Language Models (LLMs) via a secure, centralized gateway.
+- **Centralized AI Gateway Service (`AiService`)**: All AI-related calls within the system must pass through a single `AiService`. This architecture is designed to support future expansions (Task **AI-05**), including data masking, rate limiting, and audit logging.
+- **Privacy & Data Protection (No PII)**: Prompts sent to the AI and system logs must **never contain** a candidate’s full name, email address, or phone number. Data transmitted is limited strictly to verified skill categories, associated scores, and the requirements specified in the Job Description (JD).
+
+### 2. Competency-Based Job Recommendation API (for Candidates)
+
+- **Endpoint**: `GET /api/v1/me/job-recommendations?limit=10` (Also accessible via the shorthand alias: `/me/job-recommendations`).
+- **Processing Workflow**:
+  1. Retrieve a list of job descriptions (JDs) that are in the `APPROVED` status and still open for applications (`deadline > now`).
+  2. Calculate competency similarity scores (using the **DN-06** algorithm): Compare the candidate’s verified skill levels against the JD requirements (mandatory skills are weighted $\times 2$, while preferred skills are weighted $\times 1$).
+  3. Sort the results in descending order by match score (`score DESC`) and select the top 10 positions.
+  4. For the **Top 5** positions: Invoke an AI model to generate a concise explanation ($\le 60$ words) detailing why the candidate is a good fit and identifying any missing skills. For positions 6–10, a standardized, default explanation is used.
+  5. **24-Hour Caching**: Results are stored in the `job_recommendations` table. If a candidate revisits the platform within 24 hours, the system retrieves the data from the cache, bypassing the AI call (to save costs and improve response time). If the candidate’s skill profile or a JD is updated, the system automatically recalculates the recommendations.
+  6. **Fault-Tolerance Mechanism**: In the event of an AI error (e.g., invalid API key, network failure) or a timeout (exceeding 10 seconds), the system will still return the list of positions, accompanied by a default explanation derived from the matching data.
+
+### 3. User Interface (Candidate Portal)
+
+The **"Jobs Matched for You"** section is prominently displayed on the candidate’s homepage:
+
+- Detailed job cards featuring a **"% match"** badge.
+- Explanations labeled as either **"✨ AI-generated"** or **"⚙️ System-suggested."**
+- A breakdown of skills that meet the requirements (✓) and those that need to be developed (⚠️).
+- A **"Refresh"** button for immediate recalculation, along with a set of sample candidates (`candidate1`, `candidate2`, `candidate3`) for a visual demonstration.
+
+---
+
 ## 🔍 Quality Verification & Automated Gates
 
 Run all linting, static analysis, unit tests, and security path checks using the master script:

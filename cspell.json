@@ -136,7 +136,9 @@
     "wakeup",
     "wakeups",
     "wcag",
-    "webmvc"
+    "webmvc",
+    "rikkeisoft",
+    "dtos"
   ],
   "ignorePaths": [
     "**/node_modules/**",

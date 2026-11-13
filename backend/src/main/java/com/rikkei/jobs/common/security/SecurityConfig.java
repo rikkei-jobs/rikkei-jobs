@@ -66,7 +66,12 @@ public class SecurityConfig {
                                             "/v3/api-docs/**")
                                     .permitAll();
                             if (environment.matchesProfiles("dev")) {
-                                auth.requestMatchers("/api/v1/test/**").permitAll();
+                                auth.requestMatchers(
+                                                "/api/v1/test/**",
+                                                "/api/v1/me/job-recommendations",
+                                                "/api/v1/candidates/me/job-recommendations",
+                                                "/me/job-recommendations")
+                                        .permitAll();
                             }
                             auth.anyRequest().authenticated();
                         });

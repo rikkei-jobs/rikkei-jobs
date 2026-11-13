@@ -5,6 +5,7 @@ import { HealthBadge } from './shared/components/HealthBadge';
 import { ModuleCard } from './shared/components/ModuleCard';
 import { fetchBackendHealth, type BackendHealthStatus } from './shared/api/health';
 import { BUSINESS_MODULES } from './features';
+import { JobRecommendationsSection } from './features/candidate';
 import { SkillProfilePage, fetchMySkills } from './features/candidate';
 import { LoginForm } from './shared/components/LoginForm';
 import { ApiError, buildBasicAuthHeader } from './shared/api/auth';
@@ -129,6 +130,8 @@ export const App: React.FC = () => {
               isLoading={isChecking}
             />
           </section>
+
+          <JobRecommendationsSection />
 
           <section className="section-modules">
             <div className="section-header">
