@@ -55,7 +55,7 @@ public class DefaultProfileIntegrationTest {
                 jdbcTemplate.queryForObject(
                         "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                         Integer.class);
-        assertEquals(4, migrationCount, "Default profile must apply 4 schema migrations");
+        assertEquals(7, migrationCount, "Default profile must apply 4 schema migrations");
 
         Boolean hasV2 =
                 jdbcTemplate.queryForObject(
