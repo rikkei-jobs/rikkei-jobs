@@ -431,6 +431,24 @@ if ($syncCode -eq 0) {
     Record-Gate "Quality Gate Synchronization Check" $false "Quality gates mismatch detected"
 }
 
+# 7.5 Agent Configuration Sync & Parity Check
+Write-Host "Running agent configuration sync and parity check..." -ForegroundColor Yellow
+$agentSyncOut = & node scripts/sync-agent-config.mjs --check 2>&1
+$agentSyncCode = $LASTEXITCODE
+if ($agentSyncCode -eq 0) {
+    $agentValOut = & node scripts/validate-agent-config.mjs 2>&1
+    $agentValCode = $LASTEXITCODE
+    if ($agentValCode -eq 0) {
+        Record-Gate "Agent Configuration Sync & Parity Check" $true "All rules, skills, and entrypoints in sync with canonical source and validated"
+    } else {
+        Write-Host ($agentValOut -join "`n") -ForegroundColor Red
+        Record-Gate "Agent Configuration Sync & Parity Check" $false "Agent configuration validation failed"
+    }
+} else {
+    Write-Host ($agentSyncOut -join "`n") -ForegroundColor Red
+    Record-Gate "Agent Configuration Sync & Parity Check" $false "Agent configuration drift detected between canonical source and mirrors"
+}
+
 Print-Header "GATE 8: CLEAN CODE ASSERTIONS & SECURITY LEAK SCAN"
 
 # 8.1 Scan for developer machine-specific paths (Constructed pattern to prevent self-match)

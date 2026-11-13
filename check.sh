@@ -368,9 +368,18 @@ if command -v node >/dev/null 2>&1; then
     else
         record_gate "Quality Gate Synchronization Check" "false" "Quality gates mismatch detected"
     fi
+
+    # 7.5 Agent Configuration Sync & Parity Check
+    echo -e "${YELLOW}Running agent configuration sync and parity check...${NC}"
+    if node scripts/sync-agent-config.mjs --check && node scripts/validate-agent-config.mjs; then
+        record_gate "Agent Configuration Sync & Parity Check" "true" "All rules, skills, and entrypoints in sync with canonical source and validated"
+    else
+        record_gate "Agent Configuration Sync & Parity Check" "false" "Agent configuration drift or validation failure detected"
+    fi
 else
     record_gate "Version Table Drift Check (docs/03)" "false" "node not found in PATH"
     record_gate "Quality Gate Synchronization Check" "false" "node not found in PATH"
+    record_gate "Agent Configuration Sync & Parity Check" "false" "node not found in PATH"
 fi
 
 print_header "GATE 8: CLEAN CODE ASSERTIONS & SECURITY LEAK SCAN"

@@ -1,0 +1,156 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Rikkei Jobs Dual-Agent Security Settings Template",
+  "description": "Canonical single-source security configuration for Claude Code (.claude/settings.json) and Gemini CLI (.gemini/settings.json + .geminiignore) — Task T022DB0",
+  "version": "2.0.0",
+  "securityPolicies": {
+    "deniedFilePatterns": [
+      ".env*",
+      "*.pem",
+      "*.key",
+      "**/.env*",
+      "**/*.pem",
+      "**/*.key"
+    ],
+    "allowedExampleEnvFiles": [
+      ".env.example",
+      "**/.env.example"
+    ],
+    "destructiveCommands": [
+      "git commit",
+      "git push",
+      "git reset --hard",
+      "git rebase",
+      "git stash",
+      "git clean -fd",
+      "rm -rf"
+    ],
+    "askCommands": [
+      "git checkout",
+      "git restore",
+      "git reset",
+      "git clean"
+    ],
+    "readOnlyGitCommands": [
+      "git status",
+      "git diff",
+      "git log",
+      "git show",
+      "git ls-files",
+      "git ls-tree",
+      "git check-ignore",
+      "git rev-parse"
+    ],
+    "redactedEnvVars": [
+      "DB_PASSWORD",
+      "POSTGRES_PASSWORD",
+      "SPRING_DATASOURCE_PASSWORD",
+      "JWT_SECRET",
+      "EXTERNAL_SERVICE_KEY",
+      "MAIL_PASSWORD"
+    ]
+  },
+  "claude": {
+    "permissions": {
+      "deny": [
+        "Read(./.env)",
+        "Read(./.env.*)",
+        "Read(.env*)",
+        "Read(*.pem)",
+        "Read(*.key)",
+        "Read(**/.env*)",
+        "Read(**/*.pem)",
+        "Read(**/*.key)",
+        "Read(//**/.env)",
+        "Read(//**/*.pem)",
+        "Read(//**/*.key)",
+        "Bash(git commit *)",
+        "Bash(git push *)",
+        "Bash(git reset --hard *)",
+        "Bash(git rebase *)",
+        "Bash(git stash *)",
+        "Bash(git clean -fd *)",
+        "Bash(rm -rf *)"
+      ],
+      "ask": [
+        "Bash(git checkout *)",
+        "Bash(git restore *)",
+        "Bash(git reset *)",
+        "Bash(git clean *)"
+      ],
+      "allow": [
+        "Bash(git status *)",
+        "Bash(git diff *)",
+        "Bash(git log *)",
+        "Bash(git show *)",
+        "Bash(git ls-files *)",
+        "Bash(git ls-tree *)",
+        "Bash(git check-ignore *)",
+        "Bash(git rev-parse *)"
+      ]
+    }
+  },
+  "gemini": {
+    "$schema": "https://raw.githubusercontent.com/google-gemini/gemini-cli/main/schemas/settings.schema.json",
+    "context": {
+      "fileFiltering": {
+        "respectGitIgnore": true,
+        "respectGeminiIgnore": true
+      }
+    },
+    "security": {
+      "disableYoloMode": true,
+      "disableAlwaysAllow": true,
+      "environmentVariableRedaction": {
+        "enabled": true,
+        "blocked": [
+          "DB_PASSWORD",
+          "POSTGRES_PASSWORD",
+          "SPRING_DATASOURCE_PASSWORD",
+          "JWT_SECRET",
+          "EXTERNAL_SERVICE_KEY",
+          "MAIL_PASSWORD"
+        ]
+      }
+    },
+    "tools": {
+      "exclude": [
+        "run_shell_command(git commit)",
+        "run_shell_command(git push)",
+        "run_shell_command(git reset --hard)",
+        "run_shell_command(git rebase)",
+        "run_shell_command(git stash)",
+        "run_shell_command(git clean -fd)",
+        "run_shell_command(rm -rf)"
+      ],
+      "confirmationRequired": [
+        "run_shell_command(git checkout)",
+        "run_shell_command(git restore)",
+        "run_shell_command(git reset)",
+        "run_shell_command(git clean)"
+      ],
+      "allowed": [
+        "run_shell_command(git status)",
+        "run_shell_command(git diff)",
+        "run_shell_command(git log)",
+        "run_shell_command(git show)",
+        "run_shell_command(git ls-files)",
+        "run_shell_command(git ls-tree)",
+        "run_shell_command(git check-ignore)",
+        "run_shell_command(git rev-parse)"
+      ]
+    }
+  },
+  "geminiIgnore": [
+    "# Auto-generated from agent-config/templates/settings.template.json (T022DB0)",
+    "# Excludes sensitive environment and key files from Gemini CLI file-reading and search tools.",
+    ".env*",
+    "!.env.example",
+    "*.pem",
+    "*.key",
+    "**/.env*",
+    "!**/.env.example",
+    "**/*.pem",
+    "**/*.key"
+  ]
+}

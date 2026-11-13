@@ -239,6 +239,7 @@ Run all linting, static analysis, unit tests, and security path checks using the
 
 Individual checks:
 
+- **Agent Configuration Validation**: `node scripts/validate-agent-config.mjs` and `node scripts/sync-agent-config.mjs --check` (Quality Gate 25: validates frontmatter schema, line caps, forbidden patterns, mirror parity, and real repository citations).
 - **Backend Lint & Format**: `cd backend && ./mvnw spotless:check`
 - **Frontend Lint & Test**: `cd frontend && npm run lint && npm run test`
 - **End-to-End Integration Suite**: `node e2e/run-all.mjs` (Requires running stack via `docker compose up -d --build --wait`)
@@ -279,3 +280,4 @@ For detailed architectural decisions and operational guides, consult the `docs/`
 - [04 — Security & Secrets Policy](docs/04-security-secrets-policy.md) *(Bilingual)* — Zero real secrets rules and RBAC matrix.
 - [05 — Open Business Questions](docs/05-open-business-questions.md) *(Bilingual)* — Critical questions with citations from project PDFs.
 - [Contributing Guidelines](CONTRIBUTING.md) — Git workflow and pull request process.
+- [AI Agent Configuration & Skills](docs/agent-config/README.md) *(Bilingual)* — Architecture, 16 enterprise rules, 28 task-triggered skills, validation tooling, and open-source attribution.

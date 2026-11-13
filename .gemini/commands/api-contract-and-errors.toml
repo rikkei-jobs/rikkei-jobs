@@ -1,0 +1,8 @@
+# Auto-generated fallback command for Gemini CLI / Antigravity
+# Skill: api-contract-and-errors
+description = "Use when designing or updating REST API endpoints, DTO contracts, pagination parameters, or error representations."
+prompt = """
+You are activating the 'api-contract-and-errors' skill.
+Follow all instructions and rules defined in:
+.gemini/skills/api-contract-and-errors/SKILL.md
+"""

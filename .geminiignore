@@ -1,0 +1,10 @@
+# Auto-generated from agent-config/templates/settings.template.json (T022DB0)
+# Excludes sensitive environment and key files from Gemini CLI file-reading and search tools.
+.env*
+!.env.example
+*.pem
+*.key
+**/.env*
+!**/.env.example
+**/*.pem
+**/*.key

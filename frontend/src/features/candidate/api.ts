@@ -1,3 +1,4 @@
+import { getApiBaseUrl } from '../../shared/api/health';
 import type { JobRecommendationsResponse } from './types';
 
 export async function fetchJobRecommendations(
@@ -15,13 +16,16 @@ export async function fetchJobRecommendations(
     params.set('userId', userId.toString());
   }
 
-  const response = await fetch(`/api/v1/me/job-recommendations?${params.toString()}`, {
-    method: 'GET',
-    headers: {
-      Accept: 'application/json',
+  const response = await fetch(
+    `${getApiBaseUrl()}/api/v1/me/job-recommendations?${params.toString()}`,
+    {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+      },
+      signal,
     },
-    signal,
-  });
+  );
 
   if (!response.ok) {
     throw new Error(`Lỗi tải dữ liệu gợi ý việc làm (${response.status} ${response.statusText})`);

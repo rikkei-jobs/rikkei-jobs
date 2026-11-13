@@ -1,0 +1,8 @@
+# Auto-generated fallback command for Gemini CLI / Antigravity
+# Skill: module-domain-knowledge
+description = "Use when implementing business rules, state lifecycles, role permissions, or workflows across any of the 7 Rikkei Jobs modules or Identity."
+prompt = """
+You are activating the 'module-domain-knowledge' skill.
+Follow all instructions and rules defined in:
+.gemini/skills/module-domain-knowledge/SKILL.md
+"""

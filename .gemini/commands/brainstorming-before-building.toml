@@ -1,0 +1,8 @@
+# Auto-generated fallback command for Gemini CLI / Antigravity
+# Skill: brainstorming-before-building
+description = "Use when exploring requirements, designing features, evaluating architectural trade-offs, or addressing ambiguities before writing implementation plans."
+prompt = """
+You are activating the 'brainstorming-before-building' skill.
+Follow all instructions and rules defined in:
+.gemini/skills/brainstorming-before-building/SKILL.md
+"""

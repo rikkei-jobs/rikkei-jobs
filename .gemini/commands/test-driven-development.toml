@@ -1,0 +1,8 @@
+# Auto-generated fallback command for Gemini CLI / Antigravity
+# Skill: test-driven-development
+description = "Use when implementing new business logic, domain services, API endpoints, bug fixes, or utility algorithms that can be validated with automated tests."
+prompt = """
+You are activating the 'test-driven-development' skill.
+Follow all instructions and rules defined in:
+.gemini/skills/test-driven-development/SKILL.md
+"""

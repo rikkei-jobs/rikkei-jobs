@@ -22,3 +22,5 @@ export const candidateModuleConfig = {
 export * from './types';
 export * from './api';
 export * from './JobRecommendationsSection';
+export { SkillProfilePage } from './components/SkillProfilePage';
+export { fetchMySkills } from './api/skillProfile';

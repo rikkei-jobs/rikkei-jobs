@@ -1,0 +1,71 @@
+/* Design tokens subset from docs/design/DESIGN_SYSTEM.md (namespace --rj-). */
+:root {
+  --rj-neutral-50: #f7f9fc;
+  --rj-neutral-100: #eef2f6;
+  --rj-neutral-200: #e2e7ed;
+  --rj-neutral-300: #c5d0dc;
+  --rj-neutral-500: #6f8094;
+  --rj-neutral-700: #334e68;
+  --rj-neutral-900: #0c1a30;
+  --rj-white: #ffffff;
+  --rj-brand-50: #ebf3fa;
+  --rj-brand-600: #132f52;
+  --rj-brand-700: #0a2540;
+  --rj-accent-600: #d9480f;
+  --rj-success-50: #e8f8f5;
+  --rj-success-700: #0e6251;
+  --rj-warning-50: #fef9e7;
+  --rj-warning-700: #7a4305;
+  --rj-danger-50: #fdf2f4;
+  --rj-danger-700: #9b1c2a;
+
+  --rj-color-page: var(--rj-neutral-50);
+  --rj-color-surface: var(--rj-white);
+  --rj-color-surface-subtle: var(--rj-neutral-100);
+  --rj-color-border: var(--rj-neutral-300);
+  --rj-color-divider: var(--rj-neutral-200);
+  --rj-color-text: var(--rj-neutral-900);
+  --rj-color-text-secondary: var(--rj-neutral-700);
+  --rj-color-action: var(--rj-brand-600);
+  --rj-color-action-hover: var(--rj-brand-700);
+  --rj-color-on-action: var(--rj-white);
+  --rj-color-focus: var(--rj-brand-700);
+  --rj-color-meter-track: var(--rj-neutral-200);
+  --rj-color-meter-fill: var(--rj-brand-600);
+  --rj-color-verified-bg: var(--rj-success-50);
+  --rj-color-verified-text: var(--rj-success-700);
+  --rj-color-self-bg: var(--rj-warning-50);
+  --rj-color-self-text: var(--rj-warning-700);
+  --rj-color-error-bg: var(--rj-danger-50);
+  --rj-color-error-text: var(--rj-danger-700);
+
+  --rj-motion-micro: 150ms;
+  --rj-motion-dialog: 300ms;
+  --rj-font-display: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
+  --rj-font-body: 'Be Vietnam Pro', 'Segoe UI', system-ui, sans-serif;
+  --rj-font-mono: 'JetBrains Mono', Consolas, Menlo, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --rj-color-page: #0a111e;
+    --rj-color-surface: #111c2e;
+    --rj-color-surface-subtle: #1a2c3f;
+    --rj-color-border: #334e68;
+    --rj-color-divider: #1a2c3f;
+    --rj-color-text: #eef2f6;
+    --rj-color-text-secondary: #c5d0dc;
+    --rj-color-action: #4c85de;
+    --rj-color-action-hover: #6ba0f2;
+    --rj-color-on-action: #0a111e;
+    --rj-color-focus: #6ba0f2;
+    --rj-color-meter-track: #1a2c3f;
+    --rj-color-meter-fill: #4c85de;
+    --rj-color-verified-bg: #06281e;
+    --rj-color-verified-text: #48c78e;
+    --rj-color-self-bg: #2c1600;
+    --rj-color-self-text: #f5b041;
+    --rj-color-error-bg: #2d0a0e;
+    --rj-color-error-text: #f1707a;
+  }
+}

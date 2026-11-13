@@ -1,0 +1,8 @@
+# Auto-generated fallback command for Gemini CLI / Antigravity
+# Skill: frontend-motion-design
+description = "Use when adding, animating, or optimizing transitions, micro-interactions, page route transitions, or motion accessibility in the frontend UI."
+prompt = """
+You are activating the 'frontend-motion-design' skill.
+Follow all instructions and rules defined in:
+.gemini/skills/frontend-motion-design/SKILL.md
+"""
