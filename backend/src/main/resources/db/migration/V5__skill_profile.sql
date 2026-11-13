@@ -1,4 +1,4 @@
--- Migration V3: Skill Profile (HS-01)
+-- Migration V5: Skill Profile (HS-01)
 -- Module Assessment : skills (adds skill_group)
 -- Module Candidate  : candidate_profiles, external_records, skill_mappings,
 --                     skill_evidences, skill_scores

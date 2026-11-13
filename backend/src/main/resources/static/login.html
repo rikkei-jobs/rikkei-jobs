@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Tuyển Dụng - Đăng Nhập</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4">
+
+    <div class="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-700 px-6 py-8 text-center text-white">
+            <h1 class="text-2xl font-bold tracking-tight">Rikkei Jobs Cổng Tuyển Dụng</h1>
+            <p class="text-blue-100 text-sm mt-1">Hệ thống Đăng nhập (Task [NT-01])</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex border-b border-slate-200 bg-slate-50">
+            <button id="tab-lms" onclick="switchTab('lms')" 
+                    class="flex-1 py-3 text-sm font-semibold text-blue-600 border-b-2 border-blue-600 bg-white transition-all">
+                Qua LMS (SSO)
+            </button>
+            <button id="tab-hr" onclick="switchTab('hr')" 
+                    class="flex-1 py-3 text-sm font-semibold text-slate-500 hover:text-slate-800 transition-all">
+                Doanh Nghiệp (Email/Pass)
+            </button>
+        </div>
+
+        <div class="p-6">
+            <!-- Alert Error -->
+            <div id="error-alert" class="hidden mb-4 p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded"></div>
+            <!-- Alert Success -->
+            <div id="success-alert" class="hidden mb-4 p-3 bg-green-50 border-l-4 border-green-500 text-green-700 text-sm rounded"></div>
+
+            <!-- Tab 1: Qua LMS -->
+            <div id="content-lms" class="space-y-4">
+                <div class="text-center text-xs text-slate-600 mb-2">
+                    Lấy vé SSO từ Mock Server cổng 9000 (Header: <code>X-Service-Key: dev-key</code>)
+                </div>
+
+                <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 space-y-2.5">
+                    <div class="text-xs font-semibold uppercase text-blue-800 tracking-wider">Chọn Tài Khoản LMS Giả Lập:</div>
+                    
+                    <button onclick="requestLmsTicket('lms-sv-001')" class="w-full text-left px-3 py-2 bg-white hover:bg-blue-100/50 border border-blue-200 rounded-lg text-sm font-medium text-slate-700 flex justify-between items-center transition">
+                        <span>🎓 candidate1 (Nguyễn Văn An)</span>
+                        <span class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">CANDIDATE</span>
+                    </button>
+                    <button onclick="requestLmsTicket('lms-sv-002')" class="w-full text-left px-3 py-2 bg-white hover:bg-blue-100/50 border border-blue-200 rounded-lg text-sm font-medium text-slate-700 flex justify-between items-center transition">
+                        <span>🎓 candidate2 (Trần Thị Bình)</span>
+                        <span class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">CANDIDATE</span>
+                    </button>
+                    <button onclick="requestLmsTicket('lms-mt-001')" class="w-full text-left px-3 py-2 bg-white hover:bg-blue-100/50 border border-blue-200 rounded-lg text-sm font-medium text-slate-700 flex justify-between items-center transition">
+                        <span>👨‍🏫 mentor1 (Phạm Quốc Dũng)</span>
+                        <span class="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded">MENTOR</span>
+                    </button>
+                    <button onclick="requestLmsTicket('lms-st-001')" class="w-full text-left px-3 py-2 bg-white hover:bg-blue-100/50 border border-blue-200 rounded-lg text-sm font-medium text-slate-700 flex justify-between items-center transition">
+                        <span>💼 staff1 (Hoàng Thu Hà)</span>
+                        <span class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded">STAFF</span>
+                    </button>
+                    <button onclick="requestLmsTicket('lms-ad-001')" class="w-full text-left px-3 py-2 bg-white hover:bg-blue-100/50 border border-blue-200 rounded-lg text-sm font-medium text-slate-700 flex justify-between items-center transition">
+                        <span>⚡ admin1 (Đỗ Thanh Hải)</span>
+                        <span class="text-xs bg-rose-100 text-rose-700 px-2 py-0.5 rounded">ADMIN</span>
+                    </button>
+                </div>
+
+                <div class="pt-2">
+                    <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Hoặc Nhập Mã Vé SSO Tùy Chọn:</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="custom-ticket" placeholder="Nhập vé để test lại lần 2..." 
+                               class="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <button onclick="loginWithCustomTicket()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition">
+                            Vào
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2: Doanh Nghiệp -->
+            <div id="content-hr" class="hidden space-y-4">
+                <div class="bg-amber-50 p-3 rounded-lg border border-amber-200 text-xs text-amber-800">
+                    💡 <strong>Tài khoản mẫu:</strong> Email: <code class="font-bold">hr1@company.com</code> | Mật khẩu: <code class="font-bold">Hr@123456</code> (Lần đầu đăng nhập sẽ yêu cầu đổi mật khẩu).
+                </div>
+
+                <form id="hr-login-form" onsubmit="handleHrLogin(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Email Doanh Nghiệp</label>
+                        <input type="email" id="hr-email" value="hr1@company.com" required
+                               class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Mật Khẩu</label>
+                        <input type="password" id="hr-password" value="Hr@123456" required
+                               class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-slate-500">Sai quá 5 lần sẽ bị khoá 15p</span>
+                        <a href="/forgot-password" class="text-blue-600 hover:underline font-medium">Quên mật khẩu?</a>
+                    </div>
+                    <button type="submit" id="btn-hr-submit" 
+                            class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg text-sm transition shadow-md">
+                        Đăng Nhập
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tab) {
+            const tabLms = document.getElementById('tab-lms');
+            const tabHr = document.getElementById('tab-hr');
+            const contentLms = document.getElementById('content-lms');
+            const contentHr = document.getElementById('content-hr');
+            hideAlerts();
+
+            if (tab === 'lms') {
+                tabLms.className = "flex-1 py-3 text-sm font-semibold text-blue-600 border-b-2 border-blue-600 bg-white transition-all";
+                tabHr.className = "flex-1 py-3 text-sm font-semibold text-slate-500 hover:text-slate-800 transition-all";
+                contentLms.classList.remove('hidden');
+                contentHr.classList.add('hidden');
+            } else {
+                tabHr.className = "flex-1 py-3 text-sm font-semibold text-blue-600 border-b-2 border-blue-600 bg-white transition-all";
+                tabLms.className = "flex-1 py-3 text-sm font-semibold text-slate-500 hover:text-slate-800 transition-all";
+                contentHr.classList.remove('hidden');
+                contentLms.classList.add('hidden');
+            }
+        }
+
+        // Bước 1 luồng SSO: Giả lập bấm nút từ LMS -> Gọi Mock cổng 9000 lấy vé
+        async function requestLmsTicket(lmsUserId) {
+            hideAlerts();
+            try {
+                const res = await fetch('http://localhost:9000/lms/sso/tickets', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Service-Key': 'dev-key'
+                    },
+                    body: JSON.stringify({ lmsUserId })
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    showError("Lỗi từ Mock (9000): " + (err.message || 'Không thể cấp vé'));
+                    return;
+                }
+
+                const data = await res.json();
+                // Bước 2: Chuyển hướng sang /sso-callback?ticket=<vé>
+                window.location.href = `/sso-callback?ticket=${encodeURIComponent(data.ticket)}`;
+
+            } catch (e) {
+                showError("⚠️ Chưa bật Mock Server cổng 9000! Hãy mở Terminal và gõ: 'cd mock && java MockServer.java' (hoặc 'npm start').");
+            }
+        }
+
+        function loginWithCustomTicket() {
+            const ticket = document.getElementById('custom-ticket').value.trim();
+            if (!ticket) {
+                showError("Vui lòng nhập mã vé SSO");
+                return;
+            }
+            window.location.href = `/sso-callback?ticket=${encodeURIComponent(ticket)}`;
+        }
+
+        async function handleHrLogin(e) {
+            e.preventDefault();
+            hideAlerts();
+            const email = document.getElementById('hr-email').value.trim();
+            const password = document.getElementById('hr-password').value;
+            const submitBtn = document.getElementById('btn-hr-submit');
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Đang xác thực...';
+
+            try {
+                const response = await fetch('/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    showError(data.message || 'Đăng nhập không thành công.');
+                    return;
+                }
+
+                localStorage.setItem('accessToken', data.accessToken);
+                localStorage.setItem('user', JSON.stringify(data.user));
+
+                if (data.mustChangePassword) {
+                    window.location.href = '/change-password';
+                } else {
+                    window.location.href = '/dashboard';
+                }
+            } catch (err) {
+                showError('Không thể kết nối đến máy chủ.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Đăng Nhập';
+            }
+        }
+
+        function showError(msg) {
+            const el = document.getElementById('error-alert');
+            el.textContent = msg;
+            el.classList.remove('hidden');
+        }
+
+        function hideAlerts() {
+            document.getElementById('error-alert').classList.add('hidden');
+            document.getElementById('success-alert').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>

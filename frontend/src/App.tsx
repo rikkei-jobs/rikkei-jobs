@@ -5,13 +5,9 @@ import { HealthBadge } from './shared/components/HealthBadge';
 import { ModuleCard } from './shared/components/ModuleCard';
 import { fetchBackendHealth, type BackendHealthStatus } from './shared/api/health';
 import { BUSINESS_MODULES } from './features';
-<<<<<<< HEAD
-import { JobRecommendationsSection } from './features/candidate';
-=======
 import { SkillProfilePage, fetchMySkills } from './features/candidate';
 import { LoginForm } from './shared/components/LoginForm';
 import { ApiError, buildBasicAuthHeader } from './shared/api/auth';
->>>>>>> origin/feature/hs-01-skill-profile
 
 export const APP_NAME = 'Rikkei Jobs - Nền tảng kết nối việc làm theo năng lực đã xác thực';
 export const APP_VERSION = 'v1.0.0-sprint1';
@@ -109,17 +105,6 @@ export const App: React.FC = () => {
         </button>
       </nav>
 
-<<<<<<< HEAD
-        <JobRecommendationsSection />
-
-        <section className="section-modules">
-          <div className="section-header">
-            <h2 className="section-title">7 Module Nghiệp vụ Hệ thống</h2>
-            <p className="section-desc">
-              Kiến trúc Modular Monolith phân rã độc lập theo từng phân hệ nghiệp vụ chuẩn xác
-            </p>
-          </div>
-=======
       {view === 'skills' && (
         <main className="app-main">
           {authHeader ? (
@@ -133,7 +118,6 @@ export const App: React.FC = () => {
           )}
         </main>
       )}
->>>>>>> origin/feature/hs-01-skill-profile
 
       {view === 'home' && (
         <main className="app-main">

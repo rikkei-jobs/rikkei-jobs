@@ -1,4 +1,4 @@
--- Migration V6: Dev seed for Evaluation module
+-- Migration V8: Dev seed for Evaluation module
 -- Only loaded in the 'dev' profile.
 --
 -- Dependencies:

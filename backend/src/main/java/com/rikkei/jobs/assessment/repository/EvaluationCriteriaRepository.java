@@ -9,4 +9,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface EvaluationCriteriaRepository extends JpaRepository<EvaluationCriteria, Long> {
     List<EvaluationCriteria> findAllByIdIn(Collection<Long> ids);
+    List<EvaluationCriteria> findAllByTemplateId(Long templateId);
 }

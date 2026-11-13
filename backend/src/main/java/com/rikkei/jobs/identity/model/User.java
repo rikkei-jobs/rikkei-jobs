@@ -34,6 +34,21 @@ public class User {
     @Column(name = "role_id", nullable = false)
     private Integer roleId;
 
+    @Column(name = "must_change_password", nullable = false)
+    private boolean mustChangePassword = false;
+
+    @Column(name = "failed_login_count", nullable = false)
+    private int failedLoginCount = 0;
+
+    @Column(name = "locked_until")
+    private OffsetDateTime lockedUntil;
+
+    @Column(length = 20, nullable = false)
+    private String status = "ACTIVE";
+
+    @Column(name = "company_id")
+    private Long companyId;
+
     @Column(name = "created_at")
     private OffsetDateTime createdAt;
 
@@ -112,6 +127,46 @@ public class User {
 
     public void setRoleId(Integer roleId) {
         this.roleId = roleId;
+    }
+
+    public boolean isMustChangePassword() {
+        return mustChangePassword;
+    }
+
+    public void setMustChangePassword(boolean mustChangePassword) {
+        this.mustChangePassword = mustChangePassword;
+    }
+
+    public int getFailedLoginCount() {
+        return failedLoginCount;
+    }
+
+    public void setFailedLoginCount(int failedLoginCount) {
+        this.failedLoginCount = failedLoginCount;
+    }
+
+    public OffsetDateTime getLockedUntil() {
+        return lockedUntil;
+    }
+
+    public void setLockedUntil(OffsetDateTime lockedUntil) {
+        this.lockedUntil = lockedUntil;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public Long getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Long companyId) {
+        this.companyId = companyId;
     }
 
     public OffsetDateTime getCreatedAt() {
