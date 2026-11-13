@@ -8,6 +8,8 @@ import { BUSINESS_MODULES } from './features';
 import { SkillProfilePage, fetchMySkills } from './features/candidate';
 import { LoginForm } from './shared/components/LoginForm';
 import { ApiError, buildBasicAuthHeader } from './shared/api/auth';
+import { CandidateProfilePage } from './features/candidate/components/CandidateProfilePage';
+import { fetchCurrentUser, type CurrentUser } from './shared/api/authApi';
 
 export const APP_NAME = 'Rikkei Jobs - Nền tảng kết nối việc làm theo năng lực đã xác thực';
 export const APP_VERSION = 'v1.0.0-sprint1';
@@ -20,14 +22,17 @@ export const App: React.FC = () => {
     'Đang thiết lập kết nối tới Backend...',
   );
   const [isChecking, setIsChecking] = useState<boolean>(false);
-  const [view, setView] = useState<'home' | 'skills'>('home');
+  const [view, setView] = useState<'home' | 'skills' | 'candidate'>('home');
   const [authHeader, setAuthHeader] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
 
   const handleLogin = useCallback(async (email: string, password: string) => {
     const header = buildBasicAuthHeader(email, password);
     try {
       await fetchMySkills(header);
       setAuthHeader(header);
+      const user = await fetchCurrentUser(header);
+      setCurrentUser(user);
       return null;
     } catch (err: unknown) {
       return err instanceof ApiError && err.status === 401
@@ -36,7 +41,11 @@ export const App: React.FC = () => {
     }
   }, []);
 
-  const handleLogout = useCallback(() => setAuthHeader(null), []);
+  const handleLogout = useCallback(() => {
+    setAuthHeader(null);
+    setCurrentUser(null);
+    setView('home');
+  }, []);
 
   const checkHealth = useCallback(async () => {
     setIsChecking(true);
@@ -103,6 +112,16 @@ export const App: React.FC = () => {
         >
           Hồ sơ năng lực
         </button>
+        {(!currentUser || currentUser.role === 'CANDIDATE') && (
+          <button
+            type="button"
+            className="app-nav-btn"
+            aria-current={view === 'candidate' ? 'page' : undefined}
+            onClick={() => setView('candidate')}
+          >
+            Hồ sơ ứng viên
+          </button>
+        )}
       </nav>
 
       {view === 'skills' && (
@@ -110,6 +129,21 @@ export const App: React.FC = () => {
           {authHeader ? (
             <SkillProfilePage
               authHeader={authHeader}
+              onUnauthorized={handleLogout}
+              onLogout={handleLogout}
+            />
+          ) : (
+            <LoginForm onSubmit={handleLogin} />
+          )}
+        </main>
+      )}
+
+      {view === 'candidate' && (
+        <main className="app-main">
+          {authHeader && currentUser?.role === 'CANDIDATE' ? (
+            <CandidateProfilePage
+              userId={currentUser.id}
+              authorizationHeader={authHeader}
               onUnauthorized={handleLogout}
               onLogout={handleLogout}
             />

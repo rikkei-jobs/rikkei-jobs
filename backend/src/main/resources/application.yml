@@ -8,7 +8,7 @@ spring:
     active: ${SPRING_PROFILES_ACTIVE:}
 
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/rikkeijobs}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/rikkeijobs}
     username: ${SPRING_DATASOURCE_USERNAME:rikkei_app}
     password: ${SPRING_DATASOURCE_PASSWORD:rikkei_secret}
     driver-class-name: org.postgresql.Driver
@@ -33,12 +33,35 @@ spring:
     host: ${SPRING_MAIL_HOST:localhost}
     port: ${SPRING_MAIL_PORT:1025}
 
+jwt:
+  secret: ${JWT_SECRET:MySuperSecretKeyForJwtTokenGenerationLongEnough32Bytes}
+  expiration-ms: ${JWT_EXPIRATION_MS:28800000}
+
 external:
   api:
     base-url: ${EXTERNAL_BASE_URL:http://localhost:9000}
     service-key: ${EXTERNAL_SERVICE_KEY:dev-key}
     timeout-seconds: ${EXTERNAL_API_TIMEOUT:5}
     max-retries: 2
+
+ai:
+  provider: ${AI_PROVIDER:mock}
+  timeout-seconds: ${AI_TIMEOUT_SECONDS:10}
+  mock:
+    explanation: "Hồ sơ của bạn phù hợp với vị trí này nhờ năng lực vững vàng về các kỹ năng trọng tâm. Bạn cần trau dồi thêm về các công cụ liên quan để gia tăng lợi thế cạnh tranh."
+  openai:
+    api-key: ${OPENAI_API_KEY:}
+    model: ${OPENAI_MODEL:gpt-4o-mini}
+    base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
+  gemini:
+    api-key: ${GEMINI_API_KEY:}
+    model: ${GEMINI_MODEL:gemini-1.5-flash}
+    base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com/v1beta}
+  claude:
+    api-key: ${CLAUDE_API_KEY:}
+    model: ${CLAUDE_MODEL:claude-3-5-sonnet-20241022}
+    base-url: ${CLAUDE_BASE_URL:https://api.anthropic.com/v1}
+
 
 springdoc:
   api-docs:

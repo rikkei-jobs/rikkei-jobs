@@ -1,4 +1,4 @@
--- Migration V4: Dev seed for Skill Profile (HS-01). Loaded only in the 'dev' profile.
+-- Migration V6: Dev seed for Skill Profile (HS-01). Loaded only in the 'dev' profile.
 -- Provides skill groups, source-to-skill mappings, candidate visibility, sample external
 -- records for 3 candidates (stand-in for NT-05) and SELF evidences.
 -- Timestamps are relative to NOW() so the "within the last year" time factor stays stable.

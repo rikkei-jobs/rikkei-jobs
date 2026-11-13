@@ -2,10 +2,12 @@ package com.rikkei.jobs.common.security;
 
 import java.util.Arrays;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -13,6 +15,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -25,22 +28,36 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
  */
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final CustomAuthenticationEntryPoint authenticationEntryPoint;
     private final CustomAccessDeniedHandler accessDeniedHandler;
     private final Environment environment;
     private final String corsAllowedOrigins;
+    private final JwtAuthFilter jwtAuthFilter;
 
     public SecurityConfig(
             CustomAuthenticationEntryPoint authenticationEntryPoint,
             CustomAccessDeniedHandler accessDeniedHandler,
             Environment environment,
             @Value("${CORS_ALLOWED_ORIGINS:}") String corsAllowedOrigins) {
+        this(authenticationEntryPoint, accessDeniedHandler, environment, corsAllowedOrigins, null);
+    }
+
+    @Autowired
+    public SecurityConfig(
+            CustomAuthenticationEntryPoint authenticationEntryPoint,
+            CustomAccessDeniedHandler accessDeniedHandler,
+            Environment environment,
+            @Value("${CORS_ALLOWED_ORIGINS:}") String corsAllowedOrigins,
+            @org.springframework.beans.factory.annotation.Autowired(required = false)
+                    JwtAuthFilter jwtAuthFilter) {
         this.authenticationEntryPoint = authenticationEntryPoint;
         this.accessDeniedHandler = accessDeniedHandler;
         this.environment = environment;
         this.corsAllowedOrigins = corsAllowedOrigins;
+        this.jwtAuthFilter = jwtAuthFilter;
     }
 
     @Bean
@@ -63,13 +80,33 @@ public class SecurityConfig {
                                             "/swagger-ui.html",
                                             "/swagger-ui/**",
                                             "/api-docs/**",
-                                            "/v3/api-docs/**")
+                                            "/v3/api-docs/**",
+                                            "/api/v1/auth/**",
+                                            "/auth/**",
+                                            "/login",
+                                            "/sso-callback",
+                                            "/change-password",
+                                            "/forgot-password",
+                                            "/reset-password",
+                                            "/dashboard",
+                                            "/*.html",
+                                            "/static/**")
                                     .permitAll();
                             if (environment.matchesProfiles("dev")) {
-                                auth.requestMatchers("/api/v1/test/**").permitAll();
+                                auth.requestMatchers(
+                                                "/api/v1/test/**",
+                                                "/api/v1/me/job-recommendations",
+                                                "/api/v1/candidates/me/job-recommendations",
+                                                "/me/job-recommendations",
+                                                "/api/v1/evaluation-templates")
+                                        .permitAll();
                             }
                             auth.anyRequest().authenticated();
                         });
+
+        if (jwtAuthFilter != null) {
+            http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+        }
 
         return http.build();
     }
