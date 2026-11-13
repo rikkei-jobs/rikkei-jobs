@@ -6,15 +6,12 @@ import com.rikkei.jobs.candidate.dto.response.ProfileEvaluationMentorResponse;
 import com.rikkei.jobs.candidate.dto.response.ProfileEvaluationResponse;
 import com.rikkei.jobs.candidate.dto.response.ProfileEvaluationScoreResponse;
 import com.rikkei.jobs.candidate.dto.response.ProfileEvaluationsResponse;
+import java.util.List;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 
-import java.util.List;
-
-@Mapper(componentModel = "spring",
-    unmappedTargetPolicy = ReportingPolicy.IGNORE
-)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface ProfileEvaluationMapper {
     @Mapping(target = "mentor", source = "mentor")
     @Mapping(target = "context", expression = "java(evaluation.getContext().name())")
@@ -23,24 +20,15 @@ public interface ProfileEvaluationMapper {
     ProfileEvaluationResponse toResponse(Evaluation evaluation);
 
     @Mapping(target = "name", source = "fullName")
-    ProfileEvaluationMentorResponse toMentorResponse(
-        com.rikkei.jobs.identity.model.User mentor
-    );
+    ProfileEvaluationMentorResponse toMentorResponse(com.rikkei.jobs.identity.model.User mentor);
 
     @Mapping(target = "criterionId", source = "criterion.id")
     @Mapping(target = "criterionDescription", source = "criterion.description")
-    ProfileEvaluationScoreResponse toScoreResponse(
-        EvaluationScore evaluationScore
-    );
+    ProfileEvaluationScoreResponse toScoreResponse(EvaluationScore evaluationScore);
 
-    List<ProfileEvaluationResponse> toResponseList(
-        List<Evaluation> evaluations
-    );
+    List<ProfileEvaluationResponse> toResponseList(List<Evaluation> evaluations);
 
     @Mapping(target = "userId", source = "userId")
     @Mapping(target = "evaluations", source = "evaluations")
-    ProfileEvaluationsResponse toEvaluationsResponse(
-        Long userId,
-        List<Evaluation> evaluations
-    );
+    ProfileEvaluationsResponse toEvaluationsResponse(Long userId, List<Evaluation> evaluations);
 }

@@ -6,6 +6,8 @@ import com.rikkei.jobs.assessment.dto.response.EvaluationResponse;
 
 public interface EvaluationService {
     EvaluationResponse createEvaluation(CreateEvaluationRequest request, Long mentorId);
-    void updateEvaluation(Long evaluationId, Long mentorId,UpdateEvaluationRequest request);
+
+    void updateEvaluation(Long evaluationId, Long mentorId, UpdateEvaluationRequest request);
+
     void submitEvaluation(Long evaluationId, Long mentorId);
 }
