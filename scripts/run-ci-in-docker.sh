@@ -342,23 +342,26 @@ execute_clean_code_and_linters() {
     echo "6. Running Version Table Drift Check..."
     node scripts/check-version-drift.mjs
 
-    echo "7. Running Quality Gate Synchronization Check..."
+    echo "7. Running Contrast Table Verification..."
+    node scripts/compute-contrast.mjs
+
+    echo "8. Running Quality Gate Synchronization Check..."
     node scripts/check-gate-sync.mjs
 
-    echo "8. Running Agent Configuration Sync & Validation Check..."
+    echo "9. Running Agent Configuration Sync & Validation Check..."
     node scripts/sync-agent-config.mjs --check
     node scripts/validate-agent-config.mjs
 
-    echo "9. Running Yamllint..."
+    echo "10. Running Yamllint..."
     docker run --rm -v "$PWD:/data" cytopia/yamllint:1-0.14 -c /data/.yamllint.yml /data
 
-    echo "10. Running Hadolint..."
+    echo "11. Running Hadolint..."
     docker run --rm -v "$PWD:/repo" hadolint/hadolint:v2.15.1 hadolint /repo/backend/Dockerfile /repo/frontend/Dockerfile /repo/mock/Dockerfile
 
-    echo "11. Running Actionlint..."
+    echo "12. Running Actionlint..."
     docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 .github/workflows/ci.yml
 
-    echo "12. Running SQLFluff on Flyway Migrations..."
+    echo "13. Running SQLFluff on Flyway Migrations..."
     docker run --rm -v "$PWD:/repo" -w /repo sqlfluff/sqlfluff:4.5.0 lint backend/src/main/resources/db/migration
 }
 run_job "clean-code-and-linters" "Code Hygiene & Security Leak Scan" execute_clean_code_and_linters
