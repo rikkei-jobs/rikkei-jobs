@@ -1448,3 +1448,73 @@ User / Team Lead Prompt (ORIGINAL_REQUEST.md & PROMPT_NT01F_EN.txt) > Enterprise
   2. Inspect and measure offsets at 375px and 1440px in light and dark modes.
   3. Record verified measurements in docs/nt01/README.md.
   4. Confirm OS temp folder cleaned and git status shows zero image files added.
+
+---
+
+## 15. Phase 0 Round G Acknowledgement (PR Evidence: Sample-Data Section, PR Screenshots Kept Out of Git, and OpenAPI Completeness)
+
+### 15.1 Inventory of Authoritative Files Read Prior to Round G
+
+1. CLAUDE.md
+2. .claude/rules/03-safety-and-secrets.md
+3. .claude/rules/04-honest-verification.md
+4. .claude/rules/07-security-rbac.md
+5. .claude/rules/11-docs-and-bilingual.md
+6. .claude/rules/16-backend-integrations.md
+7. .claude/skills/security-review-checklist/SKILL.md
+8. .claude/skills/verification-before-completion/SKILL.md
+9. .claude/skills/docs-bilingual-update/SKILL.md
+10. D:\GitHub\Rikkei\.agents\PROMPT_NT01G_EN.txt
+11. D:\GitHub\Rikkei\.agents\PROMPT_NT01_EN.txt
+
+### 15.2 Concrete Applicable Constraint per Rule and Skill
+
+| Identifier | Name | Exact Applicable Constraint for Round G |
+|---|---|---|
+| Rule 03 | Safety and Secrets | Never open, read, print, or commit secrets (.env, *.pem, first-key.pem); writable bounds strictly rikkei-jobs; temp captures in OS temp only and immediately deleted; never run scripts/run-ci-in-docker.*; leave all changes uncommitted. |
+| Rule 04 | Honest Verification | Evidence before claims; report real measured test counts and raw command outputs; all 26 gates must pass on check.sh and check.ps1; tear down Docker stack completely. |
+| Rule 07 | Security RBAC | 5 system roles (CANDIDATE, HR, MENTOR, STAFF, ADMIN); deny-by-default posture in SecurityConfig; SSO tickets single-use with 60s TTL recorded in used_sso_tickets; must_change_password flag triggers 403 on non-whitelisted business endpoints. |
+| Rule 11 | Docs and Bilingual | Maintain documentation standards; zero version drift in docs/03; markdownlint clean with zero errors; cspell clean with zero inline ignores; full Vietnamese diacritics in PR description and handoff report. |
+| Rule 16 | Backend Integrations | OpenAPI 3.2.0 active on dev profile (/swagger-ui.html and /api-docs) and completely disabled on prod profile; Mailpit on ports 1025 (SMTP) and 8025 (Web UI); ExternalApiClient calls mock port 9000 with X-Service-Key: dev-key. |
+| Skill 1 | security-review-checklist | Verify single-use 60s TTL SSO ticket validation; enforce fail-fast validation and unified ErrorResponse schema; ensure no sensitive credentials leaked in controller documentation or responses. |
+| Skill 2 | verification-before-completion | Run all local quality gates and verify exit code 0 before declaring completion; measure real numbers for backend tests, frontend tests, e2e suites/cases, contrast pairs; author automated OpenAPI test without Thread.sleep(); tear down containers cleanly. |
+| Skill 3 | docs-bilingual-update | Keep PR_DESCRIPTION.md synchronized with exact seed data and verified reviewer steps; maintain full Vietnamese diacritics and bilingual structure; ensure zero markdownlint/cspell errors. |
+
+### 15.3 Defect Resolution and Proof Methods for Items G1 through G4
+
+#### G1. Sample Data and Reviewer Acceptance Scenarios
+
+- Objective: Add a dedicated section "Dữ liệu mẫu và tài khoản thử nghiệm" in docs/nt01/PR_DESCRIPTION.md built exclusively from committed development seed files (V2__dev_seed.sql, V6__dev_seed_nt01.sql, mock/data.json, docs/mock-contract.md, .env.example) with role, company, must_change_password, and login method. Provide exact curl commands to obtain fresh ephemeral SSO tickets from the LMS mock service with X-Service-Key: dev-key and 60s TTL. Detail step-by-step numbered instructions for all 7 reviewer acceptance scenarios (SSO login, ticket replay 401, expired ticket 401, hr1 first login 403, 5 wrong passwords lockout 401, forgot password Mailpit reset link and single-use, OpenAPI dev UI). Verify every step on the running Docker stack and record raw output.
+- Proof Method:
+  1. Extract development seed accounts exclusively from V2__dev_seed.sql and V6__dev_seed_nt01.sql, verifying against mock/data.json.
+  2. Execute curl commands against Mock LMS (`http://localhost:9000/lms/sso/tickets`) to obtain valid tickets and expired tickets.
+  3. Execute curl and browser acceptance scenarios for all 7 scenarios against localhost backend and frontend, capturing raw response codes and JSON bodies.
+  4. Record verified steps and outputs in docs/nt01/PR_DESCRIPTION.md with full Vietnamese diacritics.
+
+#### G2. Screenshots Prepared Outside Git
+
+- Objective: Create folder docs/nt01/pr-screenshots/ and make sure it can never be committed by adding an ignore rule to .gitignore under # Temporary / Scratch Files. Prove it with git check-ignore -v and git status showing no image file tracked or staged. Write docs/nt01/pr-screenshots/ORDER.txt listing the 10 ordered screenshots (plus 2 supplemental: mobile 375px and desktop dark mode). Report honestly if the Antigravity browser cannot save PNG files into the folder. Add a short section "Ảnh màn hình" to docs/nt01/PR_DESCRIPTION.md stating screenshots are attached directly in the GitHub PR and listing caption text only (no image links).
+- Proof Method:
+  1. Add `docs/nt01/pr-screenshots/` to .gitignore and execute `git check-ignore -v docs/nt01/pr-screenshots/test.png` verifying it matches the ignore rule.
+  2. Execute `git ls-files '*.png' '*.jpg'` and `git status` confirming no new image files are tracked or staged.
+  3. Create docs/nt01/pr-screenshots/ORDER.txt with 10 primary and 2 supplemental screenshot entries with exact filenames, dimensions, and Vietnamese captions.
+  4. Add caption-only list to docs/nt01/PR_DESCRIPTION.md and confirm zero Markdown image embed tags exist in the section.
+
+#### G3. OpenAPI Completeness
+
+- Objective: Compare the real behavior of every NT-01 endpoint (/api/v1/auth/sso, login, change-password, forgot-password, reset-password, me) and profile endpoint (/api/v1/profiles/me/skills, /{userId}/skills, /me/skills/recompute) with its @Operation and @ApiResponse annotations. Document all real status codes and error codes (401 UNAUTHORIZED, TICKET_EXPIRED, TICKET_ALREADY_USED, INVALID_TICKET, UNMAPPED_LMS_ROLE, ACCOUNT_LOCKED; 403 MUST_CHANGE_PASSWORD; 409 EMAIL_COLLISION; 400 VALIDATION_ERROR, RESET_TOKEN_EXPIRED; 404 NOT_FOUND) with the unified ErrorResponse schema. Add @SecurityScheme on AuthController and @SecurityRequirement(name = "bearerAuth") on secured endpoints. Maintain Swagger UI and api-docs disabled in prod profile per Rule 16. Author an automated test in AuthControllerIntegrationTest asserting /api-docs completeness without Thread.sleep().
+- Proof Method:
+  1. Inspect and update Swagger annotations in AuthController.java and SkillProfileController.java.
+  2. Implement `testOpenApiDocumentationCompleteness()` in AuthControllerIntegrationTest.java querying /api-docs via MockMvc and parsing JSON schema tree.
+  3. Run `./mvnw test -Dtest=AuthControllerIntegrationTest#testOpenApiDocumentationCompleteness` in backend confirming test passes with exit code 0.
+  4. Query `http://localhost:8080/api-docs` on running stack and verify documented paths and response schemas.
+
+#### G4. Re-verification and Bans
+
+- Objective: Execute complete quality verification: backend tests, frontend tests, markdownlint, cspell (0 issues), check-gate-sync, check-version-drift, validate-agent-config (Check 9 must pass), compute-contrast (66 pairs), check.sh and check.ps1 (26/26 gates identical counts, without path conversion override), and clean Docker teardown (docker compose down -v). Confirm all changes remain uncommitted and no git modifying commands were run.
+- Proof Method:
+  1. Run `./mvnw test` in backend confirming all tests pass.
+  2. Run `npm test -- --run` in frontend confirming 108 tests pass.
+  3. Run `node scripts/validate-agent-config.mjs --check` and `node scripts/compute-contrast.mjs`.
+  4. Run markdownlint and cspell ensuring 0 violations.
+  5. Run `git status` verifying only designated files (.gitignore, docs/nt01/*, controller annotations, test) are modified and all changes are uncommitted.

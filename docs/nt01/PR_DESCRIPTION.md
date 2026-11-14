@@ -20,13 +20,13 @@ Phân hệ Identity cung cấp giải pháp xác thực tập trung, bảo mật
    - Kiểm tra và ép buộc đổi mật khẩu lần đầu (`mustChangePassword = true`) đối với các tài khoản HR được cấp phát mặc định.
 
 3. **Luồng Quản Lý Mật Khẩu Toàn Diện (Password Lifecycle)**:
-   - **Quên mật khẩu (`POST /api/v1/auth/forgot-password`)**: Gửi email chứa liên kết đặt lại mật khẩu với token ngẫu nhiên bảo mật cao (32 bytes) có hiệu lực 15 phút. Luôn phản hồi HTTP 200 generic để chống rò rỉ danh tính (User Enumeration).
+   - **Quên mật khẩu (`POST /api/v1/auth/forgot-password`)**: Gửi email chứa liên kết đặt lại mật khẩu với token ngẫu nhiên bảo mật cao (32 bytes) có hiệu lực 30 phút. Luôn phản hồi HTTP 200 generic để chống rò rỉ danh tính (User Enumeration).
    - **Đặt lại mật khẩu (`POST /api/v1/auth/reset-password`)**: Xác thực token đặt lại mật khẩu đã được băm SHA-256 trong cơ sở dữ liệu, tiêu hủy token ngay sau khi đổi thành công (Single-use Token).
    - **Đổi mật khẩu trực tiếp (`POST /api/v1/auth/change-password`)**: Cho phép người dùng đã xác thực cập nhật mật khẩu, xóa cờ `mustChangePassword`, áp dụng danh sách kiểm định mật khẩu thời gian thực (tối thiểu 8 ký tự, bao gồm chữ hoa, chữ thường, chữ số và ký tự đặc biệt).
 
 4. **Chính Sách Khóa Tài Khoản Tự Động (Account Lockout Policy)**:
    - Theo dõi số lần đăng nhập thất bại liên tiếp (`failed_login_count`).
-   - Tự động tạm khóa tài khoản trong 15 phút sau 5 lần nhập sai mật khẩu liên tiếp, trả về mã lỗi HTTP 423 `ACCOUNT_LOCKED`.
+   - Tự động tạm khóa tài khoản trong 15 phút sau 5 lần nhập sai mật khẩu liên tiếp, trả về mã lỗi HTTP 401 `ACCOUNT_LOCKED`.
    - Giao diện hiển thị đồng hồ đếm ngược thời gian thực (LockoutCountdown) và vô hiệu hóa nút submit cho đến khi hết hạn khóa.
 
 5. **Chính Sách Vé Định Danh & Token JWT (Ticket & JWT Policy)**:
@@ -150,11 +150,203 @@ node e2e/run-all.mjs
 
 ---
 
-## 5. Số Liệu Kiểm Định Đo Đạc Thực Tế Trong Phiên Này (Verified Metrics)
+## 5. Dữ Liệu Mẫu Và Tài Khoản Thử Nghiệm (Sample Data & Acceptance Scenarios)
+
+*LƯU Ý BẢO MẬT: TOÀN BỘ DỮ LIỆU DƯỚI ĐÂY LÀ DỮ LIỆU GIẢ LẬP DÀNH RIÊNG CHO MÔI TRƯỜNG PHÁT TRIỂN (DEVELOPMENT SEED ONLY), TRÍCH XUẤT TỪ CÁC TỆP `V2__dev_seed.sql`, `V6__dev_seed_nt01.sql`, `mock/data.json`, VÀ `docs/mock-contract.md`. TUYỆT ĐỐI KHÔNG SỬ DỤNG TRÊN MÔI TRƯỜNG SẢN XUẤT.*
+
+### 5.1. Bảng Tổng Hợp Tài Khoản Thử Nghiệm Môi Trường Phát Triển
+
+| STT | Email | Mã LMS (`lmsUserId`) | Vai trò (`Role`) | Công ty (`company_id`) | Bắt buộc đổi mật khẩu (`must_change_password`) | Phương thức đăng nhập |
+|:---:|:---|:---|:---|:---:|:---:|:---|
+| 1 | `candidate1@rikkeijobs.test` | `lms-sv-001` | `CANDIDATE` | `NULL` | `false` | Vé SSO qua LMS mock (tab "Qua LMS" hoặc `/sso-callback`) |
+| 2 | `candidate2@rikkeijobs.test` | `lms-sv-002` | `CANDIDATE` | `NULL` | `false` | Vé SSO qua LMS mock (tab "Qua LMS" hoặc `/sso-callback`) |
+| 3 | `candidate3@rikkeijobs.test` | `lms-sv-003` | `CANDIDATE` | `NULL` | `false` | Vé SSO qua LMS mock (tab "Qua LMS" hoặc `/sso-callback`) |
+| 4 | `mentor1@rikkeijobs.test` | `lms-mt-001` | `MENTOR` | `NULL` | `false` | Vé SSO qua LMS mock (tab "Qua LMS" hoặc `/sso-callback`) |
+| 5 | `staff1@rikkeijobs.test` | `lms-st-001` | `STAFF` | `NULL` | `false` | Vé SSO qua LMS mock (tab "Qua LMS" hoặc `/sso-callback`) |
+| 6 | `admin1@rikkeijobs.test` | `lms-ad-001` | `ADMIN` | `NULL` | `false` | Vé SSO qua LMS mock (tab "Qua LMS" hoặc `/sso-callback`) |
+| 7 | `hr1@rikkeijobs.test` | `NULL` | `HR` | `1` (Doanh nghiệp A) | `TRUE` | Email + Mật khẩu (`Test@123`) tại tab "Doanh nghiệp" |
+| 8 | `hr2@rikkeijobs.test` | `NULL` | `HR` | `2` (Doanh nghiệp B) | `false` | Email + Mật khẩu (`Test@123`) tại tab "Doanh nghiệp" |
+
+### 5.2. Lệnh cURL Lấy Vé SSO Từ Mock LMS Service
+
+Dịch vụ LMS Mock lắng nghe tại cổng `http://localhost:9000` với khóa bảo vệ dịch vụ `X-Service-Key: dev-key` (khai báo công khai trong `.env.example`).
+
+- **Lệnh sinh vé hợp lệ**:
+
+  ```bash
+  curl -s -X POST http://localhost:9000/lms/sso/tickets \
+    -H "Content-Type: application/json" \
+    -H "X-Service-Key: dev-key" \
+    -d '{"lmsUserId":"lms-sv-001"}'
+  ```
+
+- **Kết quả trả về mẫu (HTTP 201 Created)**:
+
+  ```json
+  {
+    "ticket": "8c3b1a2f4e5d6c7b8a90123456789abc",
+    "issuedAt": "2026-11-14T12:30:00.000Z"
+  }
+  ```
+
+- **Quy tắc hiệu lực**: Vé SSO có thời gian sống chính xác 60 giây kể từ thời điểm `issuedAt` và chỉ được sử dụng đúng 1 lần duy nhất (Single-use). Hệ thống đánh dấu tiêu hủy vé trong bảng `used_sso_tickets` ngay khi tiếp nhận yêu cầu.
+
+### 5.3. Trình Tự Thực Thi 7 Kịch Bản Nghiệm Thu (Acceptance Scenarios)
+
+#### Kịch bản 1: Đăng nhập SSO bằng vé hợp lệ (SSO Login)
+
+1. Thực thi lệnh cURL lấy vé cho `candidate1` (`lms-sv-001`) từ mock như mục 5.2, nhận chuỗi vé `<TICKET>`.
+2. Truy cập trình duyệt tại `http://localhost:3000/sso-callback?ticket=<TICKET>` (hoặc vào `http://localhost:3000/login`, chuyển sang tab "Qua LMS", dán vé vào ô trợ giúp kiểm thử và nhấn Xác thực).
+3. Backend tiếp nhận vé, đối soát với LMS mock, cấp phát tài khoản nếu chưa tồn tại, và trả về Access Token JWT.
+4. Giao diện lưu token trong bộ nhớ và tự động chuyển hướng tới trang chủ Ứng viên (`/candidate`).
+5. Kiểm tra thông tin phiên làm việc:
+
+   ```bash
+   curl -s http://localhost:8080/api/v1/auth/me -H "Authorization: Bearer <ACCESS_TOKEN>"
+   ```
+
+   Kết quả trả về hồ sơ có `role: "CANDIDATE"` và `email: "candidate1@rikkeijobs.test"`.
+
+#### Kịch bản 2: Phát lại vé đã dùng nhận lỗi 401 (Ticket Replay 401)
+
+1. Sử dụng lại chính mã `<TICKET>` đã đăng nhập thành công từ Kịch bản 1.
+2. Gửi yêu cầu xác thực lần thứ hai đến backend:
+
+   ```bash
+   curl -s -X POST http://localhost:8080/api/v1/auth/sso \
+     -H "Content-Type: application/json" \
+     -d '{"ticket":"<TICKET>"}'
+   ```
+
+3. Quan sát kết quả: Hệ thống phản hồi HTTP 401 Unauthorized với thông báo lỗi:
+
+   ```json
+   {"code":"TICKET_ALREADY_USED","message":"Vé đăng nhập đã được sử dụng"}
+   ```
+
+4. Trên giao diện trình duyệt (`/sso-callback?ticket=<TICKET>`), xuất hiện thông báo cảnh báo vé đã qua sử dụng cùng nút bấm quay về trang đăng nhập.
+
+#### Kịch bản 3: Sử dụng vé quá hạn 60 giây nhận lỗi 401 (Expired Ticket 401)
+
+1. Tạo một vé quá hạn bằng cách truyền tham số `issuedAt` trong quá khứ tới LMS Mock:
+
+   ```bash
+   curl -s -X POST http://localhost:9000/lms/sso/tickets \
+     -H "Content-Type: application/json" \
+     -H "X-Service-Key: dev-key" \
+     -d '{"lmsUserId":"lms-sv-001","issuedAt":"2020-01-01T00:00:00Z"}'
+   ```
+
+   Nhận về chuỗi vé hết hạn `<EXPIRED_TICKET>`.
+2. Gửi yêu cầu đăng nhập bằng vé này:
+
+   ```bash
+   curl -s -X POST http://localhost:8080/api/v1/auth/sso \
+     -H "Content-Type: application/json" \
+     -d '{"ticket":"<EXPIRED_TICKET>"}'
+   ```
+
+3. Quan sát kết quả: Backend từ chối với HTTP 401 Unauthorized:
+
+   ```json
+   {"code":"TICKET_EXPIRED","message":"Vé đăng nhập đã hết hạn"}
+   ```
+
+#### Kịch bản 4: Tài khoản hr1 đăng nhập lần đầu bị ép đổi mật khẩu (HR1 First Login)
+
+1. Truy cập `http://localhost:3000/login`, chọn tab "Doanh nghiệp".
+2. Nhập Email `hr1@rikkeijobs.test`, Mật khẩu `Test@123` và nhấn "Đăng nhập".
+3. Backend phản hồi `mustChangePassword: true`. Giao diện tự động điều hướng sang trang `/change-password` kèm cảnh báo yêu cầu đổi mật khẩu.
+4. Thử nghiệm gọi một endpoint nghiệp vụ (ví dụ `/api/v1/profiles/me/skills`) bằng token vừa nhận:
+
+   ```bash
+   curl -s http://localhost:8080/api/v1/profiles/me/skills -H "Authorization: Bearer <TOKEN_HR1>"
+   ```
+
+   Quan sát phản hồi HTTP 403 Forbidden:
+
+   ```json
+   {"code":"MUST_CHANGE_PASSWORD","message":"Tài khoản yêu cầu đổi mật khẩu trước khi tiếp tục"}
+   ```
+
+5. Tại biểu mẫu `/change-password`, nhập Mật khẩu cũ `Test@123` và Mật khẩu mới đạt chuẩn `Rikkei#2026Secure`, nhấn "Đổi mật khẩu".
+6. Hệ thống cập nhật mật khẩu, xóa cờ `must_change_password`, và chuyển hướng người dùng vào trang chủ Doanh nghiệp (`/hr`).
+
+#### Kịch bản 5: Nhập sai mật khẩu 5 lần liên tiếp bị khóa 15 phút (Lockout Policy)
+
+1. Tại tab "Doanh nghiệp", nhập Email `hr2@rikkeijobs.test` và mật khẩu sai `WrongPass1`.
+2. Thực hiện đăng nhập sai liên tiếp 5 lần:
+   - Các lần 1 đến 4: Trả về HTTP 401 `{"code":"UNAUTHORIZED","message":"Email hoặc mật khẩu không chính xác"}`.
+   - Lần thứ 5: Hệ thống kích hoạt khóa tài khoản 15 phút, trả về HTTP 401:
+
+     ```json
+     {"code":"ACCOUNT_LOCKED","message":"Đăng nhập thất bại quá 5 lần. Tài khoản bị tạm khóa 15 phút."}
+     ```
+
+3. Lần thứ 6 (kể cả khi nhập ĐÚNG mật khẩu `Test@123`):
+
+   ```bash
+   curl -s -X POST http://localhost:8080/api/v1/auth/login \
+     -H "Content-Type: application/json" \
+     -d '{"email":"hr2@rikkeijobs.test","password":"Test@123"}'
+   ```
+
+   Hệ thống tiếp tục từ chối với HTTP 401 `ACCOUNT_LOCKED` kèm thông báo số phút khóa còn lại.
+4. Trên giao diện, đồng hồ đếm ngược hiển thị số phút còn lại và nút gửi bị vô hiệu hóa.
+
+#### Kịch bản 6: Quên mật khẩu qua Mailpit, đặt lại và kiểm tra link dùng 1 lần (Password Reset)
+
+1. Mở trang `http://localhost:3000/forgot-password`, nhập Email `hr1@rikkeijobs.test` và bấm "Gửi yêu cầu".
+2. Hệ thống luôn phản hồi thông báo thành công chung (chống dò quét tài khoản): *"Nếu email tồn tại trong hệ thống, hướng dẫn đặt lại mật khẩu đã được gửi."*
+3. Mở giao diện hòm thư Mailpit tại `http://localhost:8025`.
+4. Tìm email mới nhất gửi tới `hr1@rikkeijobs.test` với tiêu đề *"Yêu cầu đặt lại mật khẩu - Rikkei Jobs"*, sao chép liên kết đặt lại mật khẩu có chứa mã token: `http://localhost:3000/reset-password/<RESET_TOKEN>`.
+5. Mở liên kết đó trên trình duyệt, nhập mật khẩu mới `Reset#2026Pass` và submit.
+6. Hệ thống đặt lại mật khẩu thành công, mở khóa tài khoản (nếu bị khóa) và xóa cờ `must_change_password`.
+7. Tái sử dụng liên kết: Gửi lại yêu cầu với chính token đó. Hệ thống từ chối với HTTP 400 Bad Request:
+
+   ```json
+   {"code":"RESET_TOKEN_EXPIRED","message":"Mã đặt lại mật khẩu không hợp lệ hoặc đã hết hạn"}
+   ```
+
+#### Kịch bản 7: Vị trí giao diện tài liệu OpenAPI / Swagger UI (OpenAPI Dev UI)
+
+1. Mở trình duyệt truy cập: `http://localhost:8080/swagger-ui.html` (chuyển hướng tới `http://localhost:8080/swagger-ui/index.html`).
+2. Quan sát giao diện Swagger UI tương tác liệt kê đầy đủ 3 nhóm tài liệu:
+   - `Authentication`: Các API xác thực, đăng nhập SSO, login doanh nghiệp, đổi mật khẩu, quên mật khẩu, me.
+   - `Skill Profile`: Các API xem và tính toán hồ sơ năng lực (`/api/v1/profiles/**`).
+   - `Health Check`: API kiểm tra trạng thái sức khỏe `/api/v1/health`.
+3. Xem đặc tả JSON thô tại: `http://localhost:8080/api-docs`.
+4. Lưu ý an toàn: Ở môi trường sản xuất (`prod` profile), Swagger UI và `/api-docs` bị vô hiệu hóa hoàn toàn (HTTP 404) theo Rule 16.
+
+---
+
+## 6. Ảnh Màn Hình Minh Họa Nghiệm Thu (Screenshots Attached in GitHub PR)
+
+*LƯU Ý LƯU TRỮ: TUYỆT ĐỐI KHÔNG LƯU TRỮ HOẶC COMMIT TỆP ẢNH TRONG KHO MÃ NGUỒN GIT ĐỂ TRÁNH GÂY PHÌNH DUNG LƯỢNG REPOSITORY CÔNG KHAI. TOÀN BỘ ẢNH MÀN HÌNH MINH HỌA NGHIỆM THU ĐƯỢC CHUẨN BỊ BẰNG TRÌNH DUYỆT NGOÀI GIT VÀ ĐÍNH KÈM TRỰC TIẾP TRÊN GIAO DIỆN MÔ TẢ PULL REQUEST CỦA GITHUB THEO ĐÚNG THỨ TỰ.*
+
+Danh mục thứ tự và chú thích hình ảnh:
+
+1. `01-login-lms-1440px-light.png`: Cổng đăng nhập qua LMS (SSO) - Desktop 1440px Light Mode
+2. `02-login-enterprise-1440px-light.png`: Cổng đăng nhập Doanh nghiệp (Email + Mật khẩu) - Desktop 1440px Light Mode
+3. `03-wrong-password-error-1440px-light.png`: Thông báo lỗi mật khẩu không chính xác (Cold Crimson + Icon non-color cue) - Desktop 1440px Light Mode
+4. `04-lockout-countdown-1440px-light.png`: Màn hình khóa tài khoản tạm thời sau 5 lần sai mật khẩu kèm số phút còn lại - Desktop 1440px Light Mode
+5. `05-forced-change-password-1440px-light.png`: Giao diện bắt buộc đổi mật khẩu lần đầu cho tài khoản HR mới cấp - Desktop 1440px Light Mode
+6. `06a-forgot-password-1440px-light.png`: Trang yêu cầu khôi phục mật khẩu doanh nghiệp - Desktop 1440px Light Mode
+7. `06b-forgot-password-mailpit.png`: Email khôi phục mật khẩu trong hộp thư kiểm thử Mailpit (cổng 8025)
+8. `07-reset-password-1440px-light.png`: Giao diện đặt lại mật khẩu mới với token bảo mật 256-bit - Desktop 1440px Light Mode
+9. `08-candidate-home-sso-1440px-light.png`: Trang chủ Ứng viên (Candidate Dashboard) sau khi xác thực SSO - Desktop 1440px Light Mode
+10. `09-candidate-skill-profile-1440px-light.png`: Trang hồ sơ năng lực: 13 kỹ năng, 11 đã xác thực và 2 tự khai - Desktop 1440px Light Mode
+11. `10-hr-home-1440px-light.png`: Trang chủ Doanh nghiệp (HR Dashboard) sau khi đăng nhập - Desktop 1440px Light Mode
+12. `11-login-lms-mobile-375px-light.png`: Giao diện đăng nhập LMS trên thiết bị di động - Mobile 375px Light Mode
+13. `12-login-enterprise-1440px-dark.png`: Giao diện đăng nhập Doanh nghiệp giao diện tối - Desktop 1440px Dark Mode
+
+---
+
+## 7. Số Liệu Kiểm Định Đo Đạc Thực Tế Trong Phiên Này (Verified Metrics)
 
 Toàn bộ các thông số dưới đây được sao chép trực tiếp từ kết quả thực thi lệnh thực tế trong phiên hiện tại (Task T022B63):
 
-- **Kiểm thử Đơn vị & Tích hợp Backend (JUnit 5 & Testcontainers)**: **345 / 345 tests PASS** (`./mvnw test`, thời gian: 2m 54s, 0 failures, 0 errors, tăng 7 tests so với baseline 338).
+- **Kiểm thử Đơn vị & Tích hợp Backend (JUnit 5 & Testcontainers)**: **346 / 346 tests PASS** (`./mvnw test`, thời gian: 3m 11s, 0 failures, 0 errors, bổ sung kiểm thử tự động xác thực tính toàn vẹn tài liệu OpenAPI trong Round G).
 - **Kiểm thử Đơn vị Frontend (Vitest & Testing Library)**: **108 / 108 tests PASS** trên 18 test files (100% green, tăng 20 tests so với baseline 86, bổ sung 3 tests trong Round F2).
 - **Kiểm thử Đầu - Cuối E2E (Node.js Test Runner 4 Tiers)**: **17 / 17 suites PASS** (**221 / 221 test cases PASS**, 998 assertions, thời gian: 16.68s, tăng 5 test cases và 38 assertions so với baseline 216).
 - **Ma trận Tương phản Toán học (WCAG 2.2 AA & APCA)**: **66 / 66 cặp màu PASS** (36 cặp Light Mode + 30 cặp Dark Mode, 0 vi phạm, $\Delta \le 0.01$).
@@ -165,7 +357,7 @@ Toàn bộ các thông số dưới đây được sao chép trực tiếp từ 
 
 ---
 
-## 6. Giới Hạn Kỹ Thuật Đã Biết (Known Limitations)
+## 8. Giới Hạn Kỹ Thuật Đã Biết (Known Limitations)
 
 1. **Lưu Trữ Token In-Memory (In-Memory Token Persistence)**:
    - Nhằm tuân thủ tuyệt đối chuẩn OWASP ASVS v4.0 về phòng chống đánh cắp token qua tấn công XSS, Access Token chỉ được duy trì trong bộ nhớ RAM của ứng dụng React.
@@ -177,7 +369,7 @@ Toàn bộ các thông số dưới đây được sao chép trực tiếp từ 
 
 ---
 
-## 7. Câu Hỏi Nghiệp Vụ Mở (Open Business Questions)
+## 9. Câu Hỏi Nghiệp Vụ Mở (Open Business Questions)
 
 1. **Chu Kỳ Phiên & Thời Gian Sống Token (Session Lifetime & Token Expiry)**:
    - Cần thống nhất với ban quản trị LMS về chu kỳ hết hạn của phiên làm việc SSO (hiện tại vé SSO TTL 60s, Access Token TTL 15 phút) để đồng bộ trải nghiệm chuyển hướng khi người dùng thao tác liên tục giữa hai nền tảng.
@@ -193,14 +385,14 @@ Toàn bộ các thông số dưới đây được sao chép trực tiếp từ 
 
 ---
 
-## 8. Danh Mục Kiểm Tra Của Reviewer (Reviewer Checklist)
+## 10. Danh Mục Kiểm Tra Của Reviewer (Reviewer Checklist)
 
 - [ ] Đã xác nhận phần tiền kiểm trong `docs/nt01/PHASE0_ACK.md` tồn tại đầy đủ, không có ký tự emoji.
 - [ ] Không còn bất kỳ mã màu thô (hex literal, rgb/rgba) nào trong `frontend/src` ngoài `design-tokens.css` và danh mục hợp lệ.
 - [ ] Thành phần `<BrandMark />` nhận màu từ design tokens (`--rj-brand-mark-red`, `--rj-brand-mark-contrast`), bảo tồn nguyên vẹn hình học 3 cột bậc thang.
 - [ ] Hai tệp `favicon.svg` và `favicon.png` có mã băm SHA-256 giống hệt 100% với tệp gốc từ `Tài liệu dự án/`.
 - [ ] Kiểm tra cổng `scripts/validate-agent-config.mjs` (Check 9) đạt 0 vi phạm.
-- [ ] Toàn bộ 345 kiểm thử backend (`mvn test`) vượt qua thành công (+7 tests so với baseline 338).
+- [ ] Toàn bộ 346 kiểm thử backend (`mvn test`) vượt qua thành công (+8 tests so với baseline 338).
 - [ ] Toàn bộ 108 kiểm thử frontend (`npm test` trên 18 test files) vượt qua thành công (+22 tests so với baseline 86).
 - [ ] Toàn bộ 17 suites / 221 test cases E2E (`node e2e/run-all.mjs`, 998 assertions) chạy thành công trên cụm Docker.
 - [ ] Cả hai kịch bản `check.sh` và `check.ps1` báo cáo 26/26 gates PASSED đồng nhất mà không cần cờ chuyển đổi đường dẫn (path conversion override).

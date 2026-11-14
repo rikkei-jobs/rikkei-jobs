@@ -96,6 +96,7 @@ temp/
 *.bak
 *.swp
 *~
+docs/nt01/pr-screenshots/
 
 # ==============================================================================
 # AI Coding Agent Configuration (.claude & .gemini mirrors)
