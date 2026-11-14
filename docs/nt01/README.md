@@ -396,7 +396,7 @@ Giai đoạn NT-01 Round F2 (Task T022B63) tập trung khắc phục triệt đ�
 
 2. **Cập Nhật Số Liệu Đo Đạc Thực Tế Mới Nhất**:
    - Backend Unit/Integration Tests: **345 / 345 tests PASS** (0 failures, 0 errors, thời gian 2m 42s).
-   - Frontend Unit Tests: **106 / 106 tests PASS** trên 18 test files (tăng thêm 3 tests so với 103 của Round F: `httpClient.test.ts` +1, `RoleHomes.test.tsx` +1, `SkillProfilePage.test.tsx` +1).
+   - Frontend Unit Tests: **108 / 108 tests PASS** trên 18 test files (tăng thêm 5 tests so với 103 của Round F: `httpClient.test.ts` +1, `RoleHomes.test.tsx` +1, `SkillProfilePage.test.tsx` +1).
    - E2E Tests: **17 suites / 221 test cases PASS** (998 assertions) trên cụm Docker.
    - Contrast Matrix: **66 / 66 pairs PASS** (36 Light + 30 Dark).
    - Quality Gates: **26 / 26 gates PASS** đồng nhất trên cả `check.ps1` và `check.sh`.
@@ -446,5 +446,5 @@ Quy trình thẩm định thực hiện trên cụm Docker Compose thực tế (
    - Bổ sung kiểm thử đơn vị cho container shell trong `RoleHomes.test.tsx` và `SkillProfilePage.test.tsx`.
 2. `T022B63: close round f gaps with skipAuth http client test and documentation metrics`
    - Bổ sung kiểm thử `skipAuth` cho 403 MUST_CHANGE_PASSWORD trong `httpClient.test.ts` (14/14 tests).
-   - Cập nhật số liệu kiểm định thực tế (Backend 345, Frontend 106, E2E 221 cases / 17 suites, Gates 26/26).
+   - Cập nhật số liệu kiểm định thực tế (Backend 345, Frontend 108, E2E 221 cases / 17 suites, Gates 26/26).
    - Ghi nhận báo cáo thẩm định thị giác Docker stack và bảng quét responsive 112 cấu hình vào `README.md` và `PR_DESCRIPTION.md`.

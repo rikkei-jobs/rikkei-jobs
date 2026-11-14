@@ -155,7 +155,7 @@ node e2e/run-all.mjs
 Toàn bộ các thông số dưới đây được sao chép trực tiếp từ kết quả thực thi lệnh thực tế trong phiên hiện tại (Task T022B63):
 
 - **Kiểm thử Đơn vị & Tích hợp Backend (JUnit 5 & Testcontainers)**: **345 / 345 tests PASS** (`./mvnw test`, thời gian: 2m 54s, 0 failures, 0 errors, tăng 7 tests so với baseline 338).
-- **Kiểm thử Đơn vị Frontend (Vitest & Testing Library)**: **106 / 106 tests PASS** trên 18 test files (100% green, tăng 20 tests so với baseline 86, bổ sung 3 tests trong Round F2).
+- **Kiểm thử Đơn vị Frontend (Vitest & Testing Library)**: **108 / 108 tests PASS** trên 18 test files (100% green, tăng 20 tests so với baseline 86, bổ sung 3 tests trong Round F2).
 - **Kiểm thử Đầu - Cuối E2E (Node.js Test Runner 4 Tiers)**: **17 / 17 suites PASS** (**221 / 221 test cases PASS**, 998 assertions, thời gian: 16.68s, tăng 5 test cases và 38 assertions so với baseline 216).
 - **Ma trận Tương phản Toán học (WCAG 2.2 AA & APCA)**: **66 / 66 cặp màu PASS** (36 cặp Light Mode + 30 cặp Dark Mode, 0 vi phạm, $\Delta \le 0.01$).
 - **Thẩm định Thị giác & Quét Responsive Toàn Tuyến (Chromium CDP)**: **112 / 112 cấu hình đạt chuẩn 100%** (14 trang x 4 viewports 375/768/1024/1440 x 2 themes Light/Dark: $scrollWidth \le innerWidth$, lề trái $\ge 16\text{px}$, lề phải $\ge 16\text{px}$).
@@ -201,7 +201,7 @@ Toàn bộ các thông số dưới đây được sao chép trực tiếp từ 
 - [ ] Hai tệp `favicon.svg` và `favicon.png` có mã băm SHA-256 giống hệt 100% với tệp gốc từ `Tài liệu dự án/`.
 - [ ] Kiểm tra cổng `scripts/validate-agent-config.mjs` (Check 9) đạt 0 vi phạm.
 - [ ] Toàn bộ 345 kiểm thử backend (`mvn test`) vượt qua thành công (+7 tests so với baseline 338).
-- [ ] Toàn bộ 106 kiểm thử frontend (`npm test` trên 18 test files) vượt qua thành công (+20 tests so với baseline 86).
+- [ ] Toàn bộ 108 kiểm thử frontend (`npm test` trên 18 test files) vượt qua thành công (+22 tests so với baseline 86).
 - [ ] Toàn bộ 17 suites / 221 test cases E2E (`node e2e/run-all.mjs`, 998 assertions) chạy thành công trên cụm Docker.
 - [ ] Cả hai kịch bản `check.sh` và `check.ps1` báo cáo 26/26 gates PASSED đồng nhất mà không cần cờ chuyển đổi đường dẫn (path conversion override).
 - [ ] Thẩm định thị giác trình duyệt thực tế Chromium CDP đạt 112/112 cấu hình toàn tuyến $scrollWidth \le innerWidth$.
