@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rikkei.jobs.common.client.ExternalApiClient;
 import com.rikkei.jobs.common.exception.ExternalResourceNotFoundException;
@@ -461,5 +462,153 @@ public class AuthControllerIntegrationTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("UNAUTHORIZED"))
                 .andExpect(jsonPath("$.message").value("Yêu cầu xác thực tài khoản"));
+    }
+
+    // =========================================================================
+    // 7. OpenAPI Completeness Assertions for Auth Endpoints (Round G Requirement G3)
+    // =========================================================================
+
+    @Test
+    @DisplayName(
+            "OpenAPI /api-docs documents all required status and error codes for NT-01 auth endpoints")
+    void testOpenApiDocumentationCompleteness() throws Exception {
+        String apiDocsJson =
+                mockMvc.perform(get("/api-docs"))
+                        .andExpect(status().isOk())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString(StandardCharsets.UTF_8);
+
+        JsonNode root = objectMapper.readTree(apiDocsJson);
+        JsonNode paths = root.path("paths");
+
+        // 1. POST /api/v1/auth/sso
+        JsonNode ssoResponses = paths.path("/api/v1/auth/sso").path("post").path("responses");
+        assertTrue(ssoResponses.has("200"), "POST /api/v1/auth/sso must document 200");
+        assertTrue(ssoResponses.has("400"), "POST /api/v1/auth/sso must document 400");
+        assertTrue(ssoResponses.has("401"), "POST /api/v1/auth/sso must document 401");
+        assertTrue(
+                ssoResponses.has("409"), "POST /api/v1/auth/sso must document 409 EMAIL_COLLISION");
+
+        String sso400Desc = ssoResponses.path("400").path("description").asText();
+        assertTrue(
+                sso400Desc.contains("VALIDATION_ERROR"),
+                "POST /sso 400 must document VALIDATION_ERROR");
+
+        String sso401Desc = ssoResponses.path("401").path("description").asText();
+        assertTrue(
+                sso401Desc.contains("TICKET_EXPIRED"),
+                "POST /sso 401 must document TICKET_EXPIRED");
+        assertTrue(
+                sso401Desc.contains("TICKET_ALREADY_USED"),
+                "POST /sso 401 must document TICKET_ALREADY_USED");
+        assertTrue(
+                sso401Desc.contains("INVALID_TICKET"),
+                "POST /sso 401 must document INVALID_TICKET");
+        assertTrue(
+                sso401Desc.contains("UNMAPPED_LMS_ROLE"),
+                "POST /sso 401 must document UNMAPPED_LMS_ROLE");
+
+        String sso409Desc = ssoResponses.path("409").path("description").asText();
+        assertTrue(
+                sso409Desc.contains("EMAIL_COLLISION"),
+                "POST /sso 409 must document EMAIL_COLLISION");
+
+        // 2. POST /api/v1/auth/login
+        JsonNode loginResponses = paths.path("/api/v1/auth/login").path("post").path("responses");
+        assertTrue(loginResponses.has("200"), "POST /api/v1/auth/login must document 200");
+        assertTrue(loginResponses.has("400"), "POST /api/v1/auth/login must document 400");
+        assertTrue(loginResponses.has("401"), "POST /api/v1/auth/login must document 401");
+
+        String login400Desc = loginResponses.path("400").path("description").asText();
+        assertTrue(
+                login400Desc.contains("VALIDATION_ERROR"),
+                "POST /login 400 must document VALIDATION_ERROR");
+
+        String login401Desc = loginResponses.path("401").path("description").asText();
+        assertTrue(
+                login401Desc.contains("UNAUTHORIZED"),
+                "POST /login 401 must document UNAUTHORIZED");
+        assertTrue(
+                login401Desc.contains("ACCOUNT_LOCKED"),
+                "POST /login 401 must document ACCOUNT_LOCKED");
+
+        // 3. POST /api/v1/auth/change-password
+        JsonNode changePassResponses =
+                paths.path("/api/v1/auth/change-password").path("post").path("responses");
+        assertTrue(changePassResponses.has("200"), "POST /change-password must document 200");
+        assertTrue(changePassResponses.has("400"), "POST /change-password must document 400");
+        assertTrue(changePassResponses.has("401"), "POST /change-password must document 401");
+
+        String changePass400Desc = changePassResponses.path("400").path("description").asText();
+        assertTrue(
+                changePass400Desc.contains("VALIDATION_ERROR"),
+                "POST /change-password 400 must document VALIDATION_ERROR");
+
+        String changePass401Desc = changePassResponses.path("401").path("description").asText();
+        assertTrue(
+                changePass401Desc.contains("UNAUTHORIZED"),
+                "POST /change-password 401 must document UNAUTHORIZED");
+
+        // 4. POST /api/v1/auth/forgot-password
+        JsonNode forgotPassResponses =
+                paths.path("/api/v1/auth/forgot-password").path("post").path("responses");
+        assertTrue(forgotPassResponses.has("200"), "POST /forgot-password must document 200");
+        assertTrue(forgotPassResponses.has("400"), "POST /forgot-password must document 400");
+
+        String forgotPass400Desc = forgotPassResponses.path("400").path("description").asText();
+        assertTrue(
+                forgotPass400Desc.contains("VALIDATION_ERROR"),
+                "POST /forgot-password 400 must document VALIDATION_ERROR");
+
+        // 5. POST /api/v1/auth/reset-password
+        JsonNode resetPassResponses =
+                paths.path("/api/v1/auth/reset-password").path("post").path("responses");
+        assertTrue(resetPassResponses.has("200"), "POST /reset-password must document 200");
+        assertTrue(resetPassResponses.has("400"), "POST /reset-password must document 400");
+
+        String resetPass400Desc = resetPassResponses.path("400").path("description").asText();
+        assertTrue(
+                resetPass400Desc.contains("RESET_TOKEN_EXPIRED"),
+                "POST /reset-password 400 must document RESET_TOKEN_EXPIRED");
+        assertTrue(
+                resetPass400Desc.contains("VALIDATION_ERROR"),
+                "POST /reset-password 400 must document VALIDATION_ERROR");
+
+        // 6. GET /api/v1/auth/me
+        JsonNode meResponses = paths.path("/api/v1/auth/me").path("get").path("responses");
+        assertTrue(meResponses.has("200"), "GET /api/v1/auth/me must document 200");
+        assertTrue(meResponses.has("401"), "GET /api/v1/auth/me must document 401");
+
+        String me401Desc = meResponses.path("401").path("description").asText();
+        assertTrue(me401Desc.contains("UNAUTHORIZED"), "GET /me 401 must document UNAUTHORIZED");
+        assertTrue(
+                me401Desc.contains("ACCOUNT_LOCKED"), "GET /me 401 must document ACCOUNT_LOCKED");
+
+        // 7. Verify Schema ErrorResponse
+        JsonNode errorSchema = root.path("components").path("schemas").path("ErrorResponse");
+        assertFalse(errorSchema.isMissingNode(), "components.schemas.ErrorResponse must exist");
+        assertTrue(errorSchema.path("properties").has("code"), "ErrorResponse must have 'code'");
+        assertTrue(
+                errorSchema.path("properties").has("message"), "ErrorResponse must have 'message'");
+
+        // 8. Profiles endpoints in OpenAPI
+        JsonNode mySkills = paths.path("/api/v1/profiles/me/skills").path("get").path("responses");
+        assertTrue(mySkills.has("200"), "GET /me/skills must document 200");
+        assertTrue(mySkills.has("401"), "GET /me/skills must document 401");
+        assertTrue(mySkills.has("403"), "GET /me/skills must document 403");
+
+        JsonNode skillsOf =
+                paths.path("/api/v1/profiles/{userId}/skills").path("get").path("responses");
+        assertTrue(skillsOf.has("200"), "GET /{userId}/skills must document 200");
+        assertTrue(skillsOf.has("401"), "GET /{userId}/skills must document 401");
+        assertTrue(skillsOf.has("403"), "GET /{userId}/skills must document 403");
+        assertTrue(skillsOf.has("404"), "GET /{userId}/skills must document 404");
+
+        JsonNode recompute =
+                paths.path("/api/v1/profiles/me/skills/recompute").path("post").path("responses");
+        assertTrue(recompute.has("200"), "POST /me/skills/recompute must document 200");
+        assertTrue(recompute.has("401"), "POST /me/skills/recompute must document 401");
+        assertTrue(recompute.has("403"), "POST /me/skills/recompute must document 403");
     }
 }

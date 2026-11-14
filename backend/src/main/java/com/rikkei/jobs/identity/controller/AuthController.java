@@ -12,10 +12,12 @@ import com.rikkei.jobs.identity.dto.SsoLoginRequest;
 import com.rikkei.jobs.identity.dto.UserDto;
 import com.rikkei.jobs.identity.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
@@ -31,6 +33,12 @@ import org.springframework.web.bind.annotation.RestController;
  * REST Controller exposing public and authenticated authentication endpoints under /api/v1/auth.
  * Includes Springdoc OpenAPI 3.0 annotations for dev profile documentation.
  */
+@SecurityScheme(
+        name = "bearerAuth",
+        type = SecuritySchemeType.HTTP,
+        scheme = "bearer",
+        bearerFormat = "JWT",
+        description = "JWT Bearer access token")
 @RestController
 @RequestMapping("/api/v1/auth")
 @Tag(
@@ -54,11 +62,16 @@ public class AuthController {
             content = @Content(schema = @Schema(implementation = AuthResponse.class)))
     @ApiResponse(
             responseCode = "400",
-            description = "Dữ liệu vé không hợp lệ",
+            description = "Dữ liệu vé không hợp lệ: VALIDATION_ERROR",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @ApiResponse(
             responseCode = "401",
-            description = "Vé hết hạn, đã dùng hoặc không tồn tại",
+            description =
+                    "Vé không hợp lệ, đã hết hạn hoặc đã được sử dụng: TICKET_EXPIRED, TICKET_ALREADY_USED, INVALID_TICKET, UNMAPPED_LMS_ROLE",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @ApiResponse(
+            responseCode = "409",
+            description = "Xung đột định danh: EMAIL_COLLISION",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @PostMapping("/sso")
     public ResponseEntity<AuthResponse> sso(@Valid @RequestBody SsoLoginRequest request) {
@@ -76,11 +89,12 @@ public class AuthController {
             content = @Content(schema = @Schema(implementation = AuthResponse.class)))
     @ApiResponse(
             responseCode = "400",
-            description = "Dữ liệu không hợp lệ",
+            description = "Dữ liệu không hợp lệ: VALIDATION_ERROR",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @ApiResponse(
             responseCode = "401",
-            description = "Sai email/mật khẩu hoặc tài khoản đang bị khóa",
+            description =
+                    "Sai thông tin đăng nhập hoặc tài khoản đang bị khóa: UNAUTHORIZED, ACCOUNT_LOCKED",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
@@ -101,11 +115,11 @@ public class AuthController {
             content = @Content(schema = @Schema(implementation = MessageResponse.class)))
     @ApiResponse(
             responseCode = "400",
-            description = "Mật khẩu không đạt chính sách hoặc sai mật khẩu cũ",
+            description = "Mật khẩu không đạt chính sách hoặc sai mật khẩu cũ: VALIDATION_ERROR",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @ApiResponse(
             responseCode = "401",
-            description = "Chưa xác thực tài khoản",
+            description = "Chưa xác thực tài khoản: UNAUTHORIZED",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @PostMapping("/change-password")
     public ResponseEntity<MessageResponse> changePassword(
@@ -118,14 +132,14 @@ public class AuthController {
     @Operation(
             summary = "Yêu cầu đặt lại mật khẩu",
             description =
-                    "Gửi email chứa liên kết đặt lại mật khẩu có hiệu lực 30 phút đến hòm thư người dùng.")
+                    "Gửi email chứa liên kết đặt lại mật khẩu có hiệu lực 30 phút đến hòm thư người dùng (chống dò quét tài khoản anti-enumeration luôn trả về 200).")
     @ApiResponse(
             responseCode = "200",
             description = "Tiếp nhận yêu cầu",
             content = @Content(schema = @Schema(implementation = MessageResponse.class)))
     @ApiResponse(
             responseCode = "400",
-            description = "Email không hợp lệ",
+            description = "Email không hợp lệ: VALIDATION_ERROR",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @PostMapping("/forgot-password")
     public ResponseEntity<MessageResponse> forgotPassword(
@@ -144,7 +158,8 @@ public class AuthController {
             content = @Content(schema = @Schema(implementation = MessageResponse.class)))
     @ApiResponse(
             responseCode = "400",
-            description = "Token không hợp lệ, hết hạn, hoặc mật khẩu yếu",
+            description =
+                    "Token không hợp lệ, hết hạn, hoặc mật khẩu yếu: RESET_TOKEN_EXPIRED, VALIDATION_ERROR",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @PostMapping("/reset-password")
     public ResponseEntity<MessageResponse> resetPassword(
@@ -164,7 +179,7 @@ public class AuthController {
             content = @Content(schema = @Schema(implementation = UserDto.class)))
     @ApiResponse(
             responseCode = "401",
-            description = "Chưa xác thực hoặc tài khoản bị khóa",
+            description = "Chưa xác thực hoặc tài khoản bị khóa: UNAUTHORIZED, ACCOUNT_LOCKED",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @GetMapping("/me")
     public ResponseEntity<UserDto> me(@AuthenticationPrincipal UserPrincipal principal) {
