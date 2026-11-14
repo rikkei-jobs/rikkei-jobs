@@ -1227,3 +1227,224 @@ Prior to undertaking any edits in Round E2, the engineering team has re-read the
 - Proof Method & Evidence:
   1. Git status check verifying untracked helper scripts remain untouched.
   2. No new untracked files in repository root or helper directories unless strictly required by E2-1 guard.
+
+---
+
+## 13. Round F Acknowledgement (Replacing Interim HTTP Basic of HS-01 with NT-01 JWT Login)
+
+### 13.1 Mandatory Working Method (Verbatim Binding Principle)
+
+"Hay check that ky tim hieu va nghien cuu that ky chuyen sau nhat tung buoc roi search, nghien cuu ky google chuyen sau nhat song song nhieu huong cung luc kieu nhu GitHub uy tin hoac dien dan IT uy tin, bai bao nghien cuu uy tin truoc khi tim giai phap tot nhat de hoan thien hoan chinh va chinh chu nhat giup toi. Sau khi sua xong dong thoi phai test luon ket qua thuc te tho trung thuc thay vi dua vao li thuyet. Neu van chua dat duoc thi quay lai workflow tren."
+
+### 13.2 Authoritative Reference Documents & Rules Read
+
+Prior to undertaking any edits in Round F, the engineering team has re-read the following core specifications in full:
+
+1. Root Agent Directives: CLAUDE.md, GEMINI.md, AGENTS.md.
+2. Enterprise Rules (All 16 Rules in .claude/rules/):
+   - 01-project-context.md (Modular Monolith, 7 business modules + identity + common, 5 canonical roles, 20-skills catalogue).
+   - 02-git-and-delivery.md (Agent strict read-only mandate, no commits, proposed commit prefix T022B63:).
+   - 03-safety-and-secrets.md (Zero real secrets, never touch credentials or first-key.pem, OS temp cleanup, no run-ci-in-docker.*).
+   - 04-honest-verification.md (Evidence before claims, raw terminal command output, zero sleep, gate parity).
+   - 05-backend-java.md (Java 25 LTS, Spring Boot 4.1.2, Java records for DTOs, ErrorResponse {code, message}, -Xlint:all -Werror).
+   - 06-database-flyway.md (Flyway migrations immutability V1-V6, no schema changes in Round F).
+   - 07-security-rbac.md (Stateless JWT authentication, deny-by-default, removal of HTTP Basic, unified error responses).
+   - 08-frontend-engineering.md (React 19.3.1, TypeScript 6.0.3 strict, feature-slice layout, centralized HTTP client).
+   - 09-frontend-design-bar.md (Bespoke design tokens, zero emoji, custom 24px Icon, blue-led theme in light/dark, WCAG 2.2 AA).
+   - 10-testing-strategy.md (TDD Red-Green-Refactor, hermetic Testcontainers postgres:18.6-alpine, zero Thread.sleep()).
+   - 11-docs-and-bilingual.md (Authoritative bilingual documentation, clean markdownlint and cspell with zero issues).
+   - 12-ci-and-quality-gates.md (26 runtime gates parity across check.sh and check.ps1, clean Docker teardown).
+   - 13-backend-data-access-performance.md (spring.jpa.open-in-view=false, no N+1 queries, unpaginated catalogue bounded to 20 skills).
+   - 14-backend-module-boundaries.md (Candidate module depends only on public identity contract at root package, no internal leaks).
+   - 15-backend-observability-ops.md (ECS structured logging, zero secret/PII logging, minimal actuator exposure).
+   - 16-backend-integrations.md (ExternalApiClient for external systems, OpenAPI 3.2.0 reflecting JWT auth on skill endpoints).
+3. Process & Domain Skills:
+   - spring-security-rbac-endpoint (Vô hiệu hóa httpBasic, loại bỏ DatabaseUserDetailsService, dùng JWT principal thống nhất).
+   - test-driven-development (Red-Green-Refactor, viết test JWT và negative tests trước khi cập nhật code production).
+   - security-review-checklist (Xóa bỏ hoàn toàn password header trên business endpoints, kiểm tra BOLA, 403 must-change, 401 tampered).
+   - verification-before-completion (Chạy toàn bộ cổng kiểm tra cục bộ, báo cáo số đo thực tế, dọn sạch Docker stack).
+   - frontend-visual-design (100% token từ design-tokens.css, thang màu surface ladder xanh nhất quán, typography tiếng Việt không cắt dấu).
+   - frontend-accessibility-audit (WCAG 2.2 AA contrast >= 4.5:1, touch target >= 44x44px, focus-visible 2px, aria-live/expanded).
+   - docs-bilingual-update (Đồng bộ tài liệu hs-01-skill-profile.md, README.md, PR_DESCRIPTION.md, ghi nhận câu hỏi nghiệp vụ vào docs/05).
+4. Task Mandates & Context:
+   - D:\GitHub\Rikkei\.agents\PROMPT_NT01F_EN.txt (Items F1 through F6).
+   - D:\GitHub\Rikkei\.agents\PROMPT_NT01_EN.txt (sections R0/1).
+   - ORIGINAL_REQUEST.md.
+   - docs/hs-01-skill-profile.md, docs/design/DESIGN_SYSTEM.md, docs/nt01/PHASE0_ACK.md.
+
+### 13.3 Concrete Applicable Constraints per 16 Enterprise Rules
+
+| Rule | Rule Identifier | Exact Applicable Constraint for Round F |
+|---|---|---|
+| Rule 01 | Project Context | The Modular Monolith comprises 7 business domains plus identity and common; Round F eliminates the interim HTTP Basic mechanism of HS-01 (Skill Profile in candidate module), unifying authentication under the JWT HS256 infrastructure of NT-01 (identity module) while strictly preserving the 5 canonical roles and 20-skill catalogue. |
+| Rule 02 | Git & Delivery | AI coding agents are strictly READ-ONLY regarding Git state modifications; no git commit, push, stage, rebase, reset, stash, or branch checkout commands may be run. All modifications remain uncommitted on branch feature/T022863-dang-nhap. Proposed commit messages must be formulated in English prefixed with T022B63:. |
+| Rule 03 | Safety & Secrets | Strictly forbid opening, reading, copying, or printing .env, *.pem, or credentials (specifically never touch D:\GitHub\Rikkei\first-key.pem). Temporary captures reside exclusively in OS temporary storage and must be immediately deleted. Never run scripts/run-ci-in-docker.*. |
+| Rule 04 | Honest Verification | Never claim a check passed without executing the command in the active session and observing exit code 0. Report real measured test counts and raw compiler outputs. Strictly prohibit Thread.sleep(); verify time-dependent logic deterministically via the injectable java.time.Clock. |
+| Rule 05 | Backend Java Standards | Java 25 LTS and Spring Boot 4.1.2; utilize immutable Java records for DTOs; never expose JPA entities in REST controllers; adhere strictly to ErrorResponse {code, message}; compile cleanly under -Xlint:all -Werror; maintain Spotless AOSP formatting and SpotBugs clean. |
+| Rule 06 | Database & Flyway | Migrations V1-V6 across prod and dev profiles are strictly immutable; Round F introduces zero new Flyway migration scripts as the existing database schema and seed data are fully sufficient. |
+| Rule 07 | Security & RBAC | Remove .httpBasic(...) completely from SecurityConfig; establish stateless JWT as the sole backend authentication mechanism; enforce deny-by-default; unauthenticated requests return 401 UNAUTHORIZED; users with must_change_password=true receive 403 MUST_CHANGE_PASSWORD via MustChangePasswordFilter. |
+| Rule 08 | Frontend Standards | React 19.3.1, TypeScript 6.0.3 strict (zero any, zero @ts-ignore); organize code under features/candidate and features/identity; centralize HTTP authentication handling in a single shared client that automatically attaches in-memory access tokens and routes 401/403 responses. |
+| Rule 09 | Frontend Design Bar | Zero emoji in UI, code, or documentation; source 100% of visual colors from design-tokens.css (zero raw color literals outside token files, guard Check 9 must pass); typed <Icon name=... />; WCAG 2.2 AA contrast >= 4.5:1; prefers-reduced-motion; blue-led surface ladder across light and dark modes. |
+| Rule 10 | Testing Strategy | Strict Red-Green-Refactor TDD; hermetic tests with Testcontainers postgres:18.6-alpine using dynamic port allocation; zero Thread.sleep(); rewrite SkillProfileIntegrationTest with real JWT tokens; add negative tests proving HTTP Basic is rejected with 401. |
+| Rule 11 | Docs & Bilingual | Maintain authoritative technical English in core docs with full Vietnamese diacritics in UI and PR descriptions; update docs/hs-01-skill-profile.md (replace Basic with JWT flow and error matrix); synchronize docs/nt01/README.md and PR_DESCRIPTION.md; clean markdownlint and cspell with 0 issues. |
+| Rule 12 | CI & Quality Gates | Maintain exact gate parity across check.sh and check.ps1 (26/26 runtime gates); do not add artificial gates; extend existing e2e coverage; execute complete clean container teardown (docker compose down -v). |
+| Rule 13 | Data Access Performance | Keep spring.jpa.open-in-view=false; prevent N+1 queries; do not execute external HTTP requests inside transactions; skill profile list is bounded by the 20-skill catalogue and intentionally unpaginated with optimized queries. |
+| Rule 14 | Module Boundaries | The candidate module must depend strictly on a public identity contract located at root package com.rikkei.jobs.identity (UserPrincipal), never on identity internals (com.rikkei.jobs.identity.security.*); zero cross-module foreign keys or SQL joins. |
+| Rule 15 | Observability & Ops | Structured ECS JSON logging in production; never log passwords, password hashes, JWT tokens, Authorization headers, or candidate PII; /actuator/health returns UP without revealing internal infrastructure details. |
+| Rule 16 | Backend Integrations | Route external interactions through ExternalApiClient; OpenAPI 3.2.0 reflects JWT Bearer authentication on all three skill profile endpoints and remains visible exclusively in the dev profile. |
+
+### 13.4 Concrete Applicable Constraints per 7 Process & Domain Skills
+
+| Skill | Skill Identifier | Exact Applicable Constraint for Round F |
+|---|---|---|
+| Skill 1 | spring-security-rbac-endpoint | Disable httpBasic in SecurityConfig, delete DatabaseUserDetailsService and AuthenticatedUser; wire the 3 skill profile endpoints to UserPrincipal supplied by JwtAuthFilter; return 401 for missing/invalid tokens; return 403 MUST_CHANGE_PASSWORD for accounts requiring password changes. |
+| Skill 2 | test-driven-development | Execute strict Red-Green-Refactor cycle: modify tests to assert JWT authentication and Basic rejection, verify RED state, then implement minimal production code to achieve GREEN; author negative tests for expired, tampered, and Basic credentials; zero Thread.sleep(). |
+| Skill 3 | security-review-checklist | Confirm zero paths accept password headers on business endpoints; verify Broken Object Level Authorization (BOLA) protections: private profiles return 404 for non-owners, owners access own skills; enforce 403 on must-change-password; verify token tampering rejection. |
+| Skill 4 | verification-before-completion | Run all local quality gates (check.sh, check.ps1, e2e, contrast, cspell, markdownlint, agent-config) prior to completion; report real measured metrics (backend test count delta from 338, frontend test count delta from 86, e2e suites/cases); tear down Docker stack completely. |
+| Skill 5 | frontend-visual-design | Enforce 100% token compliance from design-tokens.css for Skill Profile components; ensure blue-led surface ladder consistency in light (#EEF2F8 canvas) and dark (#0B1019 canvas); self-hosted typography with zero Vietnamese diacritic clipping (line-height >= 1.5); tabular numbers for scores. |
+| Skill 6 | frontend-accessibility-audit | Guarantee WCAG 2.2 AA accessibility; text contrast >= 4.5:1; interactive touch targets >= 44x44px; logical keyboard navigation with visible 2px focus rings (:focus-visible); no unadorned outline: none; aria-live polite regions and aria-expanded attributes on evidence disclosures. |
+| Skill 7 | docs-bilingual-update | Synchronize documentation in docs/ (hs-01-skill-profile.md, README.md, PR_DESCRIPTION.md); document the role-scoping question regarding whether only CANDIDATE accounts should own a skill profile in docs/05-open-business-questions.md in both English and Vietnamese. |
+
+### 13.5 Identified Conflicts, Ambiguities & Authoritative Resolution
+
+In accordance with the binding Order of Authority:
+User / Team Lead Prompt (ORIGINAL_REQUEST.md & PROMPT_NT01F_EN.txt) > Enterprise Rules (.claude/rules/ 01-16) > Domain Skills
+
+1. Conflict 1: Interim HTTP Basic vs NT-01 JWT Architecture
+   - Ambiguity: HS-01 implementation and documentation in docs/hs-01-skill-profile.md relied on HTTP Basic via DatabaseUserDetailsService.
+   - Authority Instruction: PROMPT_NT01F_EN.txt mandates complete removal of HTTP Basic and unification under NT-01 JWT login.
+   - Resolution: Prompt wins. Disable httpBasic in SecurityConfig, delete DatabaseUserDetailsService and AuthenticatedUser, update docs/hs-01-skill-profile.md to reflect the JWT Bearer authentication flow and unified 401/403/404 response contract.
+
+2. Conflict 2: Principal Type Location & Rule 14 Module Decoupling
+   - Ambiguity: NT-01 implemented UserPrincipal in com.rikkei.jobs.identity.security.UserPrincipal. Rule 14 forbids candidate from importing identity internals.
+   - Authority Instruction: PROMPT_NT01F_EN.txt requires choosing ONE principal type for the entire backend and respecting Rule 14 via a public identity contract at root package.
+   - Resolution: Move or expose UserPrincipal at com.rikkei.jobs.identity.UserPrincipal as the canonical public principal record/class for all modules. Both AuthController and SkillProfileController consume @AuthenticationPrincipal UserPrincipal. AuthenticatedUser is completely removed.
+
+3. Conflict 3: Frontend Authentication Handling Architecture
+   - Ambiguity: SkillProfilePage previously accepted an arbitrary authHeader string prop, and HomeSkeleton managed a local Basic auth header alongside AuthProvider.
+   - Authority Instruction: PROMPT_NT01F_EN.txt mandates a centralized HTTP authentication client in the frontend that automatically injects the in-memory access token from AuthContext and centrally handles 401/403 responses.
+   - Resolution: Prompt wins. Implement a centralized HTTP client (shared/api/httpClient.ts); refactor authApi and candidate api to route through it; remove LoginForm.tsx and buildBasicAuthHeader; display an unauthenticated CTA pointing to /login.
+
+4. Conflict 4: Role-Scoping for Skill Profile Endpoints
+   - Ambiguity: HS-01 allowed any authenticated principal to invoke /api/v1/profiles/me/skills. Should access be restricted strictly to users with role CANDIDATE?
+   - Authority Instruction: PROMPT_NT01F_EN.txt specifies: "Do not widen or narrow who may call these endpoints beyond current behaviour unless a rule requires it; if you see a role-scoping gap... record it as an open business question in docs/05-open-business-questions.md."
+   - Resolution: Retain current endpoint behavior without adding restrictive role checks; record the question formally in docs/05-open-business-questions.md in both English and Vietnamese.
+
+### 13.6 Defect Resolution and Proof Methods for Items F1 through F6
+
+#### F1. Backend: One Authentication Mechanism (JWT)
+
+- Objective: Remove HTTP Basic from SecurityConfig, delete DatabaseUserDetailsService and AuthenticatedUser, configure skill profile endpoints with UserPrincipal, preserve HS-01 semantics (owner sees own, others see public only, private returns 404, recompute operates on caller, unauthenticated returns 401, must-change returns 403).
+- Proof Method:
+  1. Inspect SecurityConfig.java diff confirming absence of .httpBasic(...).
+  2. Verify deletion of DatabaseUserDetailsService.java and AuthenticatedUser.java.
+  3. Compile backend with strict flags: ./mvnw clean test-compile -Xlint:all -Werror showing 0 warnings and exit code 0.
+  4. Run SecurityHardeningIntegrationTest, ProdEnvironmentValidatorTest, and SecurityFilterIntegrationTest showing clean PASS.
+
+#### F2. Backend Tests (TDD)
+
+- Objective: Rewrite SkillProfileIntegrationTest using real JWT tokens from JwtService and injected Clock; add negative tests proving Basic is rejected with 401, must-change returns 403, tampered/expired tokens return 401; demonstrate RED-to-GREEN progression; report real backend test count delta from 338.
+- Proof Method:
+  1. Capture test failure (RED) upon asserting JWT requirement and Basic rejection.
+  2. Implement backend adjustments and capture test success (GREEN).
+  3. Execute ./mvnw test -Dtest=SkillProfileIntegrationTest verifying all positive and negative scenarios pass.
+  4. Execute full backend test suite ./mvnw test, record exact test count, and explain any variance from 338.
+
+#### F3. Frontend: Centralized HTTP Auth Client & NT-01 Login
+
+- Objective: Centralize HTTP authentication in a shared client with automatic Bearer token injection from AuthContext in-memory; handle 401 (logout and redirect /login) and 403 (redirect /change-password); remove LoginForm.tsx and buildBasicAuthHeader; unauthenticated skills view displays CTA to /login; candidate role home links to skill profile; token design bar compliant.
+- Proof Method:
+  1. Git diff confirming deletion of LoginForm.tsx and removal of buildBasicAuthHeader.
+  2. Automated search confirming zero raw "Basic " header assignments across frontend/src.
+  3. Run npm run test --prefix frontend verifying all Vitest test suites pass.
+  4. Run npm run typecheck --prefix frontend confirming 0 TypeScript errors under strict mode.
+
+#### F4. End-to-End and Live Check
+
+- Objective: Add E2E tests verifying skill endpoints reject Basic, accept login Bearer token, enforce 404 for private profiles, and enforce 403 for must-change users; execute live browser journey on Docker stack across light and dark modes at 375px and 1440px viewports; verify scrollWidth <= innerWidth; delete temporary captures from OS temp.
+- Proof Method:
+  1. Execute node e2e/run-all.mjs (or through check runners), reporting exact suite and case counts.
+  2. Perform live browser walkthrough: unauthenticated CTA -> login candidate -> skill profile loads -> recompute -> logout.
+  3. Verify viewport measurements confirming document.documentElement.scrollWidth <= window.innerWidth at 375px and 1440px in light and dark modes.
+  4. Verify git status confirming zero image files committed to the repository.
+
+#### F5. Documentation and Hygiene
+
+- Objective: Update docs/hs-01-skill-profile.md (replace Basic with JWT and 401/403/404 matrix), docs/nt01/README.md, docs/nt01/PR_DESCRIPTION.md (current-state only, full Vietnamese diacritics), and docs/05-open-business-questions.md; execute sync-agent-config and validate-agent-config; clean markdownlint and cspell.
+- Proof Method:
+  1. Inspect updated documentation files verifying complete removal of interim Basic terminology.
+  2. Run node scripts/sync-agent-config.mjs --check confirming 0 differences.
+  3. Run node scripts/validate-agent-config.mjs confirming Check 9 and all validation checks pass.
+  4. Run npx markdownlint-cli2 "**/*.md" and npx cspell "**/*.md" confirming 0 issues.
+
+#### F6. Re-verification & Final Quality Gates
+
+- Objective: Execute all quality gates with raw output: backend tests, frontend tests, markdownlint, cspell, yamllint, actionlint, check-gate-sync, check-version-drift, compute-contrast (66 pairs), check.sh and check.ps1 (26/26 gates); clean Docker stack teardown (docker compose down -v); zero uncommitted git modifications.
+- Proof Method:
+  1. Run .\check.ps1 and ./check.sh capturing raw console output confirming 26/26 gates pass.
+  2. Run node scripts/compute-contrast.mjs confirming 66 contrast pairs pass.
+  3. Execute docker compose down -v and verify docker ps -a and docker volume ls show clean state.
+  4. Run git status confirming all changes remain uncommitted and no git modifying commands were executed.
+
+---
+
+## 14. Phase 0 Round F2 Acknowledgement
+
+### 14.1 Inventory of Authoritative Files Read Prior to Round F2
+
+1. CLAUDE.md
+2. .claude/rules/08-frontend-engineering.md
+3. .claude/rules/09-frontend-design-bar.md
+4. .claude/rules/10-testing-strategy.md
+5. .claude/rules/11-docs-and-bilingual.md
+6. .claude/rules/04-honest-verification.md
+7. .claude/rules/03-safety-and-secrets.md
+8. .claude/skills/frontend-visual-design/SKILL.md
+9. .claude/skills/frontend-accessibility-audit/SKILL.md
+10. .claude/skills/verification-before-completion/SKILL.md
+11. .claude/skills/docs-bilingual-update/SKILL.md
+12. docs/design/DESIGN_SYSTEM.md
+13. D:\GitHub\Rikkei\.agents\PROMPT_NT01F2_EN.txt
+14. D:\GitHub\Rikkei\.agents\PROMPT_NT01_EN.txt
+
+### 14.2 Concrete Applicable Constraint per Rule and Skill
+
+| Identifier | Name | Exact Applicable Constraint for Round F2 |
+|---|---|---|
+| Rule 08 | Frontend Engineering | Organize frontend code under features and shared; strict TypeScript (zero any, zero @ts-ignore); ensure WCAG 2.2 AA accessibility; avoid inline styles. |
+| Rule 09 | Frontend Design Bar | Zero emoji in UI, code, or documentation; source 100% of visual colors from design tokens (zero raw color literals outside token files, guard Check 9 must pass); typed Icon component; line-height >= 1.5. |
+| Rule 10 | Testing Strategy | Strict Red-Green-Refactor TDD; hermetic tests with zero Thread.sleep() or arbitrary delays; author automated regression tests for container layout and padding tokens. |
+| Rule 11 | Docs and Bilingual | Maintain documentation standards; zero version drift in docs/03; markdownlint clean; cspell clean with zero inline ignores; full Vietnamese diacritics in PR description and handoff report. |
+| Rule 04 | Honest Verification | Evidence before claims; report real measured test counts, real browser offsets, and raw command outputs; all 26 gates must pass on check.sh and check.ps1; tear down Docker stack completely. |
+| Rule 03 | Safety and Secrets | Never open, read, print, or commit secrets (.env, *.pem, first-key.pem); writable bounds strictly rikkei-jobs; temp captures in OS temp only and immediately deleted; never run scripts/run-ci-in-docker.*; leave all changes uncommitted. |
+| Skill 1 | frontend-visual-design | Apply design tokens strictly from design-tokens.css; airy density for candidate views; responsive breakpoints (375px, 768px, 1024px, 1440px); consistent horizontal padding and max-width layout rhythm matching role-home shells; zero horizontal overflow (scrollWidth <= innerWidth). |
+| Skill 2 | frontend-accessibility-audit | Interactive touch targets >= 44x44px; WCAG 2.2 AA color contrast >= 4.5:1 for body and >= 3.0:1 for UI components; keyboard operability with 2px visible focus ring (:focus-visible); proper semantic HTML structure and ARIA labels. |
+| Skill 3 | verification-before-completion | Run all local quality gates and verify exit code 0 before declaring completion; measure real numbers for backend tests, frontend tests, e2e suites/cases, contrast pairs; tear down containers cleanly. |
+| Skill 4 | docs-bilingual-update | Keep docs/nt01/PR_DESCRIPTION.md and README.md synchronized with freshly measured values; eliminate interim HTTP Basic mentions; ensure zero markdownlint/cspell errors. |
+
+### 14.3 Defect Resolution and Proof Methods for Items F2-1 through F2-3
+
+#### F2-1. Skill Profile Page Margin & Sweeping Routed Page Spacing
+
+- Objective: Fix the missing padding/margin on /candidate/skills by wrapping it in the shared page shell/container with design tokens for horizontal padding, max width, and vertical rhythm. Sweep all routed pages (login, sso-callback, forgot-password, reset-password, change-password, 5 role homes, /candidate/skills, root overview, 404) at 375, 768, 1024, 1440 in light and dark mode; verify left offset >= 16px and scrollWidth <= innerWidth everywhere. Ensure 2-column layout collapses cleanly to 1 column at 375 and 768, verified evidence does not overflow, touch targets >= 44px, tab order and focus ring work. Add regression tests.
+- Proof Method:
+  1. Author Vitest unit/regression tests in frontend verifying SkillProfilePage has the shared page container/shell class and padding tokens.
+  2. Measure all routed pages via headless browser script at 375, 768, 1024, 1440 in light and dark modes, verifying left offset of first content element, right gap of wide elements, and scrollWidth <= innerWidth.
+  3. Inspect SkillProfilePage responsive layout at 375 and 768, verifying 1-column collapse, 44px touch targets, and focus rings.
+
+#### F2-2. Close Round F Gaps
+
+- Objective: Prove central httpClient.ts requirements in Vitest: Bearer token automatically attached from in-memory token, single 401 clearing session once even during concurrent requests, 403 MUST_CHANGE_PASSWORD redirecting to /change-password, skipAuth omitting token and suppressing redirect; grep proves single fetch and zero manual Authorization headers outside httpClient. Update docs/nt01/PR_DESCRIPTION.md and README.md with freshly measured values, remove interim HTTP Basic wording, ensure full Vietnamese diacritics and zero credentials.
+- Proof Method:
+  1. Author Vitest tests in httpClient.test.ts asserting Bearer attachment, single 401 session clearance under concurrency, 403 redirect, and skipAuth behavior.
+  2. Execute grep across frontend/src verifying zero manual Authorization headers outside httpClient and single fetch call.
+  3. Execute test runners, measure exact counts, and update PR_DESCRIPTION.md and README.md with current-state facts.
+
+#### F2-3. Honest Visual Review
+
+- Objective: Boot Docker stack, obtain candidate SSO ticket from mock, log in via /sso-callback, and review /candidate/skills at 375 and 1440 in light and dark modes. Write honest note with measured offsets in docs/nt01/README.md. Delete temporary captures from OS temp; commit zero images.
+- Proof Method:
+  1. Perform SSO login using ephemeral mock ticket on localhost Docker stack.
+  2. Inspect and measure offsets at 375px and 1440px in light and dark modes.
+  3. Record verified measurements in docs/nt01/README.md.
+  4. Confirm OS temp folder cleaned and git status shows zero image files added.

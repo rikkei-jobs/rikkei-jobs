@@ -1,4 +1,4 @@
-# Tài Liệu Căn Cứ Kỹ Thuật & Báo Cáo Nghiệm Thu NT-01 (Round C & Round E)
+# Tài Liệu Căn Cứ Kỹ Thuật & Báo Cáo Nghiệm Thu NT-01 (Round C, Round E, Round F & Round F2)
 
 Tài liệu này ghi nhận toàn bộ căn cứ kỹ thuật, nguồn dữ liệu xác thực và thuyết minh độ lệch kiến trúc giao diện phục vụ kiểm tra độc lập cho Milestone M3.
 
@@ -270,3 +270,181 @@ Dữ liệu được trích xuất trực tiếp từ DOM và computed styles t�
 
 - Toàn bộ 20 tệp ảnh chụp PNG tạo ra trong quá trình thẩm định được ghi nhận duy nhất tại thư mục tạm của hệ điều hành (`%TEMP%\e2-eval-captures\`) và đã được xóa sạch hoàn toàn ngay khi hoàn tất kiểm tra.
 - Không có bất kỳ tệp hình ảnh trung gian nào được thêm vào cây thư mục của Git repository. Toàn bộ các chỉ số đo lường trong bảng trên được trích xuất từ dữ liệu thực tế lưu tại `%TEMP%\e2-eval-results.json`.
+
+---
+
+## 6. Báo Cáo Nghiệm Thu Kỹ Thuật Round F (Task T022B63): Hợp Nhất Cơ Chế Xác Thực JWT Cho Hồ Sơ Năng Lực
+
+Giai đoạn NT-01 Round F (Task T022B63) thực hiện loại bỏ toàn diện cơ chế xác thực HTTP Basic tạm thời của phân hệ Hồ sơ năng lực (HS-01), hợp nhất vào cơ chế xác thực Access Token JWT không trạng thái (Stateless HS256) chuẩn của NT-01 cho toàn bộ nền tảng Rikkei Jobs.
+
+### 6.1. Các Trụ Cột Nâng Cấp Kỹ Thuật Trong Round F
+
+1. **Chuẩn Hóa Đối Tượng Danh Tính Duy Nhất (ONE Principal Type - Rule 14)**:
+   - Toàn bộ backend thống nhất sử dụng duy nhất một lớp đại diện danh tính: `com.rikkei.jobs.identity.UserPrincipal` đặt tại gói gốc `identity`. Lớp này đóng vai trò là giao diện hợp đồng định danh công khai (Public Identity API) cho mọi module tiêu thụ (bao gồm `candidate`), tuân thủ triệt để Rule 14 về biên giới module độc lập.
+   - Xóa bỏ hoàn toàn lớp cấu hình `DatabaseUserDetailsService.java` và `AuthenticatedUser.java`. Vô hiệu hóa cấu hình `.httpBasic(...)` trong `SecurityConfig.java`.
+   - Giữ nguyên toàn bộ hành vi nghiệp vụ HS-01: Chủ sở hữu luôn xem được hồ sơ; người khác chỉ xem được hồ sơ công khai; hồ sơ riêng tư hoặc người dùng không tồn tại trả về 404 NOT_FOUND; tính toán lại (`/recompute`) chỉ tác động lên chính người gọi; yêu cầu chưa xác thực trả về 401 UNAUTHORIZED; tài khoản chưa đổi mật khẩu nhận 403 MUST_CHANGE_PASSWORD từ `MustChangePasswordFilter`.
+2. **Khách Hàng HTTP Xác Thực Tập Trung Phía Frontend (Centralized HTTP Auth Client)**:
+   - Xây dựng mô-đun HTTP client tập trung `frontend/src/shared/api/httpClient.ts` quản lý token trong bộ nhớ RAM (In-Memory Token Storage), không lưu trữ vào localStorage hay sessionStorage theo khuyến nghị OWASP ASVS v4.0.
+   - Tự động đính kèm header `Authorization: Bearer <token>` cho mọi yêu cầu gửi tới backend.
+   - Tập trung xử lý lỗi xác thực: Chuyển hướng một lần khi gặp lỗi 401 về `/login`, chuyển hướng khi gặp 403 `MUST_CHANGE_PASSWORD` về `/change-password`.
+   - Loại bỏ hoàn toàn form Basic Auth riêng lẻ (`LoginForm.tsx`) và tiện ích `buildBasicAuthHeader`.
+   - Khi chưa đăng nhập, màn hình Hồ sơ năng lực hiển thị khối Call To Action (CTA) truy cập `/login`. Khi đã đăng nhập với vai trò Ứng viên (`CANDIDATE`), hệ thống dẫn đường mượt mà từ trang chủ `/candidate` tới tuyến đường bảo vệ `/candidate/skills`.
+3. **Mở Rộng Bộ Kiểm Thử E2E Opaque-Box & Bảo Toàn 26 Quality Gates**:
+   - Mở rộng thêm 5 test case kiểm thử sâu kịch bản HS-01 sử dụng JWT Bearer trong 2 suite hiện hữu (`test_auth_features.test.mjs` và `test_auth_boundaries.test.mjs`):
+     - Từ chối HTTP Basic trên 3 endpoint hồ sơ năng lực với mã 401 UNAUTHORIZED.
+     - Chấp nhận Bearer token từ `/api/v1/auth/login` và truy xuất 13 kỹ năng kèm bằng chứng.
+     - Thực thi tính toán lại điểm năng lực qua `POST /api/v1/profiles/me/skills/recompute`.
+     - Thực thi quy tắc 404 NOT_FOUND đối với hồ sơ riêng tư và mã định danh không tồn tại.
+     - Thực thi quy tắc 403 MUST_CHANGE_PASSWORD đối với tài khoản chưa đổi mật khẩu.
+   - Duy trì bất biến cấu trúc runner và số lượng đúng 17 test suites, bảo toàn 100% định nghĩa của 26 Quality Gates.
+
+### 6.2. Bảng Tổng Hợp Số Liệu Đo Đạc Thực Tế Kiểm Định Round F (Verified Empirical Metrics)
+
+Toàn bộ các số liệu dưới đây được đo đạc trực tiếp từ các lệnh kiểm thử thực tế trên hệ thống:
+
+| Hạng Mục Kiểm Định | Số Liệu Baseline Trước Round F | Số Liệu Thực Tế Sau Round F | Chênh Lệch / Ghi Chú Kỹ Thuật |
+|---|:---:|:---:|---|
+| **Kiểm thử Đơn vị & Tích hợp Backend** (`./mvnw test`) | 338 tests pass | **345 / 345 tests pass** | Tăng **+7 tests** (TDD negative tests: 3 Basic 401, locked user 401, must-change 403, tampered token 401, expired token 401). Thời gian: 2m 54s, 0 failures, 0 errors. |
+| **Kiểm thử Đơn vị Frontend** (`npm test`) | 86 tests pass | **103 / 103 tests pass** | Tăng **+17 tests** trên 18 test files (thêm `httpClient.test.ts`, định tuyến `authApi`, `skillProfile`, `health`, `mockLmsApi` qua `httpClient`, kiểm thử tự động token, debounce 401/403, kiểm thử CTA, kiểm thử điều hướng). |
+| **Kiểm thử Đầu - Cuối E2E Opaque-Box** (`node e2e/run-all.mjs`) | 216 test cases / 17 suites | **221 test cases / 998 assertions / đúng 17 suites** | Tăng **+5 test cases** (+38 assertions). Toàn bộ 17 suites đạt 100% PASS trên cụm 5 container Docker trong 16.68s. |
+| **Cổng Kiểm Định Chất Lượng Toàn Diện** (`.\check.ps1` & `./check.sh`) | 26 / 26 gates pass | **26 / 26 gates pass** | 100% các cổng kiểm định đạt trạng thái PASS đồng nhất trên cả hai môi trường PowerShell và Bash. |
+| **Ma Trận Tương Phản Toán Học** (`node scripts/compute-contrast.mjs`) | 66 / 66 pairs pass | **66 / 66 pairs pass** | Đạt chuẩn WCAG 2.2 AA / AAA (36 cặp Light Mode + 30 cặp Dark Mode, sai số in $\le 0.01$). |
+| **Bảo Vệ Ngăn Chặn Mã Màu Thô (Check 9)** (`node scripts/validate-agent-config.mjs`) | 0 vi phạm | **0 vi phạm** | Kiểm tra Check 9 quét sạch toàn bộ `frontend/src`, không có mã màu thô nào nằm ngoài các tệp design token chuẩn. |
+| **Thẩm Định Trình Duyệt Thực Tế Docker Stack** (Chromium CDP) | 20 / 20 measurements pass | **20 / 20 measurements pass** | Toàn bộ 5 bước hành trình người dùng x 2 viewports (375px, 1440px) x 2 themes (Light, Dark) đạt 100% $scrollWidth \le innerWidth$. |
+| **Kiểm Tra Trạng Thái Vệ Sinh Docker Stack** (`docker compose down -v`) | 5 containers running | **0 containers / 0 volumes** | Toàn bộ 5 container và volume cơ sở dữ liệu được dọn dẹp sạch sẽ, `docker ps` báo cáo trống hoàn toàn. |
+
+### 6.3. Danh Sách Git Commit Messages Đề Xuất (T022B63 Pre-fixed)
+
+Các commit message được thiết kế theo chuẩn Conventional Commits với tiền tố `T022B63:` viết bằng tiếng Anh, phân tách rõ ràng từng bước phát triển:
+
+1. `T022B63: add round f section to phase 0 acknowledgement document`
+   - Ghi nhận đầy đủ cam kết Phase 0 cho Round F vào `docs/nt01/PHASE0_ACK.md` với 16 rules, 7 skills và phương pháp chứng minh F1-F6.
+2. `T022B63: remove basic auth and unify jwt principal across backend modules`
+   - Xóa bỏ `DatabaseUserDetailsService` và `AuthenticatedUser`, vô hiệu hóa HTTP Basic trong `SecurityConfig`.
+   - Di chuyển và chuẩn hóa `com.rikkei.jobs.identity.UserPrincipal` làm Public Identity API duy nhất.
+   - Nối lại `SkillProfileController` tiêu thụ `UserPrincipal` bảo toàn ngữ nghĩa HS-01.
+   - Ghi nhận câu hỏi mở nghiệp vụ Question 11 trong `docs/05-open-business-questions.md`.
+3. `T022B63: rewrite skill profile integration tests with real jwt tdd assertions`
+   - Viết lại `SkillProfileIntegrationTest` xác thực bằng JWT thực với injectable Clock.
+   - Bổ sung 7 bài test phủ định: từ chối Basic Auth trên 3 endpoint, từ chối token hết hạn, token bị giả mạo, tài khoản bị khóa và tài khoản chưa đổi mật khẩu. Nâng tổng số test backend từ 338 lên 345.
+4. `T022B63: implement centralized frontend http auth client and skill profile cta`
+   - Xây dựng mô-đun `httpClient.ts` quản lý token in-memory, tự động đính kèm Bearer token và xử lý 401/403 tập trung.
+   - Định tuyến `authApi` và `skillProfile` qua `httpClient`. Xóa bỏ `LoginForm.tsx` và `buildBasicAuthHeader`.
+   - Hiển thị thẻ Call To Action dẫn tới `/login` khi chưa đăng nhập. Thiết lập route phân quyền `/candidate/skills`.
+   - Viết bài test Vitest kiểm thử `httpClient` và giao diện (định tuyến `authApi`, `skillProfile`, `health`, `mockLmsApi` qua `httpClient`). Nâng tổng số test frontend từ 86 lên 103 trên 18 test files.
+5. `T022B63: expand e2e opaque box test suite with skill jwt and boundary cases`
+   - Bổ sung 5 kịch bản E2E kiểm thử truy xuất kỹ năng qua Bearer token, tính toán lại điểm, từ chối Basic Auth, quy tắc 404 cho hồ sơ riêng tư và 403 cho tài khoản chưa đổi mật khẩu.
+   - Nâng tổng số E2E test cases từ 216 lên 221 (998 assertions) trong đúng 17 test suites hiện hữu.
+6. `T022B63: update technical documentation and verify final quality gates parity`
+   - Cập nhật `docs/hs-01-skill-profile.md`, `docs/nt01/README.md` và `docs/nt01/PR_DESCRIPTION.md`.
+   - Thực thi đồng bộ cấu hình agent và xác minh 26/26 Quality Gates đạt trạng thái PASS.
+
+---
+
+## 7. Báo Cáo Nghiệm Thu Kỹ Thuật Round F2 (Task T022B63): Hoàn Thiện Bố Cục Hồ Sơ Năng Lực, Quét Responsive Toàn Tuyến & Đóng Tồn Đọng
+
+Giai đoạn NT-01 Round F2 (Task T022B63) tập trung khắc phục triệt để khiếm khuyết khoảng cách lề của trang Hồ sơ năng lực (`/candidate/skills`), quét kiểm định thực tế toàn bộ 14 trang điều hướng trên 4 kích thước viewport trong cả hai chế độ giao diện Sáng và Tối, đồng thời hoàn thiện 100% các tiêu chí nghiệm thu của Round F.
+
+### 7.1. F2-1: Tái Cấu Trúc Khung Chứa Hồ Sơ Năng Lực & Quét Khoảng Cách Lề Toàn Tuyến
+
+1. **Khắc Phục Tận Gốc Kiến Trúc Khung Chứa (Shared Page Shell)**:
+   - Trước Round F2, trang `/candidate/skills` hiển thị độc lập không có khung bao quanh (`RoleHomeLayout`), dẫn đến phần thân `sp-page` sát mép màn hình (padding 0px).
+   - Giải pháp kiến trúc: Mở rộng `RoleHomeLayout` với thuộc tính `hideAccountCard?: boolean` và tạo component bao bọc `CandidateSkillsPage.tsx` dùng chung cấu trúc `.rj-dashboard`, thanh điều hướng `.rj-dashboard-nav` và vùng nội dung chính `<main className="rj-dashboard-content">`.
+   - Chuẩn hóa padding của `.rj-dashboard-content` tại breakpoint $\le 640\text{px}$ thành `var(--rj-primitive-space-4)` (16px) đồng nhất với toàn bộ ứng dụng.
+   - Chuẩn hóa `.sp-page` nhận `width: 100%; max-width: 100%; margin: 0 auto; padding: 0;`, loại bỏ các giá trị pixel thô.
+   - Nút hành động `.sp-btn` và nút Đăng xuất `.app-nav-btn` được nâng chiều cao tối thiểu lên 44px (`min-height: 44px`), đáp ứng chuẩn vùng chạm WCAG 2.5.5 / 2.5.8.
+   - Bố cục lưới hai cột `.sp-layout` tự động co về một cột duy nhất trên màn hình di động ($\le 900\text{px}$), các hàng bằng chứng (`.sp-evidence`) chuyển sang flex-wrap để chống tràn ngang.
+
+2. **Bảng Số Liệu Đo Đạc Thực Tế 112 Cấu Hình (Responsive Empirical Sweep)**:
+   - Đo đạc trực tiếp trên trình duyệt Chromium Headless qua giao thức CDP độc lập: 14 trang x 4 viewports (375px, 768px, 1024px, 1440px) x 2 themes (Light, Dark) = 112 cấu hình.
+   - Tiêu chí: Lề trái phần tử nội dung đầu tiên $\ge 16\text{px}$, khoảng cách lề phải phần tử rộng cuối cùng $\ge 16\text{px}$, và không tràn ngang ($scrollWidth \le innerWidth$).
+   - Kết quả: **112 / 112 cấu hình ĐẠT CHUẨN 100% (PASS)**. Không có bất kỳ trang nào chạm mép màn hình.
+
+| Tuyến Đường (Page Route) | 375px Light (L / R) | 375px Dark (L / R) | 768px Light (L / R) | 768px Dark (L / R) | 1024px Light (L / R) | 1024px Dark (L / R) | 1440px Light (L / R) | 1440px Dark (L / R) | Tràn Ngang ($sW \le iW$) |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| Đăng nhập LMS (`/login?tab=lms`) | 16 / 16 | 16 / 16 | 16 / 16 | 16 / 16 | 40 / 39 | 40 / 39 | 40 / 638 | 40 / 638 | ĐẠT (PASS) |
+| Đăng nhập Doanh nghiệp (`/login?tab=enterprise`) | 16 / 16 | 16 / 16 | 16 / 16 | 16 / 16 | 40 / 39 | 40 / 39 | 40 / 638 | 40 / 638 | ĐẠT (PASS) |
+| Chờ xác thực SSO (`/sso-callback`) | 16 / 16 | 16 / 16 | 16 / 16 | 16 / 16 | 40 / 39 | 40 / 39 | 40 / 638 | 40 / 638 | ĐẠT (PASS) |
+| Quên mật khẩu (`/forgot-password`) | 16 / 16 | 16 / 16 | 16 / 16 | 16 / 16 | 40 / 39 | 40 / 39 | 40 / 638 | 40 / 638 | ĐẠT (PASS) |
+| Đặt lại mật khẩu (`/reset-password/...`) | 16 / 16 | 16 / 16 | 16 / 16 | 16 / 16 | 40 / 39 | 40 / 39 | 40 / 638 | 40 / 638 | ĐẠT (PASS) |
+| Đổi mật khẩu (`/change-password`) | 16 / 16 | 16 / 16 | 16 / 16 | 16 / 16 | 40 / 39 | 40 / 39 | 40 / 86 | 40 / 86 | ĐẠT (PASS) |
+| Trang chủ Ứng viên (`/candidate`) | 33 / 16 | 33 / 16 | 33 / 24 | 33 / 24 | 66 / 39 | 66 / 39 | 274 / 39 | 274 / 39 | ĐẠT (PASS) |
+| Trang chủ Doanh nghiệp HR (`/hr`) | 33 / 16 | 33 / 16 | 33 / 24 | 33 / 24 | 66 / 39 | 66 / 39 | 281 / 24 | 281 / 24 | ĐẠT (PASS) |
+| Trang chủ Giảng viên (`/mentor`) | 33 / 16 | 33 / 16 | 33 / 24 | 33 / 24 | 73 / 24 | 73 / 24 | 281 / 24 | 281 / 24 | ĐẠT (PASS) |
+| Trang chủ Cán bộ Đào tạo (`/staff`) | 33 / 16 | 33 / 16 | 33 / 24 | 33 / 24 | 73 / 24 | 73 / 24 | 281 / 24 | 281 / 24 | ĐẠT (PASS) |
+| Trang chủ Quản trị viên (`/admin`) | 33 / 16 | 33 / 16 | 33 / 24 | 33 / 24 | 73 / 24 | 73 / 24 | 281 / 24 | 281 / 24 | ĐẠT (PASS) |
+| Hồ sơ năng lực (`/candidate/skills`) | 16 / 16 | 16 / 16 | 16 / 24 | 16 / 24 | 48 / 24 | 48 / 24 | 256 / 24 | 256 / 24 | ĐẠT (PASS) |
+| Tổng quan gốc (`/`) | 24 / 24 | 24 / 24 | 24 / 24 | 24 / 24 | 24 / 39 | 24 / 39 | 245 / 152 | 245 / 152 | ĐẠT (PASS) |
+| Tuyến đường 404 (`/unknown-target`) | 16 / 16 | 16 / 16 | 16 / 16 | 16 / 16 | 40 / 39 | 40 / 39 | 40 / 638 | 40 / 638 | ĐẠT (PASS) |
+
+### 7.2. F2-2: Đóng Tồn Đọng Round F & Kiểm Chứng Khách Hàng HTTP Tập Trung
+
+1. **Kiểm Chứng Toàn Diện Khách Hàng HTTP (`httpClient.ts`) Với Vitest**:
+   - Tệp kiểm thử `frontend/src/shared/api/__tests__/httpClient.test.ts` bao phủ 14 trường hợp kiểm thử cụ thể:
+     - Tự động đính kèm header `Authorization: Bearer <token>` từ bộ nhớ RAM (`automatically attaches Authorization: Bearer <token> when in-memory token is set`).
+     - Gửi yêu cầu nặc danh khi không có token (`sends anonymous request without Authorization header when token is null`).
+     - Bỏ qua header xác thực khi `skipAuth: true` (`bypasses Authorization header when skipAuth is explicitly set to true`).
+     - Xử lý lỗi 401: Tự động xóa token trong bộ nhớ và gọi callback đăng xuất (`handles 401 unauthorized: clears in-memory token and invokes onUnauthorized callback`).
+     - Không xóa token và không kích hoạt đăng xuất khi yêu cầu có cờ `skipAuth: true` gặp lỗi 401 (`does NOT clear token or trigger onUnauthorized when skipAuth is true on 401 error`).
+     - Debounce phản hồi 401: Khi nhiều yêu cầu đồng thời nhận 401, chỉ thực hiện chuyển hướng đăng xuất đúng 1 lần (`deduplicates multiple concurrent 401 responses to trigger redirect / logout only once`).
+     - Xử lý lỗi 403 `MUST_CHANGE_PASSWORD`: Tự động chuyển hướng tới màn hình đổi mật khẩu (`handles 403 MUST_CHANGE_PASSWORD by triggering onMustChangePassword callback`).
+     - Không kích hoạt đổi mật khẩu cho các lỗi 403 `FORBIDDEN` thông thường (`does NOT trigger onMustChangePassword for standard 403 forbidden responses`).
+     - Không kích hoạt đổi mật khẩu khi yêu cầu có `skipAuth: true` nhận lỗi 403 `MUST_CHANGE_PASSWORD` (`does NOT trigger onMustChangePassword when skipAuth is true on 403 MUST_CHANGE_PASSWORD`).
+     - Dự phòng an toàn qua `window.location` khi chưa đăng ký session handler cho 401 và 403 (`falls back gracefully`).
+     - Quét tĩnh mã nguồn `frontend/src`: Xác nhận không có bất kỳ header `Authorization` thủ công nào ngoài `httpClient.ts` (`statically scans frontend/src to confirm no manual Authorization headers outside httpClient`).
+     - Quét tĩnh mã nguồn `frontend/src`: Xác nhận không có bất kỳ lời gọi `fetch()` trực tiếp nào ngoài `httpClient.ts` (`statically scans frontend/src to confirm no direct fetch calls outside httpClient`).
+
+2. **Cập Nhật Số Liệu Đo Đạc Thực Tế Mới Nhất**:
+   - Backend Unit/Integration Tests: **345 / 345 tests PASS** (0 failures, 0 errors, thời gian 2m 42s).
+   - Frontend Unit Tests: **106 / 106 tests PASS** trên 18 test files (tăng thêm 3 tests so với 103 của Round F: `httpClient.test.ts` +1, `RoleHomes.test.tsx` +1, `SkillProfilePage.test.tsx` +1).
+   - E2E Tests: **17 suites / 221 test cases PASS** (998 assertions) trên cụm Docker.
+   - Contrast Matrix: **66 / 66 pairs PASS** (36 Light + 30 Dark).
+   - Quality Gates: **26 / 26 gates PASS** đồng nhất trên cả `check.ps1` và `check.sh`.
+
+### 7.3. F2-3: Thẩm Định Thị Giác Thực Tế Trên Cụm Docker Stack Với Tài Khoản Ứng Viên Seeded
+
+Quy trình thẩm định thực hiện trên cụm Docker Compose thực tế (`docker compose up -d --build --wait`), đăng nhập ứng viên seeded `lms-sv-001` qua vé định danh SSO từ dịch vụ Mock LMS (`http://127.0.0.1:9000/lms/sso/tickets`), nhận vé TTL 60s, hoàn tất xác thực qua `/sso-callback` và truy cập màn hình Hồ sơ năng lực (`/candidate/skills`).
+
+**Ghi chú đo đạc thực tế từng viewport**:
+
+- **375px (Chế độ Sáng - Light Mode)**:
+  - Độ rộng trang: $scrollWidth = 411\text{px} \le innerWidth = 411\text{px}$ (hoàn toàn không tràn ngang, chênh lệch 0px).
+  - Vùng đệm khung chứa: `main.rj-dashboard-content` có padding $16\text{px}$.
+  - Vị trí khối trang: `.sp-page` có lề trái $left = 16\text{px}$, lề phải $right = 359\text{px}$, độ rộng $343\text{px}$, khoảng hở phải $rightGap = 52\text{px}$.
+  - Tiêu đề trang: `.sp-heading` có lề trái $16\text{px}$, không chạm mép màn hình.
+  - Vùng chạm tương tác: Nút Đăng xuất (`.rj-dashboard-nav button`) đạt kích thước $127 \times 44\text{px}$; nút "Đăng xuất" nội bộ đạt $143 \times 44\text{px}$; nút "Tính lại từ LMS, Exam" đạt $263 \times 44\text{px}$ (100% $\ge 44\text{px}$ touch target).
+  - Bố cục: Thu gọn hoàn toàn về 1 cột duy nhất (`grid-template-columns: 343px`), bảng kỹ năng và thẻ tóm tắt xếp chồng trật tự.
+- **375px (Chế độ Tối - Dark Mode)**:
+  - Độ rộng trang: $scrollWidth = 411\text{px} \le innerWidth = 411\text{px}$ (diff = 0px).
+  - Vị trí khối: `.sp-page` giữ nguyên $left = 16\text{px}$, $right = 359\text{px}$, $rightGap = 52\text{px}$.
+  - Độ tương phản nền và chữ: Văn bản chính `#EDF2F7` hiển thị nổi bật và dịu mắt trên nền tối `#0B1019` / `#162030`.
+  - Vùng chạm và bố cục: Đạt 100% chuẩn $44\text{px}$, bố cục 1 cột hiển thị hoàn hảo.
+- **1440px (Chế độ Sáng - Light Mode)**:
+  - Độ rộng trang: $scrollWidth = 1425\text{px} \le innerWidth = 1440\text{px}$ (diff = 0px, không tràn ngang).
+  - Vùng đệm khung chứa: `main.rj-dashboard-content` có padding $32\text{px}\ 16\text{px}$.
+  - Vị trí khối trang: `.sp-page` nằm chính giữa khung chứa tối đa, $left = 249\text{px}$, $right = 1177\text{px}$, độ rộng $928\text{px}$, khoảng hở phải $rightGap = 264\text{px}$.
+  - Tiêu đề trang: `.sp-heading` có $left = 249\text{px}$.
+  - Thanh điều hướng: Nút Đăng xuất tại góc phải $left = 1274\text{px}$, $right = 1401\text{px}$, $rightGap = 39\text{px}$, chiều cao $44\text{px}$.
+  - Bố cục hai cột: Phân tách rõ ràng với tỷ lệ 2fr / 1fr (`grid-template-columns: 597.33px 298.67px`). Thẻ tóm tắt năng lực cố định bên phải, danh sách kỹ năng hiển thị thoáng đãng bên trái.
+- **1440px (Chế độ Tối - Dark Mode)**:
+  - Độ rộng trang: $scrollWidth = 1425\text{px} \le innerWidth = 1440\text{px}$ (diff = 0px).
+  - Vị trí khối trang: Giữ nguyên $left = 249\text{px}$, $rightGap = 264\text{px}$.
+  - Thẻ tóm tắt và danh sách kỹ năng có viền hairline $1\text{px}$ tách biệt rõ rệt, tương phản toán học đạt chuẩn WCAG AAA.
+
+**Vệ sinh môi trường kiểm định**:
+
+- Toàn bộ 4 ảnh chụp màn hình kiểm định được ghi nhận tại thư mục tạm của hệ điều hành (`%TEMP%`) và đã được xóa sạch ngay trong tiến trình kiểm tra.
+- Tuyệt đối không có bất kỳ tệp hình ảnh nào được lưu trong cây thư mục của Git repository.
+- Không ghi nhận mật khẩu, khóa bí mật hay vé định danh SSO trong tài liệu.
+
+### 7.4. Danh Sách Git Commit Messages Đề Xuất Bổ Sung Cho Round F2 (T022B63 Pre-fixed)
+
+1. `T022B63: fix skill profile page layout shell and responsive spacing across routed pages`
+   - Bọc `SkillProfilePage` trong `RoleHomeLayout` chia sẻ (`CandidateSkillsPage.tsx`) với `.rj-dashboard` và `.rj-dashboard-content`.
+   - Chuẩn hóa padding `.rj-dashboard-content` tại breakpoint $\le 640\text{px}$ thành 16px.
+   - Tăng kích thước vùng chạm của `.sp-btn` và `.app-nav-btn` lên tối thiểu 44px.
+   - Bổ sung kiểm thử đơn vị cho container shell trong `RoleHomes.test.tsx` và `SkillProfilePage.test.tsx`.
+2. `T022B63: close round f gaps with skipAuth http client test and documentation metrics`
+   - Bổ sung kiểm thử `skipAuth` cho 403 MUST_CHANGE_PASSWORD trong `httpClient.test.ts` (14/14 tests).
+   - Cập nhật số liệu kiểm định thực tế (Backend 345, Frontend 106, E2E 221 cases / 17 suites, Gates 26/26).
+   - Ghi nhận báo cáo thẩm định thị giác Docker stack và bảng quét responsive 112 cấu hình vào `README.md` và `PR_DESCRIPTION.md`.

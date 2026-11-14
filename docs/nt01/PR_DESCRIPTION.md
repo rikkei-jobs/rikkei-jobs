@@ -47,6 +47,13 @@ Phân hệ Identity cung cấp giải pháp xác thực tập trung, bảo mật
    - `backend/src/main/resources/db/migration/V5__auth_identity_evolution.sql`: Khởi tạo bảng `users`, ràng buộc duy nhất, chỉ mục tìm kiếm và các trường bảo mật (`password_hash`, `failed_login_count`, `locked_until`, `must_change_password`).
    - `backend/src/main/resources/db/migration-dev/V6__dev_seed_nt01.sql`: Dữ liệu seed mẫu môi trường phát triển cho các vai trò và tài khoản kiểm thử NT-01.
 
+8. **Hợp Nhất Xác Thực JWT Cho Phân Hệ Hồ Sơ Năng Lực (Skill Profile JWT Integration)**:
+   - Vô hiệu hóa và loại bỏ toàn diện cơ chế xác thực HTTP Basic tạm thời (`DatabaseUserDetailsService.java` và `AuthenticatedUser.java` đã bị xóa sạch).
+   - Chuẩn hóa mô hình danh tính duy nhất (ONE Principal Type): `com.rikkei.jobs.identity.UserPrincipal` đặt tại gói gốc `identity`, đóng vai trò là giao diện định danh công khai tuân thủ nghiêm ngặt Rule 14 (biên giới module). Cả `AuthController` và `SkillProfileController` đều tiêu thụ `@AuthenticationPrincipal UserPrincipal`.
+   - Bảo toàn 100% ngữ nghĩa nghiệp vụ HS-01: Chủ sở hữu luôn xem được hồ sơ; người khác chỉ xem được hồ sơ công khai; hồ sơ riêng tư hoặc người dùng không tồn tại trả về 404 NOT_FOUND; tính toán lại điểm (`/recompute`) chỉ tác động lên chính người gọi; yêu cầu không có token hợp lệ nhận 401 UNAUTHORIZED; tài khoản chưa đổi mật khẩu nhận 403 MUST_CHANGE_PASSWORD từ `MustChangePasswordFilter`.
+   - Phía frontend: Xây dựng khách hàng HTTP xác thực tập trung (`httpClient.ts`) với in-memory token, tự động gắn header `Authorization: Bearer <token>`, xử lý debounce chuyển hướng 401 về `/login` và 403 về `/change-password`.
+   - Loại bỏ form đăng nhập Basic riêng lẻ (`LoginForm.tsx`) và hàm `buildBasicAuthHeader`. Khi chưa đăng nhập, giao diện hiển thị thẻ Call To Action dẫn tới `/login`. Thiết lập tuyến đường phân quyền `/candidate/skills` có bảo vệ bằng `<RequireRole allowedRoles={['CANDIDATE']}>`.
+
 ---
 
 ## 2. Quyết Định Kiến Trúc & An Toàn Bảo Mật (Security Decisions)
@@ -69,6 +76,10 @@ Mọi quyết định thiết kế an ninh đều bám sát tiêu chuẩn OWASP 
 4. **Trình Kiểm Định Khởi Động Nghiêm Ngặt (Fail-Fast Production Validator for JWT_SECRET)**:
    - Lớp cấu hình `ProdEnvironmentValidator` (`backend/src/main/java/com/rikkei/jobs/common/config/ProdEnvironmentValidator.java`) kích hoạt ngay khi ứng dụng khởi động.
    - Nếu ứng dụng chạy ở môi trường production (`SPRING_PROFILES_ACTIVE=prod`) mà `JWT_SECRET` bị bỏ trống, mang giá trị mặc định của môi trường dev, hoặc có độ dài nhỏ hơn 256 bits (32 ký tự), hệ thống chủ động ném ngoại lệ dừng tiến trình khởi động ngay lập tức (Fail-Fast), ngăn ngừa rủi ro vận hành với khóa bảo mật yếu.
+
+5. **Mô Hình Danh Tính Duy Nhất & Bảo Vệ Biên Giới Module (ONE Principal Type & Rule 14)**:
+   - Thay vì duy trì song song hai mô hình định danh (`AuthenticatedUser` cho Basic Auth và `UserPrincipal` cho JWT), hệ thống chuẩn hóa duy nhất một lớp `com.rikkei.jobs.identity.UserPrincipal` tại root package của module `identity`.
+   - Lớp này đóng vai trò là hợp đồng định danh công khai (Public Identity API Contract). Module `candidate` và bất kỳ module nghiệp vụ nào khác chỉ phụ thuộc vào `UserPrincipal` thông qua `@AuthenticationPrincipal UserPrincipal user`, hoàn toàn không truy cập vào các thành phần nội bộ (internal services, repositories, entities) của module `identity`, tuân thủ triệt để Rule 14.
 
 ---
 
@@ -121,7 +132,7 @@ Các cổng dịch vụ khả dụng:
 ### 4.2. Thực Thi Toàn Bộ Kiểm Thử E2E Opaque-Box
 
 ```bash
-# Chạy bộ kiểm thử E2E 4 tầng (17 test suites, 216 test cases)
+# Chạy bộ kiểm thử E2E 4 tầng (17 test suites, 221 test cases)
 node e2e/run-all.mjs
 ```
 
@@ -141,15 +152,15 @@ node e2e/run-all.mjs
 
 ## 5. Số Liệu Kiểm Định Đo Đạc Thực Tế Trong Phiên Này (Verified Metrics)
 
-Toàn bộ các thông số dưới đây được sao chép trực tiếp từ kết quả thực thi lệnh thực tế trong phiên hiện tại:
+Toàn bộ các thông số dưới đây được sao chép trực tiếp từ kết quả thực thi lệnh thực tế trong phiên hiện tại (Task T022B63):
 
-- **Kiểm thử Đơn vị & Tích hợp Backend (JUnit 5 & Testcontainers)**: **325 / 325 tests PASS** (`./mvnw test`, thời gian: 2m 51s, 0 failures, 0 errors).
-- **Kiểm thử Đơn vị Frontend (Vitest & Testing Library)**: **82 / 82 tests PASS** (16 test files, 100% green).
-- **Kiểm thử Đầu - Cuối E2E (Node.js Test Runner 4 Tiers)**: **17 / 17 suites PASS** (**216 / 216 test cases PASS**, 960 assertions, thời gian: 22.15s).
+- **Kiểm thử Đơn vị & Tích hợp Backend (JUnit 5 & Testcontainers)**: **345 / 345 tests PASS** (`./mvnw test`, thời gian: 2m 54s, 0 failures, 0 errors, tăng 7 tests so với baseline 338).
+- **Kiểm thử Đơn vị Frontend (Vitest & Testing Library)**: **106 / 106 tests PASS** trên 18 test files (100% green, tăng 20 tests so với baseline 86, bổ sung 3 tests trong Round F2).
+- **Kiểm thử Đầu - Cuối E2E (Node.js Test Runner 4 Tiers)**: **17 / 17 suites PASS** (**221 / 221 test cases PASS**, 998 assertions, thời gian: 16.68s, tăng 5 test cases và 38 assertions so với baseline 216).
 - **Ma trận Tương phản Toán học (WCAG 2.2 AA & APCA)**: **66 / 66 cặp màu PASS** (36 cặp Light Mode + 30 cặp Dark Mode, 0 vi phạm, $\Delta \le 0.01$).
-- **Thẩm định Thị giác Trình duyệt Thực (Chromium Headless CDP)**: **20 / 20 kịch bản đạt chuẩn** ($scrollWidth \le innerWidth$, diff = 0px).
+- **Thẩm định Thị giác & Quét Responsive Toàn Tuyến (Chromium CDP)**: **112 / 112 cấu hình đạt chuẩn 100%** (14 trang x 4 viewports 375/768/1024/1440 x 2 themes Light/Dark: $scrollWidth \le innerWidth$, lề trái $\ge 16\text{px}$, lề phải $\ge 16\text{px}$).
 - **Cổng Kiểm Định Tích Hợp (Quality Gates)**: **26 / 26 gates PASSED** trên cả `check.ps1` và `check.sh` với số lượng đồng nhất 100%.
-- **Bảo Vệ Ngăn Chặn Mã Màu Thô (Color Literal Guard)**: Check 9 trong `scripts/validate-agent-config.mjs` quét sạch toàn bộ `frontend/src`, đã chứng minh bằng break-test (FAIL khi thêm mã màu thô, PASS khi dọn sạch).
+- **Bảo Vệ Ngăn Chặn Mã Màu Thô (Color Literal Guard)**: Check 9 trong `scripts/validate-agent-config.mjs` quét sạch toàn bộ `frontend/src`, 0 mã màu thô ngoài token files.
 - **Biểu Trưng Favicon**: SHA-256 của `favicon.svg` và `favicon.png` trùng khớp 100% nguyên bản byte-for-byte.
 
 ---
@@ -177,6 +188,9 @@ Toàn bộ các thông số dưới đây được sao chép trực tiếp từ 
 3. **Cơ Chế Khôi Phục Tài Khoản Doanh Nghiệp (Enterprise Account Recovery)**:
    - Trong trường hợp chuyên viên HR bị khóa tài khoản hoặc quên email đăng ký doanh nghiệp, quy trình xác minh qua Admin/Staff cần có giao diện phê duyệt nội bộ chuyên dụng.
 
+4. **Phân Quyền Vai Trò Cho Hồ Sơ Năng Lực (Skill Profile Role-Scoping — Question 11)**:
+   - Ghi nhận Question 11 trong `docs/05-open-business-questions.md`: Hiện tại các endpoint `/api/v1/profiles/**` chỉ yêu cầu xác thực (`@AuthenticationPrincipal UserPrincipal user`). Cần chốt với Product Owner xem có nên giới hạn quyền sở hữu hồ sơ năng lực chỉ cho vai trò `CANDIDATE` (và `MENTOR`) hay giữ nguyên cơ chế mở cho mọi người dùng đã xác thực.
+
 ---
 
 ## 8. Danh Mục Kiểm Tra Của Reviewer (Reviewer Checklist)
@@ -185,9 +199,11 @@ Toàn bộ các thông số dưới đây được sao chép trực tiếp từ 
 - [ ] Không còn bất kỳ mã màu thô (hex literal, rgb/rgba) nào trong `frontend/src` ngoài `design-tokens.css` và danh mục hợp lệ.
 - [ ] Thành phần `<BrandMark />` nhận màu từ design tokens (`--rj-brand-mark-red`, `--rj-brand-mark-contrast`), bảo tồn nguyên vẹn hình học 3 cột bậc thang.
 - [ ] Hai tệp `favicon.svg` và `favicon.png` có mã băm SHA-256 giống hệt 100% với tệp gốc từ `Tài liệu dự án/`.
-- [ ] Kiểm tra cổng `scripts/validate-agent-config.mjs` (Check 9) đã được chứng minh qua break-test.
-- [ ] Toàn bộ 325 kiểm thử backend (`mvn test`) và 82 kiểm thử frontend (`npm test`) vượt qua thành công.
-- [ ] Toàn bộ 17 suites / 216 test cases E2E (`node e2e/run-all.mjs`) chạy thành công trên cụm Docker.
+- [ ] Kiểm tra cổng `scripts/validate-agent-config.mjs` (Check 9) đạt 0 vi phạm.
+- [ ] Toàn bộ 345 kiểm thử backend (`mvn test`) vượt qua thành công (+7 tests so với baseline 338).
+- [ ] Toàn bộ 106 kiểm thử frontend (`npm test` trên 18 test files) vượt qua thành công (+20 tests so với baseline 86).
+- [ ] Toàn bộ 17 suites / 221 test cases E2E (`node e2e/run-all.mjs`, 998 assertions) chạy thành công trên cụm Docker.
 - [ ] Cả hai kịch bản `check.sh` và `check.ps1` báo cáo 26/26 gates PASSED đồng nhất mà không cần cờ chuyển đổi đường dẫn (path conversion override).
+- [ ] Thẩm định thị giác trình duyệt thực tế Chromium CDP đạt 112/112 cấu hình toàn tuyến $scrollWidth \le innerWidth$.
 - [ ] Ngăn xếp Docker được dọn dẹp sạch sẽ (`docker compose down -v`), không tồn đọng container hoặc volume rikkei.
 - [ ] Toàn bộ thay đổi ở trạng thái UNCOMMITTED trên nhánh `feature/T022863-dang-nhap`.

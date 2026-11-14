@@ -6,10 +6,10 @@
 
 ### Overview
 
-During the in-depth architectural and specification analysis of the project reference documents and the implementation of Task NT-01 (Authentication & Authorization, code T022B63), the engineering team identified several functional ambiguities and specification gaps. This document presents 10 concrete business questions organized into two sections:
+During the in-depth architectural and specification analysis of the project reference documents and the implementation of Task NT-01 (Authentication & Authorization, code T022B63), the engineering team identified several functional ambiguities and specification gaps. This document presents 11 concrete business questions organized into two sections:
 
 - **Section A**: General Architecture & External System Mock Questions (Questions 1–6)
-- **Section B**: Task NT-01 Authentication, Multi-Tenancy & Security Lifecycle Questions (Questions 7–10)
+- **Section B**: Task NT-01 Authentication, Multi-Tenancy & Security Lifecycle Questions (Questions 7–11)
 
 All questions include citations, context, proposed options, and architectural impacts for review and confirmation by the Product Owner and Team Lead.
 
@@ -136,14 +136,26 @@ All questions include citations, context, proposed options, and architectural im
 
 ---
 
+#### Question 11: Role-Scoping Policy for Skill Profile Feature (HS-01 / NT-01 Round F)
+
+- **Citation**: `docs/hs-01-skill-profile.md` (Section "Quyền truy cập & Phân quyền"), `PROMPT_NT01F_EN.txt` (Section R2 / F1), and `SkillProfileController.java`.
+- **Context**: Currently, the Skill Profile endpoints (`GET /api/v1/profiles/me/skills`, `GET /api/v1/profiles/{userId}/skills`, and `POST /api/v1/profiles/me/skills/recompute`) only require authentication (`@AuthenticationPrincipal UserPrincipal user`), without role enforcement such as `@PreAuthorize("hasRole('CANDIDATE')")`. As a result, users with any system role (`HR`, `ADMIN`, `MENTOR`, `STAFF`) can theoretically access or recompute a personal skill profile. However, the business specifications (HS-01) focus entirely on candidate competencies derived from LMS, Exam, and Project records; employer HR accounts should not logically own candidate skill profiles.
+- **Proposed Options**:
+  - *Option A (Strict Candidate Scoping)*: Restrict ownership and recomputation of skill profiles (`/me/skills`, `/me/skills/recompute`) strictly to users with the `CANDIDATE` role via `@PreAuthorize("hasRole('CANDIDATE')")`. Non-candidates attempting to call these endpoints receive HTTP 403 `FORBIDDEN`. Viewing another candidate's public skills (`/{userId}/skills`) remains open to all authenticated users (or HR/Mentors).
+  - *Option B (Permissive Universal Profiles - Current Behavior)*: Maintain the existing permissive behavior where any authenticated user possesses a personal skill profile. For non-candidate roles, if no external records exist in LMS/Exam/PM, the API simply returns an empty list `[]`.
+  - *Option C (Candidate and Mentor Dual Scoping)*: Allow both `CANDIDATE` and `MENTOR` roles to maintain skill profiles, while strictly excluding `HR` and `ADMIN` enterprise/staff accounts from skill profile ownership.
+- **Architectural Impact**: Determines whether method-level authorization `@PreAuthorize("hasRole('CANDIDATE')")` should be applied to `SkillProfileController`, how frontend routing guards (`RequireRole`) are configured, and role-based test expectations.
+
+---
+
 ## Part 2: Vietnamese Section / Bản dịch Tiếng Việt
 
 ### Tổng quan
 
-Trong quá trình khảo sát kiến trúc, đối chiếu đặc tả hệ thống và thực hiện nhiệm vụ NT-01 (Đăng nhập & Xác thực Đa kênh, mã T022B63), đội ngũ kỹ sư phát hiện một số điểm mơ hồ và câu hỏi nghiệp vụ cần làm rõ. Tài liệu này tổng hợp 10 câu hỏi nghiệp vụ then chốt chia thành hai phần:
+Trong quá trình khảo sát kiến trúc, đối chiếu đặc tả hệ thống và thực hiện nhiệm vụ NT-01 (Đăng nhập & Xác thực Đa kênh, mã T022B63), đội ngũ kỹ sư phát hiện một số điểm mơ hồ và câu hỏi nghiệp vụ cần làm rõ. Tài liệu này tổng hợp 11 câu hỏi nghiệp vụ then chốt chia thành hai phần:
 
 - **Phần A**: Các câu hỏi kiến trúc tổng thể và hệ thống Mock bên ngoài (Câu hỏi 1–6)
-- **Phần B**: Các câu hỏi chuyên sâu về Nhiệm vụ NT-01 — Xác thực, Đa người thuê và Vòng đời bảo mật (Câu hỏi 7–10)
+- **Phần B**: Các câu hỏi chuyên sâu về Nhiệm vụ NT-01 — Xác thực, Đa người thuê và Vòng đời bảo mật (Câu hỏi 7–11)
 
 Mỗi câu hỏi đều có trích dẫn văn bản, ngữ cảnh phát sinh, các phương án khả thi và đánh giá tác động kiến trúc để Product Owner và Team Lead phê duyệt.
 
@@ -267,3 +279,15 @@ Mỗi câu hỏi đều có trích dẫn văn bản, ngữ cảnh phát sinh, c�
   - *Phương án B (Phân tách độc lập Trạng thái và Thời hạn khóa)*: Giữ `status` chỉ gồm các trạng thái quản trị (`ACTIVE`, `INACTIVE`), trong khi việc khóa brute-force hoàn toàn do điều kiện thời gian `locked_until > NOW()` quyết định. Tài khoản đã bị Quản trị viên tắt (`INACTIVE`) tuyệt đối không thể tự kích hoạt lại thông qua quy trình quên mật khẩu.
   - *Phương án C (Cờ khóa hành chính kèm vết kiểm toán)*: Giữ nguyên `ACTIVE` và `LOCKED`, bổ sung cờ `administrative_lock` và bảng nhật ký lưu ID quản trị viên, lý do và thời điểm khóa tài khoản.
 - **Tác động kiến trúc**: Định hình máy trạng thái (state machine) trong `AuthServiceImpl`, cấu trúc ràng buộc CSDL cho trạng thái tài khoản và bộ API quản lý người dùng dành cho Quản trị viên ở các sprint tiếp theo.
+
+---
+
+#### Câu hỏi 11: Phân quyền Vai trò (Role-Scoping) cho Tính năng Hồ sơ Năng lực (HS-01 / NT-01 Round F)
+
+- **Trích dẫn**: `docs/hs-01-skill-profile.md` (Mục "Quyền truy cập & Phân quyền"), `PROMPT_NT01F_EN.txt` (Mục R2 / F1), và mã nguồn `SkillProfileController.java`.
+- **Ngữ cảnh**: Hiện tại, các endpoint của tính năng Hồ sơ năng lực (`GET /api/v1/profiles/me/skills`, `GET /api/v1/profiles/{userId}/skills`, và `POST /api/v1/profiles/me/skills/recompute`) chỉ yêu cầu đăng nhập (`@AuthenticationPrincipal UserPrincipal user`) mà hoàn toàn chưa có ràng buộc vai trò, ví dụ `@PreAuthorize("hasRole('CANDIDATE')")`. Do đó, bất kỳ người dùng thuộc bất kỳ vai trò nào (`HR`, `ADMIN`, `MENTOR`, `STAFF`) đều có thể gọi API để xem hoặc tính toán lại hồ sơ năng lực của bản thân. Trong khi đó, đặc tả HS-01 tập trung hoàn toàn vào năng lực của ứng viên/học viên lấy từ dữ liệu LMS, Khảo thí và Dự án thực tập; về mặt nghiệp vụ, tài khoản doanh nghiệp (HR) không nên sở hữu hồ sơ năng lực ứng viên.
+- **Các phương án đề xuất**:
+  - *Phương án A (Giới hạn chặt chẽ chỉ dành cho CANDIDATE)*: Áp dụng `@PreAuthorize("hasRole('CANDIDATE')")` cho các endpoint sở hữu và tính toán lại hồ sơ (`/me/skills`, `/me/skills/recompute`). Nếu tài khoản không phải `CANDIDATE` gọi tới, hệ thống trả về HTTP 403 `FORBIDDEN`. Endpoint xem kỹ năng công khai của người khác (`/{userId}/skills`) vẫn cho phép mọi người dùng đã xác thực (hoặc HR/Mentor) tra cứu.
+  - *Phương án B (Cho phép phổ quát mọi vai trò - Hành vi hiện tại)*: Giữ nguyên hành vi hiện tại, cho phép mọi tài khoản đã đăng nhập đều có hồ sơ năng lực cá nhân. Với các vai trò không phải ứng viên, nếu không có dữ liệu LMS/Exam/PM, API trả về danh sách rỗng `[]`.
+  - *Phương án C (Hỗ trợ CANDIDATE và MENTOR)*: Cho phép cả học viên (`CANDIDATE`) và người hướng dẫn (`MENTOR`) sở hữu hồ sơ kỹ năng, nhưng loại trừ hoàn toàn tài khoản nhân sự doanh nghiệp (`HR`) và quản trị viên (`ADMIN`).
+- **Tác động kiến trúc**: Xác định việc có bổ sung phân quyền cấp phương thức `@PreAuthorize` vào `SkillProfileController` hay không, cấu hình guard bảo vệ route trên frontend (`RequireRole(['CANDIDATE'])`), và các trường hợp kiểm thử phân quyền theo vai trò.
