@@ -17,8 +17,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
- * Verifies that the default profile (no active profiles specified) executes ONLY the V1 schema
- * migration and does NOT seed any sample users.
+ * Verifies that the default profile (no active profiles specified) executes ONLY prod schema
+ * migrations (V1 and V3) and does NOT seed any sample users (neither V2 nor V4).
  */
 @SpringBootTest
 @Testcontainers
@@ -32,6 +32,7 @@ public class DefaultProfileIntegrationTest {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
+        registry.add("jwt.secret", () -> "default-profile-test-secret-min-32-chars-long!");
     }
 
     @Autowired private UserRepository userRepository;
@@ -49,16 +50,16 @@ public class DefaultProfileIntegrationTest {
     }
 
     @Test
-    @DisplayName("Default profile must apply only V1 migration, not V2 dev seed")
+    @DisplayName("Default profile must apply only V1 and V3 schema migrations, not dev seeds")
     void testDefaultProfileAppliesOnlyV1Schema() {
         Integer migrationCount =
                 jdbcTemplate.queryForObject(
                         "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                         Integer.class);
         assertEquals(
-                1,
+                2,
                 migrationCount,
-                "Default profile must only apply V1 migration (schema), migration count must be 1");
+                "Default profile must only apply V1 and V3 schema migrations, migration count must be 2");
 
         Boolean hasV2 =
                 jdbcTemplate.queryForObject(
@@ -67,6 +68,22 @@ public class DefaultProfileIntegrationTest {
         assertFalse(
                 Boolean.TRUE.equals(hasV2),
                 "V2 seed migration must NOT be applied in default profile");
+
+        Boolean hasV3 =
+                jdbcTemplate.queryForObject(
+                        "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '3')",
+                        Boolean.class);
+        assertTrue(
+                Boolean.TRUE.equals(hasV3),
+                "V3 schema migration must be applied in default profile");
+
+        Boolean hasV4 =
+                jdbcTemplate.queryForObject(
+                        "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '4')",
+                        Boolean.class);
+        assertFalse(
+                Boolean.TRUE.equals(hasV4),
+                "V4 dev seed migration must NOT be applied in default profile");
     }
 
     @Test
