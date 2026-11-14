@@ -361,7 +361,15 @@ if command -v node >/dev/null 2>&1; then
         record_gate "Version Table Drift Check (docs/03)" "false" "Version drift detected between docs/03 and manifests"
     fi
 
-    # 7.4 Quality Gate Synchronization Check
+    # 7.4 Contrast Table Verification (docs/design)
+    echo -e "${YELLOW}Running design system contrast verification (docs/design/DESIGN_SYSTEM.md)...${NC}"
+    if node scripts/compute-contrast.mjs; then
+        record_gate "Contrast Table Verification (docs/design)" "true" "All WCAG 2.2 contrast pairs verified with exact printed ratios"
+    else
+        record_gate "Contrast Table Verification (docs/design)" "false" "Contrast ratio mismatch or WCAG threshold violation detected"
+    fi
+
+    # 7.5 Quality Gate Synchronization Check
     echo -e "${YELLOW}Running Quality Gate synchronization check...${NC}"
     if node scripts/check-gate-sync.mjs; then
         record_gate "Quality Gate Synchronization Check" "true" "All gates synchronized across check.sh, check.ps1, and CI"
@@ -369,7 +377,7 @@ if command -v node >/dev/null 2>&1; then
         record_gate "Quality Gate Synchronization Check" "false" "Quality gates mismatch detected"
     fi
 
-    # 7.5 Agent Configuration Sync & Parity Check
+    # 7.6 Agent Configuration Sync & Parity Check
     echo -e "${YELLOW}Running agent configuration sync and parity check...${NC}"
     if node scripts/sync-agent-config.mjs --check && node scripts/validate-agent-config.mjs; then
         record_gate "Agent Configuration Sync & Parity Check" "true" "All rules, skills, and entrypoints in sync with canonical source and validated"
@@ -378,6 +386,7 @@ if command -v node >/dev/null 2>&1; then
     fi
 else
     record_gate "Version Table Drift Check (docs/03)" "false" "node not found in PATH"
+    record_gate "Contrast Table Verification (docs/design)" "false" "node not found in PATH"
     record_gate "Quality Gate Synchronization Check" "false" "node not found in PATH"
     record_gate "Agent Configuration Sync & Parity Check" "false" "node not found in PATH"
 fi

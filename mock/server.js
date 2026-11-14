@@ -92,7 +92,7 @@ app.post('/lms/sso/tickets', (req, res) => {
   }
 
   const ticket = crypto.randomBytes(16).toString('hex');
-  const issuedAt = new Date().toISOString();
+  const issuedAt = (req.body && req.body.issuedAt) || new Date().toISOString();
 
   tickets.set(ticket, { lmsUserId, issuedAt });
 

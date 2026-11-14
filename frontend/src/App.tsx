@@ -1,42 +1,44 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom';
 import './App.css';
 import { Header } from './shared/components/Header';
 import { HealthBadge } from './shared/components/HealthBadge';
 import { ModuleCard } from './shared/components/ModuleCard';
 import { fetchBackendHealth, type BackendHealthStatus } from './shared/api/health';
 import { BUSINESS_MODULES } from './features';
-import { SkillProfilePage, fetchMySkills } from './features/candidate';
-import { LoginForm } from './shared/components/LoginForm';
-import { ApiError, buildBasicAuthHeader } from './shared/api/auth';
+import { SkillProfilePage } from './features/candidate';
+
+import { AuthProvider } from './features/identity/context/AuthContext';
+import { useAuth } from './features/identity/context/useAuth';
+import { setAuthSessionHandlers } from './shared/api/httpClient';
+import { RequireMustChangePassword } from './features/identity/guards/RequireMustChangePassword';
+import { RequireRole } from './features/identity/guards/RequireRole';
+import { LoginPage } from './features/identity/pages/LoginPage';
+import { SsoCallbackPage } from './features/identity/pages/SsoCallbackPage';
+import { ChangePasswordPage } from './features/identity/pages/ChangePasswordPage';
+import { ForgotPasswordPage } from './features/identity/pages/ForgotPasswordPage';
+import { ResetPasswordPage } from './features/identity/pages/ResetPasswordPage';
+import { CandidateHomePage } from './features/identity/pages/role-homes/CandidateHomePage';
+import { CandidateSkillsPage } from './features/identity/pages/role-homes/CandidateSkillsPage';
+import { HrHomePage } from './features/identity/pages/role-homes/HrHomePage';
+import { MentorHomePage } from './features/identity/pages/role-homes/MentorHomePage';
+import { StaffHomePage } from './features/identity/pages/role-homes/StaffHomePage';
+import { AdminHomePage } from './features/identity/pages/role-homes/AdminHomePage';
+import { Icon } from './shared/components/Icon';
 
 export const APP_NAME = 'Rikkei Jobs - Nền tảng kết nối việc làm theo năng lực đã xác thực';
 export const APP_VERSION = 'v1.0.0-sprint1';
 export const APP_SUBTITLE =
   'Giải pháp cầu nối minh bạch giữa Sinh viên, Doanh nghiệp tuyển dụng và Cán bộ đào tạo';
 
-export const App: React.FC = () => {
+export const HomeSkeleton: React.FC = () => {
+  const { isAuthenticated, logout } = useAuth();
   const [backendStatus, setBackendStatus] = useState<BackendHealthStatus>('CONNECTING...');
   const [statusDetails, setStatusDetails] = useState<string>(
     'Đang thiết lập kết nối tới Backend...',
   );
   const [isChecking, setIsChecking] = useState<boolean>(false);
   const [view, setView] = useState<'home' | 'skills'>('home');
-  const [authHeader, setAuthHeader] = useState<string | null>(null);
-
-  const handleLogin = useCallback(async (email: string, password: string) => {
-    const header = buildBasicAuthHeader(email, password);
-    try {
-      await fetchMySkills(header);
-      setAuthHeader(header);
-      return null;
-    } catch (err: unknown) {
-      return err instanceof ApiError && err.status === 401
-        ? 'Email hoặc mật khẩu không đúng'
-        : 'Không thể kết nối đến máy chủ Backend';
-    }
-  }, []);
-
-  const handleLogout = useCallback(() => setAuthHeader(null), []);
 
   const checkHealth = useCallback(async () => {
     setIsChecking(true);
@@ -107,20 +109,40 @@ export const App: React.FC = () => {
 
       {view === 'skills' && (
         <main className="app-main">
-          {authHeader ? (
-            <SkillProfilePage
-              authHeader={authHeader}
-              onUnauthorized={handleLogout}
-              onLogout={handleLogout}
-            />
+          {isAuthenticated ? (
+            <SkillProfilePage onLogout={logout} />
           ) : (
-            <LoginForm onSubmit={handleLogin} />
+            <section className="sp-cta-card" aria-labelledby="sp-cta-heading">
+              <h2 id="sp-cta-heading" className="sp-heading">
+                Hồ sơ năng lực
+              </h2>
+              <p className="sp-lead">
+                Vui lòng đăng nhập bằng tài khoản học viên (LMS SSO) hoặc tài khoản doanh nghiệp để xem
+                chỉ số kỹ năng đã xác thực.
+              </p>
+              <Link to="/login" className="rj-btn rj-btn-primary">
+                <Icon name="shield" size={18} />
+                <span>Đăng nhập để xem hồ sơ năng lực</span>
+              </Link>
+            </section>
           )}
         </main>
       )}
 
       {view === 'home' && (
         <main className="app-main">
+          {/* Quick Identity Portal Entry */}
+          <section style={{ textAlign: 'center', margin: '0 0 16px 0' }}>
+            <Link
+              to="/login"
+              className="rj-btn rj-btn-primary"
+              style={{ display: 'inline-flex', padding: '12px 24px', fontSize: '1rem' }}
+            >
+              <Icon name="shield" size={20} />
+              <span>Đến Cổng Đăng Nhập NT-01 (LMS SSO / Doanh Nghiệp)</span>
+            </Link>
+          </section>
+
           <section className="section-health">
             <HealthBadge
               status={backendStatus}
@@ -177,6 +199,112 @@ export const App: React.FC = () => {
         </p>
       </footer>
     </div>
+  );
+};
+
+export const AppRoutes: React.FC = () => {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  useEffect(() => {
+    setAuthSessionHandlers({
+      onUnauthorized: () => {
+        logout();
+        navigate('/login');
+      },
+      onMustChangePassword: () => {
+        navigate('/change-password');
+      },
+    });
+  }, [logout, navigate]);
+
+  return (
+    <Routes>
+      {/* Root skeleton */}
+      <Route path="/" element={<HomeSkeleton />} />
+
+      {/* Public identity routes */}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/sso-callback" element={<SsoCallbackPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+      {/* Forced change password route */}
+      <Route
+        path="/change-password"
+        element={
+          <RequireMustChangePassword>
+            <ChangePasswordPage />
+          </RequireMustChangePassword>
+        }
+      />
+
+      {/* Dedicated candidate skill profile route */}
+      <Route
+        path="/candidate/skills"
+        element={
+          <RequireRole allowedRoles={['CANDIDATE']}>
+            <CandidateSkillsPage />
+          </RequireRole>
+        }
+      />
+
+      {/* Protected role homes */}
+      <Route
+        path="/candidate"
+        element={
+          <RequireRole allowedRoles={['CANDIDATE']}>
+            <CandidateHomePage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/hr"
+        element={
+          <RequireRole allowedRoles={['HR']}>
+            <HrHomePage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/mentor"
+        element={
+          <RequireRole allowedRoles={['MENTOR']}>
+            <MentorHomePage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/staff"
+        element={
+          <RequireRole allowedRoles={['STAFF']}>
+            <StaffHomePage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <RequireRole allowedRoles={['ADMIN']}>
+            <AdminHomePage />
+          </RequireRole>
+        }
+      />
+
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/login" replace />} />
+    </Routes>
+  );
+};
+
+export const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    </AuthProvider>
   );
 };
 

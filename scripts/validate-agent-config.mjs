@@ -197,7 +197,8 @@ export function scanForbiddenPatterns(content, filePath = '') {
     const isEmoji =
       /\p{Extended_Pictographic}/u.test(line) ||
       /[\u{1F1E6}-\u{1F1FF}]{2}/u.test(line) ||
-      /[0-9#*]\uFE0F?\u20E3/u.test(line);
+      /[0-9#*]\uFE0F?\u20E3/u.test(line) ||
+      /[\u261A-\u261F]/u.test(line);
 
     if (isEmoji) {
       violations.push({ type: 'emoji', line: lineNum, detail: 'Forbidden emoji character detected', content: line.trim() });
@@ -384,7 +385,8 @@ export async function validateAgentConfig(options = {}) {
     check5Violations: [],
     check6Violations: [],
     check7Violations: [],
-    check8Violations: []
+    check8Violations: [],
+    check9Violations: []
   };
 
   const logVerbose = (msg) => {
@@ -399,7 +401,7 @@ export async function validateAgentConfig(options = {}) {
   // ---------------------------------------------------------------------------
   // Check 1: YAML Frontmatter Integrity (Skills)
   // ---------------------------------------------------------------------------
-  console.log(`${BOLD}[Check 1/8] Validating YAML Frontmatter Integrity in Skills...${RESET}`);
+  console.log(`${BOLD}[Check 1/9] Validating YAML Frontmatter Integrity in Skills...${RESET}`);
   for (const skillName of SKILL_NAMES) {
     const skillPath = path.join(CANONICAL_DIR, 'skills', skillName, 'SKILL.md');
     if (!fs.existsSync(skillPath)) {
@@ -440,7 +442,7 @@ export async function validateAgentConfig(options = {}) {
   // ---------------------------------------------------------------------------
   // Check 2: Strict Line Cap Limits & Line Ending Hygiene
   // ---------------------------------------------------------------------------
-  console.log(`\n${BOLD}[Check 2/8] Validating Line Caps & Line Ending Hygiene (LF, UTF-8 no BOM)...${RESET}`);
+  console.log(`\n${BOLD}[Check 2/9] Validating Line Caps & Line Ending Hygiene (LF, UTF-8 no BOM)...${RESET}`);
 
   // 2.1 Rules <= 150 lines
   for (const ruleName of RULE_NAMES) {
@@ -516,7 +518,7 @@ export async function validateAgentConfig(options = {}) {
   // ---------------------------------------------------------------------------
   // Check 3: Forbidden Patterns Detection (Extended Scope) (T022DB0)
   // ---------------------------------------------------------------------------
-  console.log(`\n${BOLD}[Check 3/8] Scanning for Forbidden Patterns across Extended Scope (Emoji, Secrets, Git Mutations, TODOs)...${RESET}`);
+  console.log(`\n${BOLD}[Check 3/9] Scanning for Forbidden Patterns across Extended Scope (Emoji, Secrets, Git Mutations, TODOs)...${RESET}`);
   const scanTargets = [];
   RULE_NAMES.forEach(r => scanTargets.push({ file: r, fullPath: path.join(CANONICAL_DIR, 'rules', r) }));
   SKILL_NAMES.forEach(s => scanTargets.push({ file: `${s}/SKILL.md`, fullPath: path.join(CANONICAL_DIR, 'skills', s, 'SKILL.md') }));
@@ -543,15 +545,12 @@ export async function validateAgentConfig(options = {}) {
     extendedScanTargets.set(fp, path.relative(REPO_ROOT, fp).replace(/\\/g, '/'));
   });
 
-  // 4. Docs in scope: docs/design and docs/agent-config
-  findMarkdownFiles(path.join(REPO_ROOT, 'docs', 'design')).forEach(fp => {
-    extendedScanTargets.set(fp, path.relative(REPO_ROOT, fp).replace(/\\/g, '/'));
-  });
-  findMarkdownFiles(path.join(REPO_ROOT, 'docs', 'agent-config')).forEach(fp => {
+  // 4. Docs in scope: docs/ (including docs/nt01/**, docs/design/**, docs/agent-config/**, and all markdown files under docs/)
+  findMarkdownFiles(path.join(REPO_ROOT, 'docs')).forEach(fp => {
     extendedScanTargets.set(fp, path.relative(REPO_ROOT, fp).replace(/\\/g, '/'));
   });
 
-  console.log(`  Scope: Inspected ${extendedScanTargets.size} Markdown files across docs/design, docs/agent-config, agent-config, .claude, .gemini, and root.`);
+  console.log(`  Scope: Inspected ${extendedScanTargets.size} Markdown files across docs (including docs/nt01/**), agent-config, .claude, .gemini, and root.`);
 
   // Recursive emoji scan across ALL extended markdown targets
   for (const [fullPath, relPath] of extendedScanTargets.entries()) {
@@ -561,7 +560,8 @@ export async function validateAgentConfig(options = {}) {
       const isEmoji =
         /\p{Extended_Pictographic}/u.test(line) ||
         /[\u{1F1E6}-\u{1F1FF}]{2}/u.test(line) ||
-        /[0-9#*]\uFE0F?\u20E3/u.test(line);
+        /[0-9#*]\uFE0F?\u20E3/u.test(line) ||
+        /[\u261A-\u261F]/u.test(line);
       if (isEmoji) {
         results.check3Violations.push(`Forbidden emoji character detected: '${line.trim()}' at ${relPath}:${idx + 1}`);
       }
@@ -591,7 +591,7 @@ export async function validateAgentConfig(options = {}) {
   // ---------------------------------------------------------------------------
   // Check 4: Markdown Links & Internal Anchor Validity
   // ---------------------------------------------------------------------------
-  console.log(`\n${BOLD}[Check 4/8] Validating Markdown Relative Links & Internal Anchors...${RESET}`);
+  console.log(`\n${BOLD}[Check 4/9] Validating Markdown Relative Links & Internal Anchors...${RESET}`);
   for (const target of scanTargets) {
     if (!fs.existsSync(target.fullPath)) continue;
     const content = fs.readFileSync(target.fullPath, 'utf8');
@@ -665,7 +665,7 @@ export async function validateAgentConfig(options = {}) {
   // ---------------------------------------------------------------------------
   // Check 5: Cryptographic Mirror Parity (.claude <-> .gemini 1:1 SHA-256 match)
   // ---------------------------------------------------------------------------
-  console.log(`\n${BOLD}[Check 5/8] Verifying Mirror Parity & SHA-256 Cryptographic Hashes...${RESET}`);
+  console.log(`\n${BOLD}[Check 5/9] Verifying Mirror Parity & SHA-256 Cryptographic Hashes...${RESET}`);
 
   // 5.1 Rules parity
   for (const ruleName of RULE_NAMES) {
@@ -771,7 +771,7 @@ export async function validateAgentConfig(options = {}) {
   // ---------------------------------------------------------------------------
   // Check 6: Repository Asset Citation & Command Existence ([EXISTS] vs [TARGET])
   // ---------------------------------------------------------------------------
-  console.log(`\n${BOLD}[Check 6/8] Verifying Repository Asset Citations & [EXISTS]/[TARGET] Markers...${RESET}`);
+  console.log(`\n${BOLD}[Check 6/9] Verifying Repository Asset Citations & [EXISTS]/[TARGET] Markers...${RESET}`);
   let existsMarkerCount = 0;
   let targetMarkerCount = 0;
   const UNIMPLEMENTED_CONSTRUCTS = [
@@ -932,7 +932,7 @@ export async function validateAgentConfig(options = {}) {
   // ---------------------------------------------------------------------------
   // Check 7: Skill Supporting Files (references/*) Link Target Validity & Mirror Parity (T022DB0)
   // ---------------------------------------------------------------------------
-  console.log(`\n${BOLD}[Check 7/8] Validating Skill Supporting Files (references/*) Link Validity & Mirror Parity...${RESET}`);
+  console.log(`\n${BOLD}[Check 7/9] Validating Skill Supporting Files (references/*) Link Validity & Mirror Parity...${RESET}`);
 
   // 7.1 Link Target Validity
   for (const skillName of SKILL_NAMES) {
@@ -1014,7 +1014,7 @@ export async function validateAgentConfig(options = {}) {
   // ---------------------------------------------------------------------------
   // Check 8: Project-Level Settings (settings.json + .geminiignore) Mapping & Security Enforcement (T022DB0)
   // ---------------------------------------------------------------------------
-  console.log(`\n${BOLD}[Check 8/8] Validating settings.json & .geminiignore Mapping & Security Enforcement...${RESET}`);
+  console.log(`\n${BOLD}[Check 8/9] Validating settings.json & .geminiignore Mapping & Security Enforcement...${RESET}`);
   const settingsTemplatePath = path.join(CANONICAL_DIR, 'templates', 'settings.template.json');
   const claudeSettingsPath = path.join(CLAUDE_DIR, 'settings.json');
   const geminiSettingsPath = path.join(GEMINI_DIR, 'settings.json');
@@ -1149,6 +1149,124 @@ export async function validateAgentConfig(options = {}) {
     results.pass = false;
   }
 
+  // ===========================================================================
+  // Check 9: Frontend Color Tokens & Palette Guard (Rule 08/09 / NT-01 Round E2 / E2-1)
+  // Ensures zero undocumented color literals outside design-tokens.css and documented allow-list.
+  // ===========================================================================
+  console.log(`\n${CYAN}[Check 9/9] Enforcing Frontend Color Tokens & Palette Invariants (E2-1)...${RESET}`);
+  const frontendSrc = path.join(REPO_ROOT, 'frontend', 'src');
+  if (fs.existsSync(frontendSrc)) {
+    const isAllowListedRgba = (line) => {
+      const trimmed = line.trim();
+      return (
+        trimmed.startsWith('box-shadow:') ||
+        trimmed.includes('drop-shadow(') ||
+        trimmed.includes('radial-gradient(') ||
+        trimmed.includes('rgba(186, 202, 217, 0.5)') ||
+        trimmed.includes('rgba(255, 255, 255, 0.08)')
+      );
+    };
+
+    const hexPattern = /#[0-9a-fA-F]{3,8}\b/g;
+
+    const namedColors = [
+      'black', 'white', 'red', 'green', 'blue', 'yellow', 'purple', 'gray', 'grey',
+      'orange', 'pink', 'cyan', 'magenta', 'lime', 'navy', 'teal', 'aqua', 'maroon',
+      'silver', 'olive', 'fuchsia', 'brown', 'indigo', 'violet', 'gold', 'coral',
+      'crimson', 'khaki', 'plum', 'salmon', 'tan', 'turquoise', 'azure', 'beige'
+    ];
+    const namedColorRegex = new RegExp(`\\b(${namedColors.join('|')})\\b`, 'i');
+    const allowedNamedValues = new Set(['transparent', 'currentColor'.toLowerCase(), 'inherit', 'none', 'initial', 'unset']);
+
+    const scanFiles = (dir) => {
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+      for (const ent of entries) {
+        const full = path.join(dir, ent.name);
+        if (ent.isDirectory()) {
+          if (ent.name !== '__tests__' && ent.name !== 'node_modules') {
+            scanFiles(full);
+          }
+        } else if (ent.isFile()) {
+          if (ent.name === 'design-tokens.css' || ent.name.includes('.test.') || ent.name.includes('.spec.')) {
+            continue;
+          }
+          if (ent.name.endsWith('.css') || ent.name.endsWith('.tsx') || ent.name.endsWith('.ts')) {
+            const rel = path.relative(frontendSrc, full).replace(/\\/g, '/');
+            const lines = fs.readFileSync(full, 'utf8').split('\n');
+            lines.forEach((line, idx) => {
+              if (hexPattern.test(line)) {
+                results.check9Violations.push(`Undocumented hex color literal in frontend/src/${rel}:${idx + 1} -> ${line.trim()}`);
+              }
+              if (/\brgb\s*\(/i.test(line)) {
+                results.check9Violations.push(`Disallowed rgb() color literal in frontend/src/${rel}:${idx + 1} -> ${line.trim()}`);
+              }
+              if (/\brgba\s*\(/i.test(line) && !isAllowListedRgba(line)) {
+                results.check9Violations.push(`Unapproved rgba() color literal in frontend/src/${rel}:${idx + 1} -> ${line.trim()}`);
+              }
+              if (/\bhsla?\s*\(/i.test(line)) {
+                results.check9Violations.push(`Disallowed hsl()/hsla() color literal in frontend/src/${rel}:${idx + 1} -> ${line.trim()}`);
+              }
+              const cssPropMatch = line.match(/(?:^|[^-a-zA-Z0-9_])(color|background|background-color|backgroundColor|fill|stroke|border(?:-(?:top|bottom|left|right))?(?:-color)?|borderColor|outline(?:-color)?|outlineColor)\s*:\s*([^;!]+)/i);
+              if (cssPropMatch) {
+                const val = cssPropMatch[2].trim().replace(/var\([^)]+\)/g, '').replace(/url\([^)]+\)/g, '');
+                const m = val.match(namedColorRegex);
+                if (m && !allowedNamedValues.has(m[1].toLowerCase())) {
+                  results.check9Violations.push(`Disallowed CSS named color literal '${m[1]}' in frontend/src/${rel}:${idx + 1} -> ${line.trim()}`);
+                }
+              }
+              const jsxAttrMatch = line.match(/\b(fill|stroke|color)\s*=\s*(?:\{?["'])([^"'}]+)(?:["']\}?)/i);
+              if (jsxAttrMatch) {
+                const attrVal = jsxAttrMatch[2].trim().replace(/var\([^)]+\)/g, '');
+                const m = attrVal.match(namedColorRegex);
+                if (m && !allowedNamedValues.has(m[1].toLowerCase())) {
+                  results.check9Violations.push(`Disallowed named color literal '${m[1]}' in attribute in frontend/src/${rel}:${idx + 1} -> ${line.trim()}`);
+                }
+              }
+            });
+          }
+        }
+      }
+    };
+
+    scanFiles(frontendSrc);
+
+    // Verify BrandMark component has zero raw color literals in fill attributes
+    const brandMarkPath = path.join(frontendSrc, 'shared', 'components', 'BrandMark.tsx');
+    if (fs.existsSync(brandMarkPath)) {
+      const bmContent = fs.readFileSync(brandMarkPath, 'utf8');
+      if (!bmContent.includes('fill="var(--rj-brand-mark') || !bmContent.includes('fill="var(--rj-brand-mark-bars')) {
+        results.check9Violations.push(`BrandMark.tsx must source all fill colors strictly from design tokens`);
+      }
+      if (/fill="#[0-9a-fA-F]{3,8}"/.test(bmContent) || /fill="(white|red)"/.test(bmContent)) {
+        results.check9Violations.push(`BrandMark.tsx contains raw color literal in fill attribute`);
+      }
+    }
+
+    // Verify Favicon SHA-256 hashes
+    const faviconSvg = path.join(REPO_ROOT, 'frontend', 'public', 'favicon.svg');
+    const faviconPng = path.join(REPO_ROOT, 'frontend', 'public', 'favicon.png');
+    if (fs.existsSync(faviconSvg)) {
+      const hashSvg = calcHash(faviconSvg).toUpperCase();
+      if (hashSvg !== '3FDE006C20CE49E8D28B78DC0ED4AA9DD4921F7E157185E43DC64F27D855ED20') {
+        results.check9Violations.push(`frontend/public/favicon.svg hash mismatch: expected 3FDE006C..., got ${hashSvg}`);
+      }
+    }
+    if (fs.existsSync(faviconPng)) {
+      const hashPng = calcHash(faviconPng).toUpperCase();
+      if (hashPng !== '0D19BBB20F40CA8C4681D329D3FFA79DEE8CCEFFB32AE25197FCF73818C2E453') {
+        results.check9Violations.push(`frontend/public/favicon.png hash mismatch: expected 0D19BBB2..., got ${hashPng}`);
+      }
+    }
+  }
+
+  if (results.check9Violations.length === 0) {
+    console.log(`  ${GREEN}[PASS] Check 9: Zero raw color literals outside tokens, BrandMark tokenized, favicon hashes verified.${RESET}`);
+  } else {
+    console.log(`  ${RED}[FAIL] Check 9: Found ${results.check9Violations.length} color token/asset violation(s).${RESET}`);
+    results.check9Violations.forEach(v => console.log(`    ${RED}- ${v}${RESET}`));
+    results.pass = false;
+  }
+
   // ---------------------------------------------------------------------------
   // Summary & Exit Code
   // ---------------------------------------------------------------------------
@@ -1156,7 +1274,7 @@ export async function validateAgentConfig(options = {}) {
   if (results.pass) {
     console.log(`  ${GREEN}${BOLD}[PASS] 100% Agent Configuration Validation Passed Successfully!${RESET}`);
     console.log(`  Total canonical & mirror artifacts checked: ${results.totalFilesChecked}`);
-    console.log(`  Checks 1 through 8: ALL GREEN.`);
+    console.log(`  Checks 1 through 9: ALL GREEN.`);
     console.log(`${BOLD}================================================================================${RESET}\n`);
     return 0;
   } else {

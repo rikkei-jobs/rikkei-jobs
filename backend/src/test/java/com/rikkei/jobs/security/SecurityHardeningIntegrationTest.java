@@ -45,7 +45,8 @@ public class SecurityHardeningIntegrationTest {
             properties = {
                 "CORS_ALLOWED_ORIGINS=http://localhost:3000",
                 "EXTERNAL_BASE_URL=https://mock.example.com",
-                "EXTERNAL_SERVICE_KEY=prod-secret-service-key-999"
+                "EXTERNAL_SERVICE_KEY=prod-secret-service-key-999",
+                "JWT_SECRET=super-secure-production-jwt-secret-key-32-bytes-minimum!"
             })
     @Testcontainers
     @ActiveProfiles("prod")
@@ -85,6 +86,12 @@ public class SecurityHardeningIntegrationTest {
                             "SELECT count(*) FROM flyway_schema_history WHERE version = '2'",
                             Integer.class);
             assertEquals(0, v2Count, "V2 migration must not exist in prod");
+
+            Integer v4Count =
+                    jdbcTemplate.queryForObject(
+                            "SELECT count(*) FROM flyway_schema_history WHERE version = '4'",
+                            Integer.class);
+            assertEquals(0, v4Count, "V4 dev seed migration must not exist in prod");
 
             Integer seedUsers =
                     jdbcTemplate.queryForObject(
@@ -311,6 +318,7 @@ public class SecurityHardeningIntegrationTest {
             registry.add("spring.datasource.url", stagingDb::getJdbcUrl);
             registry.add("spring.datasource.username", stagingDb::getUsername);
             registry.add("spring.datasource.password", stagingDb::getPassword);
+            registry.add("jwt.secret", () -> "arbitrary-profile-test-secret-min-32-chars-long!");
         }
 
         @Autowired private UserRepository userRepository;
@@ -327,7 +335,7 @@ public class SecurityHardeningIntegrationTest {
                     jdbcTemplate.queryForObject(
                             "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                             Integer.class);
-            assertEquals(2, migrationCount, "Only schema migrations V1 and V3 must be applied");
+            assertEquals(3, migrationCount, "Only schema migrations V1, V3 and V5 must be applied");
 
             Boolean hasV2 =
                     jdbcTemplate.queryForObject(
@@ -336,6 +344,14 @@ public class SecurityHardeningIntegrationTest {
             assertFalse(
                     Boolean.TRUE.equals(hasV2),
                     "V2 seed migration must NOT exist in staging profile");
+
+            Boolean hasV4 =
+                    jdbcTemplate.queryForObject(
+                            "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '4')",
+                            Boolean.class);
+            assertFalse(
+                    Boolean.TRUE.equals(hasV4),
+                    "V4 dev seed migration must NOT exist in staging profile");
         }
     }
 
@@ -354,6 +370,7 @@ public class SecurityHardeningIntegrationTest {
             registry.add("spring.datasource.url", defaultPostgres::getJdbcUrl);
             registry.add("spring.datasource.username", defaultPostgres::getUsername);
             registry.add("spring.datasource.password", defaultPostgres::getPassword);
+            registry.add("jwt.secret", () -> "default-profile-test-secret-min-32-chars-long!");
         }
 
         @Autowired private WebApplicationContext context;
@@ -367,7 +384,8 @@ public class SecurityHardeningIntegrationTest {
         }
 
         @Test
-        @DisplayName("Default profile strictly isolates seed data (0 users, only V1 migration)")
+        @DisplayName(
+                "Default profile strictly isolates seed data (0 users, only V1 and V3 migrations)")
         void testDefaultProfileDatabaseState() {
             assertEquals(0L, userRepository.count(), "Default profile must have 0 users");
 
@@ -376,15 +394,21 @@ public class SecurityHardeningIntegrationTest {
                             "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                             Integer.class);
             assertEquals(
-                    2,
+                    3,
                     totalMigrations,
-                    "Default profile must have exactly 2 schema migrations (V1, V3)");
+                    "Default profile must have exactly 3 schema migrations (V1, V3, V5)");
 
             Integer v2Count =
                     jdbcTemplate.queryForObject(
                             "SELECT count(*) FROM flyway_schema_history WHERE version = '2'",
                             Integer.class);
             assertEquals(0, v2Count, "V2 seed migration must not exist in default profile");
+
+            Integer v4Count =
+                    jdbcTemplate.queryForObject(
+                            "SELECT count(*) FROM flyway_schema_history WHERE version = '4'",
+                            Integer.class);
+            assertEquals(0, v4Count, "V4 seed migration must not exist in default profile");
         }
 
         @Test

@@ -12,10 +12,20 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.rikkei.jobs.identity.model.Role;
+import com.rikkei.jobs.identity.model.User;
+import com.rikkei.jobs.identity.model.UserStatus;
+import com.rikkei.jobs.identity.repository.RoleRepository;
+import com.rikkei.jobs.identity.repository.UserRepository;
+import com.rikkei.jobs.identity.security.JwtService;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.OffsetDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
@@ -32,7 +42,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 @SpringBootTest
 @Testcontainers
 @ActiveProfiles("dev")
-@DisplayName("HS-01 Skill Profile API (dev seed)")
+@DisplayName("HS-01 Skill Profile API (dev seed - JWT Authentication)")
 class SkillProfileIntegrationTest {
 
     @Container
@@ -47,19 +57,39 @@ class SkillProfileIntegrationTest {
 
     @Autowired private WebApplicationContext context;
     @Autowired private JdbcTemplate jdbcTemplate;
+    @Autowired private UserRepository userRepository;
+    @Autowired private RoleRepository roleRepository;
+    @Autowired private JwtService jwtService;
+    @Autowired private Clock clock;
+
+    @Value("${jwt.secret}")
+    private String jwtSecret;
 
     private MockMvc mockMvc;
 
-    private static final String PASSWORD = "Test@123";
-
-    private static RequestPostProcessor candidate(int n) {
-        return httpBasic("candidate" + n + "@rikkeijobs.test", PASSWORD);
+    private RequestPostProcessor candidate(int n) {
+        User user =
+                userRepository
+                        .findByEmail("candidate" + n + "@rikkeijobs.test")
+                        .orElseThrow(
+                                () ->
+                                        new IllegalStateException(
+                                                "Candidate not found: candidate" + n));
+        String token = jwtService.generateToken(user);
+        return request -> {
+            request.addHeader("Authorization", "Bearer " + token);
+            return request;
+        };
     }
 
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
     }
+
+    // =========================================================================
+    // 1. HS-01 Preservation Scenarios (8 tests with genuine JWT Bearer token)
+    // =========================================================================
 
     @Test
     @DisplayName("candidate1 sees at least 5 skills and every verified skill lists source and date")
@@ -172,5 +202,123 @@ class SkillProfileIntegrationTest {
             mockMvc.perform(post("/api/v1/profiles/me/skills/recompute").with(candidate(1)))
                     .andExpect(jsonPath("$[?(@.skill.code == 'DOCKER')]").isEmpty());
         }
+    }
+
+    // =========================================================================
+    // 2. Negative Tests Proving Complete HTTP Basic Removal & JWT Security (7 tests)
+    // =========================================================================
+
+    @Test
+    @DisplayName("Basic auth is rejected with 401 on GET /api/v1/profiles/me/skills")
+    void basicAuthIsRejectedOnMeSkills() throws Exception {
+        mockMvc.perform(
+                        get("/api/v1/profiles/me/skills")
+                                .with(httpBasic("candidate1@rikkeijobs.test", "Test@123")))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+    }
+
+    @Test
+    @DisplayName("Basic auth is rejected with 401 on GET /api/v1/profiles/1/skills")
+    void basicAuthIsRejectedOnSkillsOf() throws Exception {
+        mockMvc.perform(
+                        get("/api/v1/profiles/1/skills")
+                                .with(httpBasic("candidate1@rikkeijobs.test", "Test@123")))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+    }
+
+    @Test
+    @DisplayName("Basic auth is rejected with 401 on POST /api/v1/profiles/me/skills/recompute")
+    void basicAuthIsRejectedOnRecompute() throws Exception {
+        mockMvc.perform(
+                        post("/api/v1/profiles/me/skills/recompute")
+                                .with(httpBasic("candidate1@rikkeijobs.test", "Test@123")))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+    }
+
+    @Test
+    @DisplayName("Locked user with Bearer token is rejected with 401 ACCOUNT_LOCKED")
+    void lockedUserCannotReadSkills() throws Exception {
+        Role role = roleRepository.findByName(Role.CANDIDATE).orElseThrow();
+        User lockedUser =
+                new User(
+                        "locked_candidate@rikkeijobs.test",
+                        "hash",
+                        "Locked Candidate",
+                        null,
+                        role,
+                        null);
+        lockedUser.setStatus(UserStatus.LOCKED);
+        lockedUser.setLockedUntil(OffsetDateTime.now(clock).plusMinutes(15));
+        lockedUser = userRepository.save(lockedUser);
+
+        String token = jwtService.generateToken(lockedUser);
+
+        mockMvc.perform(
+                        get("/api/v1/profiles/me/skills")
+                                .header("Authorization", "Bearer " + token))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("ACCOUNT_LOCKED"))
+                .andExpect(jsonPath("$.message").isNotEmpty());
+    }
+
+    @Test
+    @DisplayName("User with must_change_password=true is rejected with 403 MUST_CHANGE_PASSWORD")
+    void mustChangePasswordUserIsForbidden() throws Exception {
+        Role role = roleRepository.findByName(Role.CANDIDATE).orElseThrow();
+        User user =
+                new User(
+                        "must_change_candidate@rikkeijobs.test",
+                        "hash",
+                        "Must Change Candidate",
+                        null,
+                        role,
+                        null);
+        user.setMustChangePassword(true);
+        user = userRepository.save(user);
+
+        String token = jwtService.generateToken(user);
+
+        mockMvc.perform(
+                        get("/api/v1/profiles/me/skills")
+                                .header("Authorization", "Bearer " + token))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("MUST_CHANGE_PASSWORD"))
+                .andExpect(
+                        jsonPath("$.message")
+                                .value("Tài khoản yêu cầu đổi mật khẩu trước khi tiếp tục"));
+    }
+
+    @Test
+    @DisplayName("Tampered token signature is rejected with 401 UNAUTHORIZED")
+    void tamperedTokenReturns401() throws Exception {
+        User user = userRepository.findByEmail("candidate1@rikkeijobs.test").orElseThrow();
+        String validToken = jwtService.generateToken(user);
+        String tamperedToken = validToken.substring(0, validToken.length() - 4) + "XXXX";
+
+        mockMvc.perform(
+                        get("/api/v1/profiles/me/skills")
+                                .header("Authorization", "Bearer " + tamperedToken))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+    }
+
+    @Test
+    @DisplayName("Expired token is rejected with 401 UNAUTHORIZED")
+    void expiredTokenReturns401() throws Exception {
+        User user = userRepository.findByEmail("candidate1@rikkeijobs.test").orElseThrow();
+        // Generate token using a clock 10 hours in the past so it is already expired (validity is
+        // 8h)
+        JwtService pastJwtService =
+                new JwtService(jwtSecret, Clock.offset(clock, Duration.ofHours(-10)));
+        String expiredToken = pastJwtService.generateToken(user);
+
+        mockMvc.perform(
+                        get("/api/v1/profiles/me/skills")
+                                .header("Authorization", "Bearer " + expiredToken))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
     }
 }

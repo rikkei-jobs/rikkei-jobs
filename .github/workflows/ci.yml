@@ -230,6 +230,9 @@ jobs:
       - name: Run Version Table Drift Check
         run: node scripts/check-version-drift.mjs
 
+      - name: Run Contrast Table Verification
+        run: node scripts/compute-contrast.mjs
+
       - name: Run Quality Gate Synchronization Check
         run: node scripts/check-gate-sync.mjs
 

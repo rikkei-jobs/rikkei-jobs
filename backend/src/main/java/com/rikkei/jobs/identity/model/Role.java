@@ -12,6 +12,12 @@ import jakarta.persistence.Table;
 @Table(name = "roles")
 public class Role {
 
+    public static final String CANDIDATE = "CANDIDATE";
+    public static final String HR = "HR";
+    public static final String MENTOR = "MENTOR";
+    public static final String STAFF = "STAFF";
+    public static final String ADMIN = "ADMIN";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;

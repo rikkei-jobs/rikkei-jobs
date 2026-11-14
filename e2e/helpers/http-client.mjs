@@ -94,3 +94,44 @@ export const http = {
   put: (url, body, options = {}) => sendRequest(url, { ...options, method: 'PUT', body }),
   delete: (url, options = {}) => sendRequest(url, { ...options, method: 'DELETE' }),
 };
+
+/**
+ * Polls Mailpit messages endpoint with retries until messages count meets threshold or timeout.
+ * @param {string} mailpitBaseUrl - Base URL of Mailpit service
+ * @param {string} [query] - Optional query string or recipient email
+ * @param {Object} [options]
+ * @param {number} [options.minCount] - Minimum message count expected (defaults to 0 for ghost queries, 1 otherwise)
+ * @param {number} [options.maxRetries=10] - Maximum retry attempts
+ * @param {number} [options.intervalMs=100] - Delay between retries in milliseconds
+ * @returns {Promise<any>} Response body containing messages array
+ */
+export async function fetchMailpitMessagesWithRetry(mailpitBaseUrl, query, options = {}) {
+  const isGhostQuery = query && (query.includes('ghost') || query.includes('nonexistent'));
+  const minCount = options.minCount !== undefined
+    ? options.minCount
+    : (isGhostQuery ? 0 : 1);
+  const maxRetries = options.maxRetries !== undefined ? options.maxRetries : 10;
+  const intervalMs = options.intervalMs !== undefined ? options.intervalMs : 100;
+
+  const formattedQuery = query && query.includes('@') && !query.startsWith('to:')
+    ? `to:${query}`
+    : query;
+
+  const url = formattedQuery
+    ? `${mailpitBaseUrl}/api/v1/messages?query=${encodeURIComponent(formattedQuery)}`
+    : `${mailpitBaseUrl}/api/v1/messages`;
+
+  let lastBody = null;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const res = await http.get(url);
+    lastBody = res.body;
+    const count = lastBody && Array.isArray(lastBody.messages) ? lastBody.messages.length : 0;
+    if (count >= minCount || minCount === 0) {
+      return lastBody;
+    }
+    if (attempt < maxRetries - 1) {
+      await new Promise(resolve => setTimeout(resolve, intervalMs));
+    }
+  }
+  return lastBody;
+}

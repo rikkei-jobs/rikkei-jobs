@@ -3,9 +3,14 @@ package com.rikkei.jobs.candidate.controller;
 import com.rikkei.jobs.candidate.dto.SkillProfileItemDto;
 import com.rikkei.jobs.candidate.service.SkillProfileService;
 import com.rikkei.jobs.candidate.service.SkillRecomputeService;
-import com.rikkei.jobs.identity.AuthenticatedUser;
+import com.rikkei.jobs.common.dto.ErrorResponse;
+import com.rikkei.jobs.identity.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -36,11 +41,31 @@ public class SkillProfileController {
     @Operation(
             summary = "Danh sách kỹ năng của chính mình",
             responses = {
-                @ApiResponse(responseCode = "200", description = "Danh sách kỹ năng"),
-                @ApiResponse(responseCode = "401", description = "Chưa xác thực")
+                @ApiResponse(
+                        responseCode = "200",
+                        description = "Danh sách kỹ năng",
+                        content =
+                                @Content(
+                                        array =
+                                                @ArraySchema(
+                                                        schema =
+                                                                @Schema(
+                                                                        implementation =
+                                                                                SkillProfileItemDto
+                                                                                        .class)))),
+                @ApiResponse(
+                        responseCode = "401",
+                        description = "Chưa xác thực tài khoản: UNAUTHORIZED",
+                        content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                @ApiResponse(
+                        responseCode = "403",
+                        description =
+                                "Yêu cầu đổi mật khẩu trước khi tiếp tục: MUST_CHANGE_PASSWORD",
+                        content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             })
+    @SecurityRequirement(name = "bearerAuth")
     @GetMapping("/me/skills")
-    public List<SkillProfileItemDto> mySkills(@AuthenticationPrincipal AuthenticatedUser user) {
+    public List<SkillProfileItemDto> mySkills(@AuthenticationPrincipal UserPrincipal user) {
         return skillProfileService.getSkills(user.getId(), user.getId());
     }
 
@@ -48,27 +73,68 @@ public class SkillProfileController {
             summary = "Danh sách kỹ năng của một ứng viên",
             description = "Chủ hồ sơ luôn xem được; người khác chỉ xem được hồ sơ đã công khai.",
             responses = {
-                @ApiResponse(responseCode = "200", description = "Danh sách kỹ năng"),
-                @ApiResponse(responseCode = "401", description = "Chưa xác thực"),
+                @ApiResponse(
+                        responseCode = "200",
+                        description = "Danh sách kỹ năng",
+                        content =
+                                @Content(
+                                        array =
+                                                @ArraySchema(
+                                                        schema =
+                                                                @Schema(
+                                                                        implementation =
+                                                                                SkillProfileItemDto
+                                                                                        .class)))),
+                @ApiResponse(
+                        responseCode = "401",
+                        description = "Chưa xác thực tài khoản: UNAUTHORIZED",
+                        content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                @ApiResponse(
+                        responseCode = "403",
+                        description =
+                                "Yêu cầu đổi mật khẩu trước khi tiếp tục: MUST_CHANGE_PASSWORD",
+                        content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
                 @ApiResponse(
                         responseCode = "404",
-                        description = "Hồ sơ không tồn tại hoặc chưa công khai")
+                        description = "Hồ sơ không tồn tại hoặc chưa công khai: NOT_FOUND",
+                        content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             })
+    @SecurityRequirement(name = "bearerAuth")
     @GetMapping("/{userId}/skills")
     public List<SkillProfileItemDto> skillsOf(
-            @AuthenticationPrincipal AuthenticatedUser user, @PathVariable Long userId) {
+            @AuthenticationPrincipal UserPrincipal user, @PathVariable Long userId) {
         return skillProfileService.getSkills(user.getId(), userId);
     }
 
     @Operation(
             summary = "Tính lại kỹ năng của chính mình từ dữ liệu LMS, Exam, PM",
             responses = {
-                @ApiResponse(responseCode = "200", description = "Danh sách kỹ năng sau khi tính"),
-                @ApiResponse(responseCode = "401", description = "Chưa xác thực")
+                @ApiResponse(
+                        responseCode = "200",
+                        description = "Danh sách kỹ năng sau khi tính",
+                        content =
+                                @Content(
+                                        array =
+                                                @ArraySchema(
+                                                        schema =
+                                                                @Schema(
+                                                                        implementation =
+                                                                                SkillProfileItemDto
+                                                                                        .class)))),
+                @ApiResponse(
+                        responseCode = "401",
+                        description = "Chưa xác thực tài khoản: UNAUTHORIZED",
+                        content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                @ApiResponse(
+                        responseCode = "403",
+                        description =
+                                "Yêu cầu đổi mật khẩu trước khi tiếp tục: MUST_CHANGE_PASSWORD",
+                        content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             })
+    @SecurityRequirement(name = "bearerAuth")
     @PostMapping("/me/skills/recompute")
     public List<SkillProfileItemDto> recomputeMySkills(
-            @AuthenticationPrincipal AuthenticatedUser user) {
+            @AuthenticationPrincipal UserPrincipal user) {
         skillRecomputeService.recomputeSkills(user.getId());
         return skillProfileService.getSkills(user.getId(), user.getId());
     }
