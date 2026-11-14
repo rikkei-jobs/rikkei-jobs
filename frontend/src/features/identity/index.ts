@@ -18,6 +18,7 @@ export * from './pages/ChangePasswordPage';
 export * from './pages/ForgotPasswordPage';
 export * from './pages/ResetPasswordPage';
 export * from './pages/role-homes/CandidateHomePage';
+export * from './pages/role-homes/CandidateSkillsPage';
 export * from './pages/role-homes/HrHomePage';
 export * from './pages/role-homes/MentorHomePage';
 export * from './pages/role-homes/StaffHomePage';

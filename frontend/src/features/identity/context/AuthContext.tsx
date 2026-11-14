@@ -1,6 +1,5 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
-  AuthApiError,
   type AuthResponse,
   type ChangePasswordRequest,
   type ForgotPasswordRequest,
@@ -12,6 +11,7 @@ import {
 import { authApi } from '../api/authApi';
 import { getRoleHomePath } from '../utils/roleUtils';
 import { AuthContext, type AuthContextValue } from './authContextDef';
+import { setAuthToken, setAuthSessionHandlers, getAuthSessionHandlers } from '../../../shared/api/httpClient';
 
 export interface AuthProviderProps {
   children: React.ReactNode;
@@ -64,7 +64,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   const initialState = getInitialAuthState(initialToken, initialUser);
 
   // In-Memory Token Storage (OWASP ASVS: NEVER use localStorage or sessionStorage for tokens)
-  const [accessToken, setAccessToken] = useState<string | null>(initialState.token);
+  const [accessToken, setAccessToken] = useState<string | null>(() => {
+    setAuthToken(initialState.token);
+    return initialState.token;
+  });
   const [user, setUser] = useState<UserDto | null>(initialState.user);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -74,16 +77,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   }, []);
 
   const logout = useCallback(() => {
+    setAuthToken(null);
     setAccessToken(null);
     setUser(null);
     setError(null);
   }, []);
+
+  useEffect(() => {
+    setAuthToken(accessToken);
+  }, [accessToken]);
+
+  useEffect(() => {
+    const current = getAuthSessionHandlers();
+    if (!current.onUnauthorized) {
+      setAuthSessionHandlers({
+        onUnauthorized: logout,
+      });
+      return () => {
+        setAuthSessionHandlers({});
+      };
+    }
+  }, [logout]);
 
   const login = useCallback(async (credentials: LoginRequest): Promise<AuthResponse> => {
     setIsLoading(true);
     setError(null);
     try {
       const response = await authApi.login(credentials);
+      setAuthToken(response.accessToken);
       setAccessToken(response.accessToken);
       const userProfile: UserDto = {
         ...response.user,
@@ -108,6 +129,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     setError(null);
     try {
       const response = await authApi.ssoLogin({ ticket });
+      setAuthToken(response.accessToken);
       setAccessToken(response.accessToken);
       setUser(response.user);
       return response;
@@ -182,20 +204,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     if (!accessToken) {
       throw new Error('Chưa đăng nhập');
     }
-    try {
-      const profile = await authApi.getMe(accessToken);
-      setUser(profile);
-      return profile;
-    } catch (err: unknown) {
-      if (
-        (err instanceof AuthApiError && err.status === 401) ||
-        (err instanceof Error && 'status' in err && (err as { status: number }).status === 401)
-      ) {
-        logout();
-      }
-      throw err;
-    }
-  }, [accessToken, logout]);
+    const profile = await authApi.getMe(accessToken);
+    setUser(profile);
+    return profile;
+  }, [accessToken]);
 
   const value = useMemo<AuthContextValue>(
     () => ({

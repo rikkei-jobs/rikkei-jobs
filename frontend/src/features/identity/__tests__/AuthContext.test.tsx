@@ -6,6 +6,7 @@ import { useAuth } from '../context/useAuth';
 import { authApi } from '../api/authApi';
 import { getRoleHomePath } from '../utils/roleUtils';
 import { AuthApiError, type AuthResponse, type UserDto } from '../types';
+import { getAuthSessionHandlers, setAuthSessionHandlers } from '../../../shared/api/httpClient';
 
 vi.mock('../api/authApi', () => ({
   authApi: {
@@ -21,6 +22,7 @@ vi.mock('../api/authApi', () => ({
 describe('AuthContext & useAuth', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    setAuthSessionHandlers({});
   });
 
   const wrapper: FC<{ children: ReactNode }> = ({ children }) => (
@@ -157,9 +159,11 @@ describe('AuthContext & useAuth', () => {
 
   it('automatically logs out and clears state when fetchCurrentUser encounters 401', async () => {
     vi.mocked(authApi.login).mockResolvedValueOnce(mockAuthResponse);
-    vi.mocked(authApi.getMe).mockRejectedValueOnce(
-      new AuthApiError('UNAUTHORIZED', 'Hết phiên đăng nhập', 401),
-    );
+    vi.mocked(authApi.getMe).mockImplementationOnce(() => {
+      // In centralized architecture, httpClient triggers sessionHandlers.onUnauthorized on 401
+      getAuthSessionHandlers().onUnauthorized?.();
+      return Promise.reject(new AuthApiError('UNAUTHORIZED', 'Hết phiên đăng nhập', 401));
+    });
 
     const { result } = renderHook(() => useAuth(), { wrapper });
 

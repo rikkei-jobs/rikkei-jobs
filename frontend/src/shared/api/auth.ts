@@ -1,22 +1,16 @@
 /**
- * Interim HTTP Basic credentials kept in memory only (never persisted). Replaced by the SSO
- * ticket login of NT-01; callers only depend on the opaque Authorization header value.
+ * Unified API Error for Rikkei Jobs HTTP communication.
  */
-export const buildBasicAuthHeader = (email: string, password: string): string => {
-  const bytes = new TextEncoder().encode(`${email}:${password}`);
-  let binary = '';
-  bytes.forEach((byte) => {
-    binary += String.fromCharCode(byte);
-  });
-  return `Basic ${btoa(binary)}`;
-};
-
 export class ApiError extends Error {
   readonly status: number;
+  readonly code: string;
+  readonly statusText?: string;
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, code = 'API_ERROR', statusText?: string) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
+    this.code = code;
+    this.statusText = statusText;
   }
 }

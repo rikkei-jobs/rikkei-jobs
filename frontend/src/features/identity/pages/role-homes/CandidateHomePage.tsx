@@ -1,5 +1,7 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { RoleHomeLayout } from './RoleHomeLayout';
+import { Icon } from '../../../../shared/components/Icon';
 
 export const CandidateHomePage: React.FC = () => {
   return (
@@ -21,6 +23,30 @@ export const CandidateHomePage: React.FC = () => {
           <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--rj-color-text-secondary)' }}>
             Tích hợp kết quả học tập từ Rikkei Academy để tự động đề xuất việc làm phù hợp.
           </p>
+        </div>
+        <div
+          className="rj-auth-card"
+          style={{
+            maxWidth: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+          }}
+        >
+          <div>
+            <h3 style={{ margin: '0 0 8px 0', fontSize: '1rem', fontWeight: 600 }}>Hồ Sơ Năng Lực</h3>
+            <p style={{ margin: '0 0 16px 0', fontSize: '0.875rem', color: 'var(--rj-color-text-secondary)' }}>
+              Theo dõi và tính toán chỉ số năng lực 0 - 100 đã xác thực từ LMS, bài thi và thực tập.
+            </p>
+          </div>
+          <Link
+            to="/candidate/skills"
+            className="rj-btn rj-btn-primary"
+            style={{ alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+          >
+            <Icon name="check-circle" size={16} />
+            <span>Xem Hồ Sơ Năng Lực</span>
+          </Link>
         </div>
       </div>
     </RoleHomeLayout>

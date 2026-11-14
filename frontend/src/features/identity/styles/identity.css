@@ -1222,7 +1222,7 @@
   }
 
   .rj-dashboard-content {
-    padding: var(--rj-primitive-space-4) var(--rj-primitive-space-3);
+    padding: var(--rj-primitive-space-4) var(--rj-primitive-space-4);
   }
 
   .rj-info-table th,

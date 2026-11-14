@@ -10,6 +10,7 @@ export interface RoleHomeLayoutProps {
   roleIcon: 'user' | 'building' | 'graduation-cap' | 'briefcase' | 'shield';
   description: string;
   density?: 'airy' | 'dense';
+  hideAccountCard?: boolean;
   children?: React.ReactNode;
 }
 
@@ -19,6 +20,7 @@ export const RoleHomeLayout: React.FC<RoleHomeLayoutProps> = ({
   roleIcon,
   description,
   density,
+  hideAccountCard = false,
   children,
 }) => {
   const { user, logout } = useAuth();
@@ -52,7 +54,7 @@ export const RoleHomeLayout: React.FC<RoleHomeLayoutProps> = ({
             type="button"
             className="rj-btn rj-btn-secondary"
             onClick={handleLogout}
-            style={{ minHeight: '36px', padding: '4px 12px', fontSize: '0.875rem' }}
+            style={{ minHeight: '44px', padding: '8px 16px', fontSize: '0.875rem' }}
           >
             <Icon name="logout" size={16} />
             <span>Đăng Xuất</span>
@@ -61,7 +63,8 @@ export const RoleHomeLayout: React.FC<RoleHomeLayoutProps> = ({
       </header>
 
       <main className="rj-dashboard-content">
-        <div className="rj-auth-card" style={{ maxWidth: '100%', marginBottom: '24px' }}>
+        {!hideAccountCard && (
+          <div className="rj-auth-card" style={{ maxWidth: '100%', marginBottom: '24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
             <div>
               <span className={`rj-role-badge ${roleBadgeClass}`} style={{ marginBottom: '8px' }}>
@@ -129,6 +132,7 @@ export const RoleHomeLayout: React.FC<RoleHomeLayoutProps> = ({
             </tbody>
           </table>
         </div>
+        )}
 
         {children}
       </main>

@@ -1,3 +1,5 @@
+import { ApiError } from '../../shared/api/auth';
+
 /**
  * Types and DTOs for Identity and Authentication feature.
  * Exactly matches Backend Spring Boot DTOs and unified ErrorResponse contract.
@@ -55,15 +57,10 @@ export interface ErrorResponse {
   message: string;
 }
 
-export class AuthApiError extends Error {
-  public readonly code: string;
-  public readonly status: number;
-
+export class AuthApiError extends ApiError {
   constructor(code: string, message: string, status: number) {
-    super(message);
+    super(status, message, code);
     this.name = 'AuthApiError';
-    this.code = code;
-    this.status = status;
   }
 }
 

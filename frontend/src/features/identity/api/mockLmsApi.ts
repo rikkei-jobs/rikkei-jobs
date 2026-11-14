@@ -1,3 +1,5 @@
+import { request } from '../../../shared/api/httpClient';
+
 export interface MockLmsTicketResponse {
   ticket: string;
   lmsUserId: string;
@@ -13,20 +15,16 @@ export const getMockLmsUrl = (): string => {
  */
 export async function requestDevLmsTicket(lmsUserId: string): Promise<string> {
   const mockUrl = getMockLmsUrl();
-  const res = await fetch(`${mockUrl}/lms/sso/tickets`, {
+  const data = await request<MockLmsTicketResponse>(`${mockUrl}/lms/sso/tickets`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'X-Service-Key': 'dev-key',
     },
     body: JSON.stringify({ lmsUserId }),
+    skipAuth: true,
   });
 
-  if (!res.ok) {
-    throw new Error(`Không thể lấy vé từ Mock LMS (HTTP ${res.status}). Hãy chắc chắn Mock LMS đang chạy.`);
-  }
-
-  const data = (await res.json()) as MockLmsTicketResponse;
   if (!data.ticket) {
     throw new Error('Phản hồi từ Mock LMS không chứa mã vé (ticket).');
   }
