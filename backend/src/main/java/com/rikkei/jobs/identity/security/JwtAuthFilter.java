@@ -2,6 +2,7 @@ package com.rikkei.jobs.identity.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rikkei.jobs.common.dto.ErrorResponse;
+import com.rikkei.jobs.identity.UserPrincipal;
 import com.rikkei.jobs.identity.model.User;
 import com.rikkei.jobs.identity.model.UserStatus;
 import com.rikkei.jobs.identity.repository.UserRepository;

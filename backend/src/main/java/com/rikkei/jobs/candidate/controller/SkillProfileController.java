@@ -3,7 +3,7 @@ package com.rikkei.jobs.candidate.controller;
 import com.rikkei.jobs.candidate.dto.SkillProfileItemDto;
 import com.rikkei.jobs.candidate.service.SkillProfileService;
 import com.rikkei.jobs.candidate.service.SkillRecomputeService;
-import com.rikkei.jobs.identity.AuthenticatedUser;
+import com.rikkei.jobs.identity.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -40,7 +40,7 @@ public class SkillProfileController {
                 @ApiResponse(responseCode = "401", description = "Chưa xác thực")
             })
     @GetMapping("/me/skills")
-    public List<SkillProfileItemDto> mySkills(@AuthenticationPrincipal AuthenticatedUser user) {
+    public List<SkillProfileItemDto> mySkills(@AuthenticationPrincipal UserPrincipal user) {
         return skillProfileService.getSkills(user.getId(), user.getId());
     }
 
@@ -56,7 +56,7 @@ public class SkillProfileController {
             })
     @GetMapping("/{userId}/skills")
     public List<SkillProfileItemDto> skillsOf(
-            @AuthenticationPrincipal AuthenticatedUser user, @PathVariable Long userId) {
+            @AuthenticationPrincipal UserPrincipal user, @PathVariable Long userId) {
         return skillProfileService.getSkills(user.getId(), userId);
     }
 
@@ -68,7 +68,7 @@ public class SkillProfileController {
             })
     @PostMapping("/me/skills/recompute")
     public List<SkillProfileItemDto> recomputeMySkills(
-            @AuthenticationPrincipal AuthenticatedUser user) {
+            @AuthenticationPrincipal UserPrincipal user) {
         skillRecomputeService.recomputeSkills(user.getId());
         return skillProfileService.getSkills(user.getId(), user.getId());
     }

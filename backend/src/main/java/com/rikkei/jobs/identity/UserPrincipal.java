@@ -1,4 +1,4 @@
-package com.rikkei.jobs.identity.security;
+package com.rikkei.jobs.identity;
 
 import java.util.Collection;
 import java.util.List;

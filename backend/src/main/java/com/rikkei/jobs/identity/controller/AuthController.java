@@ -1,6 +1,7 @@
 package com.rikkei.jobs.identity.controller;
 
 import com.rikkei.jobs.common.dto.ErrorResponse;
+import com.rikkei.jobs.identity.UserPrincipal;
 import com.rikkei.jobs.identity.dto.AuthResponse;
 import com.rikkei.jobs.identity.dto.ChangePasswordRequest;
 import com.rikkei.jobs.identity.dto.ForgotPasswordRequest;
@@ -9,7 +10,6 @@ import com.rikkei.jobs.identity.dto.MessageResponse;
 import com.rikkei.jobs.identity.dto.ResetPasswordRequest;
 import com.rikkei.jobs.identity.dto.SsoLoginRequest;
 import com.rikkei.jobs.identity.dto.UserDto;
-import com.rikkei.jobs.identity.security.UserPrincipal;
 import com.rikkei.jobs.identity.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
