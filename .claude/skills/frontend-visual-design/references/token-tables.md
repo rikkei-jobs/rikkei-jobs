@@ -6,44 +6,47 @@ This reference document provides concrete CSS Custom Properties for typography, 
 
 ## 1. Color System (Bespoke Palette)
 
-### 1.1 Neutral Palette (Technical Iron Charcoal)
+### 1.1 Neutral Palette (5-Level Surface Ladder & Iron Obsidian)
 
 | Token Name | Light Mode Value | Dark Mode Value | Usage / Semantic Role |
 |---|---|---|---|
-| `--rj-color-bg-canvas` | `#F7F9FC` | `#0A111E` | Primary page canvas background |
-| `--rj-color-bg-subtle` | `#EEF2F6` | `#111C2E` | Table header, subtle card surface |
-| `--rj-color-surface-card` | `#FFFFFF` | `#111C2E` | Primary card surface |
-| `--rj-color-border-subtle` | `#E2E7ED` | `#1E2C3F` | Dividers, row borders |
-| `--rj-color-border-default` | `#C5D0DC` | `#334155` | Card outlines, container borders |
-| `--rj-color-border-interactive` | `#6F8094` | `#5B7083` | Form inputs, interactive borders (CR >= 3.0:1) |
-| `--rj-color-text-primary` | `#0C1A30` | `#EDF2F7` | Headings, primary body text (CR >= 15:1) |
-| `--rj-color-text-secondary` | `#334E68` | `#CBD5E1` | Secondary labels, descriptions (CR >= 8:1) |
-| `--rj-color-text-muted` | `#5B7083` | `#94A3B8` | Timestamps, metadata (CR >= 5:1) |
+| `--rj-color-bg-canvas` | `#EEF2F8` | `#0B1019` | Primary page canvas background (Level 1) |
+| `--rj-color-bg-subtle` | `#E1E8F2` | `#101724` | Hero section panel, subtle surface (Level 2) |
+| `--rj-color-surface-card` | `#FFFFFF` | `#162030` | Primary card surface (Level 3) |
+| `--rj-color-surface-input` | `#F8FAFD` | `#0D1420` | Form input field inset (Level 4) |
+| `--rj-color-surface-elevated` | `#FFFFFF` | `#1E2C42` | Popovers, elevated dropdowns (Level 5) |
+| `--rj-color-border-subtle` | `#BACAD9` | `#1E2C42` | Dividers, row borders (CR >= 3.0:1) |
+| `--rj-color-border-default` | `#879BB0` | `#2D3F59` | Card outlines, container borders |
+| `--rj-color-border-interactive` | `#6F8094` | `#49627D` | Form inputs, interactive borders (CR >= 3.0:1) |
+| `--rj-color-text-primary` | `#0B1A2C` | `#EDF2F7` | Headings, primary body text (CR >= 16.8:1) |
+| `--rj-color-text-secondary` | `#25394E` | `#BACAD9` | Secondary labels, descriptions (CR >= 10.4:1) |
+| `--rj-color-text-muted` | `#49627D` | `#879BB0` | Timestamps, metadata (CR >= 4.5:1) |
 
-### 1.2 Brand Palette (Technical Iron Cobalt)
+### 1.2 Brand Palette (Confident Royal Cobalt & Dedicated Brand Mark)
 
 | Token Name | Light Mode Value | Dark Mode Value | Usage / Semantic Role |
 |---|---|---|---|
-| `--rj-color-brand-primary` | `#132F52` | `#4C85DE` | Primary buttons, brand anchors |
-| `--rj-color-brand-anchor` | `#0A2540` | `#246EB9` | Hover/active states, header background |
-| `--rj-color-brand-subtle` | `#EBF3FA` | `#132F52` | Selected row highlight, active navigation pill |
+| `--rj-color-brand-primary` | `#0D55B8` | `#508CEE` | Primary buttons, brand anchors (CR >= 5.0:1) |
+| `--rj-color-brand-anchor` | `#0A4596` | `#70A5FA` | Hover/active states, header background |
+| `--rj-color-brand-subtle` | `#E1E8F2` | `rgba(80, 140, 238, 0.15)` | Selected row highlight, active navigation pill |
+| `--rj-brand-mark` | `#C8161D` | `#C8161D` | Official Brand Mark Logo Red (isolated asset) |
 
 ### 1.3 Accent Palette (Cyber Persimmon / Terracotta)
 
 | Token Name | Light Mode Value | Dark Mode Value | Usage / Semantic Role |
 |---|---|---|---|
-| `--rj-color-accent` | `#D9480F` | `#F08C65` | Match percentage highlight, verified badges |
-| `--rj-color-accent-hover` | `#BF3A0A` | `#FA9D78` | Hover state for accent buttons |
-| `--rj-color-accent-subtle` | `#FEF2ED` | `#2A160F` | Badge background, warning notification chip |
+| `--rj-color-accent` | `#C8531D` | `#E66A35` | Match percentage highlight, verified badges |
+| `--rj-color-accent-hover` | `#A33F12` | `#F7A889` | Hover state for accent buttons |
+| `--rj-color-accent-subtle` | `#FFF6F0` | `rgba(230, 106, 53, 0.15)` | Badge background, warning notification chip |
 
-### 1.4 Semantic Status Palette
+### 1.4 Semantic Status Palette (Quarantined Danger & Clear Roles)
 
 | Token Name | Text / Icon Color | Background Surface | Border Color |
 |---|---|---|---|
-| Status Success (Deep Pine) | `#0E6251` (CR 6.65:1) | `#E8F8F5` | `#A2D9CE` |
-| Status Warning (Honey Amber) | `#7A4305` (CR 7.57:1) | `#FEF9E7` | `#F9E79F` |
-| Status Danger (Crimson Brick)| `#9B1C2A` (CR 7.40:1) | `#FDF2F4` | `#F5B7B1` |
-| Status Info (Cerulean) | `#134B5E` (CR 8.65:1) | `#EBF5FB` | `#A9CCE3` |
+| Status Success (Forest Mint) | `#0E6251` (CR 6.63:1) | `#E8F8F0` | `#A3E4C8` |
+| Status Warning (Deep Amber) | `#7A4305` (CR 7.43:1) | `#FEF6E8` | `#FDE68A` |
+| Status Danger (Quarantined Red) | `#9B1C2A` (CR 8.10:1) | `#FDF2F4` | `#F1707A` |
+| Status Info (Deep Ocean) | `#134B5E` (CR 8.65:1) | `#EBF5FB` | `#AED6F1` |
 
 ### 1.5 Categorical Data Visualization Set (6 Colors)
 

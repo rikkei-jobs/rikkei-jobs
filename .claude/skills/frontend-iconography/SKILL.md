@@ -126,7 +126,7 @@ export interface IconProps extends React.SVGProps<SVGSVGElement> {
 |---|---|
 | "Installing `lucide-react` or `react-icons` directly saves time compared to maintaining a registry." | Direct third-party imports lead to bundle size inflation, styling inconsistencies, and break the cohesive Anti-AI visual identity of Rikkei Jobs. |
 | "This icon is purely decorative, so accessibility properties do not matter." | Decorative icons without `aria-hidden="true"` cause screen readers to announce meaningless raw SVG coordinates or path tokens, creating auditory clutter for visually impaired users. |
-| "Hardcoding `#132F52` ensures the brand color stays consistent everywhere." | Hardcoded colors break theme flexibility, failing when components invert into Dark Mode or render on active navigation states. |
+| "Hardcoding `#0D55B8` ensures the brand color stays consistent everywhere." | Hardcoded colors break theme flexibility, failing when components invert into Dark Mode or render on active navigation states. |
 
 ## 7. Verification Checklist
 
