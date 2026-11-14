@@ -786,7 +786,7 @@
 
 .rj-btn-danger {
   background: var(--rj-primitive-danger-text);
-  color: var(--rj-primitive-neutral-white);
+  color: var(--rj-primitive-white);
 }
 
 .rj-btn-danger:hover:not(:disabled) {

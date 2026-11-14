@@ -1,0 +1,27 @@
+/*
+ * Compatibility aliases for the Skill Profile feature (HS-01).
+ * Single source of truth is design-tokens.css (docs/design/DESIGN_SYSTEM.md); this file only
+ * maps the feature-level names to those semantic tokens and must not hold any colour literal.
+ */
+:root {
+  --rj-color-page: var(--rj-color-surface-page);
+  --rj-color-surface: var(--rj-color-surface-card);
+  --rj-color-border: var(--rj-color-border-subtle);
+  --rj-color-divider: var(--rj-color-border-subtle);
+  --rj-color-text: var(--rj-color-text-primary);
+  --rj-color-action: var(--rj-color-brand-primary);
+  --rj-color-action-hover: var(--rj-color-brand-primary-hover);
+  --rj-color-on-action: var(--rj-color-text-inverse);
+  --rj-color-focus: var(--rj-color-focus-ring);
+  --rj-color-meter-track: var(--rj-color-border-subtle);
+  --rj-color-meter-fill: var(--rj-color-brand-primary);
+  --rj-color-verified-bg: var(--rj-color-status-success-bg);
+  --rj-color-verified-text: var(--rj-color-status-success-text);
+  --rj-color-self-bg: var(--rj-color-status-warning-bg);
+  --rj-color-self-text: var(--rj-color-status-warning-text);
+  --rj-color-error-bg: var(--rj-color-status-danger-bg);
+  --rj-color-error-text: var(--rj-color-status-danger-text);
+
+  --rj-motion-micro: 150ms;
+  --rj-motion-dialog: 300ms;
+}

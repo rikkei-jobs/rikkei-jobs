@@ -10,6 +10,8 @@
     "jwts",
     "plaintexts",
     "rikkei",
+    "hamcrest",
+    "nums",
     "rikkeijobs",
     "mailpit",
     "springdoc",

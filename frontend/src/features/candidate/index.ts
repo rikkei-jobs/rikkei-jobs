@@ -18,3 +18,6 @@ export const candidateModuleConfig = {
   roleTarget: 'CANDIDATE (Sinh viên / Thực tập sinh IOC)',
   badge: 'Module 1',
 };
+
+export { SkillProfilePage } from './components/SkillProfilePage';
+export { fetchMySkills } from './api/skillProfile';

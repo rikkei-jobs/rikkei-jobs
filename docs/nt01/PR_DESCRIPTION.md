@@ -43,9 +43,9 @@ Phân hệ Identity cung cấp giải pháp xác thực tập trung, bảo mật
      - Cán bộ Đào tạo (`/staff`): Quản lý dữ liệu khảo thí và liên kết doanh nghiệp.
      - Quản trị viên (`/admin`): Giám sát hệ thống và phân quyền người dùng.
 
-7. **Di Trú Cơ Sở Dữ Liệu Flyway (V3 & V4 Migrations)**:
-   - `backend/src/main/resources/db/migration/V3__auth_identity_evolution.sql`: Khởi tạo bảng `users`, ràng buộc duy nhất, chỉ mục tìm kiếm và các trường bảo mật (`password_hash`, `failed_login_count`, `locked_until`, `must_change_password`).
-   - `backend/src/main/resources/db/migration-dev/V4__dev_seed_nt01.sql`: Dữ liệu seed mẫu môi trường phát triển cho các vai trò và tài khoản kiểm thử NT-01.
+7. **Di Trú Cơ Sở Dữ Liệu Flyway (V5 & V6 Migrations)**:
+   - `backend/src/main/resources/db/migration/V5__auth_identity_evolution.sql`: Khởi tạo bảng `users`, ràng buộc duy nhất, chỉ mục tìm kiếm và các trường bảo mật (`password_hash`, `failed_login_count`, `locked_until`, `must_change_password`).
+   - `backend/src/main/resources/db/migration-dev/V6__dev_seed_nt01.sql`: Dữ liệu seed mẫu môi trường phát triển cho các vai trò và tài khoản kiểm thử NT-01.
 
 ---
 

@@ -883,6 +883,11 @@ export async function validateAgentConfig(options = {}) {
         if (/^(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS|SELECT|INSERT|UPDATE|WHERE|JOIN|FROM|200|201|400|401|403|404|500)/i.test(token)) {
           continue;
         }
+        // Filter out local-only, git-ignored files (for example the real .env) that rules cite only to forbid reading them
+        // and that never exist in a clean checkout such as the CI runner. Tracked examples such as .env.example are still verified.
+        if (/^.env(.(local|development|test|production)(.local)?)?$/i.test(token)) {
+          continue;
+        }
         // Filter out URLs
         if (token.startsWith('http://') || token.startsWith('https://')) {
           continue;

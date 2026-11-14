@@ -26,13 +26,19 @@ export type IconName =
   | 'file-check'
   | 'sparkles'
   | 'user-check'
-  | 'network';
+  | 'network'
+  | 'chevron-down'
+  | 'pencil'
+  | 'calendar'
+  | 'log-out';
 
 export interface IconProps extends React.SVGAttributes<SVGSVGElement> {
   name: IconName;
   size?: number;
   className?: string;
   'aria-label'?: string;
+  /** Accessible name alias; omit for decorative icons (rendered aria-hidden). */
+  label?: string;
 }
 
 const iconPaths: Record<IconName, React.ReactNode> = {
@@ -179,6 +185,21 @@ const iconPaths: Record<IconName, React.ReactNode> = {
       <polyline points="9 12 11 14 15 10" />
     </>
   ),
+  'chevron-down': <polyline points="6 9 12 15 18 9" />,
+  pencil: <path d="M4 20l1-4L16 5a2.1 2.1 0 013 3L8 19l-4 1z" />,
+  calendar: (
+    <>
+      <rect x="4" y="5" width="16" height="15" rx="2" />
+      <path d="M4 10h16M9 3v4M15 3v4" />
+    </>
+  ),
+  'log-out': (
+    <>
+      <path d="M9 4H5a1 1 0 00-1 1v14a1 1 0 001 1h4" />
+      <polyline points="16 8 20 12 16 16" />
+      <line x1="20" y1="12" x2="9" y2="12" />
+    </>
+  ),
   'file-check': (
     <>
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -213,9 +234,11 @@ export const Icon: React.FC<IconProps> = ({
   name,
   size = 24,
   className = '',
-  'aria-label': ariaLabel,
+  'aria-label': ariaLabelProp,
+  label,
   ...props
 }) => {
+  const ariaLabel = ariaLabelProp ?? label;
   const content = iconPaths[name];
   if (!content) {
     return null;

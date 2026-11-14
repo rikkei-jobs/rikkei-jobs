@@ -1,4 +1,4 @@
--- Migration V3: Authentication and Identity Evolution
+-- Migration V5: Authentication and Identity Evolution
 -- Module Identity: users, used_sso_tickets, password_reset_tokens
 
 -- 1. Evolve users table with authentication and lockout tracking columns

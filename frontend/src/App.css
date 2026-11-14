@@ -258,3 +258,31 @@
   color: var(--rj-color-text-muted);
   font-size: 0.875rem;
 }
+
+.app-nav {
+  display: flex;
+  gap: 8px;
+  padding: 8px 24px;
+  border-bottom: 1px solid var(--rj-color-border-subtle);
+}
+
+.app-nav-btn {
+  min-height: 40px;
+  padding: 8px 16px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.app-nav-btn[aria-current='page'] {
+  border-bottom-color: var(--rj-color-brand-primary);
+}
+
+.app-nav-btn:focus-visible {
+  outline: 3px solid var(--rj-color-focus-ring);
+  outline-offset: 2px;
+}

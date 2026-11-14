@@ -123,6 +123,7 @@
   --rj-brand-deep:           #0A4596;
   --rj-brand-electric:       #508CEE;
   --rj-brand-electric-hover: #6EA2F4;
+  --rj-color-brand-electric: var(--rj-brand-electric);
   --rj-brand-mark:           #C8161D;
   --rj-brand-mark-red:       #C8161D;
   --rj-brand-mark-contrast:  #FFFFFF;
