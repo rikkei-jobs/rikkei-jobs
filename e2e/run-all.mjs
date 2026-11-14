@@ -35,7 +35,9 @@ const testTiers = [
       'test_mock_11_endpoints.test.mjs',
       'test_mock_4_tools.test.mjs',
       'test_backend_health_errors.test.mjs',
-      'test_frontend_stack.test.mjs'
+      'test_frontend_stack.test.mjs',
+      'test_auth_features.test.mjs',
+      'test_round_b_features.test.mjs'
     ]
   },
   {
@@ -44,39 +46,64 @@ const testTiers = [
     files: [
       'test_mock_auth_boundaries.test.mjs',
       'test_mock_business_boundaries.test.mjs',
-      'test_backend_error_boundaries.test.mjs'
+      'test_backend_error_boundaries.test.mjs',
+      'test_auth_boundaries.test.mjs',
+      'test_round_b_boundaries.test.mjs'
     ]
   },
   {
     tier: 'Tier 3 — Pairwise Combinations & Cross-Feature',
     dir: path.join(__dirname, 'tier3-combinations'),
     files: [
-      'test_cross_feature_combinations.test.mjs'
+      'test_cross_feature_combinations.test.mjs',
+      'test_auth_lifecycles.test.mjs',
+      'test_round_b_combinations.test.mjs'
     ]
   },
   {
     tier: 'Tier 4 — Real-World Application Scenarios',
     dir: path.join(__dirname, 'tier4-scenarios'),
     files: [
-      'test_real_world_scenarios.test.mjs'
+      'test_real_world_scenarios.test.mjs',
+      'test_auth_security_audit.test.mjs',
+      'test_round_b_scenarios.test.mjs'
     ]
   }
 ];
 
-// Collect all test files
+// Collect all test files with strict missing-file detection
 const allFilesToRun = [];
+const missingFiles = [];
+let totalExpectedSuites = 0;
+let totalStaticCases = 0;
+let totalStaticAsserts = 0;
+let totalStaticLines = 0;
+
 for (const tier of testTiers) {
   for (const file of tier.files) {
+    totalExpectedSuites++;
     const fullPath = path.join(tier.dir, file);
     if (fs.existsSync(fullPath)) {
-      allFilesToRun.push({ tier: tier.tier, file, fullPath });
+      const content = fs.readFileSync(fullPath, 'utf-8');
+      const caseCount = (content.match(/\bit\s*\(/g) || []).length;
+      const assertCount = (content.match(/\bassert\.[a-zA-Z]+/g) || []).length;
+      const lineCount = content.split('\n').length;
+      totalStaticCases += caseCount;
+      totalStaticAsserts += assertCount;
+      totalStaticLines += lineCount;
+      allFilesToRun.push({ tier: tier.tier, file, fullPath, caseCount, assertCount, lineCount });
     } else {
-      console.warn(`${c.yellow}[SKIP] File not found: ${fullPath}${c.reset}`);
+      console.error(`${c.red}[ERROR] Required test suite file missing: ${fullPath}${c.reset}`);
+      missingFiles.push({ tier: tier.tier, file, fullPath });
     }
   }
 }
 
-console.log(`${c.bold}Discovered ${allFilesToRun.length} test suites across 4 Tiers.${c.reset}\n`);
+console.log(`${c.bold}Discovered ${allFilesToRun.length}/${totalExpectedSuites} test suites across 4 Tiers (${totalStaticCases} test cases, ${totalStaticAsserts} assertions, ${totalStaticLines} lines).${c.reset}\n`);
+
+if (missingFiles.length > 0) {
+  console.error(`${c.red}${c.bold}❌ Fatal: ${missingFiles.length} required test suite file(s) are missing from disk!${c.reset}`);
+}
 
 async function runTestSuite(testItem) {
   return new Promise((resolve) => {
@@ -109,7 +136,7 @@ async function main() {
   const overallStart = Date.now();
   let currentTier = '';
   let totalPass = 0;
-  let totalFail = 0;
+  let totalFail = missingFiles.length;
   const results = [];
 
   for (const item of allFilesToRun) {
@@ -118,7 +145,7 @@ async function main() {
       console.log(`\n${c.bold}${c.cyan}▶ ${currentTier}${c.reset}`);
     }
 
-    process.stdout.write(`  • Running ${item.file} ... `);
+    process.stdout.write(`  • Running ${item.file} (${item.caseCount} tests, ${item.assertCount} asserts) ... `);
     const res = await runTestSuite(item);
     results.push(res);
 
@@ -132,8 +159,8 @@ async function main() {
       if (res.stderr) {
         console.error(`${c.red}${res.stderr.trim().split('\n').map(l => '    ' + l).join('\n')}${c.reset}`);
       }
-      if (res.stdout && res.stdout.includes('fail')) {
-        console.log(`${c.gray}${res.stdout.trim().split('\n').filter(l => l.includes('not ok') || l.includes('fail')).map(l => '    ' + l).join('\n')}${c.reset}`);
+      if (res.stdout && (res.stdout.includes('fail') || res.stdout.includes('not ok'))) {
+        console.log(`${c.gray}${res.stdout.trim().split('\n').filter(l => l.includes('not ok') || l.includes('fail') || l.includes('AssertionError')).map(l => '    ' + l).join('\n')}${c.reset}`);
       }
     }
   }
@@ -143,14 +170,21 @@ async function main() {
   console.log(`\n${c.bold}==============================================================${c.reset}`);
   console.log(`${c.bold}                      TEST SUMMARY                            ${c.reset}`);
   console.log(`${c.bold}==============================================================${c.reset}`);
-  console.log(`  Total Suites : ${results.length}`);
-  console.log(`  Passed       : ${c.green}${totalPass}${c.reset}`);
-  console.log(`  Failed       : ${totalFail > 0 ? c.red : c.green}${totalFail}${c.reset}`);
-  console.log(`  Duration     : ${overallDuration}s`);
+  console.log(`  Expected Suites : ${totalExpectedSuites}`);
+  console.log(`  Executed Suites : ${results.length}`);
+  console.log(`  Passed Suites   : ${c.green}${totalPass}${c.reset}`);
+  console.log(`  Failed Suites   : ${totalFail > 0 ? c.red : c.green}${totalFail}${c.reset}`);
+  if (missingFiles.length > 0) {
+    console.log(`  Missing Suites  : ${c.red}${missingFiles.length}${c.reset}`);
+  }
+  console.log(`  Total Cases     : ${totalStaticCases}`);
+  console.log(`  Total Asserts   : ${totalStaticAsserts}`);
+  console.log(`  Total Lines     : ${totalStaticLines}`);
+  console.log(`  Duration        : ${overallDuration}s`);
   console.log(`${c.bold}==============================================================${c.reset}\n`);
 
-  if (totalFail > 0) {
-    console.log(`${c.red}${c.bold}❌ Test suite finished with ${totalFail} failing file(s).${c.reset}\n`);
+  if (totalFail > 0 || missingFiles.length > 0) {
+    console.log(`${c.red}${c.bold}❌ Test suite finished with ${totalFail} failing or missing suite(s).${c.reset}\n`);
     process.exit(1);
   } else {
     console.log(`${c.green}${c.bold}✅ ALL E2E TEST SUITES PASSED CLEANLY!${c.reset}\n`);
