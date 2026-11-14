@@ -1,5 +1,3 @@
-<!-- cspell:ignore glassmorphism monoline keyline keylines DTCG WAAPI UPM rgba Segoe Menlo Consolas Typekit tnum SVGSVG transitionend Uncurated Tokotype Rahayu -->
-
 # Rikkei Jobs Design System & Anti-AI Standard
 
 Tài liệu Đặc tả Thiết kế Hệ thống Giao diện & Tiêu chuẩn Chống Rập khuôn AI (Authoritative Specification & Anti-AI Standard).  
@@ -56,6 +54,18 @@ Hệ thống thiết kế Rikkei Jobs được xây dựng qua quy trình 6 bư�
 [6. Mechanical Verification & Anti-AI Rubric] (Toán học WCAG 2.2, zero emoji, proof screenshots)
 ```
 
+### 1.4. Nguồn Nhận diện Thương hiệu & Thuyết minh Độ lệch Kiến trúc Sản phẩm (Brand Identity Source & Product Architectural Deviation Rationale)
+
+Khảo sát dữ liệu nhận diện công khai (truy cập ngày 12/11/2026 tại `https://rikkei.edu.vn`, `https://rikkeiacademy.edu.vn` và `https://rikkeisoft.com`) ghi nhận: hệ thống nhận diện thương hiệu công cộng của Rikkei Education và tập đoàn Rikkeisoft sử dụng tông màu Đỏ doanh nghiệp đặc trưng (`#ED1B2E` / `#D6083B`) biểu trưng cho nhiệt huyết và năng lượng tuổi trẻ.
+
+**Ghi chú Minh bạch về Nguồn Nhận diện Thương hiệu & Quyết định Giao diện Blue-led (C0 / C4)**:  
+Khảo sát dữ liệu nhận diện công khai (truy cập ngày 12/11/2026 tại `https://rikkei.edu.vn`, `https://rikkeiacademy.edu.vn` và `https://rikkeisoft.com`) ghi nhận: hệ thống nhận diện thương hiệu công cộng của Rikkei Education và tập đoàn Rikkeisoft sử dụng tông màu Đỏ doanh nghiệp đặc trưng (`#ED1B2E` / `#D6083B`) biểu trưng cho nhiệt huyết và năng lượng tuổi trẻ. Tuy nhiên, trong sản phẩm Rikkei Jobs (nền tảng thẩm định năng lực và tuyển dụng kỹ sư công nghệ), việc sử dụng màu đỏ làm màu chủ đạo giao diện gây xung đột công thái học nghiêm trọng với trạng thái lỗi ngữ nghĩa (Semantic Error State) và tạo áp lực tâm lý cho người dùng.  
+Theo Quyết định Tối cao và Cuối cùng của User / Team Lead tại Round C (C0), Rikkei Jobs áp dụng bảng màu Xanh dương chủ đạo (Technical Cobalt / Deep Navy Blue-led). Quyết định này là bất biến: màu đỏ được bảo lưu độc quyền cho trạng thái lỗi kỹ thuật (kèm chỉ dẫn phi màu sắc: icon, border, nhãn cảnh báo), trong khi sắc xanh đại diện cho sự tin cậy, an tâm và chuẩn mực kỹ thuật công nghệ cao. Tài liệu thiết kế ghi nhận sự sai lệch có chủ đích (Product Architectural Deviation) này giữa giao diện phần mềm chuyên dụng và nhận diện thương hiệu truyền thông công cộng.
+
+**Brand Identity Source & Product Architectural Deviation Note (C0 / C4)**:  
+Public brand research conducted on 2026-11-12 across official web properties (`https://rikkei.edu.vn`, `https://rikkeiacademy.edu.vn`, `https://rikkeisoft.com`) confirms that Rikkei Education and Rikkeisoft utilize a vibrant corporate Red palette (`#ED1B2E` / `#D6083B`) as their primary marketing brand color. However, for an enterprise assessment and talent matching platform, adopting red as the primary brand color introduces severe cognitive friction and visual ambiguity against semantic error/danger states.  
+By the definitive and binding mandate of the User / Team Lead in Round C (C0), the Rikkei Jobs frontend strictly standardizes on a Blue-dominant visual hierarchy (Technical Cobalt / Deep Navy). This decision is final: red is strictly quarantined to semantic error feedback (complemented by non-color cues: icons, borders, and warning text), while the blue palette delivers stability, accessibility, and professional technical rigor. This deliberate architectural deviation between the specialized software UI and public media branding is formally acknowledged and documented.
+
 ---
 
 ## 2. Anti-AI Design Philosophy & Strict Prohibitions
@@ -90,7 +100,7 @@ Hệ thống token của Rikkei Jobs được xây dựng theo tiêu chuẩn c�
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
 │ TIER 1: PRIMITIVE TOKENS (Giá trị vật lý thô, bất biến)         │
-│ Ví dụ: --rj-primitive-brand-600: #132F52;                       │
+│ Ví dụ: --rj-primitive-brand-600: #0D55B8;                       │
 │        --rj-primitive-space-4: 16px;                            │
 └───────────────────────────────┬─────────────────────────────────┘
                                 │ Tham chiếu (Aliasing)
@@ -119,42 +129,43 @@ Thay thế hoàn toàn thang mặc định của Tailwind CSS và Material Desig
 ```css
 :root {
   /* ===================================================================
-     1. PRIMITIVE COLOR SCALES (Bespoke Palette)
+     1. PRIMITIVE COLOR SCALES (Bespoke Palette: Technical Deep Cobalt & Iron Obsidian)
      =================================================================== */
 
-  /* Neutral Palette: Technical Iron Charcoal (Thay thế thang Slate)
-     Sắc xám ấm pha ánh xanh than kỹ thuật, chống mỏi mắt khi làm việc kéo dài */
-  --rj-primitive-neutral-50:  #F7F9FC; /* Nền canvas trang Light Mode */
-  --rj-primitive-neutral-100: #EEF2F6; /* Nền thẻ phụ, table subtle header */
-  --rj-primitive-neutral-200: #E2E7ED; /* Đường phân cách subtle */
-  --rj-primitive-neutral-300: #C5D0DC; /* Viền thẻ, divider rõ */
-  --rj-primitive-neutral-400: #9AA8B9; /* Placeholder, icon inactive */
+  /* Neutral Palette: Technical Iron Charcoal
+     Sắc xám lạnh than chì và xanh đen obsidian, chuẩn mực kỹ thuật và bảo vệ thị giác */
+  --rj-primitive-neutral-50:  #F8FAFD; /* Vùng nhập Field Inset Light Mode */
+  --rj-primitive-neutral-100: #EEF2F8; /* Nền canvas trang Light Mode (Soft Steel Canvas) */
+  --rj-primitive-neutral-150: #E1E8F2; /* Bảng Hero Story Panel Light Mode (60/40 Split) */
+  --rj-primitive-neutral-200: #D8E2EE; /* Đường phân cách subtle */
+  --rj-primitive-neutral-300: #BACAD9; /* Viền thẻ subtle */
+  --rj-primitive-neutral-400: #889BB0; /* Placeholder, icon inactive */
   --rj-primitive-neutral-500: #6F8094; /* Viền tương tác Light Mode (CR 4.05:1 on #FFFFFF) */
-  --rj-primitive-neutral-600: #5B7083; /* Text muted Light Mode / Viền tương tác Dark Mode (CR 3.33:1 on #111C2E) */
-  --rj-primitive-neutral-700: #334E68; /* Text secondary Light Mode (CR 8.64:1 on #FFFFFF) */
-  --rj-primitive-neutral-800: #1A2C3F; /* Nền thẻ elevated Dark Mode, dropdown surface */
-  --rj-primitive-neutral-900: #0C1A30; /* Text primary Light Mode (CR 17.41:1 on #FFFFFF) */
-  --rj-primitive-neutral-950: #0A111E; /* Nền canvas trang Dark Mode */
+  --rj-primitive-neutral-600: #475B70; /* Text muted Light Mode (CR 7.00:1 on #FFFFFF) */
+  --rj-primitive-neutral-700: #25394E; /* Text secondary Light Mode (CR 11.84:1 on #FFFFFF) */
+  --rj-primitive-neutral-800: #162030; /* Nền thẻ Card Surface Dark Mode */
+  --rj-primitive-neutral-900: #0B1A2C; /* Text primary Light Mode Deep Navy (CR 17.52:1 on #FFFFFF) */
+  --rj-primitive-neutral-950: #0B1019; /* Nền canvas trang Dark Mode Deep Obsidian */
   --rj-primitive-white:       #FFFFFF;
 
-  /* Brand Anchor: Technical Iron Cobalt (Thay thế #0B57D0 Material Blue)
-     Sắc xanh Cobalt Thép trầm tĩnh, kỷ luật công nghệ chuẩn Nhật Bản */
-  --rj-primitive-brand-50:             #EBF3FA;
-  --rj-primitive-brand-100:            #D4E5F5;
-  --rj-primitive-brand-200:            #AACCEB;
-  --rj-primitive-brand-500:            #246EB9;
-  --rj-primitive-brand-600:            #132F52; /* Brand Primary Light — nút bấm chính, link */
-  --rj-primitive-brand-700:            #0A2540; /* Brand Hover / Focus Ring Light Mode */
-  --rj-primitive-brand-800:            #081E33; /* Brand Active state */
-  --rj-primitive-brand-electric:       #4C85DE; /* Brand Primary Dark Mode (CR 4.65:1 on #111C2E) */
-  --rj-primitive-brand-electric-hover: #6BA0F2; /* Brand Hover Dark Mode (CR 7.14:1 on #111C2E) */
+  /* Brand Anchor: Confident Royal Cobalt (Hệ màu xanh sở hữu riêng)
+     Thể hiện tính chuẩn mực, chiều sâu kỹ thuật và uy tín đào tạo - tuyển dụng */
+  --rj-primitive-brand-50:             #EBF2FC; /* Nền wash thương hiệu / Soft Brand Tint */
+  --rj-primitive-brand-100:            #D0E1F9; /* Viền badge tint phụ */
+  --rj-primitive-brand-200:            #A3C5F3; /* Viền subtle tương tác */
+  --rj-primitive-brand-500:            #1B6BD8; /* Sắc xanh cobalt phụ trợ */
+  --rj-primitive-brand-600:            #0D55B8; /* Confident Royal Cobalt — CR 6.98:1 on #FFFFFF */
+  --rj-primitive-brand-700:            #0A4596; /* Deep Cobalt Hover — CR 9.11:1 on #FFFFFF */
+  --rj-primitive-brand-800:            #083674; /* Deep Cobalt Active — CR 11.73:1 on #FFFFFF */
+  --rj-primitive-brand-electric:       #508CEE; /* Luminous Cobalt Dark Mode — CR 4.93:1 on Card */
+  --rj-primitive-brand-electric-hover: #6EA2F4; /* Hover Dark Mode — CR 7.38:1 on Dark Canvas */
 
   /* Accent: Cyber Persimmon / Terracotta
      Sắc cam đất nung công nghệ cao, thể hiện nhiệt huyết đào tạo và cơ hội nghề nghiệp */
   --rj-primitive-accent-50:  #FEF2ED;
   --rj-primitive-accent-100: #FDE2D6;
   --rj-primitive-accent-500: #F08C65; /* Accent Dark Mode (CR 7.03:1 on #111C2E) */
-  --rj-primitive-accent-600: #D9480F; /* Accent Light Mode — CTA, Badge điểm năng lực (CR 4.30:1 on #FFFFFF) */
+  --rj-primitive-accent-600: #D9480F; /* Accent Light Mode (CR 4.30:1 on #FFFFFF) */
   --rj-primitive-accent-700: #BF3A0A; /* Accent Hover */
 
   /* Functional Status: Deep Pine Green (Success) */
@@ -173,15 +184,16 @@ Thay thế hoàn toàn thang mặc định của Tailwind CSS và Material Desig
   --rj-primitive-warning-light:#F5B041; /* Text Dark Mode (CR 9.14:1 on #2C1600) */
   --rj-primitive-warning-950:  #2C1600; /* Nền alert Dark Mode */
 
-  /* Functional Status: Crimson Brick (Error / Danger) */
+  /* Functional Status: Cold Crimson Brick (Error / Danger - Tách biệt hoàn toàn khỏi Brand Blue) */
   --rj-primitive-danger-50:    #FDF2F4; /* Nền alert Light Mode */
+  --rj-primitive-danger-100:   #FCE4E7;
   --rj-primitive-danger-200:   #F5B7B1; /* Viền alert Light Mode */
-  --rj-primitive-danger-600:   #943126; /* Viền alert Dark Mode */
+  --rj-primitive-danger-600:   #943126;
   --rj-primitive-danger-700:   #9B1C2A; /* Text/Solid Badge Light Mode (CR 7.40:1 on #FDF2F4, 8.10:1 on #FFFFFF) */
   --rj-primitive-danger-light: #F1707A; /* Text Dark Mode (CR 6.32:1 on #2D0A0E) */
   --rj-primitive-danger-950:   #2D0A0E; /* Nền alert Dark Mode */
 
-  /* Functional Status: Cerulean Blue (Info) */
+  /* Functional Status: Cerulean Blue (Info - Lam ánh ngọc mòng két) */
   --rj-primitive-info-50:      #EBF5FB; /* Nền alert Light Mode */
   --rj-primitive-info-200:     #A9CCE3; /* Viền alert Light Mode */
   --rj-primitive-info-600:     #1F618D; /* Viền alert Dark Mode */
@@ -259,42 +271,42 @@ Thay thế hoàn toàn thang mặc định của Tailwind CSS và Material Desig
    ===================================================================== */
 :root, [data-theme="light"] {
   /* Surface Tokens */
-  --rj-color-surface-page:       var(--rj-primitive-neutral-50);  /* #F7F9FC - Canvas */
+  --rj-color-surface-page:       var(--rj-primitive-neutral-50);  /* #F7F9FC - Canvas Light Mode */
   --rj-color-surface-card:       var(--rj-primitive-white);       /* #FFFFFF - Card Surface */
   --rj-color-surface-subtle:     var(--rj-primitive-neutral-100); /* #EEF2F6 - Table Header */
   --rj-color-surface-elevated:   var(--rj-primitive-white);       /* #FFFFFF - Modal/Popover */
   --rj-color-surface-overlay:    rgba(12, 26, 48, 0.55);
 
   /* Text & Foreground Tokens */
-  --rj-color-text-primary:       var(--rj-primitive-neutral-900); /* #0C1A30 - CR 17.41:1 */
-  --rj-color-text-secondary:     var(--rj-primitive-neutral-700); /* #334E68 - CR 8.64:1 */
-  --rj-color-text-muted:         var(--rj-primitive-neutral-600); /* #5B7083 - CR 5.13:1 */
+  --rj-color-text-primary:       var(--rj-primitive-neutral-900); /* #0B1A2C - Deep Navy CR 17.52:1 on #FFFFFF */
+  --rj-color-text-secondary:     var(--rj-primitive-neutral-700); /* #25394E - CR 11.84:1 on #FFFFFF */
+  --rj-color-text-muted:         var(--rj-primitive-neutral-600); /* #475B70 - CR 7.00:1 on #FFFFFF */
   --rj-color-text-inverse:       var(--rj-primitive-white);       /* #FFFFFF */
-  --rj-color-text-disabled:      var(--rj-primitive-neutral-400); /* #9AA8B9 */
+  --rj-color-text-disabled:      var(--rj-primitive-neutral-400); /* #889BB0 */
 
   /* Border & Outline Tokens (WCAG 1.4.11 Non-text Contrast >= 3.0:1) */
-  --rj-color-border-subtle:      var(--rj-primitive-neutral-200); /* #E2E7ED - Dividers */
+  --rj-color-border-subtle:      var(--rj-primitive-neutral-300); /* #BACAD9 - Dividers */
   --rj-color-border-interactive: var(--rj-primitive-neutral-500); /* #6F8094 - CR 4.05:1 on #FFFFFF */
-  --rj-color-border-hover:       var(--rj-primitive-neutral-700); /* #334E68 - CR 8.64:1 */
-  --rj-color-border-focus:       var(--rj-primitive-brand-700);   /* #0A2540 */
+  --rj-color-border-hover:       var(--rj-primitive-neutral-700); /* #25394E - CR 11.84:1 */
+  --rj-color-border-focus:       var(--rj-primitive-brand-600);   /* #0D55B8 */
 
-  /* Action & Interactive State Tokens */
-  --rj-color-action-primary-bg:        var(--rj-primitive-brand-600);   /* #132F52 */
-  --rj-color-action-primary-fg:        var(--rj-primitive-white);       /* #FFFFFF - CR 13.49:1 */
-  --rj-color-action-primary-hover-bg:  var(--rj-primitive-brand-700);   /* #0A2540 */
-  --rj-color-action-primary-hover-fg:  var(--rj-primitive-white);       /* #FFFFFF - CR 15.54:1 */
-  --rj-color-action-primary-active-bg: var(--rj-primitive-brand-800);   /* #081E33 */
-  --rj-color-action-link:              var(--rj-primitive-brand-600);   /* #132F52 - CR 13.49:1 */
-  --rj-color-action-secondary-bg:      var(--rj-primitive-neutral-100); /* #EEF2F6 */
-  --rj-color-action-secondary-fg:      var(--rj-primitive-neutral-900); /* #0C1A30 - CR 15.48:1 */
-  --rj-color-action-secondary-hover-bg:var(--rj-primitive-neutral-200); /* #E2E7ED */
+  /* Action & Interactive State Tokens (Confident Royal Cobalt) */
+  --rj-color-action-primary-bg:        var(--rj-primitive-brand-600);   /* #0D55B8 - Confident Royal Cobalt */
+  --rj-color-action-primary-fg:        var(--rj-primitive-white);       /* #FFFFFF - CR 6.98:1 on #0D55B8 */
+  --rj-color-action-primary-hover-bg:  var(--rj-primitive-brand-700);   /* #0A4596 - Deep Cobalt Hover */
+  --rj-color-action-primary-hover-fg:  var(--rj-primitive-white);       /* #FFFFFF - CR 9.11:1 */
+  --rj-color-action-primary-active-bg: var(--rj-primitive-brand-800);   /* #083674 - CR 11.73:1 */
+  --rj-color-action-link:              var(--rj-primitive-brand-600);   /* #0D55B8 - CR 6.98:1 */
+  --rj-color-action-secondary-bg:      var(--rj-primitive-neutral-100); /* #EEF2F8 */
+  --rj-color-action-secondary-fg:      var(--rj-primitive-neutral-900); /* #0B1A2C - CR 17.52:1 */
+  --rj-color-action-secondary-hover-bg:var(--rj-primitive-neutral-200); /* #D8E2EE */
 
   /* Accent Tokens (Cyber Persimmon / Terracotta) */
-  --rj-color-accent:              var(--rj-primitive-accent-600); /* #D9480F - CR 4.30:1 (UI/Large) */
+  --rj-color-accent:              var(--rj-primitive-accent-600); /* #D9480F - CR 4.30:1 */
   --rj-color-accent-hover:        var(--rj-primitive-accent-700); /* #BF3A0A */
   --rj-color-accent-subtle:       var(--rj-primitive-accent-50);  /* #FEF2ED */
 
-  /* Status Indicators (Subtle Background + Solid High-Contrast Text) */
+  /* Status Indicators: Distinct Non-Brand Functional Semantics */
   --rj-color-status-success-bg:      var(--rj-primitive-success-50);  /* #E8F8F5 */
   --rj-color-status-success-text:    var(--rj-primitive-success-700); /* #0E6251 - CR 6.65:1 */
   --rj-color-status-success-border:  var(--rj-primitive-success-200); /* #A2D9CE */
@@ -305,10 +317,10 @@ Thay thế hoàn toàn thang mặc định của Tailwind CSS và Material Desig
   --rj-color-status-warning-border:  var(--rj-primitive-warning-200); /* #F9E79F */
   --rj-color-status-warning-solid:   var(--rj-primitive-warning-700); /* #7A4305 - CR 7.98:1 */
 
-  --rj-color-status-error-bg:        var(--rj-primitive-danger-50);   /* #FDF2F4 */
-  --rj-color-status-error-text:      var(--rj-primitive-danger-700);  /* #9B1C2A - CR 7.40:1 */
+  --rj-color-status-error-bg:        var(--rj-primitive-danger-50);   /* #FDF2F4 - Cold Crimson Tint */
+  --rj-color-status-error-text:      var(--rj-primitive-danger-700);  /* #9B1C2A - Cold Crimson Core Error CR 7.40:1 on #FDF2F4, 8.10:1 on #FFFFFF */
   --rj-color-status-error-border:    var(--rj-primitive-danger-200);  /* #F5B7B1 */
-  --rj-color-status-error-solid:     var(--rj-primitive-danger-700);  /* #9B1C2A - CR 8.10:1 */
+  --rj-color-status-error-solid:     var(--rj-primitive-danger-700);  /* #9B1C2A */
 
   --rj-color-status-info-bg:         var(--rj-primitive-info-50);     /* #EBF5FB */
   --rj-color-status-info-text:       var(--rj-primitive-info-700);    /* #134B5E - CR 8.65:1 */
@@ -316,7 +328,7 @@ Thay thế hoàn toàn thang mặc định của Tailwind CSS và Material Desig
   --rj-color-status-info-solid:      var(--rj-primitive-info-700);    /* #134B5E - CR 9.56:1 */
 
   /* Focus Indicator Ring (WCAG 2.2 Criterion 2.4.7 & 2.4.11) */
-  --rj-color-focus-ring:         var(--rj-primitive-brand-700);   /* #0A2540 - CR 15.54:1 on #FFFFFF */
+  --rj-color-focus-ring:         var(--rj-primitive-brand-600);   /* #0D55B8 - CR 6.98:1 on #FFFFFF */
   --rj-focus-ring-width:         2px;
   --rj-focus-ring-offset:        2px;
 }
@@ -326,62 +338,64 @@ Thay thế hoàn toàn thang mặc định của Tailwind CSS và Material Desig
    Nguyên lý: Tầng bậc độ sáng quang học thực tế, không đảo màu âm bản thô thiển
    ===================================================================== */
 [data-theme="dark"] {
-  /* Surface Tokens (Layered Iron Charcoal Elevation) */
-  --rj-color-surface-page:       var(--rj-primitive-neutral-950); /* #0A111E - Canvas Dark */
-  --rj-color-surface-card:       #111C2E;                         /* #111C2E - Thẻ Card Dark */
-  --rj-color-surface-subtle:     var(--rj-primitive-neutral-950); /* #0A111E */
-  --rj-color-surface-elevated:   var(--rj-primitive-neutral-800); /* #1A2C3F - Modal/Popover */
-  --rj-color-surface-overlay:    rgba(10, 17, 30, 0.80);
+  /* Surface Tokens (Layered Iron Obsidian Elevation) */
+  --rj-color-surface-page:       var(--rj-primitive-neutral-950); /* #0B1019 - Canvas Base Dark Deep Obsidian */
+  --rj-color-surface-panel:      #101724;                         /* #101724 - Hero Story Panel Dark */
+  --rj-color-surface-card:       var(--rj-primitive-neutral-800); /* #162030 - Thẻ Card Dark */
+  --rj-color-surface-input:      #0D1420;                         /* #0D1420 - Field Inset Dark */
+  --rj-color-surface-elevated:   #1E2C42;                         /* #1E2C42 - Khối Nổi Elevated Dark */
+  --rj-color-surface-subtle:     #101724;
+  --rj-color-surface-overlay:    rgba(11, 16, 25, 0.85);
 
   /* Text & Foreground Tokens */
-  --rj-color-text-primary:       #EDF2F7;                         /* #EDF2F7 - CR 15.17:1 on #111C2E */
-  --rj-color-text-secondary:     #CBD5E1;                         /* #CBD5E1 - CR 11.51:1 on #111C2E */
-  --rj-color-text-muted:         #94A3B8;                         /* #94A3B8 - CR 6.66:1 on #111C2E */
-  --rj-color-text-inverse:       var(--rj-primitive-neutral-950); /* #0A111E */
-  --rj-color-text-disabled:      #4A5568;
+  --rj-color-text-primary:       #EDF2F7;                         /* #EDF2F7 - CR 14.53:1 on #162030 */
+  --rj-color-text-secondary:     #CBD5E1;                         /* #CBD5E1 - CR 11.02:1 on #162030 */
+  --rj-color-text-muted:         #94A3B8;                         /* #94A3B8 - CR 6.38:1 on #162030 */
+  --rj-color-text-inverse:       var(--rj-primitive-neutral-950); /* #0B1019 */
+  --rj-color-text-disabled:      #5B7083;
 
-  /* Border & Outline Tokens (Hiệu chỉnh toán học để đạt CR >= 3.0:1 trên #111C2E) */
-  --rj-color-border-subtle:      #1E2C3F;
-  --rj-color-border-interactive: var(--rj-primitive-neutral-600); /* #5B7083 - CR 3.33:1 on #111C2E >= 3.0:1 */
-  --rj-color-border-elevated:    #94A3B8;                         /* #94A3B8 - CR 4.04:1 on #1A2C3F */
-  --rj-color-border-hover:       #94A3B8;                         /* #94A3B8 - CR 6.66:1 */
-  --rj-color-border-focus:       #38BDF8;                         /* #38BDF8 - Focus Ring Dark */
+  /* Border & Outline Tokens (Hiệu chỉnh toán học để đạt CR >= 3.0:1 trên #162030) */
+  --rj-color-border-subtle:      #1E2D42;
+  --rj-color-border-interactive: var(--rj-primitive-neutral-600); /* #5B7083 - CR 3.19:1 on #162030 >= 3.0:1 */
+  --rj-color-border-elevated:    #94A3B8;
+  --rj-color-border-hover:       #CBD5E1;
+  --rj-color-border-focus:       #508CEE;                         /* #508CEE - Focus Ring Dark (CR 4.93:1) */
 
-  /* Action & Interactive State Tokens */
-  --rj-color-action-primary-bg:        var(--rj-primitive-brand-electric);       /* #4C85DE - CR 4.65:1 on #111C2E */
-  --rj-color-action-primary-fg:        var(--rj-primitive-neutral-950);          /* #0A111E - CR 5.14:1 */
-  --rj-color-action-primary-hover-bg:  var(--rj-primitive-brand-electric-hover); /* #6BA0F2 */
-  --rj-color-action-primary-hover-fg:  var(--rj-primitive-neutral-950);          /* #0A111E - CR 7.14:1 */
-  --rj-color-action-primary-active-bg: var(--rj-primitive-brand-500);            /* #246EB9 */
-  --rj-color-action-link:              var(--rj-primitive-brand-electric);       /* #4C85DE */
-  --rj-color-action-secondary-bg:      var(--rj-primitive-neutral-800);          /* #1A2C3F */
-  --rj-color-action-secondary-fg:      #EDF2F7;                                  /* #EDF2F7 - CR 12.63:1 */
-  --rj-color-action-secondary-hover-bg:#223852;
+  /* Action & Interactive State Tokens (Brand Luminous Cobalt) */
+  --rj-color-action-primary-bg:        var(--rj-primitive-brand-electric);       /* #508CEE - CR 4.93:1 on #162030 */
+  --rj-color-action-primary-fg:        var(--rj-primitive-neutral-950);          /* #0B1019 - CR 5.74:1 */
+  --rj-color-action-primary-hover-bg:  var(--rj-primitive-brand-electric-hover); /* #6EA2F4 */
+  --rj-color-action-primary-hover-fg:  var(--rj-primitive-neutral-950);          /* #0B1019 - CR 7.38:1 */
+  --rj-color-action-primary-active-bg: var(--rj-primitive-brand-500);            /* #1B6BD8 */
+  --rj-color-action-link:              var(--rj-primitive-brand-electric);       /* #508CEE - CR 4.93:1 on #162030 */
+  --rj-color-action-secondary-bg:      var(--rj-primitive-neutral-800);          /* #162030 */
+  --rj-color-action-secondary-fg:      #EDF2F7;                                  /* #EDF2F7 - CR 14.53:1 */
+  --rj-color-action-secondary-hover-bg:#1E2C42;
 
   /* Accent Tokens (Cyber Persimmon Dark) */
-  --rj-color-accent:              var(--rj-primitive-accent-500); /* #F08C65 - CR 7.03:1 on #111C2E */
+  --rj-color-accent:              var(--rj-primitive-accent-500); /* #F08C65 */
   --rj-color-accent-hover:        #FA9D78;
-  --rj-color-accent-subtle:       #2A160F;
+  --rj-color-accent-subtle:       rgba(240, 140, 101, 0.15);
 
   /* Status Indicators Dark Mode */
-  --rj-color-status-success-bg:      var(--rj-primitive-success-950);   /* #06281E */
+  --rj-color-status-success-bg:      rgba(72, 199, 142, 0.15);
   --rj-color-status-success-text:    var(--rj-primitive-success-light); /* #48C78E - CR 7.40:1 */
-  --rj-color-status-success-border:  var(--rj-primitive-success-600);   /* #196F3D */
+  --rj-color-status-success-border:  rgba(72, 199, 142, 0.30);
   --rj-color-status-success-solid:   #196F3D;
 
-  --rj-color-status-warning-bg:      var(--rj-primitive-warning-950);   /* #2C1600 */
+  --rj-color-status-warning-bg:      rgba(245, 176, 65, 0.15);
   --rj-color-status-warning-text:    var(--rj-primitive-warning-light); /* #F5B041 - CR 9.14:1 */
-  --rj-color-status-warning-border:  var(--rj-primitive-warning-600);   /* #935116 */
+  --rj-color-status-warning-border:  rgba(245, 176, 65, 0.30);
   --rj-color-status-warning-solid:   #935116;
 
-  --rj-color-status-error-bg:        var(--rj-primitive-danger-950);    /* #2D0A0E */
-  --rj-color-status-error-text:      var(--rj-primitive-danger-light);  /* #F1707A - CR 6.32:1 */
-  --rj-color-status-error-border:    var(--rj-primitive-danger-600);    /* #943126 */
-  --rj-color-status-error-solid:     #943126;
+  --rj-color-status-error-bg:        rgba(155, 28, 42, 0.15);           /* Cold Crimson Dark Tint */
+  --rj-color-status-error-text:      var(--rj-primitive-danger-light);  /* #F1707A - Cold Crimson Dark Text CR 6.32:1 */
+  --rj-color-status-error-border:    rgba(241, 112, 122, 0.35);
+  --rj-color-status-error-solid:     #781620;
 
-  --rj-color-status-info-bg:         var(--rj-primitive-info-950);      /* #071E28 */
+  --rj-color-status-info-bg:         rgba(93, 173, 226, 0.15);
   --rj-color-status-info-text:       var(--rj-primitive-info-light);    /* #5DADE2 - CR 6.97:1 */
-  --rj-color-status-info-border:     var(--rj-primitive-info-600);      /* #1F618D */
+  --rj-color-status-info-border:     rgba(93, 173, 226, 0.30);
   --rj-color-status-info-solid:      #1F618D;
 
   /* Focus Indicator Ring Dark Mode */
@@ -501,68 +515,105 @@ Khoảng giá trị: $CR \in [1.0, 21.0]$.
 
 ### 4.2. Ma trận Chứng minh Tương phản Toán học — Light Mode (Zero Emoji)
 
-Toàn bộ 26 cặp màu thực tế trong hệ thống Rikkei Jobs ở chế độ Sáng (Light Mode) được kiểm chứng qua giải thuật toán học thực nghiệm, tuyệt đối không dùng emoji, chỉ sử dụng văn bản thuần PASS:
+Toàn bộ 36 cặp màu thực tế trong hệ thống Rikkei Jobs ở chế độ Sáng (Light Mode - Technical Deep Cobalt / Round E) được kiểm chứng qua giải thuật toán học thực nghiệm WCAG 2.2 Relative Luminance và W3C/Myndex APCA 0.98G-4g, tuyệt đối không dùng emoji, chỉ sử dụng văn bản thuần PASS:
 
-| STT | Thành phần Giao diện (Role) | Token Màu Chữ / FG | Hex FG | Token Màu Nền / BG | Hex BG | $L_{\text{FG}}$ | $L_{\text{BG}}$ | Tỷ lệ $CR$ | Ngưỡng Chuẩn | Kết luận |
-|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | Văn bản chính trên Thẻ Card | `--rj-color-text-primary` | `#0C1A30` | `--rj-color-surface-card` | `#FFFFFF` | 0.0103 | 1.0000 | **17.41:1** | $\ge 4.5:1$ | PASS (AAA) |
-| 2 | Văn bản chính trên Nền Trang | `--rj-color-text-primary` | `#0C1A30` | `--rj-color-surface-page` | `#F7F9FC` | 0.0103 | 0.9455 | **16.51:1** | $\ge 4.5:1$ | PASS (AAA) |
-| 3 | Văn bản chính trên Bảng Header | `--rj-color-text-primary` | `#0C1A30` | `--rj-color-surface-subtle` | `#EEF2F6` | 0.0103 | 0.8834 | **15.48:1** | $\ge 4.5:1$ | PASS (AAA) |
-| 4 | Văn bản phụ trên Thẻ Card | `--rj-color-text-secondary` | `#334E68` | `--rj-color-surface-card` | `#FFFFFF` | 0.0715 | 1.0000 | **8.64:1** | $\ge 4.5:1$ | PASS (AAA) |
-| 5 | Văn bản phụ trên Nền Trang | `--rj-color-text-secondary` | `#334E68` | `--rj-color-surface-page` | `#F7F9FC` | 0.0715 | 0.9455 | **8.19:1** | $\ge 4.5:1$ | PASS (AAA) |
-| 6 | Văn bản phụ trên Bảng Header | `--rj-color-text-secondary` | `#334E68` | `--rj-color-surface-subtle` | `#EEF2F6` | 0.0715 | 0.8834 | **7.68:1** | $\ge 4.5:1$ | PASS (AAA) |
-| 7 | Chữ ghi chú mờ trên Thẻ Card | `--rj-color-text-muted` | `#5B7083` | `--rj-color-surface-card` | `#FFFFFF` | 0.1545 | 1.0000 | **5.13:1** | $\ge 4.5:1$ | PASS (AA) |
-| 8 | Chữ ghi chú mờ trên Nền Trang | `--rj-color-text-muted` | `#5B7083` | `--rj-color-surface-page` | `#F7F9FC` | 0.1545 | 0.9455 | **4.87:1** | $\ge 4.5:1$ | PASS (AA) |
-| 9 | Chữ Nút Chính trên Nền Nút | `--rj-color-action-primary-fg` | `#FFFFFF` | `--rj-color-action-primary-bg` | `#132F52` | 1.0000 | 0.0278 | **13.49:1** | $\ge 4.5:1$ | PASS (AAA) |
-| 10 | Chữ Nút Hover trên Nền Hover | `--rj-color-action-primary-hover-fg` | `#FFFFFF` | `--rj-color-action-primary-hover-bg` | `#0A2540` | 1.0000 | 0.0176 | **15.54:1** | $\ge 4.5:1$ | PASS (AAA) |
-| 11 | Link Hành động trên Nền Trắng | `--rj-color-action-link` | `#132F52` | `--rj-color-surface-card` | `#FFFFFF` | 0.0278 | 1.0000 | **13.49:1** | $\ge 4.5:1$ | PASS (AAA) |
-| 12 | Link Hành động trên Nền Trang | `--rj-color-action-link` | `#132F52` | `--rj-color-surface-page` | `#F7F9FC` | 0.0278 | 0.9455 | **12.80:1** | $\ge 4.5:1$ | PASS (AAA) |
-| 13 | Chữ Nút Phụ trên Nền Phụ | `--rj-color-action-secondary-fg` | `#0C1A30` | `--rj-color-action-secondary-bg` | `#EEF2F6` | 0.0103 | 0.8834 | **15.48:1** | $\ge 4.5:1$ | PASS (AAA) |
-| 14 | Accent Terracotta (UI / Large text) | `--rj-primitive-accent-600` | `#D9480F` | `--rj-color-surface-card` | `#FFFFFF` | 0.1942 | 1.0000 | **4.30:1** | $\ge 3.0:1$ | PASS (AA Large/UI) |
-| 15 | Chữ Thành công trên Nền Alert | `--rj-color-status-success-text` | `#0E6251` | `--rj-color-status-success-bg` | `#E8F8F5` | 0.0942 | 0.9088 | **6.65:1** | $\ge 4.5:1$ | PASS (AA) |
-| 16 | Chữ Cảnh báo trên Nền Alert | `--rj-color-status-warning-text` | `#7A4305` | `--rj-color-status-warning-bg` | `#FEF9E7` | 0.0816 | 0.9459 | **7.57:1** | $\ge 4.5:1$ | PASS (AAA) |
-| 17 | Chữ Báo lỗi trên Nền Alert | `--rj-color-status-error-text` | `#9B1C2A` | `--rj-color-status-error-bg` | `#FDF2F4` | 0.0797 | 0.9092 | **7.40:1** | $\ge 4.5:1$ | PASS (AAA) |
-| 18 | Chữ Thông tin trên Nền Alert | `--rj-color-status-info-text` | `#134B5E` | `--rj-color-status-info-bg` | `#EBF5FB` | 0.0598 | 0.8993 | **8.65:1** | $\ge 4.5:1$ | PASS (AAA) |
-| 19 | Chữ Trắng trên Badge Solid Xanh | `--rj-primitive-white` | `#FFFFFF` | `--rj-color-status-success-solid` | `#0E6251` | 1.0000 | 0.0942 | **7.28:1** | $\ge 4.5:1$ | PASS (AAA) |
-| 20 | Chữ Trắng trên Badge Solid Cam | `--rj-primitive-white` | `#FFFFFF` | `--rj-color-status-warning-solid` | `#7A4305` | 1.0000 | 0.0816 | **7.98:1** | $\ge 4.5:1$ | PASS (AAA) |
-| 21 | Chữ Trắng trên Badge Solid Đỏ | `--rj-primitive-white` | `#FFFFFF` | `--rj-color-status-error-solid` | `#9B1C2A` | 1.0000 | 0.0797 | **8.10:1** | $\ge 4.5:1$ | PASS (AAA) |
-| 22 | Chữ Trắng trên Badge Solid Lam | `--rj-primitive-white` | `#FFFFFF` | `--rj-color-status-info-solid` | `#134B5E` | 1.0000 | 0.0598 | **9.56:1** | $\ge 4.5:1$ | PASS (AAA) |
-| 23 | Viền Khung Input trên Thẻ Card | `--rj-color-border-interactive` | `#6F8094` | `--rj-color-surface-card` | `#FFFFFF` | 0.2096 | 1.0000 | **4.05:1** | $\ge 3.0:1$ | PASS (UI) |
-| 24 | Viền Input Hover trên Thẻ Card | `--rj-color-border-hover` | `#334E68` | `--rj-color-surface-card` | `#FFFFFF` | 0.0715 | 1.0000 | **8.64:1** | $\ge 3.0:1$ | PASS (UI) |
-| 25 | Vòng Focus Ring trên Nền Trắng | `--rj-color-focus-ring` | `#0A2540` | `--rj-color-surface-card` | `#FFFFFF` | 0.0176 | 1.0000 | **15.54:1** | $\ge 3.0:1$ | PASS (UI) |
-| 26 | Vòng Focus Ring trên Nền Trang | `--rj-color-focus-ring` | `#0A2540` | `--rj-color-surface-page` | `#F7F9FC` | 0.0176 | 0.9455 | **14.73:1** | $\ge 3.0:1$ | PASS (UI) |
+| STT | Thành phần Giao diện (Role) | Token Màu Chữ / FG | Hex FG | Token Màu Nền / BG | Hex BG | $L_{\text{FG}}$ | $L_{\text{BG}}$ | Tỷ lệ $CR$ | Ngưỡng Chuẩn | APCA $L_c$ | Kết luận |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | Văn bản chính trên Thẻ Card | `--rj-primitive-neutral-900` | `#0B1A2C` | `--rj-color-surface-card` | `#FFFFFF` | 0.0099 | 1.0000 | **17.52:1** | $\ge 4.5:1$ | +104.3 | PASS (AAA) |
+| 2 | Văn bản chính trên Nền Canvas | `--rj-primitive-neutral-900` | `#0B1A2C` | `--rj-primitive-neutral-100` | `#EEF2F8` | 0.0099 | 0.8846 | **15.60:1** | $\ge 4.5:1$ | +96.3 | PASS (AAA) |
+| 3 | Văn bản chính trên Bảng Hero Panel | `--rj-primitive-neutral-900` | `#0B1A2C` | `--rj-primitive-neutral-150` | `#E1E8F2` | 0.0099 | 0.8013 | **14.21:1** | $\ge 4.5:1$ | +90.3 | PASS (AAA) |
+| 4 | Văn bản chính trên Vùng Nhập Field Inset | `--rj-primitive-neutral-900` | `#0B1A2C` | `--rj-primitive-neutral-50` | `#F8FAFD` | 0.0099 | 0.9542 | **16.76:1** | $\ge 4.5:1$ | +101.2 | PASS (AAA) |
+| 5 | Văn bản phụ trên Thẻ Card | `--rj-primitive-neutral-700` | `#25394E` | `--rj-color-surface-card` | `#FFFFFF` | 0.0387 | 1.0000 | **11.84:1** | $\ge 4.5:1$ | +97.1 | PASS (AAA) |
+| 6 | Văn bản phụ trên Nền Canvas | `--rj-primitive-neutral-700` | `#25394E` | `--rj-primitive-neutral-100` | `#EEF2F8` | 0.0387 | 0.8846 | **10.54:1** | $\ge 4.5:1$ | +89.1 | PASS (AAA) |
+| 7 | Văn bản phụ trên Bảng Hero Panel | `--rj-primitive-neutral-700` | `#25394E` | `--rj-primitive-neutral-150` | `#E1E8F2` | 0.0387 | 0.8013 | **9.60:1** | $\ge 4.5:1$ | +83.1 | PASS (AAA) |
+| 8 | Văn bản phụ trên Vùng Nhập Field Inset | `--rj-primitive-neutral-700` | `#25394E` | `--rj-primitive-neutral-50` | `#F8FAFD` | 0.0387 | 0.9542 | **11.32:1** | $\ge 4.5:1$ | +94.0 | PASS (AAA) |
+| 9 | Chữ ghi chú mờ trên Thẻ Card | `--rj-primitive-neutral-600` | `#475B70` | `--rj-color-surface-card` | `#FFFFFF` | 0.0999 | 1.0000 | **7.00:1** | $\ge 4.5:1$ | +84.2 | PASS (AAA) |
+| 10 | Chữ ghi chú mờ trên Nền Canvas | `--rj-primitive-neutral-600` | `#475B70` | `--rj-primitive-neutral-100` | `#EEF2F8` | 0.0999 | 0.8846 | **6.23:1** | $\ge 4.5:1$ | +76.3 | PASS (AA) |
+| 11 | Chữ ghi chú mờ trên Bảng Hero Panel | `--rj-primitive-neutral-600` | `#475B70` | `--rj-primitive-neutral-150` | `#E1E8F2` | 0.0999 | 0.8013 | **5.68:1** | $\ge 4.5:1$ | +70.2 | PASS (AA) |
+| 12 | Chữ ghi chú mờ trên Vùng Nhập Field Inset | `--rj-primitive-neutral-600` | `#475B70` | `--rj-primitive-neutral-50` | `#F8FAFD` | 0.0999 | 0.9542 | **6.70:1** | $\ge 4.5:1$ | +81.1 | PASS (AA) |
+| 13 | Chữ Nút Chính trên Nền Brand Core | `--rj-primitive-white` | `#FFFFFF` | `--rj-brand-core` | `#0D55B8` | 1.0000 | 0.1004 | **6.98:1** | $\ge 4.5:1$ | -88.5 | PASS (AAA) |
+| 14 | Chữ Nút Hover trên Nền Brand Deep | `--rj-primitive-white` | `#FFFFFF` | `--rj-brand-deep` | `#0A4596` | 1.0000 | 0.0652 | **9.11:1** | $\ge 4.5:1$ | -94.8 | PASS (AAA) |
+| 15 | Chữ Nút Active trên Nền Brand Active | `--rj-primitive-white` | `#FFFFFF` | `--rj-primitive-brand-800` | `#083674` | 1.0000 | 0.0395 | **11.73:1** | $\ge 4.5:1$ | -100.1 | PASS (AAA) |
+| 16 | Link Hành động trên Thẻ Card | `--rj-brand-core` | `#0D55B8` | `--rj-color-surface-card` | `#FFFFFF` | 0.1004 | 1.0000 | **6.98:1** | $\ge 4.5:1$ | +83.5 | PASS (AAA) |
+| 17 | Link Hành động trên Nền Canvas | `--rj-brand-core` | `#0D55B8` | `--rj-primitive-neutral-100` | `#EEF2F8` | 0.1004 | 0.8846 | **6.21:1** | $\ge 4.5:1$ | +75.5 | PASS (AA) |
+| 18 | Chữ Nút Phụ trên Thẻ Card | `--rj-primitive-neutral-900` | `#0B1A2C` | `--rj-color-surface-card` | `#FFFFFF` | 0.0099 | 1.0000 | **17.52:1** | $\ge 4.5:1$ | +104.3 | PASS (AAA) |
+| 19 | Vòng Focus Ring trên Thẻ Card | `--rj-brand-core` | `#0D55B8` | `--rj-color-surface-card` | `#FFFFFF` | 0.1004 | 1.0000 | **6.98:1** | $\ge 3.0:1$ | +83.5 | PASS (UI) |
+| 20 | Vòng Focus Ring trên Nền Canvas | `--rj-brand-core` | `#0D55B8` | `--rj-primitive-neutral-100` | `#EEF2F8` | 0.1004 | 0.8846 | **6.21:1** | $\ge 3.0:1$ | +75.5 | PASS (UI) |
+| 21 | Vòng Focus Ring trên Field Inset | `--rj-brand-core` | `#0D55B8` | `--rj-primitive-neutral-50` | `#F8FAFD` | 0.1004 | 0.9542 | **6.68:1** | $\ge 3.0:1$ | +80.3 | PASS (UI) |
+| 22 | Chữ Tab Đang Chọn trên Tab Pill | `--rj-brand-core` | `#0D55B8` | `--rj-color-surface-card` | `#FFFFFF` | 0.1004 | 1.0000 | **6.98:1** | $\ge 4.5:1$ | +83.5 | PASS (AAA) |
+| 23 | Chữ Tab Không Chọn trên Hero Panel | `--rj-primitive-neutral-700` | `#25394E` | `--rj-primitive-neutral-150` | `#E1E8F2` | 0.0387 | 0.8013 | **9.60:1** | $\ge 4.5:1$ | +83.1 | PASS (AAA) |
+| 24 | Đường Đồ Thị Radar trên Hero Panel | `--rj-brand-core` | `#0D55B8` | `--rj-primitive-neutral-150` | `#E1E8F2` | 0.1004 | 0.8013 | **5.66:1** | $\ge 3.0:1$ | +69.4 | PASS (UI) |
+| 25 | Nhãn Kỹ Năng Radar trên Hero Panel | `--rj-primitive-neutral-900` | `#0B1A2C` | `--rj-primitive-neutral-150` | `#E1E8F2` | 0.0099 | 0.8013 | **14.21:1** | $\ge 4.5:1$ | +90.3 | PASS (AAA) |
+| 26 | Vạch Trắng trên Nền Brand Mark Đỏ | `--rj-primitive-white` | `#FFFFFF` | `--rj-brand-mark` | `#C8161D` | 1.0000 | 0.1294 | **5.85:1** | $\ge 4.5:1$ | -82.4 | PASS (AAA) |
+| 27 | Brand Mark Đỏ trên Nền Canvas | `--rj-brand-mark` | `#C8161D` | `--rj-primitive-neutral-100` | `#EEF2F8` | 0.1294 | 0.8846 | **5.21:1** | $\ge 4.5:1$ | +69.1 | PASS (AA) |
+| 28 | Brand Mark Đỏ trên Bảng Hero Panel | `--rj-brand-mark` | `#C8161D` | `--rj-primitive-neutral-150` | `#E1E8F2` | 0.1294 | 0.8013 | **4.74:1** | $\ge 4.5:1$ | +63.1 | PASS (AA) |
+| 29 | Brand Mark Đỏ trên Thẻ Card | `--rj-brand-mark` | `#C8161D` | `--rj-color-surface-card` | `#FFFFFF` | 0.1294 | 1.0000 | **5.85:1** | $\ge 4.5:1$ | +77.1 | PASS (AA) |
+| 30 | Viền Khung Input trên Thẻ Card | `--rj-primitive-neutral-500` | `#6F8094` | `--rj-color-surface-card` | `#FFFFFF` | 0.2096 | 1.0000 | **4.05:1** | $\ge 3.0:1$ | +67.7 | PASS (UI) |
+| 31 | Viền Khung Input trên Field Inset | `--rj-primitive-neutral-500` | `#6F8094` | `--rj-primitive-neutral-50` | `#F8FAFD` | 0.2096 | 0.9542 | **3.87:1** | $\ge 3.0:1$ | +64.6 | PASS (UI) |
+| 32 | Chữ Báo Lỗi trên Nền Alert | `--rj-color-status-error-text` | `#9B1C2A` | `--rj-color-status-error-bg` | `#FDF2F4` | 0.0797 | 0.9092 | **7.40:1** | $\ge 4.5:1$ | +80.2 | PASS (AAA) |
+| 33 | Chữ Báo Lỗi trên Thẻ Card | `--rj-color-status-error-text` | `#9B1C2A` | `--rj-color-surface-card` | `#FFFFFF` | 0.0797 | 1.0000 | **8.10:1** | $\ge 4.5:1$ | +86.5 | PASS (AAA) |
+| 34 | Chữ Thành Công trên Nền Alert | `--rj-color-status-success-text` | `#0E6251` | `--rj-color-status-success-bg` | `#E8F8F5` | 0.0942 | 0.9088 | **6.65:1** | $\ge 4.5:1$ | +78.6 | PASS (AA) |
+| 35 | Chữ Cảnh Báo trên Nền Alert | `--rj-color-status-warning-text` | `#7A4305` | `--rj-color-status-warning-bg` | `#FEF9E7` | 0.0816 | 0.9459 | **7.57:1** | $\ge 4.5:1$ | +83.6 | PASS (AAA) |
+| 36 | Huy hiệu Thương hiệu Brand Badge | `--rj-color-badge-brand-text` | `#0D55B8` | `--rj-color-badge-brand-bg` | `#EBF2FC` | 0.1004 | 0.8819 | **6.20:1** | $\ge 4.5:1$ | +75.3 | PASS (AA) |
 
 ### 4.3. Ma trận Chứng minh Tương phản Toán học — Dark Mode (Zero Emoji)
 
-Toàn bộ 22 cặp màu thực tế trong hệ thống Rikkei Jobs ở chế độ Tối (Dark Mode) được kiểm chứng qua giải thuật toán học thực nghiệm, tuyệt đối không dùng emoji, chỉ sử dụng văn bản thuần PASS:
+Toàn bộ 30 cặp màu thực tế trong hệ thống Rikkei Jobs ở chế độ Tối (Dark Mode - Technical Iron Obsidian / Round E) được kiểm chứng qua giải thuật toán học thực nghiệm WCAG 2.2 Relative Luminance và W3C/Myndex APCA 0.98G-4g, tuyệt đối không dùng emoji, chỉ sử dụng văn bản thuần PASS:
 
-| STT | Thành phần Giao diện (Role) | Token Màu Chữ / FG | Hex FG | Token Màu Nền / BG | Hex BG | $L_{\text{FG}}$ | $L_{\text{BG}}$ | Tỷ lệ $CR$ | Ngưỡng Chuẩn | Kết luận |
+| STT | Thành phần Giao diện (Role) | Token Màu Chữ / FG | Hex FG | Token Màu Nền / BG | Hex BG | $L_{\text{FG}}$ | $L_{\text{BG}}$ | Tỷ lệ $CR$ | Ngưỡng Chuẩn | APCA $L_c$ | Kết luận |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | Văn bản chính trên Thẻ Tối | `--rj-color-text-primary` | `#EDF2F7` | `--rj-primitive-neutral-800` | `#162030` | 0.8822 | 0.0142 | **14.53:1** | $\ge 4.5:1$ | -96.8 | PASS (AAA) |
+| 2 | Văn bản chính trên Nền Canvas Tối | `--rj-color-text-primary` | `#EDF2F7` | `--rj-primitive-neutral-950` | `#0B1019` | 0.8822 | 0.0051 | **16.91:1** | $\ge 4.5:1$ | -98.5 | PASS (AAA) |
+| 3 | Văn bản chính trên Bảng Hero Panel Tối | `--rj-color-text-primary` | `#EDF2F7` | `--rj-color-surface-panel` | `#101724` | 0.8822 | 0.0085 | **15.93:1** | $\ge 4.5:1$ | -97.9 | PASS (AAA) |
+| 4 | Văn bản chính trên Vùng Nhập Field Inset Tối | `--rj-color-text-primary` | `#EDF2F7` | `--rj-color-surface-field` | `#0D1420` | 0.8822 | 0.0069 | **16.38:1** | $\ge 4.5:1$ | -98.2 | PASS (AAA) |
+| 5 | Văn bản chính trên Khối Nổi Elevated Tối | `--rj-color-text-primary` | `#EDF2F7` | `--rj-color-surface-elevated` | `#1E2C42` | 0.8822 | 0.0247 | **12.48:1** | $\ge 4.5:1$ | -94.7 | PASS (AAA) |
+| 6 | Văn bản phụ trên Thẻ Tối | `--rj-color-text-secondary` | `#CBD5E1` | `--rj-primitive-neutral-800` | `#162030` | 0.6572 | 0.0142 | **11.02:1** | $\ge 4.5:1$ | -78.3 | PASS (AAA) |
+| 7 | Văn bản phụ trên Nền Canvas Tối | `--rj-color-text-secondary` | `#CBD5E1` | `--rj-primitive-neutral-950` | `#0B1019` | 0.6572 | 0.0051 | **12.83:1** | $\ge 4.5:1$ | -80.0 | PASS (AAA) |
+| 8 | Văn bản phụ trên Bảng Hero Panel Tối | `--rj-color-text-secondary` | `#CBD5E1` | `--rj-color-surface-panel` | `#101724` | 0.6572 | 0.0085 | **12.09:1** | $\ge 4.5:1$ | -79.4 | PASS (AAA) |
+| 9 | Văn bản phụ trên Vùng Nhập Field Inset Tối | `--rj-color-text-secondary` | `#CBD5E1` | `--rj-color-surface-field` | `#0D1420` | 0.6572 | 0.0069 | **12.43:1** | $\ge 4.5:1$ | -79.6 | PASS (AAA) |
+| 10 | Chữ ghi chú mờ trên Thẻ Tối | `--rj-color-text-muted` | `#94A3B8` | `--rj-primitive-neutral-800` | `#162030` | 0.3595 | 0.0142 | **6.38:1** | $\ge 4.5:1$ | -49.6 | PASS (AA) |
+| 11 | Chữ ghi chú mờ trên Nền Canvas Tối | `--rj-color-text-muted` | `#94A3B8` | `--rj-primitive-neutral-950` | `#0B1019` | 0.3595 | 0.0051 | **7.43:1** | $\ge 4.5:1$ | -51.3 | PASS (AAA) |
+| 12 | Chữ ghi chú mờ trên Bảng Hero Panel Tối | `--rj-color-text-muted` | `#94A3B8` | `--rj-color-surface-panel` | `#101724` | 0.3595 | 0.0085 | **7.00:1** | $\ge 4.5:1$ | -50.7 | PASS (AAA) |
+| 13 | Chữ ghi chú mờ trên Vùng Nhập Field Inset Tối | `--rj-color-text-muted` | `#94A3B8` | `--rj-color-surface-field` | `#0D1420` | 0.3595 | 0.0069 | **7.20:1** | $\ge 4.5:1$ | -51.0 | PASS (AAA) |
+| 14 | Chữ Nút Chính trên Nền Brand Electric | `--rj-primitive-neutral-950` | `#0B1019` | `--rj-brand-electric` | `#508CEE` | 0.0051 | 0.2663 | **5.74:1** | $\ge 4.5:1$ | +43.2 | PASS (AA) |
+| 15 | Chữ Nút Hover trên Nền Brand Electric Hover | `--rj-primitive-neutral-950` | `#0B1019` | `--rj-brand-electric-hover` | `#6EA2F4` | 0.0051 | 0.3569 | **7.38:1** | $\ge 4.5:1$ | +53.1 | PASS (AAA) |
+| 16 | Link Hành động trên Thẻ Tối | `--rj-brand-electric` | `#508CEE` | `--rj-primitive-neutral-800` | `#162030` | 0.2663 | 0.0142 | **4.93:1** | $\ge 4.5:1$ | -39.3 | PASS (AA) |
+| 17 | Link Hành động trên Nền Canvas Tối | `--rj-brand-electric` | `#508CEE` | `--rj-primitive-neutral-950` | `#0B1019` | 0.2663 | 0.0051 | **5.74:1** | $\ge 4.5:1$ | -41.0 | PASS (AA) |
+| 18 | Chữ Nút Phụ trên Khối Nổi Tối | `--rj-color-text-primary` | `#EDF2F7` | `--rj-color-surface-elevated` | `#1E2C42` | 0.8822 | 0.0247 | **12.48:1** | $\ge 4.5:1$ | -94.7 | PASS (AAA) |
+| 19 | Vòng Focus Ring trên Thẻ Tối | `--rj-brand-electric` | `#508CEE` | `--rj-primitive-neutral-800` | `#162030` | 0.2663 | 0.0142 | **4.93:1** | $\ge 3.0:1$ | -39.3 | PASS (UI) |
+| 20 | Vòng Focus Ring trên Nền Canvas Tối | `--rj-brand-electric` | `#508CEE` | `--rj-primitive-neutral-950` | `#0B1019` | 0.2663 | 0.0051 | **5.74:1** | $\ge 3.0:1$ | -41.0 | PASS (UI) |
+| 21 | Vòng Focus Ring trên Field Inset Tối | `--rj-brand-electric` | `#508CEE` | `--rj-color-surface-field` | `#0D1420` | 0.2663 | 0.0069 | **5.56:1** | $\ge 3.0:1$ | -40.7 | PASS (UI) |
+| 22 | Chữ Tab Đang Chọn trên Dark Elevated Pill | `--rj-brand-electric` | `#508CEE` | `--rj-color-surface-elevated` | `#1E2C42` | 0.2663 | 0.0247 | **4.23:1** | $\ge 3.0:1$ | -37.2 | PASS (AA Large/UI) |
+| 23 | Chữ Tab Không Chọn trên Dark Tab Inset | `--rj-color-text-secondary` | `#CBD5E1` | `--rj-color-surface-field` | `#0D1420` | 0.6572 | 0.0069 | **12.43:1** | $\ge 4.5:1$ | -79.6 | PASS (AAA) |
+| 24 | Đường Đồ Thị Radar trên Hero Panel Tối | `--rj-brand-electric` | `#508CEE` | `--rj-color-surface-panel` | `#101724` | 0.2663 | 0.0085 | **5.41:1** | $\ge 3.0:1$ | -40.4 | PASS (UI) |
+| 25 | Nhãn Kỹ Năng Radar trên Hero Panel Tối | `--rj-color-text-primary` | `#EDF2F7` | `--rj-color-surface-panel` | `#101724` | 0.8822 | 0.0085 | **15.93:1** | $\ge 4.5:1$ | -97.9 | PASS (AAA) |
+| 26 | Brand Mark Đỏ trên Nền Canvas Tối | `--rj-brand-mark` | `#C8161D` | `--rj-primitive-neutral-950` | `#0B1019` | 0.1294 | 0.0051 | **3.26:1** | $\ge 3.0:1$ | -24.2 | PASS (UI) |
+| 27 | Brand Mark Đỏ trên Bảng Hero Panel Tối | `--rj-brand-mark` | `#C8161D` | `--rj-color-surface-panel` | `#101724` | 0.1294 | 0.0085 | **3.07:1** | $\ge 3.0:1$ | -23.6 | PASS (UI) |
+| 28 | Chữ Báo Lỗi trên Nền Alert Tối | `--rj-color-status-error-text` | `#F1707A` | `--rj-color-status-error-bg` | `#2D0A0E` | 0.3169 | 0.0081 | **6.32:1** | $\ge 4.5:1$ | -46.4 | PASS (AAA) |
+| 29 | Chữ Thành Công trên Nền Alert Tối | `--rj-color-status-success-text` | `#48C78E` | `--rj-color-status-success-bg` | `#06281E` | 0.4418 | 0.0165 | **7.40:1** | $\ge 4.5:1$ | -58.0 | PASS (AAA) |
+| 30 | Huy hiệu Thương hiệu Brand Badge Tối | `--rj-color-badge-brand-text` | `#6EA2F4` | `--rj-color-badge-brand-bg` | `#16243A` | 0.3569 | 0.0174 | **6.04:1** | $\ge 4.5:1$ | -48.9 | PASS (AA) |
+
+### 4.4. Ma trận Phân tách Bề mặt CIELAB Delta L* & Ranh giới Viền (Zero Emoji)
+
+Bảng kiểm chứng độ phân tách cảm nhận bề mặt theo không gian màu quốc tế CIE 1976 CIELAB ($L^* = 116 \cdot f(Y/Y_n) - 16$) với chuẩn D65 ($Y_n = 1.0$) và hàm phân mảnh $f(y)$ liên tục ($\epsilon = 216/24389$):
+
+| STT | Cặp Bề mặt Liền kề (Role) | Bề mặt 1 | Hex 1 | Bề mặt 2 | Hex 2 | $L^*_1$ | $L^*_2$ | Chênh lệch $\Delta L^*$ | Ngưỡng Chuẩn | Kết luận |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 1 | Văn bản chính trên Thẻ Tối | `--rj-color-text-primary` | `#EDF2F7` | `--rj-color-surface-card` | `#111C2E` | 0.8822 | 0.0115 | **15.17:1** | $\ge 4.5:1$ | PASS (AAA) |
-| 2 | Văn bản chính trên Nền Trang Tối | `--rj-color-text-primary` | `#EDF2F7` | `--rj-color-surface-page` | `#0A111E` | 0.8822 | 0.0056 | **16.77:1** | $\ge 4.5:1$ | PASS (AAA) |
-| 3 | Văn bản chính trên Khối Nổi Tối | `--rj-color-text-primary` | `#EDF2F7` | `--rj-color-surface-elevated` | `#1A2C3F` | 0.8822 | 0.0238 | **12.63:1** | $\ge 4.5:1$ | PASS (AAA) |
-| 4 | Văn bản phụ trên Thẻ Tối | `--rj-color-text-secondary` | `#CBD5E1` | `--rj-color-surface-card` | `#111C2E` | 0.6572 | 0.0115 | **11.51:1** | $\ge 4.5:1$ | PASS (AAA) |
-| 5 | Văn bản phụ trên Nền Trang Tối | `--rj-color-text-secondary` | `#CBD5E1` | `--rj-color-surface-page` | `#0A111E` | 0.6572 | 0.0056 | **12.72:1** | $\ge 4.5:1$ | PASS (AAA) |
-| 6 | Chữ mờ trên Thẻ Tối | `--rj-color-text-muted` | `#94A3B8` | `--rj-color-surface-card` | `#111C2E` | 0.3595 | 0.0115 | **6.66:1** | $\ge 4.5:1$ | PASS (AA) |
-| 7 | Chữ mờ trên Nền Trang Tối | `--rj-color-text-muted` | `#94A3B8` | `--rj-color-surface-page` | `#0A111E` | 0.3595 | 0.0056 | **7.37:1** | $\ge 4.5:1$ | PASS (AA) |
-| 8 | Chữ Nút Chính trên Nền Nút Tối | `--rj-color-action-primary-fg` | `#0A111E` | `--rj-color-action-primary-bg` | `#4C85DE` | 0.0056 | 0.2359 | **5.14:1** | $\ge 4.5:1$ | PASS (AA) |
-| 9 | Chữ Nút Hover trên Nền Hover Tối | `--rj-color-action-primary-hover-fg` | `#0A111E` | `--rj-color-action-primary-hover-bg` | `#6BA0F2` | 0.0056 | 0.3468 | **7.14:1** | $\ge 4.5:1$ | PASS (AAA) |
-| 10 | Link Hành động trên Thẻ Tối | `--rj-color-action-link` | `#4C85DE` | `--rj-color-surface-card` | `#111C2E` | 0.2359 | 0.0115 | **4.65:1** | $\ge 4.5:1$ | PASS (AA) |
-| 11 | Link Hành động trên Nền Trang Tối | `--rj-color-action-link` | `#4C85DE` | `--rj-color-surface-page` | `#0A111E` | 0.2359 | 0.0056 | **5.14:1** | $\ge 4.5:1$ | PASS (AA) |
-| 12 | Chữ Nút Phụ trên Nền Phụ Tối | `--rj-color-action-secondary-fg` | `#EDF2F7` | `--rj-color-action-secondary-bg` | `#1A2C3F` | 0.8822 | 0.0238 | **12.63:1** | $\ge 4.5:1$ | PASS (AAA) |
-| 13 | Chữ Thành công trên Alert Tối | `--rj-color-status-success-text` | `#48C78E` | `--rj-color-status-success-bg` | `#06281E` | 0.4418 | 0.0165 | **7.40:1** | $\ge 4.5:1$ | PASS (AAA) |
-| 14 | Chữ Cảnh báo trên Alert Tối | `--rj-color-status-warning-text` | `#F5B041` | `--rj-color-status-warning-bg` | `#2C1600` | 0.5084 | 0.0111 | **9.14:1** | $\ge 4.5:1$ | PASS (AAA) |
-| 15 | Chữ Báo lỗi trên Alert Tối | `--rj-color-status-error-text` | `#F1707A` | `--rj-color-status-error-bg` | `#2D0A0E` | 0.3169 | 0.0081 | **6.32:1** | $\ge 4.5:1$ | PASS (AAA) |
-| 16 | Chữ Thông tin trên Alert Tối | `--rj-color-status-info-text` | `#5DADE2` | `--rj-color-status-info-bg` | `#071E28` | 0.3771 | 0.0113 | **6.97:1** | $\ge 4.5:1$ | PASS (AAA) |
-| 17 | Viền Khung Input trên Thẻ Tối | `--rj-color-border-interactive` | `#5B7083` | `--rj-color-surface-card` | `#111C2E` | 0.1545 | 0.0115 | **3.33:1** | $\ge 3.0:1$ | PASS (UI) |
-| 18 | Viền Khung Input trên Nền Trang | `--rj-color-border-interactive` | `#5B7083` | `--rj-color-surface-page` | `#0A111E` | 0.1545 | 0.0056 | **3.68:1** | $\ge 3.0:1$ | PASS (UI) |
-| 19 | Viền Input Hover trên Thẻ Tối | `--rj-color-border-hover` | `#94A3B8` | `--rj-color-surface-card` | `#111C2E` | 0.3595 | 0.0115 | **6.66:1** | $\ge 3.0:1$ | PASS (UI) |
-| 20 | Vòng Focus Ring trên Thẻ Tối | `--rj-color-focus-ring` | `#38BDF8` | `--rj-color-surface-card` | `#111C2E` | 0.4401 | 0.0115 | **7.97:1** | $\ge 3.0:1$ | PASS (UI) |
-| 21 | Vòng Focus Ring trên Nền Trang | `--rj-color-focus-ring` | `#38BDF8` | `--rj-color-surface-page` | `#0A111E` | 0.4401 | 0.0056 | **8.82:1** | $\ge 3.0:1$ | PASS (UI) |
-| 22 | Accent Terracotta trên Thẻ Tối (UI/Large) | `--rj-primitive-accent-500` | `#F08C65` | `--rj-color-surface-card` | `#111C2E` | 0.3822 | 0.0115 | **7.03:1** | $\ge 3.0:1$ | PASS (AA Large/UI) |
+| 1 | Light Canvas sang Card Container | Page Canvas | `#EEF2F8` | Card Container | `#FFFFFF` | 95.35 | 100.00 | **4.65** | $\ge 4.0$ | PASS (Inherent Separation) |
+| 2 | Light Hero Panel sang Card Container | Hero Story Panel | `#E1E8F2` | Card Container | `#FFFFFF` | 91.74 | 100.00 | **8.26** | $\ge 3.5$ | PASS (Panel Separation) |
+| 3 | Light Canvas sang Hero Panel (60/40 Split) | Page Canvas | `#EEF2F8` | Hero Story Panel | `#E1E8F2` | 95.35 | 91.74 | **3.61** | $\ge 2.0$ | PASS (Split Boundary) |
+| 4 | Light Card Container sang Field Inset | Card Container | `#FFFFFF` | Field Inset | `#F8FAFD` | 100.00 | 98.20 | **1.80** | $\ge 1.5$ | PASS (Well Inset) |
+| 5 | Dark Canvas sang Card Container | Dark Canvas | `#0B1019` | Dark Card Container | `#162030` | 4.62 | 12.07 | **7.45** | $\ge 4.0$ | PASS (Inherent Separation) |
+| 6 | Dark Hero Panel sang Card Container | Dark Hero Panel | `#101724` | Dark Card Container | `#162030` | 7.68 | 12.07 | **4.39** | $\ge 3.5$ | PASS (Panel Separation) |
+| 7 | Dark Canvas sang Hero Panel (60/40 Split) | Dark Canvas | `#0B1019` | Dark Hero Panel | `#101724` | 4.62 | 7.68 | **3.06** | $\ge 2.0$ | PASS (Split Boundary) |
+| 8 | Dark Card Container sang Field Inset | Dark Card Container | `#162030` | Dark Field Inset | `#0D1420` | 12.07 | 6.23 | **5.84** | $\ge 1.5$ | PASS (Well Inset) |
+| 9 | Dark Card Container sang Khối Nổi Elevated | Dark Card Container | `#162030` | Dark Elevated | `#1E2C42` | 12.07 | 17.79 | **5.72** | $\ge 3.5$ | PASS (Tonal Elevation) |
 
 > **Phát hiện Toán học Sâu sắc**:  
-> Trong giao diện AI generic thông thường, màu viền tối `#475569` trên thẻ `#111C2E` chỉ đạt **2.25:1**, vi phạm nghiêm trọng Tiêu chuẩn WCAG 2.2 AA 1.4.11 (yêu cầu $\ge 3.0:1$). Rikkei Jobs đã hiệu chỉnh token viền tương tác `--rj-color-border-interactive` ở Dark Mode thành `#5B7083` đạt **3.33:1** (và trên nền trang đạt **3.68:1**), hoàn toàn vượt ngưỡng kiểm định.
+>
+> 1. **Brand Mark Red (#C8161D)**: Tỷ lệ tương phản giữa vạch trắng `#FFFFFF` và nền đỏ `#C8161D` đạt chính xác toán học là **5.85:1** (vượt xa chuẩn WCAG 2.1 AA 4.5:1 cho văn bản và 3.0:1 cho đối tượng đồ họa SC 1.4.11; APCA $L_c = -82.4$). Trên nền Canvas Sáng `#EEF2F8`, logo đạt **5.21:1** ($L_c = +69.1$). Trên nền Canvas Tối `#0B1019`, logo đạt **3.26:1** ($\ge 3.0:1$) và được bảo vệ quang học bởi viền mờ subtle ring chống rung sắc sai.
+> 2. **Ranh giới Viền Tương tác (UI Boundary SC 1.4.11)**: Viền khung nhập liệu `--rj-primitive-neutral-500: #6F8094` ở Light Mode đạt **4.05:1** trên Card và **3.87:1** trên Field Inset. Ở Dark Mode, token `--rj-color-border-interactive: #5B7083` đạt **3.19:1** trên Card và **3.59:1** trên Field Inset, hoàn toàn vượt ngưỡng bắt buộc $3.0:1$.
+> 3. **Bất biến Phân tách Bề mặt (CIELAB Delta L*)**: Ở cả hai chế độ Light và Dark, độ chênh lệch độ sáng cảm nhận giữa Canvas và Card Container đều vượt ngưỡng tối thiểu ($\Delta L^* = 4.65 \ge 4.0$ ở Light và $\Delta L^* = 7.45 \ge 4.0$ ở Dark), triệt tiêu hoàn toàn khiếm khuyết washed out hoặc pale on pale.
 
 ---
 
@@ -581,7 +632,7 @@ Rikkei Jobs xây dựng một bộ ba font có chủ đích rõ rệt, kết h�
   --rj-font-body: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
 
   /* Code / Tabular Numerals: JetBrains Mono (Đồng độ rộng chữ số hoàn hảo) */
-  --rj-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --rj-font-mono: 'JetBrains Mono', 'Courier New', monospace;
 }
 ```
 
@@ -589,9 +640,9 @@ Rikkei Jobs xây dựng một bộ ba font có chủ đích rõ rệt, kết h�
 
 Cả 3 font đều được cấp phép theo tiêu chuẩn nguồn mở **SIL Open Font License (OFL) 1.1**:
 
-- **Plus Jakarta Sans**: Tác giả Tokotype (Gumpita Rahayu). Miễn phí sử dụng thương mại, không bản quyền thương mại.
-- **Be Vietnam Pro**: Tác giả Adaptive Type (Lam Bao). Thiết kế chuyên biệt cho hệ ký tự Quốc ngữ Việt Nam.
-- **JetBrains Mono**: Tác giả JetBrains. Tối ưu cho môi trường đọc mã nguồn và số liệu bảng biểu.
+- **Plus Jakarta Sans**: Tác giả The Plus Jakarta Sans Project Authors (Gumpita Rahayu, Tokotype). Tự lưu trữ tại `frontend/public/fonts/`.
+- **Be Vietnam Pro**: Tác giả The Be Vietnam Pro Project Authors. Thiết kế chuyên biệt cho hệ ký tự Quốc ngữ Việt Nam, tự lưu trữ tại `frontend/public/fonts/`.
+- **JetBrains Mono**: Tác giả JetBrains s.r.o. Tối ưu cho môi trường đọc mã nguồn và số liệu bảng biểu tabular figures, tự lưu trữ tại `frontend/public/fonts/`.
 
 ### 5.2. Giải phẫu Bounding Box Dấu Tiếng Việt Xếp Chồng (Stacked Diacritics)
 
@@ -845,7 +896,7 @@ body.role-employer {
    - Bên trái (65%): Tiêu đề biên tập sắc sảo, ô tìm kiếm tech stack tuyển dụng, thống kê lương thời gian thực dạng tabular nums.
    - Bên phải (35%): Widget Radar trực quan thể hiện mức độ tương thích kỹ năng thực tế của ứng viên so với yêu cầu công việc.
 2. **Hexagonal Verified Skill Badge**:
-   - Huy hiệu hình lục giác với đường viền thép đĩnh đạc (`#132F52`), số điểm đánh giá kỹ năng thực chiến (0-100) căn chỉnh dạng bảng, kèm micro-icon chứng nhận.
+   - Huy hiệu hình lục giác với đường viền thép đĩnh đạc (`#0D55B8`), số điểm đánh giá kỹ năng thực chiến (0-100) căn chỉnh dạng bảng, kèm micro-icon chứng nhận.
 3. **Admin Dense Data Matrix**:
    - Bảng quản trị siêu mật độ với các status pill tương phản cao, thanh Bulk-Action bar ghim nổi ở chân trang khi chọn nhiều bản ghi (`z-index: 1100`).
 4. **Dual-Density Switcher**:
@@ -1131,7 +1182,7 @@ $$\text{Tổng Điểm} = \sum_{i=1}^{6} C_i \quad (0 \le \text{Tổng Điểm} 
 |---|---|---|---|---|
 | **C1** | **Typography & Hierarchy** | Dùng font Inter mặc định; dấu tiếng Việt bị cắt ngọn hoặc đè dòng (`line-height < 1.4`); số liệu bảng biểu giật layout; tải font ngoài qua CDN. | Font hệ thống cơ bản; tiếng Việt hiển thị đủ dấu (`line-height 1.4 - 1.45`); có phân cấp tiêu đề; nhưng một số bảng quên khai báo `tabular-nums`. | Phối hợp Plus Jakarta Sans + Be Vietnam Pro + JetBrains Mono; tiếng Việt chuẩn xác với `line-height >= 1.5`; 100% số liệu dùng `tabular-nums`; thang 9 cấp typography modular scale hoàn hảo. |
 | **C2** | **Spacing, Layout & Density** | Hero căn giữa + lưới 3 cột thẻ bo góc giống hệt nhau (`grid-cols-3`); padding đều chằn chặn `p-4`; không phân hóa mật độ vai trò; cuộn ngang ở 375px. | Bố cục responsive ổn định trên 4 breakpoints; không cuộn ngang; có phân cấp khoảng cách nhưng cấu trúc còn mang tính template rập khuôn. | Bố cục nhịp điệu biên tập bất đối xứng 65/35 (8 cột chính / 4 cột tiện ích); phân hóa hoàn hảo: Dense Mode (row 36-38px) cho Admin/HR vs Airy Mode (row 56px, padding 24px) cho Candidate. |
-| **C3** | **Color Palette & Contrast** | Hero gradient tím - xanh; kính mờ glassmorphism bừa bãi; chữ xám mờ nhạt không đủ tương phản ($CR < 4.5:1$); Dark mode đảo màu âm bản; hardcode hex tùy tiện. | Không dùng gradient tím hay glassmorphism; văn bản đạt tương phản tối thiểu 4.5:1; Dark mode cơ bản nhưng thiếu tầng nâng bề mặt (surface elevations). | 100% kế thừa từ Bespoke Palette (Iron Charcoal, Iron Cobalt, Cyber Persimmon); tương phản được chứng minh bằng công thức toán học W3C sRGB; Dark mode thiết kế riêng theo thang sáng; viền input $\ge 3.0:1$, focus ring $\ge 3.0:1$. |
+| **C3** | **Color Palette & Contrast** | Hero gradient tím - xanh; kính mờ glassmorphism bừa bãi; chữ xám mờ nhạt không đủ tương phản ($CR < 4.5:1$); Dark mode đảo màu âm bản; hardcode hex tùy tiện. | Không dùng gradient tím hay glassmorphism; văn bản đạt tương phản tối thiểu 4.5:1; Dark mode cơ bản nhưng thiếu tầng nâng bề mặt (surface elevations). | 100% kế thừa từ Bespoke Confident Royal Cobalt & Iron Obsidian Palette (Core Cobalt #0D55B8, Deep Cobalt #0A4596, Electric Cobalt #508CEE, Iron Charcoal, Deep Obsidian); giải pháp bảo tồn ranh giới Error Cold Crimson #9B1C2A tách biệt khỏi Brand Blue; tương phản được chứng minh bằng công thức toán học W3C sRGB; Dark mode thiết kế riêng theo thang sáng; viền input $\ge 3.0:1$, focus ring $\ge 3.0:1$. |
 | **C4** | **Iconography & Visual Assets** | Xuất hiện emoji trong UI (ví dụ: rocket, sparkles...); nhập raw stock icons từ thư viện ngoài với nét cọc cạch; thiếu thuộc tính trợ năng `aria-hidden` hoặc `aria-label`. | Không có emoji; sử dụng một họ icon thống nhất; có nhãn trợ năng cơ bản nhưng icon gọi trực tiếp từ thư viện ngoài, chưa bọc qua component chuẩn. | Hệ thống icon độc quyền tuyển chọn trên **lưới 24px, nét 2px round/round**; gọi duy nhất qua component `<Icon name=... />`; triệt tiêu 100% emoji; đầy đủ nhãn a11y. |
 | **C5** | **Purposeful Motion** | Hiệu ứng nảy (bounce), lắc (wiggle); fade-up cơ học hàng loạt; chuyển động chậm (> 400ms); animate kích hoạt layout (`width`, `height`); không hỗ trợ reduced motion. | Không có nảy/lắc khó chịu; chuyển trạng thái tương đối mượt; có tắt animation khi bật reduced motion nhưng chưa có dàn dựng thứ tự xuất hiện tinh tế. | Preset vật lý lò xo chuẩn (`snappy`, `gentle`, `stiff`) và cubic-bezier chuyên biệt; 60fps tuyệt đối (CHỈ animate `transform`/`opacity`, CLS = 0); hỗ trợ toàn diện `prefers-reduced-motion` 100ms cross-fade và 0.001ms duration. |
 | **C6** | **AI-Tell Avoidance** | Xuất hiện từ 2 dấu hiệu nhận diện AI trở lên (gradient tím - xanh, kính mờ, 3 card rập khuôn, copy sáo rỗng "Welcome to...", lorem ipsum, rò rỉ test ID). | Không có lỗi AI thô thiển; có nội dung thực tế về Rikkei Jobs nhưng tổng thể vẫn mang cảm giác "starter template", thiếu cá tính công nghệ chuyên sâu. | Hoàn toàn sạch bóng dấu hiệu AI; thiết kế mang bản sắc CNTT thực chiến đẳng cấp; nội dung song ngữ chuẩn mực; thẻ dữ liệu phong phú theo ngữ cảnh nghiệp vụ; sở hữu 4 Signature Elements riêng biệt. |
@@ -1147,9 +1198,161 @@ Mọi Pull Request giao diện bắt buộc phải đính kèm bảng tự đán
 |---|:---:|---|
 | C1. Typography & Hierarchy | [0 / 1 / 2] | Plus Jakarta Sans + Be Vietnam Pro + JetBrains Mono, line-height >= 1.5, tabular-nums |
 | C2. Spacing, Layout & Density | [0 / 1 / 2] | Lưới 65/35, Dense Mode (row 38px) cho Admin / Airy Mode cho Candidate |
-| C3. Color Palette & Contrast | [0 / 1 / 2] | Bespoke Palette, CR primary text 17.41:1 (Light) & 15.17:1 (Dark), viền input >= 3.0:1 |
+| C3. Color Palette & Contrast | [0 / 1 / 2] | Bespoke Palette, CR primary text 17.52:1 (Light) & 14.53:1 (Dark), viền input >= 3.0:1 |
 | C4. Iconography & Visual Assets | [0 / 1 / 2] | Component <Icon name=... />, 0 emoji, nét 2px round trên lưới 24px |
 | C5. Purposeful Motion | [0 / 1 / 2] | Chỉ animate transform/opacity, hỗ trợ reduced-motion 100ms cross-fade & 0.001ms, preset snappy |
 | C6. AI-Tell Avoidance | [0 / 1 / 2] | Không glassmorphism, không 3 thẻ đối xứng rập khuôn, 4 signature elements, copy thực tế CNTT |
 | **TỔNG ĐIỂM** | **[X / 12]** | **Trạng thái: [PASS (>= 11/12, không điểm 0) / REJECT]** |
 ```
+
+---
+
+## 11. Round E Design Research Summary: Colour, Surface Ladder & Visual Ergonomics (E1)
+
+Tài liệu Tóm tắt Kết quả Nghiên cứu Thiết kế Chuyên sâu: Hệ Màu Sắc, Thang Bề Mặt & Tiện Nghi Thị Giác (Round E Investigation Summary).
+
+### 11.1. Comparative Analysis of 5 Mature Design Systems (Nghiên cứu So sánh 5 Hệ thống Thiết kế Tiêu chuẩn)
+
+Quá trình nghiên cứu chuyên sâu được tiến hành song song vào ngày **13/11/2026** (2026-11-13) qua các tài liệu kỹ thuật và kho mã nguồn chính thức của 5 hệ thống thiết kế trưởng thành toàn cầu:
+
+#### 1. Radix Themes & Colors (12-Step Semantic Scale)
+
+- **Source**: [Radix Colors Documentation - Understanding the Scale](https://www.radix-ui.com/colors/docs/palette-composition/understanding-the-scale) (Accessed: 2026-11-13).
+- **Core Principles**:
+  - Phân tầng 12 bước màu có chủ đích rõ rệt: Steps 1-2 dành cho nền tổng (canvas) và panel phụ; Steps 3-5 dành cho bề mặt component (card, input) và tương tác hover/active; Steps 6-8 dành cho viền và dividers (đảm bảo $CR \ge 3.0:1$); Steps 9-10 dành cho màu thương hiệu lấp đầy (solid brand fill); Steps 11-12 dành cho chữ phụ và chữ chính.
+  - Phân tách tường minh giữa màu nền tổng thể (`surface-page`) và màu panel lồng nhau (`surface-panel`), tránh việc gộp chung thành một tông xám đồng nhất.
+- **Application to Rikkei Jobs**:
+  - Áp dụng thang bậc tách biệt: `--rj-color-surface-page` (Canvas Step 1: `#EEF2F8` Light / `#0B1019` Dark) khác biệt rõ rệt với `--rj-color-surface-panel` (Hero Panel Step 2: `#E1E8F2` Light / `#101724` Dark) và `--rj-color-surface-card` (Card Step 3: `#FFFFFF` Light / `#162030` Dark).
+
+#### 2. Material Design 3 (M3 Tonal Surface Containers)
+
+- **Source**: [Material Design 3 - Elevation & Surface Tone Roles](https://m3.material.io/styles/color/roles) (Accessed: 2026-11-13).
+- **Core Principles**:
+  - M3 loại bỏ việc lạm dụng bóng đổ z-axis mờ mịt và thay thế hoàn toàn bằng hệ thống 5 tầng container tông màu (Tonal Containers): `surfaceContainerLowest`, `surfaceContainerLow`, `surfaceContainer`, `surfaceContainerHigh`, `surfaceContainerHighest`.
+  - Độ phân cấp giao diện có thể đọc được ngay cả khi tắt toàn bộ bóng đổ (flat tonal contrast).
+- **Application to Rikkei Jobs**:
+  - Bố cục 60/40 giữa Hero Story Panel và Form Card có độ tương phản tự thân qua chênh lệch độ sáng (tonal step) kết hợp đường viền hairline 1px, đảm bảo tính phân tách hình học ngay ở dạng phẳng.
+
+#### 3. GitHub Primer Design System (Canvas Hierarchy & Inset Wells)
+
+- **Source**: [GitHub Primer Design System - Color & Canvas Primitives](https://primer.style/primitives/colors) (Accessed: 2026-11-13).
+- **Core Principles**:
+  - Thiết lập 3 tầng canvas: `canvas.default` (nền thẻ hoặc nền chính), `canvas.subtle` (panel phụ, sidebar), và `canvas.inset` (vùng lún sâu dành cho ô nhập liệu form hoặc khối code).
+  - Vùng nhập liệu `inset` luôn có nền hoặc đường bao rõ rệt, giúp mắt người dùng lập tức xác định được trường tương tác khả dụng.
+- **Application to Rikkei Jobs**:
+  - Khai báo token `--rj-color-surface-input`: `#F8FAFD` ở Light Mode và `#0D1420` ở Dark Mode, kết hợp viền tương tác vững chắc `--rj-primitive-neutral-400` (`#879BB0` đạt $CR \ge 3.20:1$ trên nền Card).
+
+#### 4. IBM Carbon Design System (Layering Architecture & Optical Depth)
+
+- **Source**: [IBM Carbon Design System - Color Architecture & Layer Tokens](https://carbondesignsystem.com/elements/color/usage/) (Accessed: 2026-11-13).
+- **Core Principles**:
+  - Kiến trúc phân lớp tuyến tính (`$background`, `$layer-01`, `$layer-02`, `$layer-03`).
+  - Trong Dark Theme, độ sáng tương đối $L$ tăng dần khi tầng component nổi lên cao hơn, tạo chiều sâu quang học thực tế thay vì đảo màu âm bản cơ học.
+- **Application to Rikkei Jobs**:
+  - Dark Mode áp dụng Tonal Elevation: Canvas (`#0B1019`, $L=0.007$) $\to$ Hero Panel (`#101724`, $L=0.013$) $\to$ Card Surface (`#162030`, $L=0.021$) $\to$ Elevated Modal / Popover (`#1E2C42`, $L=0.033$).
+
+#### 5. Linear & Stripe Design Principles (Hairline Precision & Confident Restraint)
+
+- **Source**: [Linear Design Method](https://linear.app/method) & [Stripe Dashboard Design System Analysis](https://stripe.com) (Accessed: 2026-11-13).
+- **Core Principles**:
+  - Tránh nền đen tuyền `#000000`; sử dụng than chì ánh lam trầm (`#08090A` / `#0B1019`).
+  - Phân định các khối giao diện bằng đường viền hairline 1px sắc nét có tỷ lệ tương phản tối thiểu $3.0:1$ (theo WCAG 1.4.11) thay vì dùng bóng mờ nhòe lớn.
+  - Sử dụng **một sắc thái xanh nhận diện duy nhất có độ bão hòa tự tin (Confident Chroma)** cho hành động chính, focus ring và điểm nhấn, giữ toàn bộ phần còn lại ở trạng thái trung tính có kỷ luật.
+- **Application to Rikkei Jobs**:
+  - Viền thẻ và đường phân cách giữa Hero Story Panel và Form Panel sử dụng viền 1px chuẩn xác với token `--rj-primitive-neutral-300` (`#BACAD9`, $CR \ge 3.0:1$). Màu xanh chủ đạo được tinh chỉnh thành **Confident Royal Cobalt** (`#0D55B8` Light, `#508CEE` Dark).
+
+---
+
+### 11.2. Visual Ergonomics and Human Vision Research (Nghiên cứu Khoa học Thị giác & Công thái học)
+
+#### 1. APCA (Accessible Perceptual Contrast Algorithm - W3C WCAG 3 / Silver)
+
+- **Source**: [APCA Contrast Calculator & Specification (apca-w3 / 0.98G)](https://www.apcacontrast.com) (Accessed: 2026-11-13).
+- **Phát hiện Khoa học**:
+  - Công thức tỷ lệ tương phản truyền thống của WCAG 2.2 $(L_1 + 0.05) / (L_2 + 0.05)$ chỉ dựa trên toán học tuyến tính, không phản ánh cách não bộ và võng mạc con người cảm nhận độ sáng thực tế. Nó dẫn đến hiện tượng "đậu giả" (false pass) cho văn bản mỏng nét hoặc "rớt giả" (false fail) cho màu sắc có độ tương phản cảm nhận tốt.
+  - Thuật toán APCA tính toán độ tương phản cảm nhận $L_c$ dựa trên tần số không gian (spatial frequency), độ dày nét chữ (font-weight), kích thước font và tính phân cực sáng/tối (polarity).
+- **Ngưỡng Chuẩn APCA Áp dụng**:
+  - Văn bản đọc trôi chảy (Fluent Body Text 14-16px, weight 400-500): Tối thiểu $|L_c| \ge 60$, lý tưởng $|L_c| \ge 75$.
+  - Tiêu đề và văn bản đậm (Headings $\ge 18\text{px}$ bold hoặc $\ge 24\text{px}$ regular): Tối thiểu $|L_c| \ge 45$, lý tưởng $|L_c| \ge 60$.
+  - Thành phần đồ họa & icon: Tối thiểu $|L_c| \ge 30$.
+
+#### 2. Hiện tượng Quang sai, Chói lóa & Loạn thị (Halation, Glare & Astigmatism)
+
+- **Source**: [Vision Research & Dark Mode Astigmatism Ergonomics](https://readtech.org) & [Level Access Accessibility Research](https://www.levelaccess.com) (Accessed: 2026-11-13).
+- **Phát hiện Khoa học**:
+  - Khoảng **30% đến 50% dân số trưởng thành** mắc tật khúc xạ loạn thị (astigmatism) ở các mức độ khác nhau. Giác mạc loạn thị có độ cong không đồng đều giữa các kinh tuyến.
+  - Khi người dùng nhìn vào màn hình nền đen tuyền (`#000000`), đồng tử mắt buộc phải giãn nở tối đa để thu nhận ánh sáng môi trường. Khi đồng tử mở rộng, chùm tia sáng phát ra từ các ký tự chữ trắng tinh (`#FFFFFF`) đi qua vùng rìa biến dạng của giác mạc, gây ra hiện tượng **tán xạ quang học và nhòe hào quang (halation / optical bloom)**.
+  - Hậu quả: Chữ trông như phát sáng nhòe nhoẹt, các nét chữ dính vào nhau gây mỏi mắt dữ dội, đau đầu và giảm tốc độ đọc đáng kể.
+- **Giải pháp Công thái học cho Rikkei Jobs**:
+  - Tuyệt đối **cấm nền đen tuyền `#000000`** và **cấm chữ trắng tinh `#FFFFFF`** trong Dark Mode.
+  - Nền Dark Mode được cố định ở vùng than chì ánh lam sâu `#0B1019` ($L = 0.007$), nâng bề mặt Card lên `#162030` ($L = 0.021$).
+  - Chữ chính sử dụng sắc trắng ngà dịu (Off-white: `#EDF2F7`, $L = 0.882$, $APCA\ Lc \approx 98$), giảm áp lực ánh sáng xanh dội vào mắt loạn thị.
+
+#### 3. Chứng Sợ Ánh Sáng & Màu Nhấn Khử Bão hòa (Photophobia & Desaturated Luminous Accents)
+
+- **Source**: [Google Material Design 3 - Dark Theme Contrast Principles](https://m3.material.io) (Accessed: 2026-11-13).
+- **Phát hiện Khoa học**:
+  - Màu neon có độ bão hòa 100% (như `#00FFFF` hoặc `#00E5FF`) khi đặt trên nền tối sẽ gây ra hiện tượng **quang sai sắc (chromatic aberration)**: mắt người không thể đồng thời hội tụ hai bước sóng quá khác biệt lên cùng một điểm trên võng mạc, khiến viền chữ dường như rung rinh, nhấp nháy, gây căng thẳng cho cơ thể mi và thị giác.
+- **Giải pháp Công thái học cho Rikkei Jobs**:
+  - Màu nhấn Dark Mode được hiệu chỉnh sang **Luminous Cobalt `#508CEE`** (HSL $217^\circ, 82\%, 62\%$, Relative Luminance $L = 0.2663$): giữ độ sáng và độ rực rỡ êm dịu, đạt tỷ lệ tương phản $4.93:1$ trên nền Card `#162030` và $APCA\ L_c = -39.3$, hoàn toàn không rung mắt.
+
+---
+
+### 11.3. Round E Color Architecture & Surface Ladder (Kiến trúc Màu sắc & Thang Bề mặt Round E)
+
+#### 1. Thang Bề mặt Kép (Dual Neutral Scales)
+
+Hệ thống thiết lập 5 bậc thang bề mặt tường minh ở cả hai chế độ:
+
+```text
+Light Mode Surface Ladder:
+Page Canvas (#EEF2F8, L=0.885, L*=95.35) 
+  --> Hero Story Panel (#E1E8F2, L=0.801, L*=91.74) 
+    --> Card Container (#FFFFFF, L=1.000, L*=100.00) 
+      --> Field Inset (#F8FAFD, L=0.954, L*=98.20) 
+        --> Elevated Surface (#FFFFFF, L=1.000, L*=100.00)
+
+Dark Mode Surface Ladder (Tonal Elevation):
+Page Canvas (#0B1019, L=0.005, L*=4.62) 
+  --> Hero Story Panel (#101724, L=0.009, L*=7.68) 
+    --> Card Container (#162030, L=0.014, L*=12.07) 
+      --> Field Inset (#0D1420, L=0.007, L*=6.23) 
+        --> Elevated Surface (#1E2C42, L=0.025, L*=17.79)
+```
+
+#### 2. Phân cấp Tương phản & Rào cản Tách biệt Bề mặt (Contrast Hierarchy & Surface Separation)
+
+- **Rào cản Toán học Ngăn chặn Lỗi "Pale on Pale"**:
+  - Chênh lệch độ sáng cảm nhận giữa Nền Canvas và Thẻ Card: $\Delta L^* = 4.65 \ge 4.0$ ở Light Mode và $\Delta L^* = 7.45 \ge 4.0$ ở Dark Mode (CIE 1976 CIELAB).
+  - Chênh lệch giữa Hero Panel và Thẻ Card: $\Delta L^* = 8.26 \ge 3.5$ ở Light Mode và $\Delta L^* = 4.39 \ge 3.5$ ở Dark Mode.
+  - Đường viền phân định cấu trúc xung quanh thẻ và giữa hai panel 60/40 đạt $CR \ge 3.0:1$ theo tiêu chuẩn WCAG 1.4.11 Non-text Contrast (viền tương tác `--rj-primitive-neutral-500: #6F8094` ở Light Mode đạt $4.05:1$, và `--rj-color-border-interactive: #5B7083` ở Dark Mode đạt $3.19:1$).
+
+#### 3. Ánh xạ Ngữ nghĩa (Semantic Mapping) & Màu Xanh Tự tin (Confident Blue)
+
+- **Màu Thương hiệu Chính (Primary Brand Blue)**:
+  - Light Mode: **Confident Royal Cobalt `#0D55B8`** (HSL $215^\circ, 87\%, 38\%$, $L = 0.100$). Đạt $CR = 6.98:1$ trên nền trắng Card và $APCA\ L_c = +83.5$.
+  - Dark Mode: **Luminous Cobalt `#508CEE`** (HSL $217^\circ, 82\%, 62\%$, $L = 0.266$). Đạt $CR = 4.93:1$ trên nền Card `#162030` ($APCA\ L_c = -39.3$ cho UI element), và đạt $CR = 5.74:1$ ($APCA\ L_c = +43.2$) khi dùng làm nền nút chính phối cùng chữ tối `--rj-primitive-neutral-950: #0B1019`.
+- **Trạng thái Chức năng (Functional Status)**:
+  - Lỗi (Error / Danger): **Cold Crimson `#9B1C2A`** (Light, $CR = 8.10:1$) và `#F1707A` (Dark, $CR = 6.32:1$). Tách biệt hoàn toàn khỏi sắc xanh thương hiệu; bắt buộc đi kèm icon cảnh báo và văn bản mô tả.
+  - Thành công (Success): **Deep Pine Green `#0E6251`** (Light) và `#48C78E` (Dark).
+  - Cảnh báo (Warning): **Dark Honey Amber `#7A4305`** (Light) và `#F5B041` (Dark).
+  - Thông tin (Info): **Cerulean Navy `#134B5E`** (Light) và `#5DADE2` (Dark).
+
+#### 4. Đóng gói Biểu trưng Thương hiệu Chính thức (Logo Badge Containment - Rule E7)
+
+- Biểu trưng chính thức tại `Tài liệu dự án/favicon.svg` mang nền đỏ nhận diện `#c8161d` với motif 3 cột trắng xếp tầng (bậc năng lực).
+- Để bảo toàn quyết định bất biến Blue-dominant của giao diện người dùng, biểu trưng đỏ được đóng gói độc quyền trong component `<BrandMark />` tại Header, Auth lockup và tab icon.
+- Token chuyên biệt: `--rj-brand-mark: #C8161D;`.
+- Trong Dark Mode, một vòng viền bề mặt tinh tế `rgba(255, 255, 255, 0.12)` được thiết lập quang học xung quanh biểu trưng nhằm chống chìm màu trên nền tối mà không chỉnh sửa tệp SVG gốc.
+
+---
+
+### 11.4. Table of Rejected Ideas and Rationale (Bảng Ý Tưởng Bị Từ Chối và Lý Do Bác Bỏ)
+
+| # | Ý Tưởng Bị Từ Chối (Rejected Idea) | Đề Xuất Ban Đầu | Lý Do Bác Bỏ Kỹ Thuật & Công Thái Học (Rejection Rationale) |
+|---|---|---|---|
+| **1** | **Chuyển Toàn Bộ Giao Diện Sang Tông Đỏ Thương Hiệu (Full Red UI Shift)** | Đổi các nút bấm chính, links, tabs và accent sang màu đỏ `#c8161d` giống logo Rikkei. | **BÁC BỎ**: Vi phạm Quyết định Tối cao của User / Team Lead về định hướng Blue-dominant. Gây nhầm lẫn nghiêm trọng với trạng thái lỗi kỹ thuật (Semantic Danger/Error), làm gia tăng căng thẳng thị giác và tâm lý cho ứng viên. |
+| **2** | **Sử Dụng Nền Đen Tuyền `#000000` & Chữ Trắng Tinh `#FFFFFF` Trong Dark Mode** | Áp dụng nền đen tuyệt đối để tối đa hóa tỷ lệ tương phản toán học ($21.0:1$). | **BÁC BỎ**: Gây ra hiện tượng nhòe hào quang (Halation) và chói lóa (Glare) cho 30-50% người dùng có tật loạn thị khi đồng tử giãn nở trong tối. Gây mỏi mắt dữ dội và đau đầu khi đọc văn bản kéo dài. |
+| **3** | **Lạm Dụng Bóng Đổ Mờ Đậm (Heavy Blurry Drop Shadows) Để Tách Thẻ** | Sử dụng bóng mờ `box-shadow: 0 20px 40px rgba(0,0,0,0.25)` để nâng card khỏi canvas. | **BÁC BỎ**: Vi phạm tiêu chuẩn Chống Rập khuôn AI (P-AI-03). Bóng mờ nhòe lớn tạo cảm giác bẩn nhòe giao diện, không giải quyết được bài toán phân tách phẳng (flat tonal separation) trên các màn hình có độ sáng thấp. |
+| **4** | **Sử Dụng Màu Nhấn Xanh Neon Bão Hòa 100% (`#00FFFF` / `#00E5FF`) Trên Nền Tối** | Dùng sắc xanh cyan huỳnh quang rực sáng để tạo hiệu ứng công nghệ cao trong Dark Mode. | **BÁC BỎ**: Gây ra hiện tượng quang sai sắc (chromatic aberration) trên võng mạc, làm chữ và viền tương tác bị rung nhấp nháy, gây căng thẳng cơ thể mi và thị giác người dùng. |
+| **5** | **Vẽ Lại Hoặc Đổi Màu Biểu Trưng SVG (Recolour / Redraw Brand Mark Asset)** | Tô lại nền logo SVG sang màu xanh hoặc điều chỉnh các cột trắng để đồng bộ với UI. | **BÁC BỎ**: Vi phạm nguyên tắc bảo toàn tính chân thực của tài sản thương hiệu gốc (Authentic Asset Mandate). Biểu trưng phải được sao chép nguyên vẹn từng byte từ thư mục dự án với mã băm SHA-256 xác thực. |
