@@ -758,8 +758,10 @@ describe('Tier 2: NT-01 Auth Boundaries & Negative Invalidation (39 Tests)', asy
 
       const parts = validToken.split('.');
       assert.strictEqual(parts.length, 3);
-      // Flip characters in signature segment
-      const tamperedSig = parts[2].slice(0, -2) + 'XX';
+      // Replace the FIRST signature character: it carries all 6 bits, so the decoded signature
+      // always differs (the last Base64URL character holds padding bits and can be a no-op).
+      const swapped = parts[2][0] === 'A' ? 'B' : 'A';
+      const tamperedSig = swapped + parts[2].slice(1);
       const tamperedToken = `${parts[0]}.${parts[1]}.${tamperedSig}`;
 
       const res = await http.get(`${BACKEND_BASE_URL}/api/v1/auth/me`, {
