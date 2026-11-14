@@ -1,5 +1,5 @@
 // Tier 1: Feature Coverage — NT-01 Authentication & Authorization Endpoints
-// Verifies Happy-Path behavior across 6 core endpoints for all 5 system roles (30 tests)
+// Verifies Happy-Path behavior across 6 core endpoints for all 5 system roles + Skill Profile (32 tests)
 
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
@@ -15,7 +15,7 @@ const mockHeaders = {
   'Content-Type': 'application/json'
 };
 
-describe('Tier 1: NT-01 Authentication & Authorization (Feature Coverage — 30 Tests)', async () => {
+describe('Tier 1: NT-01 Authentication & Authorization (Feature Coverage — 32 Tests)', async () => {
   let backendOnline = false;
   let mockOnline = false;
   let mailpitOnline = false;
@@ -692,6 +692,65 @@ describe('Tier 1: NT-01 Authentication & Authorization (Feature Coverage — 30 
       assert.strictEqual(meRes.status, 200);
       assert.strictEqual(meRes.body.role, 'ADMIN');
       assert.strictEqual(meRes.body.lmsUserId, 'lms-ad-001');
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // Feature F07: Skill Profile with JWT Authentication (HS-01 & NT-01 Round F) — 2 Test Cases
+  // --------------------------------------------------------------------------
+  describe('Feature F07: Skill Profile with JWT Authentication (HS-01 & NT-01 Round F)', () => {
+    it('TC-T1-SKILL-01: Should login candidate1, access /api/v1/profiles/me/skills with JWT Bearer, and return valid skills, scores, evidences', async () => {
+      assert.ok(backendOnline, `Backend service at ${BACKEND_BASE_URL} is offline`);
+
+      const loginRes = await http.post(`${BACKEND_BASE_URL}/api/v1/auth/login`, {
+        email: 'candidate1@rikkeijobs.test',
+        password: 'Test@123'
+      });
+
+      assert.strictEqual(loginRes.status, 200, `Login must return 200 OK: ${loginRes.rawText}`);
+      assert.ok(loginRes.body && loginRes.body.accessToken, 'Must return accessToken');
+      const token = loginRes.body.accessToken;
+
+      const skillsRes = await http.get(`${BACKEND_BASE_URL}/api/v1/profiles/me/skills`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      assert.strictEqual(skillsRes.status, 200, `Expected 200 OK: ${skillsRes.rawText}`);
+      assert.ok(Array.isArray(skillsRes.body), 'Response must be an array of skill profile items');
+      assert.ok(skillsRes.body.length >= 5, `Expected at least 5 skills, got ${skillsRes.body.length}`);
+
+      // Check JAVA skill item structure
+      const javaSkill = skillsRes.body.find(item => item.skill && item.skill.code === 'JAVA');
+      assert.ok(javaSkill, 'Response must include JAVA skill');
+      assert.ok(typeof javaSkill.verifiedScore === 'number', 'JAVA verifiedScore must be a number');
+      assert.ok(javaSkill.level, 'JAVA level must be defined');
+      assert.ok(Array.isArray(javaSkill.evidences), 'JAVA evidences must be an array');
+      assert.ok(javaSkill.evidences.length > 0, 'JAVA must have at least one evidence');
+      assert.ok(javaSkill.evidences.some(e => e.verified === true), 'JAVA must have at least one verified evidence');
+    });
+
+    it('TC-T1-SKILL-02: Should recompute candidate1 skills via POST /api/v1/profiles/me/skills/recompute and return updated scores', async () => {
+      assert.ok(backendOnline, `Backend service at ${BACKEND_BASE_URL} is offline`);
+
+      const loginRes = await http.post(`${BACKEND_BASE_URL}/api/v1/auth/login`, {
+        email: 'candidate1@rikkeijobs.test',
+        password: 'Test@123'
+      });
+
+      assert.strictEqual(loginRes.status, 200, `Login must return 200 OK: ${loginRes.rawText}`);
+      const token = loginRes.body.accessToken;
+
+      const recomputeRes = await http.post(`${BACKEND_BASE_URL}/api/v1/profiles/me/skills/recompute`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      assert.strictEqual(recomputeRes.status, 200, `Recompute must return 200 OK: ${recomputeRes.rawText}`);
+      assert.ok(Array.isArray(recomputeRes.body), 'Recompute response must be an array of skills');
+      assert.ok(recomputeRes.body.length >= 5, 'Recomputed skills count must be at least 5');
+
+      const javaSkill = recomputeRes.body.find(item => item.skill && item.skill.code === 'JAVA');
+      assert.ok(javaSkill, 'Recomputed list must contain JAVA skill');
+      assert.ok(typeof javaSkill.verifiedScore === 'number', 'JAVA must have verifiedScore');
     });
   });
 });

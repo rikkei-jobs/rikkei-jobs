@@ -1,5 +1,5 @@
 // Tier 2: Boundary, Corner Cases & Negative Invalidation
-// Verifies TTL limits, replay attacks, account lockout 5/15, weak passwords, and token invalidation (36 tests)
+// Verifies TTL limits, replay attacks, account lockout 5/15, weak passwords, token invalidation, and Skill Profile boundaries (39 tests)
 
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
@@ -16,7 +16,7 @@ const mockHeaders = {
   'Content-Type': 'application/json'
 };
 
-describe('Tier 2: NT-01 Auth Boundaries & Negative Invalidation (36 Tests)', async () => {
+describe('Tier 2: NT-01 Auth Boundaries & Negative Invalidation (39 Tests)', async () => {
   let backendOnline = false;
   let mockOnline = false;
   let mailpitOnline = false;
@@ -855,6 +855,138 @@ describe('Tier 2: NT-01 Auth Boundaries & Negative Invalidation (36 Tests)', asy
 
       assert.strictEqual(res.status, 401);
       assert.strictEqual(res.body.code, 'UNAUTHORIZED');
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // 7. Skill Profile Authentication & Boundaries (Round F) — 3 Tests
+  // --------------------------------------------------------------------------
+  describe('7. Skill Profile Authentication & Boundaries (Round F)', () => {
+    it('TC-T2-SKILL-01: Should reject HTTP Basic authentication on all 3 skill endpoints with 401 UNAUTHORIZED', async () => {
+      assert.ok(backendOnline, `Backend service at ${BACKEND_BASE_URL} is offline`);
+
+      const basicHeader = `Basic ${Buffer.from('candidate1@rikkeijobs.test:Test@123').toString('base64')}`;
+      const endpoints = [
+        { method: 'GET', url: `${BACKEND_BASE_URL}/api/v1/profiles/me/skills` },
+        { method: 'GET', url: `${BACKEND_BASE_URL}/api/v1/profiles/1/skills` },
+        { method: 'POST', url: `${BACKEND_BASE_URL}/api/v1/profiles/me/skills/recompute` }
+      ];
+
+      for (const ep of endpoints) {
+        const res = ep.method === 'GET'
+          ? await http.get(ep.url, { headers: { Authorization: basicHeader } })
+          : await http.post(ep.url, {}, { headers: { Authorization: basicHeader } });
+
+        assert.strictEqual(
+          res.status,
+          401,
+          `Basic auth on ${ep.method} ${ep.url} must return 401 UNAUTHORIZED, got ${res.status}`
+        );
+        assert.ok(res.body, `Expected response body for ${ep.url}`);
+        assert.strictEqual(
+          res.body.code,
+          'UNAUTHORIZED',
+          `Expected code UNAUTHORIZED for ${ep.url}, got ${res.body.code}`
+        );
+      }
+    });
+
+    it('TC-T2-SKILL-02: Should enforce 404 NOT_FOUND rule for private profiles and non-existent users', async () => {
+      assert.ok(backendOnline, `Backend service at ${BACKEND_BASE_URL} is offline`);
+
+      // 1. Login candidate2
+      const login2 = await http.post(`${BACKEND_BASE_URL}/api/v1/auth/login`, {
+        email: 'candidate2@rikkeijobs.test',
+        password: 'Test@123'
+      });
+      assert.strictEqual(login2.status, 200, `Login candidate2 failed: ${login2.rawText}`);
+      const token2 = login2.body.accessToken;
+
+      // 2. Login candidate1
+      const login1 = await http.post(`${BACKEND_BASE_URL}/api/v1/auth/login`, {
+        email: 'candidate1@rikkeijobs.test',
+        password: 'Test@123'
+      });
+      assert.strictEqual(login1.status, 200, `Login candidate1 failed: ${login1.rawText}`);
+      const token1 = login1.body.accessToken;
+
+      // Case 4a: candidate2 views candidate1 profile (is_public = false) -> 404 NOT_FOUND
+      const privateRes = await http.get(`${BACKEND_BASE_URL}/api/v1/profiles/1/skills`, {
+        headers: { Authorization: `Bearer ${token2}` }
+      });
+      assert.strictEqual(
+        privateRes.status,
+        404,
+        `Private profile 1 viewed by candidate 2 must return 404, got ${privateRes.status}`
+      );
+      assert.strictEqual(
+        privateRes.body && privateRes.body.code,
+        'NOT_FOUND',
+        `Expected error code NOT_FOUND for private profile, got ${privateRes.body?.code}`
+      );
+
+      // Case 4b: candidate1 views candidate2 profile (is_public = true) -> 200 OK
+      const publicRes = await http.get(`${BACKEND_BASE_URL}/api/v1/profiles/2/skills`, {
+        headers: { Authorization: `Bearer ${token1}` }
+      });
+      assert.strictEqual(
+        publicRes.status,
+        200,
+        `Public profile 2 viewed by candidate 1 must return 200 OK, got ${publicRes.status}`
+      );
+      assert.ok(Array.isArray(publicRes.body), 'Public profile must return array of skills');
+
+      // Case 4c: candidate1 views non-existent profile 99999 -> 404 NOT_FOUND
+      const nonExistentRes = await http.get(`${BACKEND_BASE_URL}/api/v1/profiles/99999/skills`, {
+        headers: { Authorization: `Bearer ${token1}` }
+      });
+      assert.strictEqual(
+        nonExistentRes.status,
+        404,
+        `Non-existent profile 99999 must return 404, got ${nonExistentRes.status}`
+      );
+      assert.strictEqual(
+        nonExistentRes.body && nonExistentRes.body.code,
+        'NOT_FOUND',
+        `Expected error code NOT_FOUND for non-existent profile, got ${nonExistentRes.body?.code}`
+      );
+    });
+
+    it('TC-T2-SKILL-03: Should reject users with must_change_password=true with 403 MUST_CHANGE_PASSWORD', async () => {
+      assert.ok(backendOnline, `Backend service at ${BACKEND_BASE_URL} is offline`);
+
+      // Login hr1 (seeded with must_change_password = true)
+      const hrLogin = await http.post(`${BACKEND_BASE_URL}/api/v1/auth/login`, {
+        email: 'hr1@rikkeijobs.test',
+        password: 'Test@123'
+      });
+      assert.strictEqual(hrLogin.status, 200, `Login hr1 failed: ${hrLogin.rawText}`);
+      assert.strictEqual(hrLogin.body.mustChangePassword, true, 'hr1 must have mustChangePassword true');
+      const hrToken = hrLogin.body.accessToken;
+
+      const endpoints = [
+        { method: 'GET', url: `${BACKEND_BASE_URL}/api/v1/profiles/me/skills` },
+        { method: 'GET', url: `${BACKEND_BASE_URL}/api/v1/profiles/1/skills` },
+        { method: 'POST', url: `${BACKEND_BASE_URL}/api/v1/profiles/me/skills/recompute` }
+      ];
+
+      for (const ep of endpoints) {
+        const res = ep.method === 'GET'
+          ? await http.get(ep.url, { headers: { Authorization: `Bearer ${hrToken}` } })
+          : await http.post(ep.url, {}, { headers: { Authorization: `Bearer ${hrToken}` } });
+
+        assert.strictEqual(
+          res.status,
+          403,
+          `Endpoint ${ep.method} ${ep.url} with must_change_password token must return 403, got ${res.status}`
+        );
+        assert.ok(res.body, `Expected response body for ${ep.url}`);
+        assert.strictEqual(
+          res.body.code,
+          'MUST_CHANGE_PASSWORD',
+          `Expected error code MUST_CHANGE_PASSWORD for ${ep.url}, got ${res.body.code}`
+        );
+      }
     });
   });
 });

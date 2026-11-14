@@ -332,6 +332,13 @@ describe('Tier 2: NT-01 Round B Boundaries & Negative Cases (9 Scenarios)', asyn
       await execPostgres(
         "UPDATE users SET email = 'hr2@rikkeijobs.test' WHERE full_name = 'Đại diện Doanh nghiệp B' OR full_name = 'HR User Two' OR email = 'candidate1@rikkeijobs.test';"
       );
+      // Restore candidate1 seed user and profile
+      await execPostgres(
+        "INSERT INTO users (id, email, password_hash, full_name, lms_user_id, role_id) VALUES (1, 'candidate1@rikkeijobs.test', '$2a$10$iF1sNO/MFRBek.CSybegFe9uF2cIZyQYJhMJRRwVqpNrstfVjjS9a', 'Nguyễn Văn An', 'lms-sv-001', 1) ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email, password_hash = EXCLUDED.password_hash, status = 'ACTIVE';"
+      );
+      await execPostgres(
+        "INSERT INTO candidate_profiles (user_id, is_public) VALUES (1, FALSE) ON CONFLICT DO NOTHING;"
+      );
     }
   });
 
