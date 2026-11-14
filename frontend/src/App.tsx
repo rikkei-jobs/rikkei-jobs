@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
 import './App.css';
 import { Header } from './shared/components/Header';
 import { HealthBadge } from './shared/components/HealthBadge';
@@ -6,12 +7,27 @@ import { ModuleCard } from './shared/components/ModuleCard';
 import { fetchBackendHealth, type BackendHealthStatus } from './shared/api/health';
 import { BUSINESS_MODULES } from './features';
 
+import { AuthProvider } from './features/identity/context/AuthContext';
+import { RequireMustChangePassword } from './features/identity/guards/RequireMustChangePassword';
+import { RequireRole } from './features/identity/guards/RequireRole';
+import { LoginPage } from './features/identity/pages/LoginPage';
+import { SsoCallbackPage } from './features/identity/pages/SsoCallbackPage';
+import { ChangePasswordPage } from './features/identity/pages/ChangePasswordPage';
+import { ForgotPasswordPage } from './features/identity/pages/ForgotPasswordPage';
+import { ResetPasswordPage } from './features/identity/pages/ResetPasswordPage';
+import { CandidateHomePage } from './features/identity/pages/role-homes/CandidateHomePage';
+import { HrHomePage } from './features/identity/pages/role-homes/HrHomePage';
+import { MentorHomePage } from './features/identity/pages/role-homes/MentorHomePage';
+import { StaffHomePage } from './features/identity/pages/role-homes/StaffHomePage';
+import { AdminHomePage } from './features/identity/pages/role-homes/AdminHomePage';
+import { Icon } from './shared/components/Icon';
+
 export const APP_NAME = 'Rikkei Jobs - Nền tảng kết nối việc làm theo năng lực đã xác thực';
 export const APP_VERSION = 'v1.0.0-sprint1';
 export const APP_SUBTITLE =
   'Giải pháp cầu nối minh bạch giữa Sinh viên, Doanh nghiệp tuyển dụng và Cán bộ đào tạo';
 
-export const App: React.FC = () => {
+export const HomeSkeleton: React.FC = () => {
   const [backendStatus, setBackendStatus] = useState<BackendHealthStatus>('CONNECTING...');
   const [statusDetails, setStatusDetails] = useState<string>(
     'Đang thiết lập kết nối tới Backend...',
@@ -67,6 +83,18 @@ export const App: React.FC = () => {
       <Header appName={APP_NAME} version={APP_VERSION} subtitle={APP_SUBTITLE} />
 
       <main className="app-main">
+        {/* Quick Identity Portal Entry */}
+        <section style={{ textAlign: 'center', margin: '0 0 16px 0' }}>
+          <Link
+            to="/login"
+            className="rj-btn rj-btn-primary"
+            style={{ display: 'inline-flex', padding: '12px 24px', fontSize: '1rem' }}
+          >
+            <Icon name="shield" size={20} />
+            <span>Đến Cổng Đăng Nhập NT-01 (LMS SSO / Doanh Nghiệp)</span>
+          </Link>
+        </section>
+
         <section className="section-health">
           <HealthBadge
             status={backendStatus}
@@ -99,27 +127,97 @@ export const App: React.FC = () => {
                 <strong>Frontend:</strong> React 19.3.1, TypeScript 6.0.3, Vite 8.3.7, Vitest 5.1.0
               </li>
               <li>
-                <strong>Container:</strong> Nginx 1.30.6-alpine non-root (Port 8080 trong container)
+                <strong>Routing:</strong> React Router DOM 7.18.5
               </li>
               <li>
-                <strong>Reverse Proxy:</strong> Định tuyến <code>/api/</code> với dynamic DNS
-                resolver
-              </li>
-              <li>
-                <strong>Bảo mật:</strong> Tuyệt đối không định tuyến hoặc expose dịch vụ Mock nội bộ
-                ra ngoài
+                <strong>Design System:</strong> Pure CSS 3-Tier Tokens, WCAG 2.2 AA, Zero Emoji
               </li>
             </ul>
           </div>
         </section>
       </main>
-
-      <footer className="app-footer">
-        <p>
-          © 2026 Rikkei Jobs Project. Sprint 1 - Task T022DB0 Skeleton & Integration Foundation.
-        </p>
-      </footer>
     </div>
+  );
+};
+
+export const AppRoutes: React.FC = () => {
+  return (
+    <Routes>
+      {/* Root skeleton */}
+      <Route path="/" element={<HomeSkeleton />} />
+
+      {/* Public identity routes */}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/sso-callback" element={<SsoCallbackPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+      {/* Forced change password route */}
+      <Route
+        path="/change-password"
+        element={
+          <RequireMustChangePassword>
+            <ChangePasswordPage />
+          </RequireMustChangePassword>
+        }
+      />
+
+      {/* Protected role homes */}
+      <Route
+        path="/candidate"
+        element={
+          <RequireRole allowedRoles={['CANDIDATE']}>
+            <CandidateHomePage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/hr"
+        element={
+          <RequireRole allowedRoles={['HR']}>
+            <HrHomePage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/mentor"
+        element={
+          <RequireRole allowedRoles={['MENTOR']}>
+            <MentorHomePage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/staff"
+        element={
+          <RequireRole allowedRoles={['STAFF']}>
+            <StaffHomePage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <RequireRole allowedRoles={['ADMIN']}>
+            <AdminHomePage />
+          </RequireRole>
+        }
+      />
+
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/login" replace />} />
+    </Routes>
+  );
+};
+
+export const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    </AuthProvider>
   );
 };
 
