@@ -44,6 +44,24 @@
       "email": "admin1@rikkeijobs.test",
       "fullName": "Đỗ Thanh Hải",
       "role": "ADMIN"
+    },
+    {
+      "lmsUserId": "lms-guest-001",
+      "email": "guest1@rikkeijobs.test",
+      "fullName": "Khách Vãng Lai",
+      "role": "GUEST"
+    },
+    {
+      "lmsUserId": "lms-superadmin-001",
+      "email": "superadmin@rikkeijobs.test",
+      "fullName": "Super Administrator",
+      "role": "SUPER_ADMIN"
+    },
+    {
+      "lmsUserId": "lms-norole-001",
+      "email": "norole@rikkeijobs.test",
+      "fullName": "No Role User",
+      "role": ""
     }
   ],
   "lmsResults": {
