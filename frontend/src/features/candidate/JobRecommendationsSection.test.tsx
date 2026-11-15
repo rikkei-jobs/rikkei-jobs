@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { JobRecommendationsSection } from './JobRecommendationsSection';
 import * as api from './api';
 import type { JobRecommendationsResponse } from './types';
@@ -70,10 +71,17 @@ describe('JobRecommendationsSection Component', () => {
     vi.restoreAllMocks();
   });
 
+  const renderSection = () =>
+    render(
+      <MemoryRouter>
+        <JobRecommendationsSection initialUserId={1} />
+      </MemoryRouter>,
+    );
+
   it('renders section title and recommendations cards correctly', async () => {
     vi.spyOn(api, 'fetchJobRecommendations').mockResolvedValueOnce(mockResponse);
 
-    render(<JobRecommendationsSection initialUserId={1} />);
+    renderSection();
 
     expect(screen.getByText(/Việc làm phù hợp với bạn/i)).toBeInTheDocument();
     expect(screen.getByText(/Đang phân tích hồ sơ kỹ năng/i)).toBeInTheDocument();
@@ -99,7 +107,7 @@ describe('JobRecommendationsSection Component', () => {
         isCached: false,
       });
 
-    render(<JobRecommendationsSection initialUserId={1} />);
+    renderSection();
 
     await waitFor(() => {
       expect(screen.getByText('Kỹ sư Java Backend')).toBeInTheDocument();
@@ -116,7 +124,7 @@ describe('JobRecommendationsSection Component', () => {
   it('changes candidate when selecting from dropdown', async () => {
     const fetchSpy = vi.spyOn(api, 'fetchJobRecommendations').mockResolvedValue(mockResponse);
 
-    render(<JobRecommendationsSection initialUserId={1} />);
+    renderSection();
 
     await waitFor(() => {
       expect(screen.getByText('Kỹ sư Java Backend')).toBeInTheDocument();
@@ -135,12 +143,27 @@ describe('JobRecommendationsSection Component', () => {
       new Error('Mạng không khả dụng'),
     );
 
-    render(<JobRecommendationsSection initialUserId={1} />);
+    renderSection();
 
     await waitFor(() => {
       expect(screen.getByText(/Mạng không khả dụng/i)).toBeInTheDocument();
     });
 
     expect(screen.getByRole('button', { name: /Thử lại/i })).toBeInTheDocument();
+  });
+
+  it('links each job card to its candidate JD detail route', async () => {
+    vi.spyOn(api, 'fetchJobRecommendations').mockResolvedValueOnce(mockResponse);
+
+    renderSection();
+
+    await waitFor(() => {
+      expect(screen.getByText('Kỹ sư Java Backend')).toBeInTheDocument();
+    });
+
+    const detailLinks = screen.getAllByRole('link', { name: /Chi tiết JD/i });
+    expect(detailLinks).toHaveLength(2);
+    expect(detailLinks[0]).toHaveAttribute('href', '/candidate/jobs/1');
+    expect(detailLinks[1]).toHaveAttribute('href', '/candidate/jobs/2');
   });
 });

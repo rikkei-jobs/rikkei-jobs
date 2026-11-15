@@ -23,4 +23,7 @@ export * from './types';
 export * from './api';
 export * from './JobRecommendationsSection';
 export { SkillProfilePage } from './components/SkillProfilePage';
+export { GapAnalysisSection } from './components/GapAnalysisSection';
+export { GapSkillsTable } from './components/GapSkillsTable';
+export { JobDetailPanel } from './components/JobDetailPanel';
 export { fetchMySkills } from './api/skillProfile';

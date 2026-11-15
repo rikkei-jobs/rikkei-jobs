@@ -21,6 +21,7 @@
     "spotbugs",
     "flyway",
     "testcontainers",
+    "ryuk",
     "typecheck",
     "bigint",
     "bigserial",

@@ -28,8 +28,8 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
  * Validates strict separation between prod and dev profiles. - Prod profile: ONLY schema migrations
- * V1, V3, V5 and V7 applied, exactly 0 users seeded, /api/v1/test/** blocked. - Dev profile: all of
- * V1-V8 applied, exactly 8 users seeded. - Mutation/negative test: verifies that seed data
+ * V1, V3, V5, V7 and V9 applied, exactly 0 users seeded, /api/v1/test/** blocked. - Dev profile:
+ * all of V1-V10 applied, exactly 8 users seeded. - Mutation/negative test: verifies that seed data
  * isolation holds and fails if inverted.
  */
 public class ProfileSeparationIntegrationTest {
@@ -104,17 +104,18 @@ public class ProfileSeparationIntegrationTest {
 
         @Test
         @DisplayName(
-                "Prod profile must apply only V1, V3, V5 and V7 migrations in flyway_schema_history")
+                "Prod profile must apply only V1, V3, V5, V7 and V9 migrations in"
+                        + " flyway_schema_history")
         void testProdProfileAppliesOnlyV1Schema() {
             Integer migrationCount =
                     jdbcTemplate.queryForObject(
                             "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                             Integer.class);
             assertEquals(
-                    4,
+                    5,
                     migrationCount,
-                    "Prod environment must only execute schema migrations V1, V3, V5 and V7, count"
-                            + " must be 4");
+                    "Prod environment must only execute schema migrations V1, V3, V5, V7 and V9,"
+                            + " count must be 5");
 
             Boolean hasV2 =
                     jdbcTemplate.queryForObject(
@@ -209,16 +210,16 @@ public class ProfileSeparationIntegrationTest {
         }
 
         @Test
-        @DisplayName("Dev profile must apply V1-V8 in flyway_schema_history")
+        @DisplayName("Dev profile must apply V1-V10 in flyway_schema_history")
         void testDevProfileAppliesV1AndV2() {
             Integer migrationCount =
                     jdbcTemplate.queryForObject(
                             "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                             Integer.class);
             assertEquals(
-                    8,
+                    10,
                     migrationCount,
-                    "Dev environment must execute all of V1-V8, migration count must be 8");
+                    "Dev environment must execute all of V1-V10, migration count must be 10");
 
             Boolean hasV2 =
                     jdbcTemplate.queryForObject(
