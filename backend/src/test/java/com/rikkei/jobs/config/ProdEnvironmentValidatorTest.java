@@ -24,6 +24,7 @@ public class ProdEnvironmentValidatorTest {
         env.setProperty("EXTERNAL_SERVICE_KEY", "prod-external-service-key-xyz-789");
         env.setProperty(
                 "CORS_ALLOWED_ORIGINS", "https://rikkeijobs.com,https://admin.rikkeijobs.com");
+        env.setProperty("JWT_SECRET", "super-secure-production-jwt-secret-key-32-bytes-minimum!");
         return env;
     }
 
@@ -48,6 +49,67 @@ public class ProdEnvironmentValidatorTest {
         env.setProperty("external.api.base-url", "https://api.external-partner.com");
         env.setProperty("external.api.service-key", "prod-external-service-key-xyz-789");
         env.setProperty("cors.allowed-origins", "https://rikkeijobs.com");
+        env.setProperty("jwt.secret", "super-secure-production-jwt-secret-key-32-bytes-minimum!");
+
+        ProdEnvironmentValidator validator = new ProdEnvironmentValidator(env);
+        assertDoesNotThrow(validator::validateEnvironment);
+    }
+
+    @Test
+    @DisplayName("Fail-fast: Startup rejected when JWT_SECRET is missing or blank")
+    void testFailFastWhenJwtSecretMissingOrBlank() {
+        MockEnvironment env = createValidEnvironment();
+        env.setProperty("JWT_SECRET", "   ");
+
+        ProdEnvironmentValidator validator = new ProdEnvironmentValidator(env);
+        IllegalStateException ex =
+                assertThrows(IllegalStateException.class, validator::validateEnvironment);
+        assertTrue(ex.getMessage().contains("JWT_SECRET"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(
+            strings = {
+                "dev-secret-key-minimum-32-characters-rikkei-2026",
+                "dev-insecure-jwt-secret-key-rikkei-jobs-min-32-chars",
+                "super-secret-jwt-key-with-at-least-32-characters-rikkei!"
+            })
+    @DisplayName("Fail-fast: Startup rejected when JWT_SECRET matches any committed dev default")
+    void testFailFastWhenJwtSecretMatchesCommittedDefaults(String devSecret) {
+        MockEnvironment env = createValidEnvironment();
+        env.setProperty("JWT_SECRET", devSecret);
+
+        ProdEnvironmentValidator validator = new ProdEnvironmentValidator(env);
+        IllegalStateException ex =
+                assertThrows(IllegalStateException.class, validator::validateEnvironment);
+        assertTrue(ex.getMessage().contains("giá trị mặc định không an toàn"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(
+            strings = {
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", // 32 chars, H=0.0, distinct=1
+                "abababababababababababababababab", // 32 chars, H=1.0, distinct=2
+                "abcdabcdabcdabcdabcdabcdabcdabcd", // 32 chars, H=2.0, distinct=4
+                "abcdefgabcdefgabcdefgabcdefgabcd" // 32 chars, distinct=7 < 8
+            })
+    @DisplayName(
+            "Fail-fast: Startup rejected when JWT_SECRET has low entropy or low distinct chars")
+    void testFailFastWhenJwtSecretHasLowEntropy(String lowEntropySecret) {
+        MockEnvironment env = createValidEnvironment();
+        env.setProperty("JWT_SECRET", lowEntropySecret);
+
+        ProdEnvironmentValidator validator = new ProdEnvironmentValidator(env);
+        IllegalStateException ex =
+                assertThrows(IllegalStateException.class, validator::validateEnvironment);
+        assertTrue(ex.getMessage().contains("độ phức tạp (entropy) quá thấp"));
+    }
+
+    @Test
+    @DisplayName("Validation succeeds when JWT_SECRET is strong, high entropy and >= 32 bytes")
+    void testValidationSucceedsWithStrongJwtSecret() {
+        MockEnvironment env = createValidEnvironment();
+        env.setProperty("JWT_SECRET", "K7v#m9$Xq2!zL5@wP8*yR1^tN4&bC6(jE3)gA0]");
 
         ProdEnvironmentValidator validator = new ProdEnvironmentValidator(env);
         assertDoesNotThrow(validator::validateEnvironment);
@@ -61,7 +123,8 @@ public class ProdEnvironmentValidatorTest {
                 "SPRING_DATASOURCE_PASSWORD",
                 "EXTERNAL_BASE_URL",
                 "EXTERNAL_SERVICE_KEY",
-                "CORS_ALLOWED_ORIGINS"
+                "CORS_ALLOWED_ORIGINS",
+                "JWT_SECRET"
             })
     @DisplayName("Fail-fast: Startup rejected when any mandatory variable is missing")
     void testFailFastWhenVariableMissing(String missingVar) {
@@ -129,5 +192,44 @@ public class ProdEnvironmentValidatorTest {
                 ex.getMessage().contains("CORS_ALLOWED_ORIGINS"),
                 "Error message must mention CORS_ALLOWED_ORIGINS");
         assertTrue(ex.getMessage().contains("wildcard"), "Error message must mention wildcard");
+    }
+
+    @Test
+    @DisplayName("Fail-fast: Startup rejected when JWT_SECRET is shorter than 32 characters")
+    void testFailFastWhenJwtSecretTooShort() {
+        MockEnvironment env = createValidEnvironment();
+        env.setProperty("JWT_SECRET", "short-secret-under-32-chars");
+
+        ProdEnvironmentValidator validator = new ProdEnvironmentValidator(env);
+        IllegalStateException ex =
+                assertThrows(
+                        IllegalStateException.class,
+                        validator::validateEnvironment,
+                        "Must reject JWT_SECRET with length < 32 characters");
+
+        assertTrue(ex.getMessage().contains("JWT_SECRET"), "Error message must mention JWT_SECRET");
+        assertTrue(
+                ex.getMessage().contains("32"), "Error message must specify 32 bytes requirement");
+    }
+
+    @ParameterizedTest
+    @ValueSource(
+            strings = {
+                "12345678901234567890123456789012",
+                "98765432109876543210987654321098",
+                "11223344556677889900112233445566"
+            })
+    @DisplayName(
+            "Fail-fast: Startup rejected when JWT_SECRET contains only digits or sequential sequence")
+    void testFailFastWhenJwtSecretIsAllDigits(String allDigitsSecret) {
+        MockEnvironment env = createValidEnvironment();
+        env.setProperty("JWT_SECRET", allDigitsSecret);
+
+        ProdEnvironmentValidator validator = new ProdEnvironmentValidator(env);
+        IllegalStateException ex =
+                assertThrows(IllegalStateException.class, validator::validateEnvironment);
+        assertTrue(
+                ex.getMessage().contains("chỉ chứa chữ số")
+                        || ex.getMessage().contains("giá trị mặc định không an toàn"));
     }
 }

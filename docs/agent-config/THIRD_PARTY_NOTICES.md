@@ -111,26 +111,40 @@ SOFTWARE.
 
 ## 3. Open Fonts & SIL Open Font License (OFL 1.1)
 
-In alignment with our Anti-AI design philosophy and commitment to high-craft typography, Rikkei Jobs selects three open-source font families licensed under the **SIL Open Font License (OFL) Version 1.1**. In strict adherence to our security policy and operational invariants, all fonts are designed for **100% self-hosted deployment** (zero runtime reliance on external CDNs or Google Fonts endpoints):
+In alignment with our Anti-AI design philosophy and commitment to high-craft typography, Rikkei Jobs selects three open-source font families licensed under the **SIL Open Font License (OFL) Version 1.1**. In strict adherence to our security policy and operational invariants, all fonts are designed for **100% self-hosted deployment** under `frontend/public/fonts/` (zero runtime reliance on external CDNs or Google Fonts endpoints):
 
 1. **Plus Jakarta Sans** (Display & Brand Typography):
-   - **Copyright**: Copyright (c) 2020 Tokotype, Gumpita Rahayu (<https://github.com/tokotype/Plus-Jakarta-Sans>).
+   - **Copyright**: Copyright (c) 2020 The Plus Jakarta Sans Project Authors (<https://github.com/tokotype/PlusJakartaSans>).
    - **License**: SIL Open Font License, Version 1.1 (<http://scripts.sil.org/OFL>).
+   - **Version**: v2.600 (Google Fonts v12, upstream commit `18d1cd2`)
    - **Role**: Geometric contemporary display face with friendly warmth, optimized for headers and hero typography.
+   - **Shipped Files & Cryptographic Checksums (SHA-256)**:
+     - `frontend/public/fonts/PlusJakartaSans-SemiBold.woff2` (42,356 bytes): `16387125b045457b8d49123d31bcc143e696cf9e867831f8ae41eb244b11106e`
+     - `frontend/public/fonts/PlusJakartaSans-Bold.woff2` (42,556 bytes): `8d76ee4c4f645bc12ebdeae87f8ec2468bade2d4f04458416848229bcc804342`
 
 2. **Be Vietnam Pro** (Body & Interface Typography):
-   - **Copyright**: Copyright (c) 2021 TypeType, Lam Bao (<https://github.com/bettertype/BeVietnamPro>).
+   - **Copyright**: Copyright (c) 2021 The Be Vietnam Pro Project Authors (<https://github.com/bettergui/BeVietnamPro>).
    - **License**: SIL Open Font License, Version 1.1 (<http://scripts.sil.org/OFL>).
+   - **Version**: v1.002 (Google Fonts v12, upstream commit `804e62d`)
    - **Role**: Engineered specifically for Vietnamese diacritic typography, providing optical clearance for stacked accents (`ệ`, `ổ`, `ự`, `ữ`, `ặ`).
+   - **Shipped Files & Cryptographic Checksums (SHA-256)**:
+     - `frontend/public/fonts/BeVietnamPro-Regular.woff2` (38,064 bytes): `907ebfa4a4bd967cdcb313b2889655ff9fb90d5fd4f193723aa99142d14a1652`
+     - `frontend/public/fonts/BeVietnamPro-Medium.woff2` (40,232 bytes): `15a399b6a57023c665fa8aca7f4691d36c512b17cc36f74bd9dc077487ac9ffc`
+     - `frontend/public/fonts/BeVietnamPro-SemiBold.woff2` (40,464 bytes): `91329e727900425300269d9402c32e9e020943783fc0b9457f0b7419bef90dbf`
+     - `frontend/public/fonts/BeVietnamPro-Bold.woff2` (41,212 bytes): `32eb3a183490d280351f9676cc0b8e1725d95090988db57503dc83879b5fe602`
 
 3. **JetBrains Mono** (Code & Tabular Numerical Typography):
    - **Copyright**: Copyright (c) 2020 JetBrains s.r.o. (<https://github.com/JetBrains/JetBrainsMono>).
    - **License**: SIL Open Font License, Version 1.1 (<http://scripts.sil.org/OFL>).
+   - **Version**: v2.304 (upstream release)
    - **Role**: High-legibility monospaced typeface with tabular numbers, optimized for tabular data, timestamps, salaries, and code blocks.
+   - **Shipped Files & Cryptographic Checksums (SHA-256)**:
+     - `frontend/public/fonts/JetBrainsMono-Regular.woff2` (92,380 bytes): `f1a7a03672cdd494ce0d5543fac6e4360fe22403c6de297fdc2e55a815f7baff`
+     - `frontend/public/fonts/JetBrainsMono-SemiBold.woff2` (94,484 bytes): `8f20245500c375a63879b47c12560a07bcaf7a88672d272f4d8e79b68f9186ae`
 
 ### SIL Open Font License 1.1 Summary
 
-Under the SIL Open Font License 1.1, the licensed fonts, including any derivative works, can be bundled, embedded, redistributed and/or sold with any software, provided that any reserved font names are not used by derivative works, and the fonts are not sold by themselves.
+Under the SIL Open Font License 1.1, the licensed fonts, including any derivative works, can be bundled, embedded, redistributed and/or sold with any software, provided that any reserved font names are not used by derivative works, and the fonts are not sold by themselves. All shipped WOFF2 font files have been empirically verified in a throwaway Docker container (`python:3.11-slim`) to contain the complete 134 precomposed Vietnamese characters, 5 combining diacritical marks (U+0300, U+0301, U+0303, U+0309, U+0323), and tabular figures in JetBrains Mono.
 
 ---
 
@@ -166,13 +180,13 @@ Dự án áp dụng triết lý loại bỏ thiết kế AI đại trà (Anti-AI
 
 ### 5.3. Giấy Phép Phông Chữ SIL Open Font License (OFL 1.1)
 
-Ba bộ phông chữ mã nguồn mở được chỉ định trong dự án bao gồm:
+Ba bộ phông chữ mã nguồn mở được nhúng tự lưu trữ (self-hosted) tại `frontend/public/fonts/` bao gồm:
 
-- **Plus Jakarta Sans** (Tokotype, Gumpita Rahayu) dành cho tiêu đề hiển thị.
-- **Be Vietnam Pro** (TypeType, Lam Bao) được tối ưu hóa đặc biệt cho tiếng Việt có dấu kép xếp chồng (`ệ`, `ổ`, `ự`, `ữ`, `ặ`).
-- **JetBrains Mono** (JetBrains s.r.o.) dành cho mã nguồn và bảng số liệu dạng tabular.
+- **Plus Jakarta Sans** (The Plus Jakarta Sans Project Authors, Tokotype) dành cho tiêu đề hiển thị (SemiBold 600, Bold 700).
+- **Be Vietnam Pro** (The Be Vietnam Pro Project Authors) được tối ưu hóa đặc biệt cho tiếng Việt có dấu kép xếp chồng (`ệ`, `ổ`, `ự`, `ữ`, `ặ`) (Regular 400, Medium 500, SemiBold 600, Bold 700).
+- **JetBrains Mono** (JetBrains s.r.o.) dành cho mã nguồn và bảng số liệu dạng tabular figures (Regular 400, SemiBold 600).
 
-Cả ba bộ phông đều tuân thủ giấy phép nguồn mở OFL 1.1 và được quy hoạch theo mô hình tự lưu trữ (self-hosted), không gọi bất kỳ CDN bên thứ ba nào tại runtime để đảm bảo bảo mật và tính độc lập offline.
+Cả ba bộ phông đều tuân thủ giấy phép nguồn mở OFL 1.1 và được lưu trữ nội bộ 100% trong `frontend/public/fonts/`, không gọi bất kỳ CDN bên thứ ba nào tại runtime để đảm bảo bảo mật và tính độc lập offline. Toàn bộ 8 file WOFF2 đã được xác thực mã hóa trong Docker container đảm bảo chứa đủ 134 chữ cái tiếng Việt và 5 dấu kết hợp.
 
 ### 5.4. Các Tiêu Chuẩn Mở Quốc Tế (W3C, OWASP, Spring Modulith)
 

@@ -2,6 +2,11 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, waitFor, within, fireEvent } from '@testing-library/react';
 import { SkillProfilePage } from './SkillProfilePage';
 import type { SkillProfileItem } from '../api/skillProfile';
+import {
+  setAuthSessionHandlers,
+  resetAuthSessionState,
+  setAuthToken,
+} from '../../../shared/api/httpClient';
 
 const SAMPLE: SkillProfileItem[] = [
   {
@@ -51,16 +56,13 @@ describe('SkillProfilePage', () => {
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
+    resetAuthSessionState();
+    setAuthSessionHandlers({});
+    setAuthToken(null);
   });
 
-  const renderPage = (onUnauthorized = vi.fn()) =>
-    render(
-      <SkillProfilePage
-        authHeader="Basic dGVzdDp0ZXN0"
-        onUnauthorized={onUnauthorized}
-        onLogout={vi.fn()}
-      />,
-    );
+  const renderPage = (onLogout = vi.fn()) =>
+    render(<SkillProfilePage onLogout={onLogout} />);
 
   it('groups skills and labels verified versus self-declared skills', async () => {
     globalThis.fetch = vi.fn().mockResolvedValue(okResponse(SAMPLE));
@@ -122,14 +124,45 @@ describe('SkillProfilePage', () => {
   });
 
   it('asks for sign-in again when the backend answers 401', async () => {
+    const onUnauthorized = vi.fn();
+    setAuthSessionHandlers({ onUnauthorized });
     globalThis.fetch = vi
       .fn()
-      .mockResolvedValue({ ok: false, status: 401, json: () => Promise.resolve({}) } as Response);
-    const onUnauthorized = vi.fn();
-    renderPage(onUnauthorized);
+      .mockResolvedValue({
+        ok: false,
+        status: 401,
+        json: () => Promise.resolve({ code: 'UNAUTHORIZED', message: 'Hết phiên đăng nhập' }),
+      } as Response);
+
+    renderPage();
 
     await waitFor(() => {
       expect(onUnauthorized).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it('ensures the page root maintains the container class and layout boundaries', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(okResponse(SAMPLE));
+    const { container } = renderPage();
+
+    await screen.findByTestId('skill-JAVA');
+    const pageRoot = container.querySelector('.sp-page');
+    expect(pageRoot).toBeInTheDocument();
+    expect(pageRoot?.tagName.toLowerCase()).toBe('section');
+    expect(pageRoot).toHaveAttribute('aria-labelledby', 'sp-heading');
+  });
+
+  it('shows the in-page logout button by default', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(okResponse(SAMPLE));
+    renderPage();
+    await screen.findByTestId('skill-JAVA');
+    expect(screen.getByRole('button', { name: /Đăng xuất/ })).toBeInTheDocument();
+  });
+
+  it('hides the in-page logout button when the shell already provides one', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(okResponse(SAMPLE));
+    render(<SkillProfilePage showLogout={false} />);
+    await screen.findByTestId('skill-JAVA');
+    expect(screen.queryByRole('button', { name: /Đăng xuất/ })).not.toBeInTheDocument();
   });
 });

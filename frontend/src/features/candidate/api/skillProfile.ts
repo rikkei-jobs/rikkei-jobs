@@ -1,5 +1,4 @@
-import { ApiError } from '../../../shared/api/auth';
-import { getApiBaseUrl } from '../../../shared/api/health';
+import { request } from '../../../shared/api/httpClient';
 
 export type SkillLevel = 'BASIC' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT';
 export type EvidenceSource = 'LMS' | 'EXAM' | 'INTERNSHIP' | 'MENTOR' | 'SELF';
@@ -27,25 +26,20 @@ export interface SkillProfileItem {
   readonly evidences: readonly SkillEvidence[];
 }
 
-const request = async (
-  path: string,
-  method: 'GET' | 'POST',
-  authHeader: string,
-  signal?: AbortSignal,
-): Promise<SkillProfileItem[]> => {
-  const response = await fetch(`${getApiBaseUrl()}${path}`, {
-    method,
-    headers: { Accept: 'application/json', Authorization: authHeader },
+export const fetchMySkills = (signal?: AbortSignal): Promise<SkillProfileItem[]> =>
+  request<SkillProfileItem[]>('/api/v1/profiles/me/skills', {
+    method: 'GET',
     signal,
   });
-  if (!response.ok) {
-    throw new ApiError(response.status, `HTTP ${response.status}`);
-  }
-  return (await response.json()) as SkillProfileItem[];
-};
 
-export const fetchMySkills = (authHeader: string, signal?: AbortSignal) =>
-  request('/api/v1/profiles/me/skills', 'GET', authHeader, signal);
+export const fetchUserSkills = (userId: number, signal?: AbortSignal): Promise<SkillProfileItem[]> =>
+  request<SkillProfileItem[]>(`/api/v1/profiles/${userId}/skills`, {
+    method: 'GET',
+    signal,
+  });
 
-export const recomputeMySkills = (authHeader: string, signal?: AbortSignal) =>
-  request('/api/v1/profiles/me/skills/recompute', 'POST', authHeader, signal);
+export const recomputeMySkills = (signal?: AbortSignal): Promise<SkillProfileItem[]> =>
+  request<SkillProfileItem[]>('/api/v1/profiles/me/skills/recompute', {
+    method: 'POST',
+    signal,
+  });

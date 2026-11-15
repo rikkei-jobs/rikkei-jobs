@@ -70,6 +70,11 @@ if (fs.existsSync(pomPath)) {
   manifests['Spotless Maven Plugin'] = extract(pom, /<spotless\.version>([^<]+)<\/spotless\.version>/, 'Spotless');
   manifests['Google Java Format'] = extract(pom, /<googleJavaFormat>\s*<version>([^<]+)<\/version>/, 'Google Java Format');
   manifests['SpotBugs Maven Plugin'] = extract(pom, /<artifactId>spotbugs-maven-plugin<\/artifactId>\s*<version>([^<]+)<\/version>/, 'SpotBugs');
+  const jjwtMatch = pom.match(/<jjwt\.version>([^<]+)<\/jjwt\.version>/);
+  manifests['Java JWT (JJWT)'] = jjwtMatch ? jjwtMatch[1].trim() : '';
+  manifests['Spring Boot Starter Mail'] = pom.includes('<artifactId>spring-boot-starter-mail</artifactId>')
+    ? manifests['Spring Boot Starter Parent']
+    : '';
 }
 
 // 2. backend/.mvn/wrapper/maven-wrapper.properties
@@ -113,6 +118,7 @@ if (fs.existsSync(fePkgPath)) {
   const fp = JSON.parse(fs.readFileSync(fePkgPath, 'utf8'));
   manifests['React'] = fp.dependencies?.react || '';
   manifests['React DOM'] = fp.dependencies?.['react-dom'] || '';
+  manifests['React Router DOM'] = fp.dependencies?.['react-router-dom'] || '';
   manifests['TypeScript'] = fp.devDependencies?.typescript || '';
   manifests['Vite'] = fp.devDependencies?.vite || '';
   manifests['Vitest'] = fp.devDependencies?.vitest || '';

@@ -1,4 +1,4 @@
--- Migration V5: Job catalogue and AI job recommendations (T023D8B)
+-- Migration V7: Job catalogue and AI job recommendations (T023D8B)
 -- Module Company & Job: companies, jobs, job_skills
 -- Module Candidate    : candidate_skills (verified competency snapshot used by the matcher)
 -- Module AI & Recommendation: job_recommendations (24h recommendation cache)

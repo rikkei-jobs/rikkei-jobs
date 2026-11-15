@@ -1,4 +1,4 @@
--- Migration V6: Dev seed for job catalogue and AI recommendations (T023D8B). Loaded only in the 'dev' profile.
+-- Migration V8: Dev seed for job catalogue and AI recommendations (T023D8B). Loaded only in the 'dev' profile.
 -- Provides sample companies, verified candidate skills, approved/expired/draft JDs and their
 -- required skills so the recommendation matcher has realistic data to work with.
 

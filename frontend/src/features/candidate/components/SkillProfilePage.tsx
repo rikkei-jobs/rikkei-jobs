@@ -1,15 +1,16 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { ApiError } from '../../../shared/api/auth';
 import { Icon } from '../../../shared/components/Icon';
 import { fetchMySkills, recomputeMySkills, type SkillProfileItem } from '../api/skillProfile';
 import { GROUP_LABELS, GROUP_ORDER, LEVEL_LABELS, LEVEL_RANGES } from '../skillLabels';
 import { SkillItem } from './SkillItem';
+import { AuthContext } from '../../identity/context/authContextDef';
 import '../skillProfile.css';
 
-interface SkillProfilePageProps {
-  readonly authHeader: string;
-  readonly onUnauthorized: () => void;
-  readonly onLogout: () => void;
+export interface SkillProfilePageProps {
+  readonly onLogout?: () => void;
+  /** Hide the in-page logout button when the surrounding shell already provides one. */
+  readonly showLogout?: boolean;
 }
 
 type LoadState =
@@ -30,34 +31,29 @@ const groupItems = (items: readonly SkillProfileItem[]) => {
 };
 
 export const SkillProfilePage: React.FC<SkillProfilePageProps> = ({
-  authHeader,
-  onUnauthorized,
   onLogout,
+  showLogout = true,
 }) => {
+  const authContext = useContext(AuthContext);
+  const handleLogout = onLogout ?? authContext?.logout ?? (() => {});
+
   const [state, setState] = useState<LoadState>({ kind: 'loading' });
   const [recomputing, setRecomputing] = useState(false);
 
-  const describeError = useCallback(
-    (err: unknown): string | null => {
-      if (err instanceof Error && err.name === 'AbortError') {
-        return null;
-      }
-      if (err instanceof ApiError && err.status === 401) {
-        onUnauthorized();
-        return null;
-      }
-      return err instanceof ApiError
-        ? `Không tải được hồ sơ kỹ năng (${err.message})`
-        : 'Không thể kết nối đến máy chủ Backend';
-    },
-    [onUnauthorized],
-  );
+  const describeError = useCallback((err: unknown): string | null => {
+    if (err instanceof Error && err.name === 'AbortError') {
+      return null;
+    }
+    return err instanceof ApiError || err instanceof Error
+      ? `Không tải được hồ sơ kỹ năng (${err.message})`
+      : 'Không thể kết nối đến máy chủ Backend';
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
     const load = async () => {
       try {
-        const items = await fetchMySkills(authHeader, controller.signal);
+        const items = await fetchMySkills(controller.signal);
         setState({ kind: 'ready', items });
       } catch (err: unknown) {
         const message = describeError(err);
@@ -68,12 +64,12 @@ export const SkillProfilePage: React.FC<SkillProfilePageProps> = ({
     };
     void load();
     return () => controller.abort();
-  }, [authHeader, describeError]);
+  }, [describeError]);
 
   const recompute = useCallback(async () => {
     setRecomputing(true);
     try {
-      const items = await recomputeMySkills(authHeader);
+      const items = await recomputeMySkills();
       setState({ kind: 'ready', items });
     } catch (err: unknown) {
       const message = describeError(err);
@@ -83,7 +79,7 @@ export const SkillProfilePage: React.FC<SkillProfilePageProps> = ({
     } finally {
       setRecomputing(false);
     }
-  }, [authHeader, describeError]);
+  }, [describeError]);
 
   const items = useMemo(() => (state.kind === 'ready' ? state.items : []), [state]);
   const groups = useMemo(() => groupItems(items), [items]);
@@ -101,10 +97,12 @@ export const SkillProfilePage: React.FC<SkillProfilePageProps> = ({
             phần tự khai.
           </p>
         </div>
-        <button type="button" className="sp-btn sp-btn-quiet" onClick={onLogout}>
-          <Icon name="log-out" size={18} />
-          Đăng xuất
-        </button>
+        {showLogout && (
+          <button type="button" className="sp-btn sp-btn-quiet" onClick={handleLogout}>
+            <Icon name="log-out" size={18} />
+            Đăng xuất
+          </button>
+        )}
       </header>
 
       {state.kind === 'loading' && (

@@ -9,9 +9,9 @@
  *   4. scripts/run-ci-in-docker.sh (Clean isolated Docker CI runner harness)
  * 
  * Enforces:
- *   - Parity between check.sh and check.ps1 across 28 gate definitions (25 active + 3 fallback)
- *   - Coverage of 22 core functional verification gates in ci.yml
- *   - Bidirectional mechanical drift guard across 24 synchronized gates between ci.yml and Docker harness
+ *   - Parity between check.sh and check.ps1 across 29 gate definitions (26 active + 3 fallback)
+ *   - Coverage of 23 core functional verification gates in ci.yml
+ *   - Bidirectional mechanical drift guard across 25 synchronized gates between ci.yml and Docker harness
  *   - Strict ZERO EMOJI compliance with plain text PASS/FAIL/DRIFT strings
  *   - Exit Code 1 on any detected drift, Exit Code 0 on 100% synchronization
  */
@@ -90,6 +90,16 @@ const fallbackGates = new Set([
 const activeShGates = new Set([...shGates].filter(g => !fallbackGates.has(g)));
 const activePsGates = new Set([...psGates].filter(g => !fallbackGates.has(g)));
 
+const EXPECTED_ACTIVE_GATES = 26;
+if (activeShGates.size !== EXPECTED_ACTIVE_GATES) {
+  console.error(`\x1b[31m[DRIFT] Expected exactly ${EXPECTED_ACTIVE_GATES} active runtime gates, but found ${activeShGates.size} in check.sh\x1b[0m`);
+  diffCount++;
+}
+if (activePsGates.size !== EXPECTED_ACTIVE_GATES) {
+  console.error(`\x1b[31m[DRIFT] Expected exactly ${EXPECTED_ACTIVE_GATES} active runtime gates, but found ${activePsGates.size} in check.ps1\x1b[0m`);
+  diffCount++;
+}
+
 for (const g of psGates) {
   if (!shGates.has(g)) {
     console.error(`\x1b[31m[DRIFT] Gate '${g}' present in check.ps1 but missing in check.sh\x1b[0m`);
@@ -127,6 +137,7 @@ const ciChecks = [
   { name: 'Lingering TODO / FIXME Comments Scan', pattern: /TODO/ },
   { name: 'Secret Leak & Private Key Scan', pattern: /PRIVATE KEY/ },
   { name: 'Version Table Drift Check', pattern: /check-version-drift\.mjs/ },
+  { name: 'Contrast Table Verification', pattern: /compute-contrast\.mjs/ },
   { name: 'Quality Gate Synchronization Check', pattern: /check-gate-sync\.mjs/ },
   { name: 'Agent Configuration Sync Check', pattern: /sync-agent-config\.mjs\s+--check/ },
   { name: 'Agent Configuration Validation', pattern: /validate-agent-config\.mjs/ }
@@ -151,6 +162,7 @@ const dockerHarnessSyncList = [
   { name: 'sync-agent-config.mjs --check', pattern: /sync-agent-config\.mjs\s+--check/ },
   { name: 'validate-agent-config.mjs', pattern: /validate-agent-config\.mjs/ },
   { name: 'check-version-drift.mjs', pattern: /check-version-drift\.mjs/ },
+  { name: 'compute-contrast.mjs', pattern: /compute-contrast\.mjs/ },
   { name: 'check-gate-sync.mjs', pattern: /check-gate-sync\.mjs/ },
   { name: 'markdownlint-cli2', pattern: /markdownlint-cli2/ },
   { name: 'cspell', pattern: /cspell/ },
