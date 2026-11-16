@@ -11,7 +11,7 @@ This skill establishes the engineering and verification methodology for ensuring
 
 Key auditing pillars:
 
-- Mathematical color contrast validation ($L_1 + 0.05) / (L_2 + 0.05)$ for text and interface components in both light (`#F7F9FC` canvas) and dark (`#0A111E` canvas) themes.
+- Mathematical color contrast validation ($L_1 + 0.05) / (L_2 + 0.05)$ for text and interface components in both light (`#EEF2F8` canvas) and dark (`#0B1019` canvas) themes.
 - Touch target sizing meeting the 44x44 pixel minimum requirement for touch interfaces (WCAG 2.2 SC 2.5.8).
 - Comprehensive keyboard operability with logical focus order and prominent focus indicators (`outline: 2px solid var(--rj-color-focus-ring); outline-offset: 2px;`).
 - Robust focus trapping and focus restoration for modal dialogs and slide-over drawers.
@@ -49,7 +49,7 @@ Key auditing pillars:
   - Body text (< 18pt regular or < 14pt bold): minimum **4.5:1** against the background.
   - Large text (>= 18pt regular or >= 14pt bold): minimum **3.0:1**.
   - User Interface Components (form field borders, toggles, status indicator icons): minimum **3.0:1**.
-- Verify contrast independently for both light mode (`#F7F9FC` canvas) and dark mode (`#0A111E` canvas).
+- Verify contrast independently for both light mode (`#EEF2F8` canvas) and dark mode (`#0B1019` canvas).
 
 ### Step 3: Verify Touch Target Dimensions (WCAG 2.2 SC 2.5.8)
 

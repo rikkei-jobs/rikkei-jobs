@@ -1,37 +1,24 @@
 package com.rikkei.jobs.identity.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-public class ResetPasswordRequest {
+/** Request DTO for resetting password using reset token. */
+@Schema(description = "Yêu cầu đặt lại mật khẩu bằng mã token")
+public record ResetPasswordRequest(
+        @NotBlank(message = "Mã token không được để trống")
+                @Schema(
+                        description = "Mã token đặt lại mật khẩu nhận qua email",
+                        example = "raw-reset-token-sample")
+                String token,
+        @NotBlank(message = "Mật khẩu mới không được để trống")
+                @Size(max = 128, message = "Mật khẩu không được vượt quá 128 ký tự")
+                @Schema(description = "Mật khẩu mới", example = "SecurePass#2026")
+                String newPassword) {
 
-    @NotBlank(message = "Token không được để trống")
-    private String token;
-
-    @NotBlank(message = "Mật khẩu mới không được để trống")
-    @Size(min = 6, message = "Mật khẩu mới phải có ít nhất 6 ký tự")
-    private String newPassword;
-
-    public ResetPasswordRequest() {}
-
-    public ResetPasswordRequest(String token, String newPassword) {
-        this.token = token;
-        this.newPassword = newPassword;
-    }
-
-    public String getToken() {
-        return token;
-    }
-
-    public void setToken(String token) {
-        this.token = token;
-    }
-
-    public String getNewPassword() {
-        return newPassword;
-    }
-
-    public void setNewPassword(String newPassword) {
-        this.newPassword = newPassword;
+    @Override
+    public String toString() {
+        return "ResetPasswordRequest[token=***, newPassword=***]";
     }
 }

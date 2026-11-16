@@ -2,32 +2,36 @@ package com.rikkei.jobs.identity.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
 
-/** Entity to track used SSO tickets and prevent replay attacks (Task NT-01). */
+/**
+ * Entity lưu vết các mã vé SSO đã được xác thực thành công. Table: used_sso_tickets (khóa chính là
+ * ticket string, đảm bảo tính duy nhất tuyệt đối).
+ */
 @Entity
 @Table(name = "used_sso_tickets")
 public class UsedSsoTicket {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(name = "ticket_hash", nullable = false, unique = true, length = 64)
-    private String ticketHash;
+    @Column(length = 255, nullable = false)
+    private String ticket;
 
     @Column(name = "used_at", nullable = false)
     private OffsetDateTime usedAt;
 
     public UsedSsoTicket() {}
 
-    public UsedSsoTicket(String ticketHash) {
-        this.ticketHash = ticketHash;
+    public UsedSsoTicket(String ticket) {
+        this.ticket = ticket;
+        this.usedAt = OffsetDateTime.now();
+    }
+
+    public UsedSsoTicket(String ticket, OffsetDateTime usedAt) {
+        this.ticket = ticket;
+        this.usedAt = usedAt;
     }
 
     @PrePersist
@@ -37,20 +41,12 @@ public class UsedSsoTicket {
         }
     }
 
-    public Long getId() {
-        return id;
+    public String getTicket() {
+        return ticket;
     }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getTicketHash() {
-        return ticketHash;
-    }
-
-    public void setTicketHash(String ticketHash) {
-        this.ticketHash = ticketHash;
+    public void setTicket(String ticket) {
+        this.ticket = ticket;
     }
 
     public OffsetDateTime getUsedAt() {

@@ -1,3 +1,6 @@
+@import './shared/styles/design-tokens.css';
+@import './features/identity/styles/identity.css';
+
 *,
 *::before,
 *::after {
@@ -7,8 +10,10 @@
 body {
   margin: 0;
   padding: 0;
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: var(--rj-color-surface-page);
+  color: var(--rj-color-text-primary);
+  font-family: var(--rj-font-body);
+  line-height: var(--rj-line-height-base);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

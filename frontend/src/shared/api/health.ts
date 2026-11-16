@@ -1,3 +1,6 @@
+import { request, getApiBaseUrl } from './httpClient';
+import { ApiError } from './auth';
+
 export type BackendHealthStatus = 'UP' | 'DOWN' | 'CONNECTING...';
 
 export interface HealthResponse {
@@ -5,34 +8,21 @@ export interface HealthResponse {
   [key: string]: unknown;
 }
 
-export const getApiBaseUrl = (): string => {
-  // Use VITE_API_BASE_URL if explicitly configured, otherwise empty string (relative to current domain/reverse proxy)
-  return import.meta.env.VITE_API_BASE_URL ?? '';
-};
+export { getApiBaseUrl };
 
 export const fetchBackendHealth = async (
   signal?: AbortSignal,
 ): Promise<{ status: BackendHealthStatus; details?: string }> => {
-  const baseUrl = getApiBaseUrl();
-  const url = `${baseUrl}/api/v1/health`;
-
   try {
-    const response = await fetch(url, {
+    const data = await request<HealthResponse>('/api/v1/health', {
       method: 'GET',
       headers: {
         Accept: 'application/json',
       },
       signal,
+      skipAuth: true,
     });
 
-    if (!response.ok) {
-      return {
-        status: 'DOWN',
-        details: `HTTP ${response.status} ${response.statusText}`,
-      };
-    }
-
-    const data = (await response.json()) as HealthResponse;
     if (data && data.status === 'UP') {
       return { status: 'UP', details: 'Backend đang hoạt động bình thường' };
     }
@@ -44,6 +34,13 @@ export const fetchBackendHealth = async (
   } catch (err: unknown) {
     if (err instanceof Error && err.name === 'AbortError') {
       throw err;
+    }
+    if (err instanceof ApiError) {
+      const statusText = err.statusText || '';
+      return {
+        status: 'DOWN',
+        details: statusText ? `HTTP ${err.status} ${statusText}` : `HTTP ${err.status} ${err.message}`,
+      };
     }
     const message = err instanceof Error ? err.message : 'Không thể kết nối Backend';
     return { status: 'DOWN', details: message };
