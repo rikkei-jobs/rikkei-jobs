@@ -176,7 +176,7 @@ Thực thi mô phỏng trực tiếp qua Chrome DevTools Protocol (`Emulation.se
 
 ### 4.5. Ma Trận Nghiệm Thu 12 Màn Hình Thực Nghiệm (96/96 Ca Đạt scrollWidth <= innerWidth)
 
-Dữ liệu thực tế đo đạc trực tiếp trên Chromium Headless qua kịch bản `scripts/capture-round-e-after.mjs` (kết quả lưu tại `%TEMP%\rikkei-nt01-round-e\screenshots\after\summary.json`):
+Dữ liệu thực tế đo đạc trực tiếp trên Chromium Headless qua một kịch bản đo tạm thời (đã được gỡ khỏi repo sau Vòng 2C vì không thuộc sản phẩm):
 
 | STT | Mã Màn Hình | Tên Màn Hình & Tuyến Route | Mobile (375px) | Tablet (768px) | Laptop (1024px) | Desktop (1440px) | Trạng Thái Chung |
 |:---:|---|---|:---:|:---:|:---:|:---:|:---:|
