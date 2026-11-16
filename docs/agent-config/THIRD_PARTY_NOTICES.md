@@ -1,5 +1,3 @@
-<!-- cspell:ignore Tokotype Rahayu -->
-
 # Third-Party Notices & Open Source Attribution (T022DB0)
 
 This repository incorporates architectural patterns, process structures, and design philosophies adapted from open-source projects licensed under the MIT License. In compliance with the licensing terms, the copyright notices, permission notices, and detailed records of adaptation are documented below.
@@ -101,7 +99,7 @@ SOFTWARE.
 2. **Crucial Repository-Specific Overhauls (100% Rewritten)**:
    - **Zero Host CLI Dependencies**: The upstream repository features a local Node CLI tool (`uipro`). In strict compliance with operational constraint R1 ("No host package installations"), no CLI tools or external host packages were installed or executed.
    - **Mathematical Design System Reconstruction (`docs/design/DESIGN_SYSTEM.md`)**: A complete 1,155-line enterprise design system was built from first principles for Rikkei Jobs, featuring:
-     - 48 computed WCAG 2.2 AA contrast pairs (26 Light Mode + 22 Dark Mode) calculated via W3C CIE 1931 relative luminance formulas.
+     - 66 computed WCAG 2.2 AA/AAA contrast pairs (36 Light Mode + 30 Dark Mode) calculated via W3C CIE 1931 relative luminance formulas.
      - Vietnamese typography support with font-metrics compensation (`line-height >= 1.5`, `padding-top` allowances for double-accent glyphs like `ể`, `ẵ`, `ộ` reaching +1050 units).
      - Purposeful physics-based spring motion presets with strict `prefers-reduced-motion` compliance.
      - Role density calibration: dense information architecture for Staff/Mentor vs airy breathing layout for Candidates.
@@ -115,7 +113,8 @@ In alignment with our Anti-AI design philosophy and commitment to high-craft typ
 
 1. **Plus Jakarta Sans** (Display & Brand Typography):
    - **Copyright**: Copyright (c) 2020 The Plus Jakarta Sans Project Authors (<https://github.com/tokotype/PlusJakartaSans>).
-   - **License**: SIL Open Font License, Version 1.1 (<http://scripts.sil.org/OFL>).
+   - **Authors & Designers**: Gumpita Rahayu (Tokotype).
+   - **License**: SIL Open Font License, Version 1.1 (<https://github.com/tokotype/PlusJakartaSans/blob/master/OFL.txt>).
    - **Version**: v2.600 (Google Fonts v12, upstream commit `18d1cd2`)
    - **Role**: Geometric contemporary display face with friendly warmth, optimized for headers and hero typography.
    - **Shipped Files & Cryptographic Checksums (SHA-256)**:
@@ -124,7 +123,8 @@ In alignment with our Anti-AI design philosophy and commitment to high-craft typ
 
 2. **Be Vietnam Pro** (Body & Interface Typography):
    - **Copyright**: Copyright (c) 2021 The Be Vietnam Pro Project Authors (<https://github.com/bettergui/BeVietnamPro>).
-   - **License**: SIL Open Font License, Version 1.1 (<http://scripts.sil.org/OFL>).
+   - **Authors & Designers**: VietAnh Nguyen, Omnibus-Type.
+   - **License**: SIL Open Font License, Version 1.1 (<https://github.com/bettergui/BeVietnamPro/blob/master/OFL.txt>).
    - **Version**: v1.002 (Google Fonts v12, upstream commit `804e62d`)
    - **Role**: Engineered specifically for Vietnamese diacritic typography, providing optical clearance for stacked accents (`ệ`, `ổ`, `ự`, `ữ`, `ặ`).
    - **Shipped Files & Cryptographic Checksums (SHA-256)**:
@@ -134,8 +134,9 @@ In alignment with our Anti-AI design philosophy and commitment to high-craft typ
      - `frontend/public/fonts/BeVietnamPro-Bold.woff2` (41,212 bytes): `32eb3a183490d280351f9676cc0b8e1725d95090988db57503dc83879b5fe602`
 
 3. **JetBrains Mono** (Code & Tabular Numerical Typography):
-   - **Copyright**: Copyright (c) 2020 JetBrains s.r.o. (<https://github.com/JetBrains/JetBrainsMono>).
-   - **License**: SIL Open Font License, Version 1.1 (<http://scripts.sil.org/OFL>).
+   - **Copyright**: Copyright 2020 The JetBrains Mono Project Authors (<https://github.com/JetBrains/JetBrainsMono>).
+   - **Authors & Designers**: Philipp Nurullin, Konstantin Bulenkov, JetBrains s.r.o.
+   - **License**: SIL Open Font License, Version 1.1 (<https://github.com/JetBrains/JetBrainsMono/blob/master/OFL.txt>).
    - **Version**: v2.304 (upstream release)
    - **Role**: High-legibility monospaced typeface with tabular numbers, optimized for tabular data, timestamps, salaries, and code blocks.
    - **Shipped Files & Cryptographic Checksums (SHA-256)**:
@@ -176,15 +177,15 @@ Dự án Rikkei Jobs kế thừa mô hình kích hoạt kỹ năng theo tác v�
 
 ### 5.2. Triết Lý Thiết Kế Anti-AI Từ nextlevelbuilder/ui-ux-pro-max-skill (Giấy Phép MIT)
 
-Dự án áp dụng triết lý loại bỏ thiết kế AI đại trà (Anti-AI Aesthetic Bar): cấm sử dụng dải màu gradient tím-xanh mặc định, cấm dùng biểu tượng emoji trang trí, và yêu cầu bảng màu sở hữu riêng. Không có bất kỳ gói phần mềm hay công cụ CLI nào được cài đặt trên máy chủ phát triển, toàn bộ 48 cặp độ tương phản WCAG 2.2 AA và thông số font chữ tiếng Việt đều được tính toán lại bằng công thức toán học từ đầu trong `docs/design/DESIGN_SYSTEM.md`.
+Dự án áp dụng triết lý loại bỏ thiết kế AI đại trà (Anti-AI Aesthetic Bar): cấm sử dụng dải màu gradient tím-xanh mặc định, cấm dùng biểu tượng emoji trang trí, và yêu cầu bảng màu sở hữu riêng. Không có bất kỳ gói phần mềm hay công cụ CLI nào được cài đặt trên máy chủ phát triển, toàn bộ 66 cặp độ tương phản WCAG 2.2 AA/AAA và thông số font chữ tiếng Việt đều được tính toán lại bằng công thức toán học từ đầu trong `docs/design/DESIGN_SYSTEM.md`.
 
 ### 5.3. Giấy Phép Phông Chữ SIL Open Font License (OFL 1.1)
 
 Ba bộ phông chữ mã nguồn mở được nhúng tự lưu trữ (self-hosted) tại `frontend/public/fonts/` bao gồm:
 
-- **Plus Jakarta Sans** (The Plus Jakarta Sans Project Authors, Tokotype) dành cho tiêu đề hiển thị (SemiBold 600, Bold 700).
-- **Be Vietnam Pro** (The Be Vietnam Pro Project Authors) được tối ưu hóa đặc biệt cho tiếng Việt có dấu kép xếp chồng (`ệ`, `ổ`, `ự`, `ữ`, `ặ`) (Regular 400, Medium 500, SemiBold 600, Bold 700).
-- **JetBrains Mono** (JetBrains s.r.o.) dành cho mã nguồn và bảng số liệu dạng tabular figures (Regular 400, SemiBold 600).
+- **Plus Jakarta Sans** (The Plus Jakarta Sans Project Authors, thiết kế bởi Gumpita Rahayu / Tokotype) dành cho tiêu đề hiển thị (SemiBold 600, Bold 700). Kho mã nguồn: <https://github.com/tokotype/PlusJakartaSans>, Giấy phép OFL 1.1: <https://github.com/tokotype/PlusJakartaSans/blob/master/OFL.txt>.
+- **Be Vietnam Pro** (The Be Vietnam Pro Project Authors, thiết kế bởi VietAnh Nguyen / Omnibus-Type) được tối ưu hóa đặc biệt cho tiếng Việt có dấu kép xếp chồng (`ệ`, `ổ`, `ự`, `ữ`, `ặ`) (Regular 400, Medium 500, SemiBold 600, Bold 700). Kho mã nguồn: <https://github.com/bettergui/BeVietnamPro>, Giấy phép OFL 1.1: <https://github.com/bettergui/BeVietnamPro/blob/master/OFL.txt>.
+- **JetBrains Mono** (The JetBrains Mono Project Authors, JetBrains s.r.o., thiết kế bởi Philipp Nurullin và Konstantin Bulenkov) dành cho mã nguồn và bảng số liệu dạng tabular figures (Regular 400, SemiBold 600). Kho mã nguồn: <https://github.com/JetBrains/JetBrainsMono>, Giấy phép OFL 1.1: <https://github.com/JetBrains/JetBrainsMono/blob/master/OFL.txt>.
 
 Cả ba bộ phông đều tuân thủ giấy phép nguồn mở OFL 1.1 và được lưu trữ nội bộ 100% trong `frontend/public/fonts/`, không gọi bất kỳ CDN bên thứ ba nào tại runtime để đảm bảo bảo mật và tính độc lập offline. Toàn bộ 8 file WOFF2 đã được xác thực mã hóa trong Docker container đảm bảo chứa đủ 134 chữ cái tiếng Việt và 5 dấu kết hợp.
 
