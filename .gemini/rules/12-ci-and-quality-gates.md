@@ -6,13 +6,14 @@ Execute all quality gates locally before pushing changes. Maintain strict parity
 
 Maintain synchronization across all verification runners:
 
-- Local verification runners `check.sh` and `check.ps1` define exactly 28 quality gate definitions.
-- Active runtime gates count exactly 25 gates during standard execution.
+- Local verification runners `check.sh` and `check.ps1` define exactly 29 quality gate definitions.
+- Active runtime gates count exactly 26 gates during standard execution.
 - Fallback defensive gates count exactly 3 gates, executed only when required files are missing:
   - `Frontend Verification Gates` (triggers when `frontend/package.json` is missing)
   - `Backend Verification Gates` (triggers when `backend/pom.xml` is missing)
   - `Docker Compose Configuration` (triggers when `docker-compose.yml` is missing)
-- Continuous integration maps these definitions to 21 distinct verification checks in `.github/workflows/ci.yml`.
+- Continuous integration maps these definitions to 23 distinct verification checks in `.github/workflows/ci.yml`.
+- The Docker CI harness reproduces continuous integration across 25 synchronized gates.
 - Verify gate synchronization using `scripts/check-gate-sync.mjs`:
 
 ```bash
@@ -81,4 +82,4 @@ Run full local verification before handoff:
 .\check.ps1
 ```
 
-- Ensure all 25 active runtime gates report `PASS`. Never fake or bypass any gate.
+- Ensure all 26 active runtime gates report `PASS`. Never fake or bypass any gate.

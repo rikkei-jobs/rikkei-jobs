@@ -1,5 +1,3 @@
-<!-- cspell:ignore Tokotype Rahayu memport geminiignore claudeignore -->
-
 # Dual-Agent Tool Compatibility & Parity Architecture (T022DB0)
 
 This document establishes the empirical and architectural proof of cross-compatibility for the Rikkei Jobs agent configuration suite across **Claude Code** (Anthropic), **Gemini CLI** (Google), and **Google Antigravity**.

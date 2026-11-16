@@ -12,12 +12,14 @@ Strictly forbid the following patterns across all frontend components and styles
 
 - FORBIDDEN Emojis in UI: Never use emojis as icons, avatars, status badges, section headers, or button labels. Emojis render inconsistently across operating systems and degrade enterprise credibility.
 - FORBIDDEN Raw Stock Icon Packs: Never drop default Lucide, Heroicons, or FontAwesome SVG sets directly into pages without design alignment.
+- FORBIDDEN Raw Color Literals & Check 9 Guard: Never hardcode raw color literals (hex `#...`, `rgb()`, `hsl()`) in components or stylesheets. All colors must be consumed strictly through CSS variables defined in `design-tokens.css`.
 - FORBIDDEN Generic AI Visual Tropes:
   - Purple-to-blue gradient headers (`linear-gradient(135deg, #6366f1, #a855f7)`).
   - Frosted glass effects, heavily blurred backdrops, and uncontrolled `backdrop-filter: blur()`.
   - Symmetrical 3-column rounded card grids with exaggerated hover scales.
   - Heavy, saturated, glowing drop shadows (`box-shadow: 0 0 25px #000000`).
-  - Default Tailwind/Material color scales (slate/indigo/sky); UI must use proprietary Confident Royal Cobalt & Iron Obsidian palette (Core #0D55B8, Electric #508CEE, Brand Mark #C8161D) with quarantined semantic error feedback (#9B1C2A Cold Crimson).
+  - Default Tailwind/Material color scales (slate/indigo/sky); UI must use proprietary Confident Royal Cobalt & Iron Obsidian palette (Core #0D55B8, Electric #508CEE) with quarantined semantic error feedback (#9B1C2A Cold Crimson).
+- Official Brand Mark Encapsulation: The official red brand color (`#C8161D`) is strictly restricted to the brand mark itself, encapsulated inside `<BrandMark />` at `frontend/src/shared/components/BrandMark.tsx` using design tokens `--rj-brand-mark` and `--rj-brand-mark-bars`. All surrounding application surfaces are blue-led.
 - FORBIDDEN Motion Gimmicks:
   - Bouncing, jiggling, shaking animations (`@keyframes bounce`).
   - Arbitrary full-page fade-in-up transitions that disrupt reading flow.
@@ -51,7 +53,7 @@ Evaluate every page, view, and component against this 12-point rubric (6 indepen
 
 1. Criterion 1: Typography & Vietnamese Diacritics Support (0-2): Self-hosted Plus Jakarta Sans / Be Vietnam Pro / JetBrains Mono; deliberate vertical rhythm; `line-height >= 1.5` for body; zero accent clipping; 100% data metrics use `font-variant-numeric: tabular-nums`.
 2. Criterion 2: Layout Asymmetry & Role Density Differentiation (0-2): Purposeful 65/35 editorial grid layout (8 primary columns / 4 sticky sidebar columns); clear density differentiation (Airy 56px rows for candidates vs Dense 36px rows for admin matrices); responsive container queries; zero horizontal overflow.
-3. Criterion 3: Color Palette & Mathematical Contrast (WCAG 2.2 AA) (0-2): Proprietary Confident Royal Cobalt & Iron Obsidian palette (Core #0D55B8, Electric #508CEE, Brand Mark #C8161D) with quarantined semantic error feedback (#9B1C2A Cold Crimson); 100% computed contrast ratios (text >= 4.5:1, UI >= 3.0:1); designed dark mode surfaces.
+3. Criterion 3: Color Palette & Mathematical Contrast (WCAG 2.2 AA) (0-2): Proprietary Confident Royal Cobalt & Iron Obsidian palette (Core #0D55B8, Electric #508CEE) with quarantined semantic error feedback (#9B1C2A Cold Crimson); 100% computed contrast ratios (text >= 4.5:1, UI >= 3.0:1); designed dark mode surfaces; BrandMark using `--rj-brand-mark`.
 4. Criterion 4: Curated Iconography & Asset Discipline (0-2): 100% of icons rendered through typed `<Icon name=... />`; strict 24px grid with uniform 2px stroke width and round caps; zero emojis anywhere.
 5. Criterion 5: Purposeful Motion & Restraint (0-2): Compositor-only properties (transform, opacity); physics-based springs; calibrated motion budgets; graceful 100ms cross-fade under `prefers-reduced-motion` with 0.001ms duration; zero layout shift (CLS = 0).
 6. Criterion 6: Authentic Copywriting & AI-Tell Avoidance (0-2): Authentic bilingual domain copy (e.g., "Khoảng thiếu hụt kỹ năng", "Hồ sơ năng lực", "Matching Score"); distinct signature elements (Skill Radar, Hexagonal Badge); absence of placeholder fluff.
