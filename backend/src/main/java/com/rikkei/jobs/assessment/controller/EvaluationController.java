@@ -4,11 +4,13 @@ import com.rikkei.jobs.assessment.dto.request.CreateEvaluationRequest;
 import com.rikkei.jobs.assessment.dto.request.UpdateEvaluationRequest;
 import com.rikkei.jobs.assessment.dto.response.EvaluationResponse;
 import com.rikkei.jobs.assessment.service.EvaluationService;
-import com.rikkei.jobs.common.dto.Response;
+import com.rikkei.jobs.identity.UserPrincipal;
 import com.rikkei.jobs.identity.model.User;
 import com.rikkei.jobs.identity.repository.UserRepository;
 import jakarta.validation.Valid;
+
 import java.time.LocalDateTime;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,57 +27,28 @@ public class EvaluationController {
 
     @PreAuthorize("hasRole('MENTOR')")
     @PostMapping
-    public ResponseEntity<Response<EvaluationResponse>> createEvaluation(
-            @Valid @RequestBody CreateEvaluationRequest request,
-            @AuthenticationPrincipal String mentorEmail) {
-        User mentor =
-                userRepository
-                        .findByEmail(mentorEmail)
-                        .orElseThrow(() -> new RuntimeException("Không tìm thấy mentor"));
-
+    public ResponseEntity<EvaluationResponse> createEvaluation(
+        @Valid @RequestBody CreateEvaluationRequest request,
+        @AuthenticationPrincipal UserPrincipal user) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(
-                        Response.<EvaluationResponse>builder()
-                                .success(true)
-                                .message("Create evaluation successfully")
-                                .data(evaluationService.createEvaluation(request, mentor.getId()))
-                                .timestamp(LocalDateTime.now())
-                                .build());
+            .body(evaluationService.createEvaluation(request, user.getId()));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('MENTOR')")
-    public ResponseEntity<Response<Void>> updateEvaluation(
-            @PathVariable Long id,
-            @Valid @RequestBody UpdateEvaluationRequest request,
-            @AuthenticationPrincipal String mentorEmail) {
-        User mentor =
-                userRepository
-                        .findByEmail(mentorEmail)
-                        .orElseThrow(() -> new RuntimeException("Không tìm thấy mentor"));
-        evaluationService.updateEvaluation(id, mentor.getId(), request);
-        return ResponseEntity.ok(
-                Response.<Void>builder()
-                        .success(true)
-                        .message("Update evaluation successfully")
-                        .timestamp(LocalDateTime.now())
-                        .build());
+    public ResponseEntity<Void> updateEvaluation(
+        @PathVariable Long id,
+        @Valid @RequestBody UpdateEvaluationRequest request,
+        @AuthenticationPrincipal UserPrincipal user) {
+        evaluationService.updateEvaluation(id, user.getId(), request);
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 
     @PostMapping("/{id}/submit")
     @PreAuthorize("hasRole('MENTOR')")
-    public ResponseEntity<Response<Void>> submitEvaluation(
-            @PathVariable Long id, @AuthenticationPrincipal String mentorEmail) {
-        User mentor =
-                userRepository
-                        .findByEmail(mentorEmail)
-                        .orElseThrow(() -> new RuntimeException("Không tìm thấy mentor"));
-        evaluationService.submitEvaluation(id, mentor.getId());
-        return ResponseEntity.ok(
-                Response.<Void>builder()
-                        .success(true)
-                        .message("Submit evaluation successfully")
-                        .timestamp(LocalDateTime.now())
-                        .build());
+    public ResponseEntity<Void> submitEvaluation(
+        @PathVariable Long id, @AuthenticationPrincipal UserPrincipal user) {
+        evaluationService.submitEvaluation(id, user.getId());
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 }

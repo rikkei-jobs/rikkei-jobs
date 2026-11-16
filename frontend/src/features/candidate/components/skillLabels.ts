@@ -1,4 +1,4 @@
-import type { EvidenceSource, SkillLevel } from './api/skillProfile';
+import type { EvidenceSource, SkillLevel } from '../api/skillProfile';
 
 export const LEVEL_LABELS: Record<SkillLevel, string> = {
   BASIC: 'Cơ bản',

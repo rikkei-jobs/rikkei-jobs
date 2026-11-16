@@ -1,7 +1,7 @@
 import React, { useId, useState } from 'react';
 import { Icon } from '../../../shared/components/Icon';
 import type { SkillProfileItem } from '../api/skillProfile';
-import { LEVEL_LABELS, SOURCE_LABELS, formatDate, formatScore } from '../skillLabels';
+import { LEVEL_LABELS, SOURCE_LABELS, formatDate, formatScore } from './skillLabels';
 
 interface SkillItemProps {
   readonly item: SkillProfileItem;

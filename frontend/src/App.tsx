@@ -6,11 +6,6 @@ import { HealthBadge } from './shared/components/HealthBadge';
 import { ModuleCard } from './shared/components/ModuleCard';
 import { fetchBackendHealth, type BackendHealthStatus } from './shared/api/health';
 import { BUSINESS_MODULES } from './features';
-import { SkillProfilePage, fetchMySkills } from './features/candidate';
-import { LoginForm } from './shared/components/LoginForm';
-import { ApiError, buildBasicAuthHeader } from './shared/api/auth';
-import { CandidateProfilePage } from './features/candidate/components/CandidateProfilePage';
-import { fetchCurrentUser, type CurrentUser } from './shared/api/authApi';
 import { SkillProfilePage } from './features/candidate';
 
 import { AuthProvider } from './features/identity/context/AuthContext';
@@ -30,6 +25,7 @@ import { MentorHomePage } from './features/identity/pages/role-homes/MentorHomeP
 import { StaffHomePage } from './features/identity/pages/role-homes/StaffHomePage';
 import { AdminHomePage } from './features/identity/pages/role-homes/AdminHomePage';
 import { Icon } from './shared/components/Icon';
+import { CandidateEvaluationsPage } from './features/candidate/pages/CandidateEvaluationsPage';
 
 export const APP_NAME = 'Rikkei Jobs - Nền tảng kết nối việc làm theo năng lực đã xác thực';
 export const APP_VERSION = 'v1.0.0-sprint1';
@@ -43,30 +39,6 @@ export const HomeSkeleton: React.FC = () => {
     'Đang thiết lập kết nối tới Backend...',
   );
   const [isChecking, setIsChecking] = useState<boolean>(false);
-  const [view, setView] = useState<'home' | 'skills' | 'candidate'>('home');
-  const [authHeader, setAuthHeader] = useState<string | null>(null);
-  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
-
-  const handleLogin = useCallback(async (email: string, password: string) => {
-    const header = buildBasicAuthHeader(email, password);
-    try {
-      await fetchMySkills(header);
-      setAuthHeader(header);
-      const user = await fetchCurrentUser(header);
-      setCurrentUser(user);
-      return null;
-    } catch (err: unknown) {
-      return err instanceof ApiError && err.status === 401
-        ? 'Email hoặc mật khẩu không đúng'
-        : 'Không thể kết nối đến máy chủ Backend';
-    }
-  }, []);
-
-  const handleLogout = useCallback(() => {
-    setAuthHeader(null);
-    setCurrentUser(null);
-    setView('home');
-  }, []);
   const [view, setView] = useState<'home' | 'skills'>('home');
 
   const checkHealth = useCallback(async () => {
@@ -134,16 +106,6 @@ export const HomeSkeleton: React.FC = () => {
         >
           Hồ sơ năng lực
         </button>
-        {(!currentUser || currentUser.role === 'CANDIDATE') && (
-          <button
-            type="button"
-            className="app-nav-btn"
-            aria-current={view === 'candidate' ? 'page' : undefined}
-            onClick={() => setView('candidate')}
-          >
-            Hồ sơ ứng viên
-          </button>
-        )}
       </nav>
 
       {view === 'skills' && (
@@ -164,21 +126,6 @@ export const HomeSkeleton: React.FC = () => {
                 <span>Đăng nhập để xem hồ sơ năng lực</span>
               </Link>
             </section>
-          )}
-        </main>
-      )}
-
-      {view === 'candidate' && (
-        <main className="app-main">
-          {authHeader && currentUser?.role === 'CANDIDATE' ? (
-            <CandidateProfilePage
-              userId={currentUser.id}
-              authorizationHeader={authHeader}
-              onUnauthorized={handleLogout}
-              onLogout={handleLogout}
-            />
-          ) : (
-            <LoginForm onSubmit={handleLogin} />
           )}
         </main>
       )}
@@ -300,6 +247,15 @@ export const AppRoutes: React.FC = () => {
         element={
           <RequireRole allowedRoles={['CANDIDATE']}>
             <CandidateSkillsPage />
+          </RequireRole>
+        }
+      />
+
+      <Route
+        path="/candidate/evaluations"
+        element={
+          <RequireRole allowedRoles={['CANDIDATE']}>
+            <CandidateEvaluationsPage />
           </RequireRole>
         }
       />

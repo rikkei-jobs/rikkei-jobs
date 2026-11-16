@@ -28,7 +28,7 @@ public class ProfileEvaluationServiceImpl implements ProfileEvaluationService {
 
     @Override
     @Transactional
-    public ProfileEvaluationsResponse getProfileEvaluations(Long userId, String currentUserEmail) {
+    public ProfileEvaluationsResponse getProfileEvaluations(Long userId, Long viewerId) {
         // 1. Kiểm tra ứng viên tồn tại
         User candidate =
                 userRepository
@@ -41,7 +41,7 @@ public class ProfileEvaluationServiceImpl implements ProfileEvaluationService {
         // 2. Kiểm tra người đang đăng nhập
         User currentUser =
                 userRepository
-                        .findByEmail(currentUserEmail)
+                        .findById(viewerId)
                         .orElseThrow(
                                 () ->
                                         new ResponseStatusException(

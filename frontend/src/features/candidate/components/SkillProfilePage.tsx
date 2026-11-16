@@ -2,10 +2,10 @@ import React, { useCallback, useContext, useEffect, useMemo, useState } from 're
 import { ApiError } from '../../../shared/api/auth';
 import { Icon } from '../../../shared/components/Icon';
 import { fetchMySkills, recomputeMySkills, type SkillProfileItem } from '../api/skillProfile';
-import { GROUP_LABELS, GROUP_ORDER, LEVEL_LABELS, LEVEL_RANGES } from '../skillLabels';
+import { GROUP_LABELS, GROUP_ORDER, LEVEL_LABELS, LEVEL_RANGES } from './skillLabels';
 import { SkillItem } from './SkillItem';
 import { AuthContext } from '../../identity/context/authContextDef';
-import '../skillProfile.css';
+import '../styles/skillProfile.css';
 
 export interface SkillProfilePageProps {
   readonly onLogout?: () => void;
