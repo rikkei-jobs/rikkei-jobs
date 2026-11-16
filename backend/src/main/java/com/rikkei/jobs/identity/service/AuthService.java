@@ -62,7 +62,7 @@ public class AuthService {
     private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
     private static final Pattern PASSWORD_PATTERN =
-        Pattern.compile("^(?=.*[A-Za-z])(?=.*\\d).{8,}$");
+            Pattern.compile("^(?=.*[A-Za-z])(?=.*\\d).{8,}$");
     public static final int MAX_FAILED_ATTEMPTS = 5;
     public static final int LOCKOUT_MINUTES = 15;
     public static final int RESET_TOKEN_TTL_MINUTES = 30;
@@ -70,7 +70,7 @@ public class AuthService {
 
     // Pre-computed BCrypt hash (cost 10) for constant-time comparison when email does not exist
     private static final String DUMMY_BCRYPT_HASH =
-        "$2a$10$7EqJtq98hPqEX7fNZaFWoOhi5wU7bU0Hj3d9J/1g4k6eZ6vR6Zt1u";
+            "$2a$10$7EqJtq98hPqEX7fNZaFWoOhi5wU7bU0Hj3d9J/1g4k6eZ6vR6Zt1u";
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
@@ -87,33 +87,33 @@ public class AuthService {
 
     @Autowired
     public AuthService(
-        UserRepository userRepository,
-        RoleRepository roleRepository,
-        SsoTicketService ssoTicketService,
-        PasswordResetTokenRepository passwordResetTokenRepository,
-        ExternalApiClient externalApiClient,
-        JwtService jwtService,
-        ApplicationEventPublisher eventPublisher,
-        PasswordEncoder passwordEncoder,
-        Clock clock,
-        ObjectMapper objectMapper) {
+            UserRepository userRepository,
+            RoleRepository roleRepository,
+            SsoTicketService ssoTicketService,
+            PasswordResetTokenRepository passwordResetTokenRepository,
+            ExternalApiClient externalApiClient,
+            JwtService jwtService,
+            ApplicationEventPublisher eventPublisher,
+            PasswordEncoder passwordEncoder,
+            Clock clock,
+            ObjectMapper objectMapper) {
         this.userRepository =
-            Objects.requireNonNull(userRepository, "userRepository cannot be null");
+                Objects.requireNonNull(userRepository, "userRepository cannot be null");
         this.roleRepository =
-            Objects.requireNonNull(roleRepository, "roleRepository cannot be null");
+                Objects.requireNonNull(roleRepository, "roleRepository cannot be null");
         this.ssoTicketService =
-            Objects.requireNonNull(ssoTicketService, "ssoTicketService cannot be null");
+                Objects.requireNonNull(ssoTicketService, "ssoTicketService cannot be null");
         this.passwordResetTokenRepository =
-            Objects.requireNonNull(
-                passwordResetTokenRepository,
-                "passwordResetTokenRepository cannot be null");
+                Objects.requireNonNull(
+                        passwordResetTokenRepository,
+                        "passwordResetTokenRepository cannot be null");
         this.externalApiClient =
-            Objects.requireNonNull(externalApiClient, "externalApiClient cannot be null");
+                Objects.requireNonNull(externalApiClient, "externalApiClient cannot be null");
         this.jwtService = Objects.requireNonNull(jwtService, "jwtService cannot be null");
         this.eventPublisher =
-            Objects.requireNonNull(eventPublisher, "eventPublisher cannot be null");
+                Objects.requireNonNull(eventPublisher, "eventPublisher cannot be null");
         this.passwordEncoder =
-            Objects.requireNonNull(passwordEncoder, "passwordEncoder cannot be null");
+                Objects.requireNonNull(passwordEncoder, "passwordEncoder cannot be null");
         this.clock = Objects.requireNonNull(clock, "clock cannot be null");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper cannot be null");
     }
@@ -183,9 +183,9 @@ public class AuthService {
         String issuedAtStr = json.path("issuedAt").asText(null);
 
         String roleStr =
-            json.hasNonNull("role")
-                ? json.path("role").asText()
-                : json.path("mockRole").asText(null);
+                json.hasNonNull("role")
+                        ? json.path("role").asText()
+                        : json.path("mockRole").asText(null);
 
         if (issuedAtStr == null || issuedAtStr.isBlank()) {
             log.warn("SSO ticket missing issuedAt timestamp: lmsUserId={}", lmsUserId);
@@ -213,11 +213,11 @@ public class AuthService {
         if (user == null) {
             if (email != null && userRepository.existsByEmail(email)) {
                 log.warn(
-                    "SSO account linking rejected: email collision detected for lmsUserId={}",
-                    lmsUserId);
+                        "SSO account linking rejected: email collision detected for lmsUserId={}",
+                        lmsUserId);
                 throw new ConflictException(
-                    "EMAIL_COLLISION",
-                    "Email từ LMS đã được sử dụng bởi một tài khoản khác trong hệ thống");
+                        "EMAIL_COLLISION",
+                        "Email từ LMS đã được sử dụng bởi một tài khoản khác trong hệ thống");
             }
             user = new User(email, null, fullName, lmsUserId, role, null);
             user.setStatus(UserStatus.ACTIVE);
@@ -259,28 +259,28 @@ public class AuthService {
             if (OffsetDateTime.now(clock).isBefore(user.getLockedUntil())) {
                 long remainingMinutes = user.getRemainingLockoutMinutes(clock);
                 log.warn(
-                    "Login attempt on locked account userId={}: {} minutes remaining",
-                    user.getId(),
-                    remainingMinutes);
+                        "Login attempt on locked account userId={}: {} minutes remaining",
+                        user.getId(),
+                        remainingMinutes);
                 throw new AccountLockedException(
-                    "Tài khoản đã bị tạm khóa do nhập sai mật khẩu quá 5 lần. Vui lòng thử lại sau "
-                        + remainingMinutes
-                        + " phút.");
+                        "Tài khoản đã bị tạm khóa do nhập sai mật khẩu quá 5 lần. Vui lòng thử lại sau "
+                                + remainingMinutes
+                                + " phút.");
             }
             user.unlockAccount();
         }
 
         if (user.getPasswordHash() == null
-            || !passwordEncoder.matches(request.password(), user.getPasswordHash())) {
+                || !passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             user.recordFailedAttempt(clock, MAX_FAILED_ATTEMPTS, LOCKOUT_MINUTES);
             userRepository.save(user);
 
             if (user.getStatus() == UserStatus.LOCKED) {
                 log.warn(
-                    "Account userId={} reached 5 consecutive failures, locked for 15 minutes",
-                    user.getId());
+                        "Account userId={} reached 5 consecutive failures, locked for 15 minutes",
+                        user.getId());
                 throw new AccountLockedException(
-                    "Đăng nhập thất bại quá 5 lần. Tài khoản bị tạm khóa 15 phút.");
+                        "Đăng nhập thất bại quá 5 lần. Tài khoản bị tạm khóa 15 phút.");
             }
 
             throw new UnauthorizedException("Email hoặc mật khẩu không chính xác");
@@ -301,16 +301,16 @@ public class AuthService {
     public MessageResponse changePassword(Long userId, ChangePasswordRequest request) {
         if (!PASSWORD_PATTERN.matcher(request.newPassword()).matches()) {
             throw new ValidationException(
-                "Mật khẩu mới phải có ít nhất 8 ký tự, bao gồm cả chữ và số");
+                    "Mật khẩu mới phải có ít nhất 8 ký tự, bao gồm cả chữ và số");
         }
 
         User user =
-            userRepository
-                .findById(userId)
-                .orElseThrow(() -> new UnauthorizedException("Yêu cầu xác thực tài khoản"));
+                userRepository
+                        .findById(userId)
+                        .orElseThrow(() -> new UnauthorizedException("Yêu cầu xác thực tài khoản"));
 
         if (user.getPasswordHash() == null
-            || !passwordEncoder.matches(request.oldPassword(), user.getPasswordHash())) {
+                || !passwordEncoder.matches(request.oldPassword(), user.getPasswordHash())) {
             throw new ValidationException("Mật khẩu hiện tại không chính xác");
         }
 
@@ -345,13 +345,13 @@ public class AuthService {
             String tokenHash = hashSha256(rawToken);
 
             OffsetDateTime expiresAt =
-                OffsetDateTime.now(clock).plusMinutes(RESET_TOKEN_TTL_MINUTES);
+                    OffsetDateTime.now(clock).plusMinutes(RESET_TOKEN_TTL_MINUTES);
             PasswordResetToken tokenEntity = new PasswordResetToken(user, tokenHash, expiresAt);
             passwordResetTokenRepository.save(tokenEntity);
 
             // Decoupled delivery: publish domain event for AFTER_COMMIT handling
             eventPublisher.publishEvent(
-                new PasswordResetRequestedEvent(user.getId(), user.getEmail(), rawToken));
+                    new PasswordResetRequestedEvent(user.getId(), user.getEmail(), rawToken));
         } else {
             // Constant-time mitigation: Dummy computation matching random generation and SHA-256
             // cost
@@ -361,7 +361,7 @@ public class AuthService {
         }
 
         return new MessageResponse(
-            "Nếu email tồn tại trong hệ thống, hướng dẫn đặt lại mật khẩu đã được gửi.");
+                "Nếu email tồn tại trong hệ thống, hướng dẫn đặt lại mật khẩu đã được gửi.");
     }
 
     /**
@@ -373,7 +373,7 @@ public class AuthService {
     public MessageResponse resetPassword(ResetPasswordRequest request) {
         if (!PASSWORD_PATTERN.matcher(request.newPassword()).matches()) {
             throw new ValidationException(
-                "Mật khẩu mới phải có ít nhất 8 ký tự, bao gồm cả chữ và số");
+                    "Mật khẩu mới phải có ít nhất 8 ký tự, bao gồm cả chữ và số");
         }
 
         String rawToken = request.token().trim();
@@ -383,16 +383,16 @@ public class AuthService {
         int updated = passwordResetTokenRepository.markTokenAsUsedAtomic(tokenHash, now, now);
         if (updated == 0) {
             throw new ResetTokenExpiredException(
-                "Mã đặt lại mật khẩu không hợp lệ hoặc đã hết hạn");
+                    "Mã đặt lại mật khẩu không hợp lệ hoặc đã hết hạn");
         }
 
         PasswordResetToken token =
-            passwordResetTokenRepository
-                .findByTokenHash(tokenHash)
-                .orElseThrow(
-                    () ->
-                        new ResetTokenExpiredException(
-                            "Mã đặt lại mật khẩu không hợp lệ hoặc đã hết hạn"));
+                passwordResetTokenRepository
+                        .findByTokenHash(tokenHash)
+                        .orElseThrow(
+                                () ->
+                                        new ResetTokenExpiredException(
+                                                "Mã đặt lại mật khẩu không hợp lệ hoặc đã hết hạn"));
 
         User user = token.getUser();
         user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
@@ -407,9 +407,9 @@ public class AuthService {
     @Transactional(readOnly = true)
     public UserDto getMe(Long userId) {
         User user =
-            userRepository
-                .findById(userId)
-                .orElseThrow(() -> new UnauthorizedException("Yêu cầu xác thực tài khoản"));
+                userRepository
+                        .findById(userId)
+                        .orElseThrow(() -> new UnauthorizedException("Yêu cầu xác thực tài khoản"));
 
         if (user.getStatus() == UserStatus.LOCKED || user.isAccountLocked(clock)) {
             throw new AccountLockedException("Tài khoản đã bị tạm khóa");
@@ -420,18 +420,18 @@ public class AuthService {
 
     public UserDto toUserDto(User user) {
         return new UserDto(
-            user.getId(),
-            user.getEmail(),
-            user.getFullName(),
-            user.getRole() != null ? user.getRole().getName() : "",
-            user.getCompanyId(),
-            user.getLmsUserId(),
-            user.getStatus() != null ? user.getStatus().name() : "ACTIVE",
-            user.isMustChangePassword());
+                user.getId(),
+                user.getEmail(),
+                user.getFullName(),
+                user.getRole() != null ? user.getRole().getName() : "",
+                user.getCompanyId(),
+                user.getLmsUserId(),
+                user.getStatus() != null ? user.getStatus().name() : "ACTIVE",
+                user.isMustChangePassword());
     }
 
     private static final Set<String> ALLOWED_LMS_ROLES =
-        Set.of(Role.CANDIDATE, Role.MENTOR, Role.STAFF, Role.ADMIN);
+            Set.of(Role.CANDIDATE, Role.MENTOR, Role.STAFF, Role.ADMIN);
 
     private Role resolveRole(String roleStr) {
         if (roleStr == null || roleStr.isBlank()) {
@@ -442,12 +442,12 @@ public class AuthService {
             throw UnmappedRoleException.forRole(roleStr);
         }
         return roleRepository
-            .findByName(normalized)
-            .orElseThrow(
-                () ->
-                    new IllegalStateException(
-                        "Vai trò hệ thống không tồn tại trong CSDL: "
-                            + normalized));
+                .findByName(normalized)
+                .orElseThrow(
+                        () ->
+                                new IllegalStateException(
+                                        "Vai trò hệ thống không tồn tại trong CSDL: "
+                                                + normalized));
     }
 
     private String hashSha256(String raw) {

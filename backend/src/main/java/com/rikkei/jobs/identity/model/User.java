@@ -70,7 +70,7 @@ public class User {
     public User() {}
 
     public User(
-        String email, String passwordHash, String fullName, String lmsUserId, Integer roleId) {
+            String email, String passwordHash, String fullName, String lmsUserId, Integer roleId) {
         this.email = email;
         this.passwordHash = passwordHash;
         this.fullName = fullName;
@@ -83,12 +83,12 @@ public class User {
     }
 
     public User(
-        String email,
-        String passwordHash,
-        String fullName,
-        String lmsUserId,
-        Role role,
-        Long companyId) {
+            String email,
+            String passwordHash,
+            String fullName,
+            String lmsUserId,
+            Role role,
+            Long companyId) {
         this.email = email;
         this.passwordHash = passwordHash;
         this.fullName = fullName;

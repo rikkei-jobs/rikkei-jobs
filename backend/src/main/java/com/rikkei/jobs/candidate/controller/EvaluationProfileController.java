@@ -2,7 +2,6 @@ package com.rikkei.jobs.candidate.controller;
 
 import com.rikkei.jobs.candidate.dto.response.ProfileEvaluationsResponse;
 import com.rikkei.jobs.candidate.service.ProfileEvaluationService;
-
 import com.rikkei.jobs.identity.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +21,8 @@ public class EvaluationProfileController {
     @GetMapping("/{userId}/evaluations")
     @PreAuthorize("hasAnyRole('HR', 'CANDIDATE')")
     public ResponseEntity<ProfileEvaluationsResponse> getProfileEvaluations(
-        @PathVariable Long userId, @AuthenticationPrincipal UserPrincipal user) {
-        return ResponseEntity.ok(profileEvaluationService.getProfileEvaluations(userId, user.getId()));
+            @PathVariable Long userId, @AuthenticationPrincipal UserPrincipal user) {
+        return ResponseEntity.ok(
+                profileEvaluationService.getProfileEvaluations(userId, user.getId()));
     }
 }

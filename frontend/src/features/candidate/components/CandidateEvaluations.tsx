@@ -11,15 +11,11 @@ export const CandidateEvaluations: React.FC = () => {
   const [data, setData] = useState<CandidateEvaluationsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedEvaluationId, setSelectedEvaluationId] = useState<number | null>(
-    null,
-  );
+  const [selectedEvaluationId, setSelectedEvaluationId] = useState<number | null>(null);
   const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     if (!user?.id) {
-      setLoading(false);
-      setError('Không tìm thấy thông tin tài khoản ứng viên.');
       return;
     }
 
@@ -30,19 +26,15 @@ export const CandidateEvaluations: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        const result = await fetchCandidateEvaluations(
-          user.id,
-    );
+        const result = await fetchCandidateEvaluations(user.id);
 
         setData(result);
       } catch (err) {
-        if (controller.signal.aborted) return;
+        if (controller.signal.aborted) {
+          return;
+        }
 
-        setError(
-          err instanceof Error
-            ? err.message
-            : 'Không thể tải danh sách đánh giá. Vui lòng thử lại.',
-        );
+        setError(err instanceof Error ? err.message : 'Không thể tải danh sách đánh giá.');
       } finally {
         if (!controller.signal.aborted) {
           setLoading(false);
@@ -56,18 +48,26 @@ export const CandidateEvaluations: React.FC = () => {
   }, [user?.id, retryCount]);
 
   const handleToggleEvaluation = useCallback((evaluationId: number) => {
-    setSelectedEvaluationId((currentId) =>
-      currentId === evaluationId ? null : evaluationId,
-    );
+    setSelectedEvaluationId((currentId) => (currentId === evaluationId ? null : evaluationId));
   }, []);
+
+  if (!user?.id) {
+    return (
+      <div className="ce-status ce-status-error">
+        <h3 className="ce-status-title">Không tìm thấy tài khoản</h3>
+
+        <p className="ce-status-description">
+          Không tìm thấy thông tin tài khoản ứng viên. Vui lòng đăng nhập lại.
+        </p>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
       <div className="ce-status" role="status">
         <p className="ce-status-title">Đang tải đánh giá</p>
-        <p className="ce-status-description">
-          Vui lòng chờ trong giây lát...
-        </p>
+        <p className="ce-status-description">Vui lòng chờ trong giây lát...</p>
       </div>
     );
   }
@@ -108,16 +108,13 @@ export const CandidateEvaluations: React.FC = () => {
         <div>
           <h2 className="ce-heading">Đánh giá từ mentor</h2>
           <p className="ce-lead">
-            Theo dõi kết quả đánh giá và nhận xét từ mentor trong quá trình
-            phỏng vấn, thực tập.
+            Theo dõi kết quả đánh giá và nhận xét từ mentor trong quá trình phỏng vấn, thực tập.
           </p>
         </div>
 
         <div className="ce-overview">
           <span className="ce-overview-label">Tổng số phiếu</span>
-          <strong className="ce-overview-value">
-            {evaluations.length}
-          </strong>
+          <strong className="ce-overview-value">{evaluations.length}</strong>
         </div>
       </div>
 

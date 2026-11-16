@@ -2,17 +2,14 @@ package com.rikkei.jobs.common.security;
 
 import com.rikkei.jobs.identity.security.JwtAuthFilter;
 import com.rikkei.jobs.identity.security.MustChangePasswordFilter;
-
 import java.util.Arrays;
 import java.util.List;
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -45,12 +42,12 @@ public class SecurityConfig {
 
     @org.springframework.beans.factory.annotation.Autowired
     public SecurityConfig(
-        CustomAuthenticationEntryPoint authenticationEntryPoint,
-        CustomAccessDeniedHandler accessDeniedHandler,
-        JwtAuthFilter jwtAuthFilter,
-        MustChangePasswordFilter mustChangePasswordFilter,
-        Environment environment,
-        @Value("${CORS_ALLOWED_ORIGINS:}") String corsAllowedOrigins) {
+            CustomAuthenticationEntryPoint authenticationEntryPoint,
+            CustomAccessDeniedHandler accessDeniedHandler,
+            JwtAuthFilter jwtAuthFilter,
+            MustChangePasswordFilter mustChangePasswordFilter,
+            Environment environment,
+            @Value("${CORS_ALLOWED_ORIGINS:}") String corsAllowedOrigins) {
         this.authenticationEntryPoint = authenticationEntryPoint;
         this.accessDeniedHandler = accessDeniedHandler;
         this.jwtAuthFilter = jwtAuthFilter;
@@ -60,73 +57,73 @@ public class SecurityConfig {
     }
 
     public SecurityConfig(
-        CustomAuthenticationEntryPoint authenticationEntryPoint,
-        CustomAccessDeniedHandler accessDeniedHandler,
-        Environment environment,
-        String corsAllowedOrigins) {
+            CustomAuthenticationEntryPoint authenticationEntryPoint,
+            CustomAccessDeniedHandler accessDeniedHandler,
+            Environment environment,
+            String corsAllowedOrigins) {
         this(
-            authenticationEntryPoint,
-            accessDeniedHandler,
-            null,
-            null,
-            environment,
-            corsAllowedOrigins);
+                authenticationEntryPoint,
+                accessDeniedHandler,
+                null,
+                null,
+                environment,
+                corsAllowedOrigins);
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .sessionManagement(
-                session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .exceptionHandling(
-                exceptions ->
-                    exceptions
-                        .authenticationEntryPoint(authenticationEntryPoint)
-                        .accessDeniedHandler(accessDeniedHandler))
-            .authorizeHttpRequests(
-                auth -> {
-                    auth.requestMatchers(
-                            "/api/v1/auth/login",
-                            "/api/v1/auth/sso",
-                            "/api/v1/auth/forgot-password",
-                            "/api/v1/auth/reset-password")
-                        .permitAll()
-                        .requestMatchers(
-                            "/api/v1/health",
-                            "/actuator/health",
-                            "/swagger-ui.html",
-                            "/swagger-ui/**",
-                            "/api-docs/**",
-                            "/v3/api-docs/**",
-                            "/api/v1/auth/**",
-                            "/auth/**",
-                            "/login",
-                            "/sso-callback",
-                            "/change-password",
-                            "/forgot-password",
-                            "/reset-password",
-                            "/dashboard",
-                            "/*.html",
-                            "/static/**",
-                            "/error")
-                        .permitAll();
-                    if (environment.matchesProfiles("dev")) {
-                        auth.requestMatchers(
-                                "/api/v1/test/**",
-                                "/api/v1/me/job-recommendations",
-                                "/api/v1/candidates/me/job-recommendations",
-                                "/me/job-recommendations",
-                                "/api/v1/evaluation-templates")
-                            .permitAll();
-                    }
-                    auth.requestMatchers(HttpMethod.POST, "/api/v1/auth/change-password")
-                        .authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/auth/me")
-                        .authenticated()
-                        .anyRequest()
-                        .authenticated();
-                });
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .sessionManagement(
+                        session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(
+                        exceptions ->
+                                exceptions
+                                        .authenticationEntryPoint(authenticationEntryPoint)
+                                        .accessDeniedHandler(accessDeniedHandler))
+                .authorizeHttpRequests(
+                        auth -> {
+                            auth.requestMatchers(
+                                            "/api/v1/auth/login",
+                                            "/api/v1/auth/sso",
+                                            "/api/v1/auth/forgot-password",
+                                            "/api/v1/auth/reset-password")
+                                    .permitAll()
+                                    .requestMatchers(
+                                            "/api/v1/health",
+                                            "/actuator/health",
+                                            "/swagger-ui.html",
+                                            "/swagger-ui/**",
+                                            "/api-docs/**",
+                                            "/v3/api-docs/**",
+                                            "/api/v1/auth/**",
+                                            "/auth/**",
+                                            "/login",
+                                            "/sso-callback",
+                                            "/change-password",
+                                            "/forgot-password",
+                                            "/reset-password",
+                                            "/dashboard",
+                                            "/*.html",
+                                            "/static/**",
+                                            "/error")
+                                    .permitAll();
+                            if (environment.matchesProfiles("dev")) {
+                                auth.requestMatchers(
+                                                "/api/v1/test/**",
+                                                "/api/v1/me/job-recommendations",
+                                                "/api/v1/candidates/me/job-recommendations",
+                                                "/me/job-recommendations",
+                                                "/api/v1/evaluation-templates")
+                                        .permitAll();
+                            }
+                            auth.requestMatchers(HttpMethod.POST, "/api/v1/auth/change-password")
+                                    .authenticated()
+                                    .requestMatchers(HttpMethod.GET, "/api/v1/auth/me")
+                                    .authenticated()
+                                    .anyRequest()
+                                    .authenticated();
+                        });
 
         if (jwtAuthFilter != null) {
             http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
@@ -145,14 +142,14 @@ public class SecurityConfig {
         List<String> origins;
         if (corsAllowedOrigins != null && !corsAllowedOrigins.trim().isEmpty()) {
             origins =
-                Arrays.stream(corsAllowedOrigins.split(","))
-                    .map(String::trim)
-                    .filter(s -> !s.isEmpty())
-                    .toList();
+                    Arrays.stream(corsAllowedOrigins.split(","))
+                            .map(String::trim)
+                            .filter(s -> !s.isEmpty())
+                            .toList();
         } else {
             if (environment.matchesProfiles("prod")) {
                 throw new IllegalStateException(
-                    "CORS_ALLOWED_ORIGINS must be set and non-empty in prod profile");
+                        "CORS_ALLOWED_ORIGINS must be set and non-empty in prod profile");
             }
             origins = List.of("http://localhost:3000", "http://127.0.0.1:3000");
         }
@@ -160,15 +157,15 @@ public class SecurityConfig {
         config.setAllowedOrigins(origins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(
-            List.of(
-                "Authorization",
-                "Content-Type",
-                "Accept",
-                "X-Requested-With",
-                "Origin",
-                "Access-Control-Request-Method",
-                "Access-Control-Request-Headers",
-                "X-Service-Key"));
+                List.of(
+                        "Authorization",
+                        "Content-Type",
+                        "Accept",
+                        "X-Requested-With",
+                        "Origin",
+                        "Access-Control-Request-Method",
+                        "Access-Control-Request-Headers",
+                        "X-Service-Key"));
         config.setAllowCredentials(true);
         config.setMaxAge(3600L);
 

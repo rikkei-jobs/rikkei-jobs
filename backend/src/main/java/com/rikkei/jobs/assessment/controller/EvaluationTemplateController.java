@@ -3,8 +3,6 @@ package com.rikkei.jobs.assessment.controller;
 import com.rikkei.jobs.assessment.dto.response.EvaluationTemplateResponse;
 import com.rikkei.jobs.assessment.model.EvaluationContext;
 import com.rikkei.jobs.assessment.service.EvaluationTemplateService;
-
-import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +22,5 @@ public class EvaluationTemplateController {
             @RequestParam(required = false) String position,
             @RequestParam(required = false) EvaluationContext context) {
         return ResponseEntity.ok(templateService.getTemplates(position, context));
-
     }
 }
