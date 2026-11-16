@@ -336,8 +336,7 @@ public class SecurityHardeningIntegrationTest {
                             "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                             Integer.class);
             assertEquals(
-                    4, migrationCount, "Non-dev profile must apply exactly 4 schema migrations");
-            assertEquals(3, migrationCount, "Only schema migrations V1, V3 and V5 must be applied");
+                    5, migrationCount, "Non-dev profile must apply exactly 5 schema migrations");
 
             Boolean hasV2 =
                     jdbcTemplate.queryForObject(

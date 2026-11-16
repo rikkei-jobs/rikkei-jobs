@@ -103,14 +103,14 @@ public class ProfileSeparationIntegrationTest {
         }
 
         @Test
-        @DisplayName("Prod profile must apply only V1 and V3 migrations in flyway_schema_history")
+        @DisplayName("Prod profile must apply 5 migrations in flyway_schema_history")
         void testProdProfileAppliesOnlyV1Schema() {
             Integer migrationCount =
                     jdbcTemplate.queryForObject(
                             "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                             Integer.class);
 
-            assertEquals(4, migrationCount, "Prod environment must execute exactly 4 migrations");
+            assertEquals(5, migrationCount, "Prod environment must execute exactly 5 migrations");
 
             Boolean hasV2 =
                     jdbcTemplate.queryForObject(
@@ -206,14 +206,14 @@ public class ProfileSeparationIntegrationTest {
         }
 
         @Test
-        @DisplayName("Dev profile must apply all 7 migrations")
+        @DisplayName("Dev profile must apply all 9 migrations")
         void testDevProfileAppliesV1AndV2() {
             Integer migrationCount =
                     jdbcTemplate.queryForObject(
                             "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                             Integer.class);
 
-            assertEquals(7, migrationCount, "Dev environment must execute exactly 7 migrations");
+            assertEquals(9, migrationCount, "Dev environment must execute exactly 9 migrations");
 
             Boolean hasV2 =
                     jdbcTemplate.queryForObject(
