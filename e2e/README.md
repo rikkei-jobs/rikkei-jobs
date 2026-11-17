@@ -9,10 +9,14 @@ This directory contains the automated end-to-end (E2E) integration test suite fo
 
 ## Test Tiers Overview
 
-1. **Tier 1 — Feature Coverage (`tier1-features/`)**: Verifies the 11 external mock endpoints, 4 mock testing tools, backend health status, error responses, and frontend serving.
-2. **Tier 2 — Boundaries & Security (`tier2-boundaries/`)**: Tests unauthorized access (401 without key), invalid payload validation (400), business conflicts (409 duplicate enrollment/batch member), and non-existent entity lookups (404).
+1. **Tier 1 — Feature Coverage (`tier1-features/`)**: Verifies the 11 external mock endpoints, 4 mock testing tools, backend health status, error responses, frontend serving, authentication features, and DG-01 Mentor Evaluation templates, happy-path submission (`DRAFT` -> `PUT` -> `submit` -> verified `MENTOR` evidence & `verifiedScore` delta), and OpenAPI `/api-docs` exposure (`test_evaluation_features.test.mjs`).
+2. **Tier 2 — Boundaries & Security (`tier2-boundaries/`)**: Tests unauthorized access (401), forbidden role calls (403), invalid payload validation (400), business conflicts (409 duplicate enrollment/batch member/submitted evaluation), IDOR protections (404 across mentors and candidates), and HTTP-level simultaneous submit concurrency (`test_evaluation_boundaries.test.mjs`).
 3. **Tier 3 — Combinations (`tier3-combinations/`)**: Verifies state mutation lifecycles (enrollment -> progress updates -> mock reset).
-4. **Tier 4 — Real-World Scenarios (`tier4-scenarios/`)**: End-to-end integration flows simulating candidate batch addition, course completion, and external service failure resilience (HTTP 503 `EXTERNAL_UNAVAILABLE`).
+4. **Tier 4 — Real-World Scenarios (`tier4-scenarios/`)**: End-to-end integration flows simulating candidate batch addition, course completion, external service failure resilience (HTTP 503 `EXTERNAL_UNAVAILABLE`), and DG-01 evaluation profile visibility (`SUBMITTED` newest-first ordering, no `DRAFT` leakage, and HR `200`/`404` access across public/private profiles in `test_evaluation_scenarios.test.mjs`).
+
+## Suite Totals
+
+- **Current Baseline (with DG-01)**: `20` suites across 4 tiers, `231` test cases, `1139` assertions (up from prior `17` suites / `221` cases / `998` assertions).
 
 ## Running the Suite
 

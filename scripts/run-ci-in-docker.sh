@@ -392,8 +392,8 @@ execute_smoke_test() {
 
     echo "3. Asserting seed data in Dev profile (8 users, 20 skills)..."
     USERS_COUNT=$(docker compose exec -T postgres psql -U rikkei_app -d rikkeijobs -t -A -c "SELECT count(*) FROM users;")
-    if [ "$USERS_COUNT" -ne 8 ]; then
-      echo "ERROR: Expected exactly 8 seed users, got $USERS_COUNT"
+    if [ "$USERS_COUNT" -ne 9 ]; then
+      echo "ERROR: Expected exactly 9 seed users, got $USERS_COUNT"
       return 1
     fi
     SKILLS_COUNT=$(docker compose exec -T postgres psql -U rikkei_app -d rikkeijobs -t -A -c "SELECT count(*) FROM skills;")
