@@ -227,7 +227,9 @@
     "ghp",
     "ssot",
     "cfix",
-    "desynchronized"
+    "desynchronized",
+    "idor",
+    "tablename"
   ],
   "ignorePaths": [
     "**/node_modules/**",

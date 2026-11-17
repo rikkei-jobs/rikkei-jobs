@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -29,6 +30,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
  */
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final CustomAuthenticationEntryPoint authenticationEntryPoint;
@@ -103,6 +105,13 @@ public class SecurityConfig {
                                     .authenticated()
                                     .requestMatchers(HttpMethod.GET, "/api/v1/auth/me")
                                     .authenticated()
+                                    .requestMatchers("/api/v1/evaluations/**")
+                                    .hasRole("MENTOR")
+                                    .requestMatchers("/api/v1/evaluation-templates/**")
+                                    .hasRole("MENTOR")
+                                    .requestMatchers(
+                                            HttpMethod.GET, "/api/v1/profiles/*/evaluations")
+                                    .hasAnyRole("CANDIDATE", "HR")
                                     .anyRequest()
                                     .authenticated();
                         });

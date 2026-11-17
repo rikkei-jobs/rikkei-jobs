@@ -18,7 +18,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
  * Verifies that the default profile (no active profiles specified) executes ONLY prod schema
- * migrations (V1, V3 and V5) and does NOT seed any sample users (neither V2 nor V4).
+ * migrations (V1, V3, V5 and V7) and does NOT seed any sample users (neither V2, V4, V6 nor V8).
  */
 @SpringBootTest
 @Testcontainers
@@ -50,16 +50,17 @@ public class DefaultProfileIntegrationTest {
     }
 
     @Test
-    @DisplayName("Default profile must apply only V1 and V3 schema migrations, not dev seeds")
+    @DisplayName(
+            "Default profile must apply only V1, V3, V5 and V7 schema migrations, not dev seeds")
     void testDefaultProfileAppliesOnlyV1Schema() {
         Integer migrationCount =
                 jdbcTemplate.queryForObject(
                         "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                         Integer.class);
         assertEquals(
-                3,
+                4,
                 migrationCount,
-                "Default profile must only apply schema migrations V1, V3 and V5, count must be 3");
+                "Default profile must only apply schema migrations V1, V3, V5 and V7, count must be 4");
 
         Boolean hasV2 =
                 jdbcTemplate.queryForObject(
@@ -84,6 +85,22 @@ public class DefaultProfileIntegrationTest {
         assertFalse(
                 Boolean.TRUE.equals(hasV4),
                 "V4 dev seed migration must NOT be applied in default profile");
+
+        Boolean hasV7 =
+                jdbcTemplate.queryForObject(
+                        "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '7')",
+                        Boolean.class);
+        assertTrue(
+                Boolean.TRUE.equals(hasV7),
+                "V7 schema migration must be applied in default profile");
+
+        Boolean hasV8 =
+                jdbcTemplate.queryForObject(
+                        "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '8')",
+                        Boolean.class);
+        assertFalse(
+                Boolean.TRUE.equals(hasV8),
+                "V8 dev seed migration must NOT be applied in default profile");
     }
 
     @Test
