@@ -1,4 +1,3 @@
-<!-- cspell:ignore typecheck vitest -->
 # Behavioural Test Scenario 02: Verification Before Completion & Linter Discipline
 
 ## 1. Metadata & Target Standards

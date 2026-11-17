@@ -4,15 +4,17 @@
  * Task: T022DB0 — Sprint 1 Quality Gate (Milestone 5)
  *
  * Mechanically validates agent configuration rules, skills, entrypoints, and mirrors.
- * Implements 8 comprehensive validation passes with zero external npm dependencies:
+ * Implements 10 comprehensive validation passes with zero external npm dependencies:
  *   - Check 1: YAML Frontmatter Integrity (trigger-only, kebab-case, name matching)
  *   - Check 2: Strict Line Cap Limits & Line Ending Hygiene (LF, no BOM, caps)
  *   - Check 3: Forbidden Patterns Detection (recursive emoji scan across all docs, secrets, commit mutations, TODOs)
  *   - Check 4: Markdown Links & Anchor Validity (internal relative links and anchors)
- *   - Check 5: Cryptographic Mirror Parity (.claude <-> .gemini 1:1 SHA-256 hash match)
+ *   - Check 5: Cryptographic Mirror Parity (.claude <-> .gemini 1:1 SHA-256 hash match, full 168 mirror artifacts verified)
  *   - Check 6: Repository Asset Citation & Command Existence (real repo assets/commands)
  *   - Check 7: Skill Supporting Files (references/*) Link Validity & Mirror Parity
  *   - Check 8: Project-Level Settings (settings.json) Mapping & Security Enforcement
+ *   - Check 9: Visual Design Bar & Color Token Parity
+ *   - Check 10: Mechanical Quality Gates Synchronization & Count Consistency
  *
  * CLI Flags:
  *   --check      Runs in verification mode. Exits 0 on clean pass, 1 on any violation.
@@ -24,6 +26,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import { buildDesiredFilesMap } from './sync-agent-config.mjs';
+import { getAuthoritativeGateCounts } from './check-gate-sync.mjs';
 
 // --- Terminal Colors ---
 const RED = '\x1b[31m';
@@ -205,7 +209,6 @@ export function scanForbiddenPatterns(content, filePath = '') {
     }
 
     // 2. Secret check
-    /* cspell:disable */
     const hasSecretPattern =
       /-----BEGIN (RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----/.test(line) ||
       /\bAKIA[0-9A-Z]{16}\b/.test(line) ||
@@ -213,7 +216,6 @@ export function scanForbiddenPatterns(content, filePath = '') {
       /\bxox[baprs]-[0-9]{12}\b/.test(line) ||
       /\beyJ[A-Za-z0-9-_]+\.eyJ[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\b/.test(line) ||
       /((api[_-]?key|secret|password|bearer|auth[_-]?token|authToken)\s*[:=]\s*(["'][^"'\r\n]{8,}["']|[^\s#"']{8,}))/i.test(line);
-    /* cspell:enable */
 
     if (hasSecretPattern) {
       const isExemptSecret =
@@ -378,6 +380,9 @@ export async function validateAgentConfig(options = {}) {
   const results = {
     pass: true,
     totalFilesChecked: 0,
+    canonicalArtifactsChecked: 0,
+    mirrorArtifactsChecked: 0,
+    markdownDocsScanned: 0,
     check1Violations: [],
     check2Violations: [],
     check3Violations: [],
@@ -386,7 +391,8 @@ export async function validateAgentConfig(options = {}) {
     check6Violations: [],
     check7Violations: [],
     check8Violations: [],
-    check9Violations: []
+    check9Violations: [],
+    check10Violations: []
   };
 
   const logVerbose = (msg) => {
@@ -401,7 +407,7 @@ export async function validateAgentConfig(options = {}) {
   // ---------------------------------------------------------------------------
   // Check 1: YAML Frontmatter Integrity (Skills)
   // ---------------------------------------------------------------------------
-  console.log(`${BOLD}[Check 1/9] Validating YAML Frontmatter Integrity in Skills...${RESET}`);
+  console.log(`${BOLD}[Check 1/10] Validating YAML Frontmatter Integrity in Skills...${RESET}`);
   for (const skillName of SKILL_NAMES) {
     const skillPath = path.join(CANONICAL_DIR, 'skills', skillName, 'SKILL.md');
     if (!fs.existsSync(skillPath)) {
@@ -442,7 +448,7 @@ export async function validateAgentConfig(options = {}) {
   // ---------------------------------------------------------------------------
   // Check 2: Strict Line Cap Limits & Line Ending Hygiene
   // ---------------------------------------------------------------------------
-  console.log(`\n${BOLD}[Check 2/9] Validating Line Caps & Line Ending Hygiene (LF, UTF-8 no BOM)...${RESET}`);
+  console.log(`\n${BOLD}[Check 2/10] Validating Line Caps & Line Ending Hygiene (LF, UTF-8 no BOM)...${RESET}`);
 
   // 2.1 Rules <= 150 lines
   for (const ruleName of RULE_NAMES) {
@@ -507,6 +513,8 @@ export async function validateAgentConfig(options = {}) {
     }
   }
 
+  results.canonicalArtifactsChecked = results.totalFilesChecked;
+
   if (results.check2Violations.length === 0) {
     console.log(`  ${GREEN}[PASS] Check 2: Line caps and LF line-ending hygiene verified across all files.${RESET}`);
   } else {
@@ -518,7 +526,7 @@ export async function validateAgentConfig(options = {}) {
   // ---------------------------------------------------------------------------
   // Check 3: Forbidden Patterns Detection (Extended Scope) (T022DB0)
   // ---------------------------------------------------------------------------
-  console.log(`\n${BOLD}[Check 3/9] Scanning for Forbidden Patterns across Extended Scope (Emoji, Secrets, Git Mutations, TODOs)...${RESET}`);
+  console.log(`\n${BOLD}[Check 3/10] Scanning for Forbidden Patterns across Extended Scope (Emoji, Secrets, Git Mutations, TODOs)...${RESET}`);
   const scanTargets = [];
   RULE_NAMES.forEach(r => scanTargets.push({ file: r, fullPath: path.join(CANONICAL_DIR, 'rules', r) }));
   SKILL_NAMES.forEach(s => scanTargets.push({ file: `${s}/SKILL.md`, fullPath: path.join(CANONICAL_DIR, 'skills', s, 'SKILL.md') }));
@@ -550,6 +558,7 @@ export async function validateAgentConfig(options = {}) {
     extendedScanTargets.set(fp, path.relative(REPO_ROOT, fp).replace(/\\/g, '/'));
   });
 
+  results.markdownDocsScanned = extendedScanTargets.size;
   console.log(`  Scope: Inspected ${extendedScanTargets.size} Markdown files across docs (including docs/nt01/**), agent-config, .claude, .gemini, and root.`);
 
   // Recursive emoji scan across ALL extended markdown targets
@@ -591,7 +600,7 @@ export async function validateAgentConfig(options = {}) {
   // ---------------------------------------------------------------------------
   // Check 4: Markdown Links & Internal Anchor Validity
   // ---------------------------------------------------------------------------
-  console.log(`\n${BOLD}[Check 4/9] Validating Markdown Relative Links & Internal Anchors...${RESET}`);
+  console.log(`\n${BOLD}[Check 4/10] Validating Markdown Relative Links & Internal Anchors...${RESET}`);
   for (const target of scanTargets) {
     if (!fs.existsSync(target.fullPath)) continue;
     const content = fs.readFileSync(target.fullPath, 'utf8');
@@ -654,6 +663,102 @@ export async function validateAgentConfig(options = {}) {
     }
   }
 
+  // 4.2 Validate Shortcut & Collapsed Reference Link Definitions (C6 - VS Code link.no-such-reference)
+  for (const [fullPath, relPath] of extendedScanTargets.entries()) {
+    if (!fs.existsSync(fullPath)) continue;
+    const content = fs.readFileSync(fullPath, 'utf8');
+
+    // 1. Collect all valid link reference definitions: ^[ ]{0,3}\[([^\]]+)\]:\s*\S+
+    const definedLabels = new Set();
+    const defRegex = /^[ ]{0,3}\[([^\]]+)\]:\s*\S+/gm;
+    let dMatch;
+    while ((dMatch = defRegex.exec(content)) !== null) {
+      definedLabels.add(dMatch[1].trim().toLowerCase());
+    }
+
+    // 2. Strip fenced code blocks (``` ... ``` or ~~~ ... ~~~)
+    let clean = content.replace(/(```|~~~)[\s\S]*?\1/g, match => {
+      return '\n'.repeat((match.match(/\n/g) || []).length);
+    });
+
+    // 3. Strip display math blocks ($$ ... $$)
+    clean = clean.replace(/\$\$[\s\S]*?\$\$/g, match => {
+      return '\n'.repeat((match.match(/\n/g) || []).length);
+    });
+
+    // 4. Strip HTML comments (<!-- ... -->)
+    clean = clean.replace(/<!--[\s\S]*?-->/g, match => {
+      return '\n'.repeat((match.match(/\n/g) || []).length);
+    });
+
+    // 5. Strip inline code spans (`...`)
+    clean = clean.replace(/`[^`\n]*`/g, match => ' '.repeat(match.length));
+
+    // 6. Strip inline math ($...$)
+    clean = clean.replace(/\$[^$\n]+\$/g, match => ' '.repeat(match.length));
+
+    const lines = clean.split(/\r?\n/);
+    for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+      const line = lines[lineIdx];
+
+      // Skip definition lines
+      if (/^[ ]{0,3}\[[^\]]+\]:\s*\S+/.test(line)) {
+        continue;
+      }
+
+      const bracketRegex = /!?\[([^\]\n]+)\]/g;
+      let bMatch;
+      while ((bMatch = bracketRegex.exec(line)) !== null) {
+        const label = bMatch[1].trim();
+        const matchEnd = bMatch.index + bMatch[0].length;
+        const after = line.substring(matchEnd);
+
+        // Case A: followed by ( -> inline link [text](url)
+        if (after.startsWith('(')) {
+          continue;
+        }
+
+        // Case B: task list checkbox: [ ], [x], [X]
+        if (label === '' || label === ' ' || label.toLowerCase() === 'x') {
+          continue;
+        }
+
+        // Case C: footnote reference: [^...]
+        if (label.startsWith('^')) {
+          continue;
+        }
+
+        // Case D: followed by : -> link definition on same line
+        if (after.startsWith(':')) {
+          continue;
+        }
+
+        // Case E: followed by [ -> reference link [text][label] or [label][]
+        if (after.startsWith('[')) {
+          const secondBracketMatch = after.match(/^\[([^\]\n]*)\]/);
+          if (secondBracketMatch) {
+            const secondLabel = secondBracketMatch[1].trim();
+            const targetRef = secondLabel.length > 0 ? secondLabel : label;
+            if (!definedLabels.has(targetRef.toLowerCase())) {
+              results.check4Violations.push(
+                `Undefined reference link '[${targetRef}]' detected at ${relPath}:${lineIdx + 1}`
+              );
+            }
+            bracketRegex.lastIndex = matchEnd + secondBracketMatch[0].length;
+            continue;
+          }
+        }
+
+        // Case F: Shortcut reference link [label]
+        if (!definedLabels.has(label.toLowerCase())) {
+          results.check4Violations.push(
+            `Undefined reference link '[${label}]' detected at ${relPath}:${lineIdx + 1}`
+          );
+        }
+      }
+    }
+  }
+
   if (results.check4Violations.length === 0) {
     console.log(`  ${GREEN}[PASS] Check 4: All markdown relative links and anchors are strictly valid.${RESET}`);
   } else {
@@ -665,7 +770,7 @@ export async function validateAgentConfig(options = {}) {
   // ---------------------------------------------------------------------------
   // Check 5: Cryptographic Mirror Parity (.claude <-> .gemini 1:1 SHA-256 match)
   // ---------------------------------------------------------------------------
-  console.log(`\n${BOLD}[Check 5/9] Verifying Mirror Parity & SHA-256 Cryptographic Hashes...${RESET}`);
+  console.log(`\n${BOLD}[Check 5/10] Verifying Mirror Parity & SHA-256 Cryptographic Hashes...${RESET}`);
 
   // 5.1 Rules parity
   for (const ruleName of RULE_NAMES) {
@@ -717,7 +822,26 @@ export async function validateAgentConfig(options = {}) {
     logVerbose(`Skill parity ${skillName}: ${canonHash?.slice(0, 8)}`);
   }
 
-  // 5.3 Orphan detection in mirrors
+  // 5.3 Complete Mirror Artifacts Parity & Verification (168 desired files from sync-agent-config.mjs)
+  const desiredMirrors = buildDesiredFilesMap(CANONICAL_DIR, REPO_ROOT);
+  results.mirrorArtifactsChecked = desiredMirrors.size;
+  for (const [destPath, desiredBuf] of desiredMirrors.entries()) {
+    const relDest = path.relative(REPO_ROOT, destPath).replace(/\\/g, '/');
+    if (!fs.existsSync(destPath)) {
+      results.check5Violations.push(`Missing mirror artifact: ${relDest}`);
+      continue;
+    }
+    const actualBuf = fs.readFileSync(destPath);
+    const actualHash = crypto.createHash('sha256').update(actualBuf).digest('hex');
+    const desiredHash = crypto.createHash('sha256').update(desiredBuf).digest('hex');
+    if (actualHash !== desiredHash) {
+      results.check5Violations.push(`Cryptographic parity mismatch in mirror artifact: ${relDest} (actual: ${actualHash.slice(0, 8)}, expected: ${desiredHash.slice(0, 8)})`);
+    }
+  }
+
+  results.totalFilesChecked = results.canonicalArtifactsChecked + results.mirrorArtifactsChecked;
+
+  // 5.4 Orphan detection in mirrors
   const claudeFiles = scanDirRecursive(CLAUDE_DIR);
   for (const cFile of claudeFiles) {
     if (cFile.startsWith('rules/')) {
@@ -771,7 +895,7 @@ export async function validateAgentConfig(options = {}) {
   // ---------------------------------------------------------------------------
   // Check 6: Repository Asset Citation & Command Existence ([EXISTS] vs [TARGET])
   // ---------------------------------------------------------------------------
-  console.log(`\n${BOLD}[Check 6/9] Verifying Repository Asset Citations & [EXISTS]/[TARGET] Markers...${RESET}`);
+  console.log(`\n${BOLD}[Check 6/10] Verifying Repository Asset Citations & [EXISTS]/[TARGET] Markers...${RESET}`);
   let existsMarkerCount = 0;
   let targetMarkerCount = 0;
   const UNIMPLEMENTED_CONSTRUCTS = [
@@ -800,26 +924,26 @@ export async function validateAgentConfig(options = {}) {
     const lines = content.split(/\r?\n/);
 
     lines.forEach((line, idx) => {
-      const hasExists = line.includes('[EXISTS]');
-      const hasTarget = line.includes('[TARGET]');
+      const hasExists = line.includes('`EXISTS`') || line.includes('[EXISTS]');
+      const hasTarget = line.includes('`TARGET`') || line.includes('[TARGET]');
       if (hasExists) existsMarkerCount++;
       if (hasTarget) targetMarkerCount++;
 
-      // Verify [EXISTS] never claims unimplemented backend constructs as already implemented
+      // Verify `EXISTS` never claims unimplemented backend constructs as already implemented
       if (hasExists && !hasTarget) {
         const isNegatedStatement = /\b(do not currently|does not currently|not yet|without)\b/i.test(line);
         if (!isNegatedStatement) {
           for (const item of UNIMPLEMENTED_CONSTRUCTS) {
             if (item.regex.test(line) && !constructExistsInDir(item.regex, item.checkDir)) {
               results.check6Violations.push(
-                `False [EXISTS] claim for unimplemented construct '${item.label}' at ${target.file}:${idx + 1} (must be marked [TARGET])`
+                `False \`EXISTS\` claim for unimplemented construct '${item.label}' at ${target.file}:${idx + 1} (must be marked \`TARGET\`)`
               );
             }
           }
         }
       }
 
-      // Verify Maven test class citations (-D "test=ClassName" or -Dtest=ClassName) on non-[TARGET] lines
+      // Verify Maven test class citations (-D "test=ClassName" or -Dtest=ClassName) on non-`TARGET` lines
       if (!hasTarget || hasExists) {
         const testMatch = line.match(/-D\s*"?test=([A-Za-z0-9_]+)"?/);
         if (testMatch && !/^(ClassName|TargetTestClass|PackageName|MyServiceTest)$/.test(testMatch[1])) {
@@ -835,6 +959,11 @@ export async function validateAgentConfig(options = {}) {
       let bMatch;
       while ((bMatch = backtickRegex.exec(line)) !== null) {
         const token = bMatch[1].trim();
+
+        // Skip marker labels
+        if (token === 'EXISTS' || token === 'TARGET') {
+          continue;
+        }
 
         // Check command validity: catch invalid tools like './gradlew' even on [TARGET] lines
         if (/^\.\/gradlew(\s+.*)?$/.test(token)) {
@@ -922,7 +1051,7 @@ export async function validateAgentConfig(options = {}) {
   }
 
   if (results.check6Violations.length === 0) {
-    console.log(`  ${GREEN}[PASS] Check 6: All cited repository assets/commands verified (${existsMarkerCount} [EXISTS] verified, ${targetMarkerCount} [TARGET] distinguished).${RESET}`);
+    console.log(`  ${GREEN}[PASS] Check 6: All cited repository assets/commands verified (${existsMarkerCount} \`EXISTS\` verified, ${targetMarkerCount} \`TARGET\` distinguished).${RESET}`);
   } else {
     console.log(`  ${RED}[FAIL] Check 6: Found ${results.check6Violations.length} asset/command citation violation(s).${RESET}`);
     results.check6Violations.forEach(v => console.log(`    ${RED}- ${v}${RESET}`));
@@ -932,7 +1061,7 @@ export async function validateAgentConfig(options = {}) {
   // ---------------------------------------------------------------------------
   // Check 7: Skill Supporting Files (references/*) Link Target Validity & Mirror Parity (T022DB0)
   // ---------------------------------------------------------------------------
-  console.log(`\n${BOLD}[Check 7/9] Validating Skill Supporting Files (references/*) Link Validity & Mirror Parity...${RESET}`);
+  console.log(`\n${BOLD}[Check 7/10] Validating Skill Supporting Files (references/*) Link Validity & Mirror Parity...${RESET}`);
 
   // 7.1 Link Target Validity
   for (const skillName of SKILL_NAMES) {
@@ -1014,7 +1143,7 @@ export async function validateAgentConfig(options = {}) {
   // ---------------------------------------------------------------------------
   // Check 8: Project-Level Settings (settings.json + .geminiignore) Mapping & Security Enforcement (T022DB0)
   // ---------------------------------------------------------------------------
-  console.log(`\n${BOLD}[Check 8/9] Validating settings.json & .geminiignore Mapping & Security Enforcement...${RESET}`);
+  console.log(`\n${BOLD}[Check 8/10] Validating settings.json & .geminiignore Mapping & Security Enforcement...${RESET}`);
   const settingsTemplatePath = path.join(CANONICAL_DIR, 'templates', 'settings.template.json');
   const claudeSettingsPath = path.join(CLAUDE_DIR, 'settings.json');
   const geminiSettingsPath = path.join(GEMINI_DIR, 'settings.json');
@@ -1153,7 +1282,7 @@ export async function validateAgentConfig(options = {}) {
   // Check 9: Frontend Color Tokens & Palette Guard (Rule 08/09 / NT-01 Round E2 / E2-1)
   // Ensures zero undocumented color literals outside design-tokens.css and documented allow-list.
   // ===========================================================================
-  console.log(`\n${CYAN}[Check 9/9] Enforcing Frontend Color Tokens & Palette Invariants (E2-1)...${RESET}`);
+  console.log(`\n${CYAN}[Check 9/10] Enforcing Frontend Color Tokens & Palette Invariants (E2-1)...${RESET}`);
   const frontendSrc = path.join(REPO_ROOT, 'frontend', 'src');
   if (fs.existsSync(frontendSrc)) {
     const isAllowListedRgba = (line) => {
@@ -1268,13 +1397,148 @@ export async function validateAgentConfig(options = {}) {
   }
 
   // ---------------------------------------------------------------------------
+  // Check 10: Mechanical Quality Gates Count Synchronization & Drift Guard (T022DB0)
+  // ---------------------------------------------------------------------------
+  console.log(`\n${BOLD}[Check 10/10] Verifying Mechanical Quality Gates Count Consistency & Zero Drift...${RESET}`);
+
+  // Retrieve authoritative Single Source of Truth (SSOT) from check-gate-sync.mjs
+  const truth = getAuthoritativeGateCounts(REPO_ROOT);
+  // Authoritative constants dynamically derived from SSOT:
+  // - truth.totalDefinitions: 29 unique gate definitions
+  // - truth.activeRuntimeGates: 26 active runtime gates
+  // - truth.fallbackGates: 3 missing-file fallbacks
+  // - truth.ciChecks: 23 CI pipeline checks
+  // - truth.dockerHarnessGates: 25 Docker CI harness gates
+
+  const gateCheckFiles = [
+    ...RULE_NAMES.map(r => ({ name: `agent-config/rules/${r}`, fullPath: path.join(CANONICAL_DIR, 'rules', r) })),
+    ...SKILL_NAMES.map(s => ({ name: `agent-config/skills/${s}/SKILL.md`, fullPath: path.join(CANONICAL_DIR, 'skills', s, 'SKILL.md') })),
+    { name: 'docs/agent-config/README.md', fullPath: path.join(REPO_ROOT, 'docs', 'agent-config', 'README.md') },
+    { name: 'docs/agent-config/BREAK_TESTS.md', fullPath: path.join(REPO_ROOT, 'docs', 'agent-config', 'BREAK_TESTS.md') },
+    { name: 'CLAUDE.md', fullPath: path.join(REPO_ROOT, 'CLAUDE.md') },
+    { name: 'GEMINI.md', fullPath: path.join(REPO_ROOT, 'GEMINI.md') },
+    { name: 'AGENTS.md', fullPath: path.join(REPO_ROOT, 'AGENTS.md') },
+    { name: 'README.md', fullPath: path.join(REPO_ROOT, 'README.md') }
+  ];
+
+  // Dynamic sentence scanners with capture group (\d+) validated line-by-line against SSOT
+  const DYNAMIC_GATE_SCANNERS = [
+    {
+      label: 'gate definitions',
+      expected: truth.totalDefinitions,
+      regex: /\b(\d+)\s+(?:unique\s+|quality\s+)?gate\s+definitions?\b/gi
+    },
+    {
+      label: 'active runtime gates',
+      expected: truth.activeRuntimeGates,
+      regex: /(?:Active\s+runtime\s+gates\s+count\s+exactly\s+(\d+)\s+gates|\b(\d+)\s+active\s+(?:runtime\s+|quality\s+)?gates?\b|\ball\s+(\d+)\s+active\s+(?:runtime\s+|quality\s+)?gates?\b|\bensure\s+all\s+(\d+)\s+active\s+runtime\s+gates\b)/gi
+    },
+    {
+      label: 'fallback defensive gates',
+      expected: truth.fallbackGates,
+      regex: /(?:Fallback\s+defensive\s+gates\s+count\s+exactly\s+(\d+)\s+gates|\b(\d+)\s+fallback\s+(?:defensive\s+)?guards?|\b(\d+)\s+missing-file\s+fallbacks?)/gi
+    },
+    {
+      label: 'CI pipeline checks',
+      expected: truth.ciChecks,
+      regex: /\b(\d+)\s+(?:distinct\s+verification\s+checks?|CI\s+pipeline\s+checks?|automated\s+validation\s+steps?|CI\s+checks?)\b/gi
+    },
+    {
+      label: 'Docker CI harness gates',
+      expected: truth.dockerHarnessGates,
+      regex: /(?:\b(\d+)\s+(?:synchronized\s+)?Docker\s+CI\s+harness\s+gates?|\bacross\s+(\d+)\s+synchronized\s+gates\b)/gi
+    }
+  ];
+
+  for (const item of gateCheckFiles) {
+    if (!fs.existsSync(item.fullPath)) continue;
+    const content = fs.readFileSync(item.fullPath, 'utf8');
+    const lines = content.split(/\r?\n/);
+    let inCodeBlock = false;
+    lines.forEach((line, idx) => {
+      if (line.trim().startsWith('```')) {
+        inCodeBlock = !inCodeBlock;
+        return;
+      }
+      if (inCodeBlock) return;
+
+      for (const scanner of DYNAMIC_GATE_SCANNERS) {
+        scanner.regex.lastIndex = 0;
+        let match;
+        while ((match = scanner.regex.exec(line)) !== null) {
+          const capturedStr = match.slice(1).find(m => m !== undefined && m !== '');
+          if (capturedStr) {
+            const count = parseInt(capturedStr, 10);
+            if (count !== scanner.expected) {
+              results.check10Violations.push(
+                `Stale or mismatched ${scanner.label} count in ${item.name}:${idx + 1}: expected ${scanner.expected}, found ${count} ('${line.trim()}')`
+              );
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Positive assertions on authoritative gate declarations using dynamic SSOT values
+  const rule04Path = path.join(CANONICAL_DIR, 'rules', '04-honest-verification.md');
+  if (fs.existsSync(rule04Path)) {
+    const r04 = fs.readFileSync(rule04Path, 'utf8');
+    if (!r04.includes(`${truth.totalDefinitions} gate definitions`) ||
+        !r04.includes(`${truth.activeRuntimeGates} active runtime gates`) ||
+        !r04.includes(`${truth.ciChecks} automated validation steps`)) {
+      results.check10Violations.push(
+        `agent-config/rules/04-honest-verification.md must declare ${truth.totalDefinitions} gate definitions, ${truth.activeRuntimeGates} active runtime gates, and ${truth.ciChecks} automated validation steps.`
+      );
+    }
+  }
+
+  const rule12Path = path.join(CANONICAL_DIR, 'rules', '12-ci-and-quality-gates.md');
+  if (fs.existsSync(rule12Path)) {
+    const r12 = fs.readFileSync(rule12Path, 'utf8');
+    if (!r12.includes(`${truth.totalDefinitions} quality gate definitions`) && !r12.includes(`${truth.totalDefinitions} gate definitions`)) {
+      results.check10Violations.push(`agent-config/rules/12-ci-and-quality-gates.md must declare ${truth.totalDefinitions} quality gate definitions.`);
+    }
+    if (!r12.includes(`${truth.activeRuntimeGates} active runtime gates`) && !r12.includes(`count exactly ${truth.activeRuntimeGates} gates`)) {
+      results.check10Violations.push(`agent-config/rules/12-ci-and-quality-gates.md must declare ${truth.activeRuntimeGates} active runtime gates.`);
+    }
+    if (!r12.includes(`${truth.ciChecks} distinct verification checks`) && !r12.includes(`${truth.ciChecks} automated validation steps`)) {
+      results.check10Violations.push(`agent-config/rules/12-ci-and-quality-gates.md must declare ${truth.ciChecks} distinct verification checks.`);
+    }
+    if (!r12.includes(`${truth.dockerHarnessGates} synchronized gates`) && !r12.includes(`${truth.dockerHarnessGates} Docker CI harness gates`)) {
+      results.check10Violations.push(`agent-config/rules/12-ci-and-quality-gates.md must declare ${truth.dockerHarnessGates} synchronized Docker CI harness gates.`);
+    }
+  }
+
+  const skillVerificationPath = path.join(CANONICAL_DIR, 'skills', 'verification-before-completion', 'SKILL.md');
+  if (fs.existsSync(skillVerificationPath)) {
+    const skillVerificationContent = fs.readFileSync(skillVerificationPath, 'utf8');
+    if (!skillVerificationContent.includes(`${truth.activeRuntimeGates} active runtime quality gates`) ||
+        !skillVerificationContent.includes(`${truth.activeRuntimeGates} active runtime gates, ${truth.totalDefinitions} definitions`) ||
+        !skillVerificationContent.includes(`${truth.activeRuntimeGates} active runtime gates mapping to ${truth.ciChecks} CI checks`)) {
+      results.check10Violations.push(
+        `agent-config/skills/verification-before-completion/SKILL.md must declare ${truth.activeRuntimeGates} active runtime gates, ${truth.totalDefinitions} definitions, and ${truth.ciChecks} CI checks.`
+      );
+    }
+  }
+
+  if (results.check10Violations.length === 0) {
+    console.log(`  ${GREEN}[PASS] Check 10: Mechanical Quality Gates count consistency verified dynamically via SSOT (${truth.totalDefinitions} definitions: ${truth.activeRuntimeGates} active + ${truth.fallbackGates} fallbacks, ${truth.ciChecks} CI checks, ${truth.dockerHarnessGates} Docker harness gates, zero stale counts).${RESET}`);
+  } else {
+    console.log(`  ${RED}[FAIL] Check 10: Found ${results.check10Violations.length} stale/desynchronized gate count violation(s).${RESET}`);
+    results.check10Violations.forEach(v => console.log(`    ${RED}- ${v}${RESET}`));
+    results.pass = false;
+  }
+
+  // ---------------------------------------------------------------------------
   // Summary & Exit Code
   // ---------------------------------------------------------------------------
   console.log(`\n${BOLD}================================================================================${RESET}`);
   if (results.pass) {
     console.log(`  ${GREEN}${BOLD}[PASS] 100% Agent Configuration Validation Passed Successfully!${RESET}`);
-    console.log(`  Total canonical & mirror artifacts checked: ${results.totalFilesChecked}`);
-    console.log(`  Checks 1 through 9: ALL GREEN.`);
+    console.log(`  Total canonical & mirror artifacts checked: ${results.totalFilesChecked} (${results.canonicalArtifactsChecked} canonical artifacts, ${results.mirrorArtifactsChecked} mirror artifacts)`);
+    console.log(`  Total markdown documents scanned: ${results.markdownDocsScanned} files across docs, agent-config, .claude, .gemini, and root.`);
+    console.log(`  Checks 1 through 10: ALL GREEN.`);
     console.log(`${BOLD}================================================================================${RESET}\n`);
     return 0;
   } else {

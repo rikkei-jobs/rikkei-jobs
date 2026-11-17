@@ -57,10 +57,10 @@ This rubric evaluates user interfaces and components to eliminate generic AI-gen
 
 | Criterion | Points (0-2) | Pass/Fail Assessment | Notes / Evidence |
 |---|---|---|---|
-| C1. Typography & Diacritics | [0-2] | PASS / FAIL | |
-| C2. Layout Asymmetry & Density | [0-2] | PASS / FAIL | |
-| C3. Color & WCAG 2.2 Contrast | [0-2] | PASS / FAIL | |
-| C4. Curated Iconography | [0-2] | PASS / FAIL | |
-| C5. Purposeful Motion | [0-2] | PASS / FAIL | |
-| C6. Authentic Copy & Anti-AI | [0-2] | PASS / FAIL | |
+| C1. Typography & Diacritics | `0-2` | PASS / FAIL | |
+| C2. Layout Asymmetry & Density | `0-2` | PASS / FAIL | |
+| C3. Color & WCAG 2.2 Contrast | `0-2` | PASS / FAIL | |
+| C4. Curated Iconography | `0-2` | PASS / FAIL | |
+| C5. Purposeful Motion | `0-2` | PASS / FAIL | |
+| C6. Authentic Copy & Anti-AI | `0-2` | PASS / FAIL | |
 | **Total Score** | **/12** | **PASS (>=11) / FAIL** | **Hard Veto: Any 0 = REJECT** |

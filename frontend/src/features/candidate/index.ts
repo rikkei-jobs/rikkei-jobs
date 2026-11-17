@@ -1,6 +1,7 @@
 /**
  * Module 1: Candidate (Hồ sơ năng lực)
- * Quản lý Skill Profile dựa trên bằng chứng đã xác thực, CV chuẩn Rikkei, Portfolio dự án.
+ * Quản lý Skill Profile dựa trên bằng chứng đã xác thực, CV chuẩn Rikkei, Portfolio dự án,
+ * và danh sách phiếu đánh giá từ Mentor theo khung kỹ năng (DG-01).
  */
 export interface CandidateProfileSummary {
   candidateId: string;
@@ -22,5 +23,21 @@ export const candidateModuleConfig = {
 export * from './types';
 export * from './api';
 export * from './JobRecommendationsSection';
-export { SkillProfilePage } from './components/SkillProfilePage';
-export { fetchMySkills } from './api/skillProfile';
+
+// Skill profile components and API
+export { SkillProfilePage, type SkillProfilePageProps } from './components/SkillProfilePage';
+export {
+  fetchMySkills,
+  fetchUserSkills,
+  recomputeMySkills,
+  type SkillProfileItem,
+} from './api/skillProfile';
+
+// Mentor evaluations components and API (DG-01)
+export {
+  CandidateEvaluations,
+  type CandidateEvaluationsProps,
+} from './components/CandidateEvaluations';
+export { EvaluationCard, type EvaluationCardProps } from './components/EvaluationCard';
+export { EvaluationScoreItem, type EvaluationScoreItemProps } from './components/EvaluationScoreItem';
+export { fetchCandidateEvaluations, getProfileEvaluations } from './api/candidateEvaluations';
