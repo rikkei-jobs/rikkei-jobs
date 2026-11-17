@@ -8,10 +8,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
@@ -45,7 +41,13 @@ public class ExternalRecord {
 
     public ExternalRecord() {}
 
-    public ExternalRecord(Long id, ExternalSource externalSource, String sourceCode, String title, BigDecimal score, OffsetDateTime recordedAt) {
+    public ExternalRecord(
+            Long id,
+            ExternalSource externalSource,
+            String sourceCode,
+            String title,
+            BigDecimal score,
+            OffsetDateTime recordedAt) {
         this.id = id;
         this.source = externalSource;
         this.sourceCode = sourceCode;
@@ -54,10 +56,7 @@ public class ExternalRecord {
         this.recordedAt = recordedAt;
     }
 
-    public void updateResult(
-        String title,
-        BigDecimal score,
-        OffsetDateTime recordedAt) {
+    public void updateResult(String title, BigDecimal score, OffsetDateTime recordedAt) {
         this.title = title;
         this.score = score;
         this.recordedAt = recordedAt;

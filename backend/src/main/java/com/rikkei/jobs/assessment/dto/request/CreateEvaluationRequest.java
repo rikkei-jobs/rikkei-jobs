@@ -6,37 +6,12 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 
-<<<<<<< HEAD
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
-public class CreateEvaluationRequest {
-    @NotNull(message = "Template ID không được để trống")
-    private Long templateId;
-
-    @NotNull(message = "User ID không được để trống")
-    private Long userId;
-
-    @NotNull(message = "Context không được để trống")
-    private EvaluationContext context;
-
-    private String batchId;
-
-    private Long interviewRoundId;
-
-    private String overallComment;
-
-    @Valid private List<EvaluationScoreRequest> scores;
-}
-=======
 public record CreateEvaluationRequest(
         @NotNull(message = "Template ID không được để trống") Long templateId,
         @NotNull(message = "User ID không được để trống") Long userId,
         @NotNull(message = "Context không được để trống") EvaluationContext context,
-        Long batchId,
+        String batchId,
         Long interviewRoundId,
         @Size(max = 5000, message = "Nhận xét chung không được vượt quá 5000 ký tự")
                 String overallComment,
         @Valid List<EvaluationScoreRequest> scores) {}
->>>>>>> origin/develop

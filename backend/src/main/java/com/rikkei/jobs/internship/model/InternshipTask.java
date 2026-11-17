@@ -1,10 +1,9 @@
 package com.rikkei.jobs.internship.model;
 
 import jakarta.persistence.*;
-import lombok.*;
-
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import lombok.*;
 
 @Entity
 @Table(name = "internship_tasks")

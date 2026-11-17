@@ -16,15 +16,14 @@ import com.rikkei.jobs.internship.model.InternshipTask;
 import com.rikkei.jobs.internship.repository.InternshipRepository;
 import com.rikkei.jobs.internship.repository.InternshipTaskRepository;
 import com.rikkei.jobs.internship.service.InternshipSyncService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -37,7 +36,6 @@ public class InternshipSyncServiceImpl implements InternshipSyncService {
     private final ExternalRecordRepository externalRecordRepository;
     private final SkillRecomputeService skillRecomputeService;
 
-
     @Transactional
     @Override
     public int syncInternships(String lmsUserId) {
@@ -45,23 +43,24 @@ public class InternshipSyncServiceImpl implements InternshipSyncService {
             throw new IllegalArgumentException("LMS User ID không được để trống");
         }
 
-        User user = userRepository.findByLmsUserId(lmsUserId.trim())
-            .orElseThrow(() ->
-                new IllegalArgumentException(
-                    "Không tìm thấy user với LMS ID: " + lmsUserId));
+        User user =
+                userRepository
+                        .findByLmsUserId(lmsUserId.trim())
+                        .orElseThrow(
+                                () ->
+                                        new IllegalArgumentException(
+                                                "Không tìm thấy user với LMS ID: " + lmsUserId));
 
         String response = externalApiClient.getStudentInternships(lmsUserId);
 
         List<PMInternshipResponse> pmInternships;
 
         try {
-            pmInternships = objectMapper.readValue(
-                response,
-                new TypeReference<List<PMInternshipResponse>>() {
-                });
+            pmInternships =
+                    objectMapper.readValue(
+                            response, new TypeReference<List<PMInternshipResponse>>() {});
         } catch (Exception e) {
-            throw new IllegalStateException(
-                "Không thể đọc dữ liệu internship từ PM", e);
+            throw new IllegalStateException("Không thể đọc dữ liệu internship từ PM", e);
         }
 
         if (pmInternships == null || pmInternships.isEmpty()) {
@@ -72,13 +71,13 @@ public class InternshipSyncServiceImpl implements InternshipSyncService {
 
         for (PMInternshipResponse pmData : pmInternships) {
             if (pmData.getBatchId() == null || pmData.getBatchId().isBlank()) {
-                throw new IllegalStateException(
-                    "PM trả về internship không có batchId");
+                throw new IllegalStateException("PM trả về internship không có batchId");
             }
 
-            Internship internship = internshipRepository
-                .findByUser_IdAndBatchId(user.getId(), pmData.getBatchId())
-                .orElseGet(Internship::new);
+            Internship internship =
+                    internshipRepository
+                            .findByUser_IdAndBatchId(user.getId(), pmData.getBatchId())
+                            .orElseGet(Internship::new);
 
             internship.setUser(user);
             internship.setBatchId(pmData.getBatchId());
@@ -99,11 +98,11 @@ public class InternshipSyncServiceImpl implements InternshipSyncService {
                         continue;
                     }
 
-                    InternshipTask task = internshipTaskRepository
-                        .findByInternship_IdAndTitle(
-                            internship.getId(),
-                            taskData.getTitle())
-                        .orElseGet(InternshipTask::new);
+                    InternshipTask task =
+                            internshipTaskRepository
+                                    .findByInternship_IdAndTitle(
+                                            internship.getId(), taskData.getTitle())
+                                    .orElseGet(InternshipTask::new);
 
                     task.setInternship(internship);
                     task.setTitle(taskData.getTitle());
@@ -116,32 +115,33 @@ public class InternshipSyncServiceImpl implements InternshipSyncService {
 
             // Đồng bộ kết quả thực tập vào external_records
             if (internship.getTopicName() != null
-                && !internship.getTopicName().isBlank()
-                && internship.getFinalScore() != null) {
+                    && !internship.getTopicName().isBlank()
+                    && internship.getFinalScore() != null) {
 
                 String sourceCode = internship.getBatchId();
                 String title = internship.getTopicName();
 
-                BigDecimal score = internship.getFinalScore()
-                    .multiply(BigDecimal.TEN)
-                    .setScale(2, RoundingMode.HALF_UP);
+                BigDecimal score =
+                        internship
+                                .getFinalScore()
+                                .multiply(BigDecimal.TEN)
+                                .setScale(2, RoundingMode.HALF_UP);
 
                 OffsetDateTime recordedAt = OffsetDateTime.now();
 
-                ExternalRecord externalRecord = externalRecordRepository
-                    .findByUserIdAndSourceAndSourceCodeAndTitle(
-                        user.getId(),
-                        ExternalSource.PM,
-                        sourceCode,
-                        title)
-                    .orElseGet(() -> new ExternalRecord(
-                        user.getId(),
-                        ExternalSource.PM,
-                        sourceCode,
-                        title,
-                        score,
-                        recordedAt
-                    ));
+                ExternalRecord externalRecord =
+                        externalRecordRepository
+                                .findByUserIdAndSourceAndSourceCodeAndTitle(
+                                        user.getId(), ExternalSource.PM, sourceCode, title)
+                                .orElseGet(
+                                        () ->
+                                                new ExternalRecord(
+                                                        user.getId(),
+                                                        ExternalSource.PM,
+                                                        sourceCode,
+                                                        title,
+                                                        score,
+                                                        recordedAt));
 
                 externalRecord.updateResult(title, score, recordedAt);
 

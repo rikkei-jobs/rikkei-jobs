@@ -1,10 +1,9 @@
 package com.rikkei.jobs.internship.dto;
 
-import lombok.Data;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import lombok.Data;
 
 @Data
 public class PMInternshipResponse {

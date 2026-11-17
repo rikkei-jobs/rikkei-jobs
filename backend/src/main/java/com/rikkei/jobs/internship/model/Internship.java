@@ -2,24 +2,20 @@ package com.rikkei.jobs.internship.model;
 
 import com.rikkei.jobs.identity.model.User;
 import jakarta.persistence.*;
-import lombok.*;
-
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
+import lombok.*;
 
 @Entity
 @Table(
-    name = "internships",
-    uniqueConstraints = {
-        @UniqueConstraint(
-            name = "uk_internships_user_batch",
-            columnNames = {"user_id", "batch_id"}
-        )
-    }
-)
+        name = "internships",
+        uniqueConstraints = {
+            @UniqueConstraint(
+                    name = "uk_internships_user_batch",
+                    columnNames = {"user_id", "batch_id"})
+        })
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -61,10 +57,6 @@ public class Internship {
     @Column(name = "synced_at")
     private LocalDateTime syncedAt;
 
-    @OneToMany(
-        mappedBy = "internship",
-        cascade = CascadeType.ALL,
-        orphanRemoval = true
-    )
+    @OneToMany(mappedBy = "internship", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<InternshipTask> tasks;
 }

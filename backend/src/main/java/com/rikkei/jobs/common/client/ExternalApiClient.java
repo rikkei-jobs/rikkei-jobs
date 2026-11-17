@@ -7,6 +7,7 @@ import com.rikkei.jobs.common.exception.ExternalResourceNotFoundException;
 import com.rikkei.jobs.common.exception.ExternalUnavailableException;
 import com.rikkei.jobs.common.exception.InvalidServiceKeyException;
 import com.rikkei.jobs.common.exception.ValidationException;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -16,6 +17,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -40,9 +42,9 @@ public class ExternalApiClient {
         this.properties = properties;
         this.objectMapper = objectMapper;
         this.httpClient =
-                HttpClient.newBuilder()
-                        .connectTimeout(Duration.ofSeconds(properties.getTimeoutSeconds()))
-                        .build();
+            HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(properties.getTimeoutSeconds()))
+                .build();
     }
 
     /**
@@ -75,13 +77,58 @@ public class ExternalApiClient {
         return executeRequest("GET", path, null, null);
     }
 
-    /** Core execution method with retry and error transformation. */
+    /**
+     * Sends a JSON POST to an absolute URL with caller-supplied headers and timeout. Used by
+     * integrations (for example AI providers) that live on a different host than the mock LMS and
+     * therefore cannot reuse the X-Service-Key contract. No request or response body is written to
+     * the logs, so provider keys and prompts are never leaked.
+     */
+    public String postJson(
+        String absoluteUrl, Object payload, Map<String, String> headers, Duration timeout) {
+        String jsonPayload;
+        try {
+            jsonPayload = objectMapper.writeValueAsString(payload);
+        } catch (JsonProcessingException e) {
+            throw new ValidationException("Không thể tạo dữ liệu JSON cho yêu cầu ngoài");
+        }
+
+        HttpRequest.Builder requestBuilder =
+            HttpRequest.newBuilder()
+                .uri(URI.create(absoluteUrl))
+                .timeout(timeout)
+                .header("Accept", "application/json")
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(jsonPayload));
+        if (headers != null) {
+            headers.forEach(requestBuilder::header);
+        }
+
+        try {
+            HttpResponse<String> response =
+                httpClient.send(requestBuilder.build(), HttpResponse.BodyHandlers.ofString());
+            int status = response.statusCode();
+            if (status >= 200 && status < 300) {
+                return response.body();
+            }
+            log.warn("External POST {} returned HTTP {}", absoluteUrl, status);
+            throw new ExternalUnavailableException("Hệ thống ngoài phản hồi HTTP " + status);
+        } catch (IOException e) {
+            throw new ExternalUnavailableException("Không thể kết nối tới hệ thống ngoài", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ExternalUnavailableException("Yêu cầu tới hệ thống ngoài bị gián đoạn", e);
+        }
+    }
+
+    /**
+     * Core execution method with retry and error transformation.
+     */
     public String executeRequest(String method, String path, String body, String customServiceKey) {
         String serviceKey =
-                (customServiceKey != null) ? customServiceKey : properties.getServiceKey();
+            (customServiceKey != null) ? customServiceKey : properties.getServiceKey();
         String fullUrl =
-                properties.getBaseUrl().replaceAll("/+$", "")
-                        + (path.startsWith("/") ? path : "/" + path);
+            properties.getBaseUrl().replaceAll("/+$", "")
+                + (path.startsWith("/") ? path : "/" + path);
 
         int maxRetries = properties.getMaxRetries();
         int attempt = 0;
@@ -90,10 +137,10 @@ public class ExternalApiClient {
             attempt++;
             try {
                 HttpRequest.Builder requestBuilder =
-                        HttpRequest.newBuilder()
-                                .uri(URI.create(fullUrl))
-                                .timeout(Duration.ofSeconds(properties.getTimeoutSeconds()))
-                                .header("Accept", "application/json");
+                    HttpRequest.newBuilder()
+                        .uri(URI.create(fullUrl))
+                        .timeout(Duration.ofSeconds(properties.getTimeoutSeconds()))
+                        .header("Accept", "application/json");
 
                 if (serviceKey != null && !serviceKey.isBlank()) {
                     requestBuilder.header("X-Service-Key", serviceKey);
@@ -101,26 +148,26 @@ public class ExternalApiClient {
 
                 if ("POST".equalsIgnoreCase(method)) {
                     requestBuilder
-                            .header("Content-Type", "application/json")
-                            .POST(
-                                    body != null
-                                            ? HttpRequest.BodyPublishers.ofString(body)
-                                            : HttpRequest.BodyPublishers.noBody());
+                        .header("Content-Type", "application/json")
+                        .POST(
+                            body != null
+                                ? HttpRequest.BodyPublishers.ofString(body)
+                                : HttpRequest.BodyPublishers.noBody());
                 } else if ("PUT".equalsIgnoreCase(method)) {
                     requestBuilder
-                            .header("Content-Type", "application/json")
-                            .PUT(
-                                    body != null
-                                            ? HttpRequest.BodyPublishers.ofString(body)
-                                            : HttpRequest.BodyPublishers.noBody());
+                        .header("Content-Type", "application/json")
+                        .PUT(
+                            body != null
+                                ? HttpRequest.BodyPublishers.ofString(body)
+                                : HttpRequest.BodyPublishers.noBody());
                 } else if ("PATCH".equalsIgnoreCase(method)) {
                     requestBuilder
-                            .header("Content-Type", "application/json")
-                            .method(
-                                    "PATCH",
-                                    body != null
-                                            ? HttpRequest.BodyPublishers.ofString(body)
-                                            : HttpRequest.BodyPublishers.noBody());
+                        .header("Content-Type", "application/json")
+                        .method(
+                            "PATCH",
+                            body != null
+                                ? HttpRequest.BodyPublishers.ofString(body)
+                                : HttpRequest.BodyPublishers.noBody());
                 } else if ("DELETE".equalsIgnoreCase(method)) {
                     requestBuilder.DELETE();
                 } else {
@@ -129,7 +176,7 @@ public class ExternalApiClient {
 
                 HttpRequest request = requestBuilder.build();
                 HttpResponse<String> response =
-                        httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                    httpClient.send(request, HttpResponse.BodyHandlers.ofString());
                 int status = response.statusCode();
 
                 log.debug("ExternalApiClient {} {} returned HTTP {}", method, fullUrl, status);
@@ -141,58 +188,72 @@ public class ExternalApiClient {
                 if (status == 404) {
                     log.warn("External API 404 Not Found at {}: {}", fullUrl, response.body());
                     throw new ExternalResourceNotFoundException(
-                            "Tài nguyên không tìm thấy trên hệ thống ngoài");
+                        "Tài nguyên không tìm thấy trên hệ thống ngoài");
                 }
                 if (status == 401) {
                     log.warn("External API 401 Unauthorized at {}: {}", fullUrl, response.body());
                     throw new InvalidServiceKeyException(
-                            "Khóa dịch vụ hệ thống ngoài không hợp lệ");
+                        "Khóa dịch vụ hệ thống ngoài không hợp lệ");
                 }
                 if (status == 409) {
                     log.warn("External API 409 Conflict at {}: {}", fullUrl, response.body());
                     throw new ConflictException(
-                            "CONFLICT", "Dữ liệu bị xung đột trên hệ thống ngoài");
+                        "CONFLICT", "Dữ liệu bị xung đột trên hệ thống ngoài");
                 }
                 if (status == 400) {
                     log.warn("External API 400 Bad Request at {}: {}", fullUrl, response.body());
                     throw new ValidationException(
-                            "Dữ liệu yêu cầu không hợp lệ trên hệ thống ngoài");
+                        "Dữ liệu yêu cầu không hợp lệ trên hệ thống ngoài");
                 }
 
                 log.warn(
-                        "External API unexpected status HTTP {} at {}: {}",
-                        status,
-                        fullUrl,
-                        response.body());
+                    "External API unexpected status HTTP {} at {}: {}",
+                    status,
+                    fullUrl,
+                    response.body());
                 throw new ExternalUnavailableException(
-                        "Hệ thống ngoài phản hồi mã lỗi không mong đợi HTTP " + status);
+                    "Hệ thống ngoài phản hồi mã lỗi không mong đợi HTTP " + status);
 
             } catch (IOException e) {
                 log.warn(
-                        "Network error during external call (attempt {}/{}): {}",
-                        attempt,
-                        maxRetries + 1,
-                        e.getMessage());
+                    "Network error during external call (attempt {}/{}): {}",
+                    attempt,
+                    maxRetries + 1,
+                    e.getMessage());
                 if (attempt > maxRetries) {
                     throw new ExternalUnavailableException(
-                            "Không thể kết nối tới hệ thống ngoài sau "
-                                    + attempt
-                                    + " lần thử: "
-                                    + e.getMessage(),
-                            e);
+                        "Không thể kết nối tới hệ thống ngoài sau "
+                            + attempt
+                            + " lần thử: "
+                            + e.getMessage(),
+                        e);
                 }
                 try {
                     Thread.sleep(150L * attempt);
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
                     throw new ExternalUnavailableException(
-                            "Yêu cầu tới hệ thống ngoài bị gián đoạn", ie);
+                        "Yêu cầu tới hệ thống ngoài bị gián đoạn", ie);
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new ExternalUnavailableException(
-                        "Yêu cầu tới hệ thống ngoài bị gián đoạn", e);
+                    "Yêu cầu tới hệ thống ngoài bị gián đoạn", e);
             }
         }
+    }
+
+    public String getStudentInternships(String lmsUserId) {
+        if (lmsUserId == null || lmsUserId.isBlank()) {
+            throw new ValidationException("LMS User ID không được để trống");
+        }
+
+        String encodedLmsUserId = URLEncoder
+            .encode(lmsUserId.trim(), StandardCharsets.UTF_8)
+            .replace("+", "%20");
+
+        String path = "/pm/students/" + encodedLmsUserId + "/internships";
+
+        return executeRequest("GET", path, null, null);
     }
 }
