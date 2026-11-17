@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ApiError } from '../../../shared/api/auth';
-import { fetchGapAnalysis, fetchMyTarget, fetchTargetPositions, setMyTarget } from '../api';
+import { fetchGapAnalysis, fetchMyTarget, fetchTargetPositions, setMyTarget } from '../api/gapAnalysis';
 import type { GapAnalysisResponse, GapTarget, TargetPosition } from '../types';
 import { GapSkillsTable } from './GapSkillsTable';
 import { describeGapError } from '../gapUtils';

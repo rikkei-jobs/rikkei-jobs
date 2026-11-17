@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { GapAnalysisSection } from './GapAnalysisSection';
 import { ApiError } from '../../../shared/api/auth';
-import * as api from '../api';
+import * as api from '../api/gapAnalysis';
 import type { GapAnalysisResponse, GapTarget, TargetPosition } from '../types';
 
 const POSITIONS: TargetPosition[] = [

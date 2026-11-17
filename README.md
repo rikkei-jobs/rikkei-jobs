@@ -191,7 +191,7 @@ The database seed migration automatically provisions 8 sample testing accounts w
 
 ---
 
-## 🤖 AI Conventions & Career Assistant
+## AI Conventions & Career Assistant
 
 The Rikkei Jobs system incorporates an AI Assistant designed to provide personalized job recommendations based on **verified competency data** (sourced from the LMS, examination systems, IOC internship programs, and mentors).
 
@@ -205,7 +205,7 @@ The Rikkei Jobs system incorporates an AI Assistant designed to provide personal
 
 ### 2. Competency-Based Job Recommendation API (for Candidates)
 
-- **Endpoint**: `GET /api/v1/me/job-recommendations?limit=10` (Also accessible via the shorthand alias: `/me/job-recommendations`).
+- **Endpoint**: `GET /api/v1/me/job-recommendations?limit=10`. The endpoint requires an authenticated `CANDIDATE` JWT and always resolves the candidate from the token, so no `userId` parameter or header is accepted.
 - **Processing Workflow**:
   1. Retrieve a list of job descriptions (JDs) that are in the `APPROVED` status and still open for applications (`deadline > now`).
   2. Calculate competency similarity scores (using the **DN-06** algorithm): Compare the candidate’s verified skill levels against the JD requirements (mandatory skills are weighted $\times 2$, while preferred skills are weighted $\times 1$).
@@ -219,9 +219,9 @@ The Rikkei Jobs system incorporates an AI Assistant designed to provide personal
 The **"Jobs Matched for You"** section is prominently displayed on the candidate’s homepage:
 
 - Detailed job cards featuring a **"% match"** badge.
-- Explanations labeled as either **"✨ AI-generated"** or **"⚙️ System-suggested."**
-- A breakdown of skills that meet the requirements (✓) and those that need to be developed (⚠️).
-- A **"Refresh"** button for immediate recalculation, along with a set of sample candidates (`candidate1`, `candidate2`, `candidate3`) for a visual demonstration.
+- Explanations labeled as either **"AI-generated"** or **"System-suggested"**.
+- A breakdown of skills that meet the requirements and those that still need to be developed.
+- A **"Refresh"** button for immediate recalculation (guarded by a 2-minute cooldown). To preview another profile, sign in with another seeded candidate account.
 
 ---
 

@@ -1,35 +1,10 @@
-import { request } from '../../shared/api/httpClient';
+import { request } from '../../../shared/api/httpClient';
 import type {
   GapAnalysisResponse,
   GapTarget,
   JobDetail,
-  JobRecommendationsResponse,
   TargetPosition,
-} from './types';
-
-export async function fetchJobRecommendations(
-  limit = 10,
-  refresh = false,
-  userId?: number,
-  signal?: AbortSignal,
-): Promise<JobRecommendationsResponse> {
-  const params = new URLSearchParams();
-  params.set('limit', limit.toString());
-  if (refresh) {
-    params.set('refresh', 'true');
-  }
-  if (userId && userId > 0) {
-    params.set('userId', userId.toString());
-  }
-
-  return request<JobRecommendationsResponse>(
-    `/api/v1/me/job-recommendations?${params.toString()}`,
-    {
-      method: 'GET',
-      signal,
-    },
-  );
-}
+} from '../types';
 
 export const fetchTargetPositions = (signal?: AbortSignal): Promise<TargetPosition[]> =>
   request<TargetPosition[]>('/api/v1/target-positions', { method: 'GET', signal });

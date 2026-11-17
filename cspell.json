@@ -180,7 +180,6 @@
     "estudent",
     "attackeradmin",
     "rikkeisoft",
-    "dtos",
     "lastexitcode",
     "cytopia",
     "rhysd",
@@ -231,7 +230,9 @@
     "cfix",
     "desynchronized",
     "idor",
-    "tablename"
+    "tablename",
+    "dtos",
+    "xact"
   ],
   "ignorePaths": [
     "**/node_modules/**",

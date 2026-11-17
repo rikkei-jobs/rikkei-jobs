@@ -1,17 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Icon } from '../../shared/components/Icon';
 import type { JobRecommendation, JobRecommendationsResponse } from './types';
-import { fetchJobRecommendations } from './api';
-import './JobRecommendationsSection.css';
+import { fetchJobRecommendations } from './api/jobRecommendations';
+import './styles/jobRecommendations.css';
 
-export interface JobRecommendationsSectionProps {
-  initialUserId?: number;
-}
-
-export const JobRecommendationsSection: React.FC<JobRecommendationsSectionProps> = ({
-  initialUserId = 1,
-}) => {
-  const [userId, setUserId] = useState<number>(initialUserId);
+export const JobRecommendationsSection: React.FC = () => {
   const [recommendations, setRecommendations] = useState<JobRecommendation[]>([]);
   const [meta, setMeta] = useState<JobRecommendationsResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -23,14 +17,10 @@ export const JobRecommendationsSection: React.FC<JobRecommendationsSectionProps>
 
     const loadData = async () => {
       try {
-        const data = await fetchJobRecommendations(10, false, userId);
+        const data = await fetchJobRecommendations(10, false);
         if (!ignore) {
-          if (data && Array.isArray(data.items)) {
-            setRecommendations(data.items);
-            setMeta(data);
-          } else {
-            setRecommendations([]);
-          }
+          setRecommendations(data && Array.isArray(data.items) ? data.items : []);
+          setMeta(data ?? null);
           setError(null);
         }
       } catch (err: unknown) {
@@ -53,13 +43,13 @@ export const JobRecommendationsSection: React.FC<JobRecommendationsSectionProps>
     return () => {
       ignore = true;
     };
-  }, [userId]);
+  }, []);
 
   const handleRefresh = async () => {
     setRefreshing(true);
     setError(null);
     try {
-      const data = await fetchJobRecommendations(10, true, userId);
+      const data = await fetchJobRecommendations(10, true);
       if (data && Array.isArray(data.items)) {
         setRecommendations(data.items);
         setMeta(data);
@@ -73,9 +63,22 @@ export const JobRecommendationsSection: React.FC<JobRecommendationsSectionProps>
     }
   };
 
-  const handleSelectCandidate = (newId: number) => {
+  const handleRetry = async () => {
     setLoading(true);
-    setUserId(newId);
+    setError(null);
+    try {
+      const data = await fetchJobRecommendations(10, false);
+      if (data && Array.isArray(data.items)) {
+        setRecommendations(data.items);
+        setMeta(data);
+      }
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message : 'Đã xảy ra lỗi không xác định khi tải lại dữ liệu',
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getScoreBadgeClass = (score: number) => {
@@ -99,7 +102,8 @@ export const JobRecommendationsSection: React.FC<JobRecommendationsSectionProps>
       <div className="recommendations-header">
         <div className="recommendations-title-group">
           <h2>
-            <span>🎯</span> Việc làm phù hợp với bạn
+            <Icon name="sparkles" size={22} />
+            Việc làm phù hợp với bạn
           </h2>
           <p className="recommendations-subtitle">
             Hệ thống tự động phân tích hồ sơ năng lực đã xác thực và gợi ý các vị trí tối ưu nhất
@@ -107,22 +111,6 @@ export const JobRecommendationsSection: React.FC<JobRecommendationsSectionProps>
         </div>
 
         <div className="recommendations-controls">
-          <label htmlFor="candidate-select" className="sr-only">
-            Chọn ứng viên thử nghiệm:
-          </label>
-          <select
-            id="candidate-select"
-            aria-label="Chọn ứng viên"
-            className="candidate-select"
-            value={userId}
-            onChange={(e) => handleSelectCandidate(Number(e.target.value))}
-            disabled={loading || refreshing}
-          >
-            <option value={1}>Ứng viên 1: Nguyễn Văn An (Java / Spring Boot)</option>
-            <option value={2}>Ứng viên 2: Trần Thị Bình (ReactJS / Frontend)</option>
-            <option value={3}>Ứng viên 3: Lê Minh Châu (Fresher / Cơ bản)</option>
-          </select>
-
           <button
             type="button"
             className="refresh-button"
@@ -130,7 +118,9 @@ export const JobRecommendationsSection: React.FC<JobRecommendationsSectionProps>
             disabled={loading || refreshing}
             aria-label="Làm mới danh sách gợi ý"
           >
-            <span className={`refresh-icon ${refreshing ? 'spinning' : ''}`}>🔄</span>
+            <span className={`refresh-icon ${refreshing ? 'spinning' : ''}`}>
+              <Icon name="refresh" size={16} />
+            </span>
             <span>{refreshing ? 'Đang tính toán...' : 'Làm mới'}</span>
           </button>
         </div>
@@ -144,29 +134,40 @@ export const JobRecommendationsSection: React.FC<JobRecommendationsSectionProps>
           </div>
           <div className="meta-badges">
             {meta.isCached ? (
-              <span className="badge-tag badge-cached">⚡ Đã lưu bộ nhớ đệm (Hiệu lực 24h)</span>
+              <span className="badge-tag badge-cached">
+                <Icon name="clock" size={14} />
+                Đã lưu bộ nhớ đệm (hiệu lực 24h)
+              </span>
             ) : (
-              <span className="badge-tag badge-cached">✨ Mới tính toán</span>
+              <span className="badge-tag badge-cached">
+                <Icon name="sparkles" size={14} />
+                Mới tính toán
+              </span>
             )}
-            <span className="badge-tag badge-provider">🤖 AI Provider: {meta.activeProvider}</span>
+            <span className="badge-tag badge-provider">
+              <Icon name="network" size={14} />
+              AI Provider: {meta.activeProvider}
+            </span>
           </div>
         </div>
       )}
 
       {loading && !refreshing && (
         <div className="recommendations-loading">
-          <p>⏳ Đang phân tích hồ sơ kỹ năng và tính toán độ tương đồng công việc...</p>
+          <p>
+            <Icon name="spinner" size={18} className="spinning" />
+            Đang phân tích hồ sơ kỹ năng và tính toán độ tương đồng công việc...
+          </p>
         </div>
       )}
 
       {error && (
         <div className="recommendations-error">
-          <p>⚠️ {error}</p>
-          <button
-            type="button"
-            className="details-button"
-            onClick={() => handleSelectCandidate(userId)}
-          >
+          <p>
+            <Icon name="alert-circle" size={18} />
+            {error}
+          </p>
+          <button type="button" className="details-button" onClick={handleRetry}>
             Thử lại
           </button>
         </div>
@@ -191,22 +192,34 @@ export const JobRecommendationsSection: React.FC<JobRecommendationsSectionProps>
                   <span className={getScoreBadgeClass(job.score)}>{job.score}% khớp</span>
                 </div>
 
-                <div className="job-company">🏢 {job.companyName}</div>
+                <div className="job-company">
+                  <Icon name="building" size={16} />
+                  {job.companyName}
+                </div>
 
                 <div className="job-details-meta">
-                  {job.location && <span className="detail-item">📍 {job.location}</span>}
-                  {job.salaryRange && <span className="detail-item">💰 {job.salaryRange}</span>}
+                  {job.location && <span className="detail-item">Địa điểm: {job.location}</span>}
+                  {job.salaryRange && <span className="detail-item">Lương: {job.salaryRange}</span>}
                   {job.deadline && (
-                    <span className="detail-item">📅 Hạn: {formatDate(job.deadline)}</span>
+                    <span className="detail-item">
+                      <Icon name="calendar" size={14} />
+                      Hạn: {formatDate(job.deadline)}
+                    </span>
                   )}
                 </div>
 
                 <div className="ai-explanation-box">
                   <div className="explanation-badge-row">
                     {job.isAiGenerated ? (
-                      <span className="ai-label">✨ Do AI tạo</span>
+                      <span className="ai-label">
+                        <Icon name="sparkles" size={14} />
+                        Do AI tạo
+                      </span>
                     ) : (
-                      <span className="system-label">⚙️ Gợi ý hệ thống</span>
+                      <span className="system-label">
+                        <Icon name="network" size={14} />
+                        Gợi ý hệ thống
+                      </span>
                     )}
                   </div>
                   <p className="explanation-text">{job.explanation}</p>
@@ -222,8 +235,8 @@ export const JobRecommendationsSection: React.FC<JobRecommendationsSectionProps>
                           className={`skill-pill ${sk.satisfied ? 'skill-match' : 'skill-gap'}`}
                           title={sk.satisfied ? 'Đã đạt yêu cầu' : 'Chưa đạt mức yêu cầu'}
                         >
-                          {sk.satisfied ? '✓' : '⚠️'} {sk.skillName} ({sk.candidateScore}/
-                          {sk.requiredLevel})
+                          <Icon name={sk.satisfied ? 'check' : 'x'} size={12} />
+                          {sk.skillName} ({sk.candidateScore}/{sk.requiredLevel})
                         </span>
                       ))}
                     </div>

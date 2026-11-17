@@ -3,7 +3,7 @@ import { render, screen, waitFor, fireEvent, act } from '@testing-library/react'
 import App, { APP_NAME } from './App';
 import { request, setAuthToken } from './shared/api/httpClient';
 
-vi.mock('./features/candidate/api', () => ({
+vi.mock('./features/candidate/api/jobRecommendations', () => ({
   fetchJobRecommendations: vi.fn().mockResolvedValue({
     items: [],
     total: 0,

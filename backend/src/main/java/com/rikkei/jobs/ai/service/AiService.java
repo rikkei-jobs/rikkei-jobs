@@ -4,9 +4,6 @@ import com.rikkei.jobs.ai.config.AiProperties;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -16,8 +13,8 @@ import org.springframework.stereotype.Service;
 
 /**
  * Unified gateway service for all AI interactions in Rikkei Jobs. Manages provider dispatching, PII
- * inspection, timeouts (<=10s), and fallback recovery. Prepares the architectural foundation for
- * AI-05 (rate limiting, masking, audit logging).
+ * inspection, timeout (enforced by the HTTP client) and fallback recovery. Prepares the
+ * architectural foundation for AI-05 (rate limiting, masking, audit logging).
  */
 @Service
 public class AiService {
@@ -45,57 +42,43 @@ public class AiService {
     }
 
     /**
-     * Generates a concise job recommendation explanation (<= 60 words). Dispatches request to the
-     * active AI client with strict 10s timeout and PII sanitization. If AI fails or exceeds 10s,
-     * seamlessly returns the provided fallback explanation.
+     * Generates a concise job recommendation explanation (<= 60 words). Any AI failure, timeout or
+     * PII rejection returns the fallback explanation instead of propagating an error. The returned
+     * flag tells whether the text really came from a generative provider (the mock provider and
+     * fallbacks are reported as system-generated).
      */
-    public String generateJobExplanation(String prompt, String fallbackExplanation) {
+    public AiExplanation generateJobExplanation(String prompt, String fallbackExplanation) {
         AiProvider provider = getActiveProvider();
         AiClient client = clients.getOrDefault(provider, clients.get(AiProvider.MOCK));
 
-        // 1. Sanitize & verify prompt contains zero Personally Identifiable Information (PII)
-        validateNoPii(prompt);
-
-        // 2. Safe logging (without leaking PII)
-        log.info(
-                "[AI_CALL_START] Provider: {}, Prompt Length: {}, Sanitized: [NO_PII_VERIFIED]",
-                provider,
-                prompt.length());
-        log.debug("[AI_PROMPT_CONTENT] {}", prompt);
-
-        // 3. Execute with timeout guarantee (<= 10 seconds)
-        int timeoutSeconds = Math.max(1, aiProperties.getTimeoutSeconds());
         try {
-            String result =
-                    CompletableFuture.supplyAsync(() -> client.generateExplanation(prompt))
-                            .get(timeoutSeconds, TimeUnit.SECONDS);
+            validateNoPii(prompt);
 
+            log.info(
+                    "[AI_CALL_START] Provider: {}, Prompt Length: {}, Sanitized: [NO_PII_VERIFIED]",
+                    provider,
+                    prompt.length());
+
+            String result = client.generateExplanation(prompt);
             if (result == null || result.trim().isEmpty()) {
                 log.warn(
                         "[AI_CALL_EMPTY] Provider {} returned empty content, falling back to default",
                         provider);
-                return fallbackExplanation;
+                return new AiExplanation(fallbackExplanation, false);
             }
 
-            // 4. Word count constraint (<= 60 words)
             String trimmed = enforceWordLimit(result.trim(), 60);
             log.info(
                     "[AI_CALL_SUCCESS] Provider: {}, Word count: {}",
                     provider,
                     countWords(trimmed));
-            return trimmed;
-        } catch (TimeoutException e) {
-            log.warn(
-                    "[AI_CALL_TIMEOUT] AI call to {} exceeded {}s timeout. Using fallback explanation.",
-                    provider,
-                    timeoutSeconds);
-            return fallbackExplanation;
+            return new AiExplanation(trimmed, provider != AiProvider.MOCK);
         } catch (Exception e) {
             log.warn(
-                    "[AI_CALL_FAILED] AI call to {} failed: {}. Using fallback explanation.",
+                    "[AI_CALL_FAILED] AI call to {} failed with {}. Using fallback explanation.",
                     provider,
-                    e.getMessage());
-            return fallbackExplanation;
+                    e.getClass().getSimpleName());
+            return new AiExplanation(fallbackExplanation, false);
         }
     }
 
@@ -136,4 +119,7 @@ public class AiService {
         }
         return text.trim().split("\\s+").length;
     }
+
+    /** Result of an explanation request, including whether a real AI provider produced it. */
+    public record AiExplanation(String text, boolean aiGenerated) {}
 }

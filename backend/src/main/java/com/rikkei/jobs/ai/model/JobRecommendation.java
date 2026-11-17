@@ -10,7 +10,7 @@ import java.time.OffsetDateTime;
 
 /**
  * Entity representing a cached AI Job Recommendation. Table: job_recommendations(user_id, job_id,
- * score, explanation, created_at)
+ * score, explanation, ai_generated, created_at)
  */
 @Entity
 @Table(name = "job_recommendations")
@@ -32,17 +32,27 @@ public class JobRecommendation {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String explanation;
 
+    @Column(name = "ai_generated", nullable = false)
+    private Boolean aiGenerated = Boolean.FALSE;
+
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
 
     public JobRecommendation() {}
 
-    public JobRecommendation(Long userId, Long jobId, Integer score, String explanation) {
+    public JobRecommendation(
+            Long userId,
+            Long jobId,
+            Integer score,
+            String explanation,
+            Boolean aiGenerated,
+            OffsetDateTime createdAt) {
         this.userId = userId;
         this.jobId = jobId;
         this.score = score;
         this.explanation = explanation;
-        this.createdAt = OffsetDateTime.now();
+        this.aiGenerated = aiGenerated != null ? aiGenerated : Boolean.FALSE;
+        this.createdAt = createdAt;
     }
 
     public JobRecommendation(
@@ -51,13 +61,10 @@ public class JobRecommendation {
             Long jobId,
             Integer score,
             String explanation,
+            Boolean aiGenerated,
             OffsetDateTime createdAt) {
+        this(userId, jobId, score, explanation, aiGenerated, createdAt);
         this.id = id;
-        this.userId = userId;
-        this.jobId = jobId;
-        this.score = score;
-        this.explanation = explanation;
-        this.createdAt = createdAt != null ? createdAt : OffsetDateTime.now();
     }
 
     public Long getId() {
@@ -98,6 +105,14 @@ public class JobRecommendation {
 
     public void setExplanation(String explanation) {
         this.explanation = explanation;
+    }
+
+    public Boolean getAiGenerated() {
+        return aiGenerated;
+    }
+
+    public void setAiGenerated(Boolean aiGenerated) {
+        this.aiGenerated = aiGenerated;
     }
 
     public OffsetDateTime getCreatedAt() {

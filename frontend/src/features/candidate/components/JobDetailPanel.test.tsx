@@ -3,7 +3,7 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { JobDetailPanel } from './JobDetailPanel';
 import { ApiError } from '../../../shared/api/auth';
-import * as api from '../api';
+import * as api from '../api/gapAnalysis';
 import type { GapAnalysisResponse, JobDetail } from '../types';
 
 const JOB: JobDetail = {

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchGapAnalysis, fetchJobDetail, setMyTarget } from '../api';
+import { fetchGapAnalysis, fetchJobDetail, setMyTarget } from '../api/gapAnalysis';
 import type { GapAnalysisResponse, JobDetail } from '../types';
 import { Icon } from '../../../shared/components/Icon';
 import { GapSkillsTable } from './GapSkillsTable';

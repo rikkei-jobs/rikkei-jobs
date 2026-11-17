@@ -99,17 +99,15 @@ public class SecurityConfig {
                                             "/error")
                                     .permitAll();
                             if (environment.matchesProfiles("dev")) {
-                                auth.requestMatchers(
-                                                "/api/v1/test/**",
-                                                "/api/v1/me/job-recommendations",
-                                                "/api/v1/candidates/me/job-recommendations",
-                                                "/me/job-recommendations")
-                                        .permitAll();
+                                auth.requestMatchers("/api/v1/test/**").permitAll();
                             }
                             auth.requestMatchers(HttpMethod.POST, "/api/v1/auth/change-password")
                                     .authenticated()
                                     .requestMatchers(HttpMethod.GET, "/api/v1/auth/me")
                                     .authenticated()
+                                    .requestMatchers(
+                                            HttpMethod.GET, "/api/v1/me/job-recommendations")
+                                    .hasRole("CANDIDATE")
                                     .requestMatchers("/api/v1/evaluations/**")
                                     .hasRole("MENTOR")
                                     .requestMatchers("/api/v1/evaluation-templates/**")

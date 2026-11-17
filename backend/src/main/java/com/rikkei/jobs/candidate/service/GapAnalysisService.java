@@ -31,6 +31,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,6 +55,7 @@ public class GapAnalysisService {
     private final SkillScoreRepository skillScoreRepository;
     private final SkillCatalogService skillCatalogService;
     private final JobQueryService jobQueryService;
+    private final JdbcTemplate jdbcTemplate;
     private final Clock clock;
 
     public GapAnalysisService(
@@ -63,6 +66,7 @@ public class GapAnalysisService {
             SkillScoreRepository skillScoreRepository,
             SkillCatalogService skillCatalogService,
             JobQueryService jobQueryService,
+            JdbcTemplate jdbcTemplate,
             Clock clock) {
         this.targetPositionRepository = targetPositionRepository;
         this.positionSkillRepository = positionSkillRepository;
@@ -71,6 +75,7 @@ public class GapAnalysisService {
         this.skillScoreRepository = skillScoreRepository;
         this.skillCatalogService = skillCatalogService;
         this.jobQueryService = jobQueryService;
+        this.jdbcTemplate = jdbcTemplate;
         this.clock = clock;
     }
 
@@ -97,6 +102,7 @@ public class GapAnalysisService {
             throw new ValidationException(INVALID_TARGET);
         }
 
+        lockCandidate(userId);
         OffsetDateTime now = OffsetDateTime.now(clock);
         CandidateTarget target =
                 candidateTargetRepository
@@ -127,6 +133,7 @@ public class GapAnalysisService {
      */
     @Transactional
     public GapAnalysisResponse analyze(Long userId, Long jobIdOverride) {
+        lockCandidate(userId);
         ResolvedTarget target =
                 jobIdOverride != null
                         ? jobTarget(jobQueryService.getOpenJob(jobIdOverride))
@@ -268,6 +275,17 @@ public class GapAnalysisService {
                 missing.current(),
                 missing.gap(),
                 missing.priority());
+    }
+
+    /**
+     * Serializes target selection and gap recomputation per candidate with a transaction-scoped
+     * advisory lock, so concurrent requests cannot race on the gap_results primary key.
+     */
+    private void lockCandidate(Long userId) {
+        jdbcTemplate.query(
+                "SELECT pg_advisory_xact_lock(?)",
+                statement -> statement.setLong(1, userId),
+                (ResultSetExtractor<Void>) resultSet -> null);
     }
 
     private CandidateTarget requireTarget(Long userId) {
