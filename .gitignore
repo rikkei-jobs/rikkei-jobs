@@ -26,8 +26,7 @@ Thumbs.db
 *.pfx
 *.p12
 
-# Java / Maven / Gradle Build Artifacts (backend)
-.gradle/
+# Java / Maven Build Artifacts (backend)
 backend/target/
 **/target/
 *.class
