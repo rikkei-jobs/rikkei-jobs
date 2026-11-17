@@ -1,6 +1,7 @@
 /**
  * Module 1: Candidate (Hồ sơ năng lực)
- * Quản lý Skill Profile dựa trên bằng chứng đã xác thực, CV chuẩn Rikkei, Portfolio dự án.
+ * Quản lý Skill Profile dựa trên bằng chứng đã xác thực, CV chuẩn Rikkei, Portfolio dự án,
+ * và danh sách phiếu đánh giá từ Mentor theo khung kỹ năng (DG-01).
  */
 export interface CandidateProfileSummary {
   candidateId: string;
@@ -19,5 +20,29 @@ export const candidateModuleConfig = {
   badge: 'Module 1',
 };
 
-export { SkillProfilePage } from './components/SkillProfilePage';
-export { fetchMySkills } from './api/skillProfile';
+export * from './types';
+export * from './api/jobRecommendations';
+export * from './api/gapAnalysis';
+export * from './JobRecommendationsSection';
+// Skill profile components and API
+export { SkillProfilePage, type SkillProfilePageProps } from './components/SkillProfilePage';
+export {
+  fetchMySkills,
+  fetchUserSkills,
+  recomputeMySkills,
+  type SkillProfileItem,
+} from './api/skillProfile';
+
+// DT-01 gap analysis components and API
+export { GapAnalysisSection } from './components/GapAnalysisSection';
+export { GapSkillsTable } from './components/GapSkillsTable';
+export { JobDetailPanel } from './components/JobDetailPanel';
+
+// Mentor evaluations components and API (DG-01)
+export {
+  CandidateEvaluations,
+  type CandidateEvaluationsProps,
+} from './components/CandidateEvaluations';
+export { EvaluationCard, type EvaluationCardProps } from './components/EvaluationCard';
+export { EvaluationScoreItem, type EvaluationScoreItemProps } from './components/EvaluationScoreItem';
+export { fetchCandidateEvaluations, getProfileEvaluations } from './api/candidateEvaluations';

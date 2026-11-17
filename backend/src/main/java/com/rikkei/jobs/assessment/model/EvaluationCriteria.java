@@ -4,14 +4,9 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import java.math.BigDecimal;
-import lombok.*;
 
 @Entity
 @Table(name = "evaluation_criteria")
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-@Data
 public class EvaluationCriteria {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,4 +27,46 @@ public class EvaluationCriteria {
     @DecimalMax("100.00")
     @Column(nullable = false, precision = 5, scale = 2)
     private BigDecimal weight;
+
+    public EvaluationCriteria() {}
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public EvaluationTemplate getTemplate() {
+        return template;
+    }
+
+    public void setTemplate(EvaluationTemplate template) {
+        this.template = template;
+    }
+
+    public Skill getSkill() {
+        return skill;
+    }
+
+    public void setSkill(Skill skill) {
+        this.skill = skill;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public BigDecimal getWeight() {
+        return weight;
+    }
+
+    public void setWeight(BigDecimal weight) {
+        this.weight = weight;
+    }
 }

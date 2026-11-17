@@ -2,13 +2,10 @@ package com.rikkei.jobs.assessment.dto.response;
 
 import com.rikkei.jobs.assessment.model.EvaluationContext;
 import com.rikkei.jobs.assessment.model.EvaluationStatus;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
+<<<<<<< HEAD
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -36,3 +33,17 @@ public class EvaluationResponse {
 
     private List<EvaluationScoreResponse> scores;
 }
+=======
+public record EvaluationResponse(
+        Long id,
+        Long templateId,
+        Long userId,
+        Long mentorId,
+        EvaluationContext context,
+        Long batchId,
+        Long interviewRoundId,
+        EvaluationStatus status,
+        String overallComment,
+        OffsetDateTime submittedAt,
+        List<EvaluationScoreResponse> scores) {}
+>>>>>>> origin/develop

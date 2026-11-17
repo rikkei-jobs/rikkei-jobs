@@ -82,6 +82,43 @@ export const CandidateHomePage: React.FC = () => {
         >
           <div>
             <h3 style={{ margin: '0 0 8px 0', fontSize: '1rem', fontWeight: 600 }}>
+              Khoảng Thiếu Hụt Năng Lực
+            </h3>
+            <p
+              style={{
+                margin: '0 0 16px 0',
+                fontSize: '0.875rem',
+                color: 'var(--rj-color-text-secondary)',
+              }}
+            >
+              Chọn vị trí mục tiêu hoặc một JD để xem kỹ năng còn thiếu và mức ưu tiên.
+            </p>
+          </div>
+          <Link
+            to="/candidate/gap-analysis"
+            className="rj-btn rj-btn-primary"
+            style={{
+              alignSelf: 'flex-start',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}
+          >
+            <Icon name="sparkles" size={16} />
+            <span>Phân Tích Khoảng Thiếu</span>
+          </Link>
+        </div>
+        <div
+          className="rj-auth-card"
+          style={{
+            maxWidth: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+          }}
+        >
+          <div>
+            <h3 style={{ margin: '0 0 8px 0', fontSize: '1rem', fontWeight: 600 }}>
               Đánh Giá Từ Mentor
             </h3>
 

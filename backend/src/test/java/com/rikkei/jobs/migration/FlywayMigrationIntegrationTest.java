@@ -1,6 +1,7 @@
 package com.rikkei.jobs.migration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -104,10 +105,10 @@ public class FlywayMigrationIntegrationTest {
 
     @Test
     @DisplayName(
-            "Dev profile must seed exactly 8 sample users with Bcrypt(Test@123) and LMS ID mapping")
+            "Dev profile must seed exactly 9 sample users with Bcrypt(Test@123) and LMS ID mapping")
     void testUsersSeeded() {
         List<User> users = userRepository.findAll();
-        assertEquals(8, users.size(), "Dev profile must have exactly 8 sample accounts");
+        assertEquals(9, users.size(), "Dev profile must have exactly 9 sample accounts");
 
         // Verify candidate1
         User cand1 = userRepository.findByEmail("candidate1@rikkeijobs.test").orElseThrow();
@@ -140,6 +141,18 @@ public class FlywayMigrationIntegrationTest {
         User mentor1 = userRepository.findByEmail("mentor1@rikkeijobs.test").orElseThrow();
         assertEquals("lms-mt-001", mentor1.getLmsUserId());
         assertTrue(passwordEncoder.matches("Test@123", mentor1.getPasswordHash()));
+
+        // Verify mentor2 (seeded in V8)
+        User mentor2 = userRepository.findByEmail("mentor2@rikkeijobs.test").orElseThrow();
+        assertEquals(9L, mentor2.getId());
+        assertEquals("Trần Minh Tuấn", mentor2.getFullName());
+        assertEquals("lms-mt-002", mentor2.getLmsUserId());
+        assertEquals(3, mentor2.getRoleId());
+        assertEquals("MENTOR", mentor2.getRole().getName());
+        assertNull(mentor2.getCompanyId(), "Mentor accounts must have null company_id");
+        assertFalse(
+                mentor2.isMustChangePassword(), "mentor2 must have must_change_password = false");
+        assertTrue(passwordEncoder.matches("Test@123", mentor2.getPasswordHash()));
 
         // Verify staff1
         User staff1 = userRepository.findByEmail("staff1@rikkeijobs.test").orElseThrow();

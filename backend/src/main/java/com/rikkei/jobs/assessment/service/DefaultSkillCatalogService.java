@@ -30,6 +30,17 @@ public class DefaultSkillCatalogService implements SkillCatalogService {
                 .collect(Collectors.toMap(SkillDto::id, Function.identity()));
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, SkillDto> findByCodes(Collection<String> codes) {
+        if (codes.isEmpty()) {
+            return Map.of();
+        }
+        return skillRepository.findByCodeIn(codes).stream()
+                .map(DefaultSkillCatalogService::toDto)
+                .collect(Collectors.toMap(SkillDto::code, Function.identity()));
+    }
+
     private static SkillDto toDto(Skill skill) {
         return new SkillDto(
                 skill.getId(), skill.getCode(), skill.getNameVi(), skill.getSkillGroup());

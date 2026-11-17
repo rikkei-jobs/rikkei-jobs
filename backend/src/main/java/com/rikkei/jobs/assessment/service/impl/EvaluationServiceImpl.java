@@ -5,94 +5,125 @@ import com.rikkei.jobs.assessment.dto.request.EvaluationScoreRequest;
 import com.rikkei.jobs.assessment.dto.request.UpdateEvaluationRequest;
 import com.rikkei.jobs.assessment.dto.response.EvaluationResponse;
 import com.rikkei.jobs.assessment.mapper.EvaluationMapper;
-import com.rikkei.jobs.assessment.model.*;
+import com.rikkei.jobs.assessment.model.Evaluation;
+import com.rikkei.jobs.assessment.model.EvaluationCriteria;
+import com.rikkei.jobs.assessment.model.EvaluationScore;
+import com.rikkei.jobs.assessment.model.EvaluationStatus;
+import com.rikkei.jobs.assessment.model.EvaluationTemplate;
 import com.rikkei.jobs.assessment.repository.EvaluationCriteriaRepository;
 import com.rikkei.jobs.assessment.repository.EvaluationRepository;
 import com.rikkei.jobs.assessment.repository.EvaluationTemplateRepository;
 import com.rikkei.jobs.assessment.service.EvaluationService;
-import com.rikkei.jobs.candidate.model.EvidenceSource;
-import com.rikkei.jobs.candidate.model.SkillEvidence;
-import com.rikkei.jobs.candidate.repository.SkillEvidenceRepository;
-import com.rikkei.jobs.candidate.service.SkillRecomputeService;
-import com.rikkei.jobs.identity.model.User;
-import com.rikkei.jobs.identity.repository.UserRepository;
-import jakarta.persistence.EntityNotFoundException;
+import com.rikkei.jobs.candidate.dto.MentorSkillEvidenceDto;
+import com.rikkei.jobs.candidate.service.CandidatePublicService;
+import com.rikkei.jobs.common.exception.EvaluationAlreadySubmittedException;
+import com.rikkei.jobs.common.exception.EvaluationContextMismatchException;
+import com.rikkei.jobs.common.exception.EvaluationIncompleteException;
+import com.rikkei.jobs.common.exception.EvaluationNotFoundException;
+import com.rikkei.jobs.common.exception.InvalidCandidateException;
+import com.rikkei.jobs.common.exception.ResourceNotFoundException;
+import com.rikkei.jobs.common.exception.TemplateInactiveException;
+import com.rikkei.jobs.common.exception.ValidationException;
+import com.rikkei.jobs.identity.service.IdentityPublicService;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.LocalDateTime;
+import java.time.Clock;
 import java.time.OffsetDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import lombok.AllArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * Core Assessment Service implementing evaluation workflows and atomic submission (Gate G4).
+ * Strictly complies with Rule 14 (Backend Module Boundaries) and Rule 05.
+ */
 @Service
-@AllArgsConstructor
 public class EvaluationServiceImpl implements EvaluationService {
+
     private final EvaluationRepository evaluationRepository;
     private final EvaluationTemplateRepository templateRepository;
     private final EvaluationCriteriaRepository criteriaRepository;
-    private final UserRepository userRepository;
-    private final SkillEvidenceRepository skillEvidenceRepository;
-    private final SkillRecomputeService skillRecomputeService;
+    private final CandidatePublicService candidatePublicService;
+    private final IdentityPublicService identityPublicService;
     private final EvaluationMapper evaluationMapper;
+    private final Clock clock;
 
-    @Transactional
+    public EvaluationServiceImpl(
+            EvaluationRepository evaluationRepository,
+            EvaluationTemplateRepository templateRepository,
+            EvaluationCriteriaRepository criteriaRepository,
+            CandidatePublicService candidatePublicService,
+            IdentityPublicService identityPublicService,
+            EvaluationMapper evaluationMapper,
+            Clock clock) {
+        this.evaluationRepository = evaluationRepository;
+        this.templateRepository = templateRepository;
+        this.criteriaRepository = criteriaRepository;
+        this.candidatePublicService = candidatePublicService;
+        this.identityPublicService = identityPublicService;
+        this.evaluationMapper = evaluationMapper;
+        this.clock = clock;
+    }
+
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public EvaluationResponse createEvaluation(CreateEvaluationRequest request, Long mentorId) {
-
-        // 1. Tìm template
+        // 1. Tìm mẫu phiếu đánh giá
         EvaluationTemplate template =
                 templateRepository
-                        .findById(request.getTemplateId())
+                        .findById(request.templateId())
                         .orElseThrow(
-                                () -> new EntityNotFoundException("Evaluation template not found"));
+                                () ->
+                                        new ResourceNotFoundException(
+                                                "Mẫu phiếu đánh giá không tồn tại"));
 
-        // 2. Kiểm tra template đang hoạt động
+        // 2. Kiểm tra mẫu phiếu còn hoạt động
         if (!Boolean.TRUE.equals(template.getActive())) {
-            throw new IllegalArgumentException("Evaluation template is inactive");
+            throw new TemplateInactiveException();
         }
 
-        // 3. Kiểm tra context
-        if (template.getContext() != request.getContext()) {
-            throw new IllegalArgumentException(
-                    "Evaluation template context does not match request context");
+        // 3. Kiểm tra bối cảnh đánh giá
+        if (template.getContext() != request.context()) {
+            throw new EvaluationContextMismatchException();
         }
 
-        // 4. Tìm ứng viên
-        User user =
-                userRepository
-                        .findById(request.getUserId())
-                        .orElseThrow(() -> new EntityNotFoundException("Candidate not found"));
+        // 4. Kiểm tra ứng viên tồn tại và có role CANDIDATE qua IdentityPublicService
+        if (!identityPublicService.existsById(request.userId())) {
+            throw new ResourceNotFoundException("Ứng viên không tồn tại");
+        }
+        if (!identityPublicService.isCandidate(request.userId())) {
+            throw new InvalidCandidateException();
+        }
 
-        // 5. Tìm mentor
-        User mentor =
-                userRepository
-                        .findById(mentorId)
-                        .orElseThrow(() -> new EntityNotFoundException("Mentor not found"));
+        // 5. Kiểm tra mentor tồn tại qua IdentityPublicService
+        if (!identityPublicService.existsById(mentorId)) {
+            throw new ResourceNotFoundException("Người đánh giá không tồn tại");
+        }
 
-        // 6. Lấy TOÀN BỘ tiêu chí thuộc template
+        // 6. Lấy toàn bộ tiêu chí thuộc template
         List<EvaluationCriteria> templateCriteria =
                 criteriaRepository.findAllByTemplateId(template.getId());
 
         if (templateCriteria.isEmpty()) {
-            throw new IllegalArgumentException("Evaluation template has no criteria");
+            throw new ValidationException("Mẫu phiếu đánh giá chưa có tiêu chí nào");
         }
 
         // 7. Lấy danh sách điểm frontend gửi lên
         List<EvaluationScoreRequest> requestScores =
-                request.getScores() == null ? List.of() : request.getScores();
+                request.scores() == null ? List.of() : request.scores();
 
         // 8. Kiểm tra criterionId bị trùng
         List<Long> criterionIds =
-                requestScores.stream().map(EvaluationScoreRequest::getCriterionId).toList();
+                requestScores.stream().map(EvaluationScoreRequest::criterionId).toList();
 
         if (new HashSet<>(criterionIds).size() != criterionIds.size()) {
-            throw new IllegalArgumentException("Duplicate criterion ID");
+            throw new ValidationException("Tiêu chí đánh giá bị trùng lặp");
         }
 
         // 9. Tạo map điểm được gửi lên, key = criterionId
@@ -100,8 +131,7 @@ public class EvaluationServiceImpl implements EvaluationService {
                 requestScores.stream()
                         .collect(
                                 Collectors.toMap(
-                                        EvaluationScoreRequest::getCriterionId,
-                                        Function.identity()));
+                                        EvaluationScoreRequest::criterionId, Function.identity()));
 
         // 10. Kiểm tra tất cả criterionId gửi lên có thuộc template không
         Set<Long> templateCriterionIds =
@@ -111,26 +141,24 @@ public class EvaluationServiceImpl implements EvaluationService {
 
         for (Long criterionId : criterionIds) {
             if (!templateCriterionIds.contains(criterionId)) {
-                throw new IllegalArgumentException(
-                        "Criterion does not belong to the selected template: " + criterionId);
+                throw new ValidationException(
+                        "Tiêu chí không thuộc mẫu phiếu đã chọn: " + criterionId);
             }
         }
 
-        // 11. Tạo Evaluation
-        Evaluation evaluation =
-                Evaluation.builder()
-                        .template(template)
-                        .user(user)
-                        .mentor(mentor)
-                        .context(request.getContext())
-                        .batchId(request.getBatchId())
-                        .interviewRoundId(request.getInterviewRoundId())
-                        .status(EvaluationStatus.DRAFT)
-                        .overallComment(request.getOverallComment())
-                        .scores(new ArrayList<>())
-                        .build();
+        // 11. Khởi tạo Evaluation ở trạng thái DRAFT
+        Evaluation evaluation = new Evaluation();
+        evaluation.setTemplate(template);
+        evaluation.setUserId(request.userId());
+        evaluation.setMentorId(mentorId);
+        evaluation.setContext(request.context());
+        evaluation.setBatchId(request.batchId());
+        evaluation.setInterviewRoundId(request.interviewRoundId());
+        evaluation.setStatus(EvaluationStatus.DRAFT);
+        evaluation.setOverallComment(request.overallComment());
+        evaluation.setScores(new ArrayList<>());
 
-        // 12. Tạo EvaluationScore cho TẤT CẢ tiêu chí của template
+        // 12. Tạo EvaluationScore cho tất cả tiêu chí của template
         List<EvaluationScore> scores =
                 templateCriteria.stream()
                         .map(
@@ -138,32 +166,27 @@ public class EvaluationServiceImpl implements EvaluationService {
                                     EvaluationScoreRequest scoreRequest =
                                             scoreRequestMap.get(criterion.getId());
 
-                                    return EvaluationScore.builder()
-                                            .evaluation(evaluation)
-                                            .criterion(criterion)
-                                            .score(
-                                                    scoreRequest != null
-                                                            ? scoreRequest.getScore()
-                                                            : null)
-                                            .comment(
-                                                    scoreRequest != null
-                                                            ? scoreRequest.getComment()
-                                                            : null)
-                                            .build();
+                                    EvaluationScore es = new EvaluationScore();
+                                    es.setEvaluation(evaluation);
+                                    es.setCriterion(criterion);
+                                    es.setScore(scoreRequest != null ? scoreRequest.score() : null);
+                                    es.setComment(
+                                            scoreRequest != null ? scoreRequest.comment() : null);
+                                    return es;
                                 })
                         .toList();
 
         evaluation.setScores(new ArrayList<>(scores));
 
-        // 13. Lưu Evaluation và các EvaluationScore bằng cascade
+        // 13. Lưu Evaluation và cascade scores
         Evaluation savedEvaluation = evaluationRepository.save(evaluation);
 
-        // 14. Chuyển Entity thành Response
+        // 14. Chuyển Entity thành Response record
         return evaluationMapper.toResponse(savedEvaluation);
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void updateEvaluation(
             Long evaluationId, Long mentorId, UpdateEvaluationRequest request) {
 
@@ -171,35 +194,28 @@ public class EvaluationServiceImpl implements EvaluationService {
         Evaluation evaluation =
                 evaluationRepository
                         .findById(evaluationId)
-                        .orElseThrow(
-                                () ->
-                                        new ResponseStatusException(
-                                                HttpStatus.NOT_FOUND, "Evaluation not found"));
+                        .orElseThrow(EvaluationNotFoundException::new);
 
-        // 2. Kiểm tra mentor trước status
-        // Không tiết lộ phiếu của mentor khác
-        if (!evaluation.getMentor().getId().equals(mentorId)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Evaluation not found");
+        // 2. IDOR check: Chỉ mentor sở hữu mới được cập nhật (404 NOT_FOUND bảo vệ thông tin)
+        if (!evaluation.getMentorId().equals(mentorId)) {
+            throw new EvaluationNotFoundException();
         }
 
-        // 3. Chỉ cho phép chỉnh sửa DRAFT
+        // 3. Chỉ cho phép chỉnh sửa phiếu ở trạng thái DRAFT
         if (evaluation.getStatus() != EvaluationStatus.DRAFT) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT, "Cannot update a submitted evaluation");
+            throw new EvaluationAlreadySubmittedException();
         }
 
         // 4. Lấy danh sách điểm gửi lên
         List<UpdateEvaluationRequest.ScoreRequest> requests =
-                request.getScores() == null ? List.of() : request.getScores();
+                request.scores() == null ? List.of() : request.scores();
 
         // 5. Kiểm tra criterionId trùng nhau
         List<Long> criterionIds =
-                requests.stream()
-                        .map(UpdateEvaluationRequest.ScoreRequest::getCriterionId)
-                        .toList();
+                requests.stream().map(UpdateEvaluationRequest.ScoreRequest::criterionId).toList();
 
         if (new HashSet<>(criterionIds).size() != criterionIds.size()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Duplicate criterion ID");
+            throw new ValidationException("Tiêu chí đánh giá bị trùng lặp");
         }
 
         // 6. Lấy toàn bộ EvaluationScore hiện tại của phiếu
@@ -212,69 +228,64 @@ public class EvaluationServiceImpl implements EvaluationService {
 
         // 7. Kiểm tra và cập nhật điểm
         for (UpdateEvaluationRequest.ScoreRequest item : requests) {
+            Long criterionId = item.criterionId();
 
-            Long criterionId = item.getCriterionId();
-
-            // Không cho phép criterionId null
             if (criterionId == null) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST, "Criterion ID is required");
+                throw new ValidationException("Mã tiêu chí không được để trống");
             }
 
-            // Chỉ được cập nhật tiêu chí đã tồn tại trong phiếu
             EvaluationScore score = scoreMap.get(criterionId);
-
             if (score == null) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST, "Cannot add or replace criterion: " + criterionId);
+                throw new ValidationException(
+                        "Không thể thêm tiêu chí mới vào phiếu: " + criterionId);
             }
 
-            // Chỉ cập nhật score nếu request có gửi giá trị
-            if (item.getScore() != null) {
-                score.setScore(item.getScore());
+            if (item.score() != null) {
+                score.setScore(item.score());
             }
 
-            // Chỉ cập nhật comment nếu request có gửi giá trị
-            if (item.getComment() != null) {
-                score.setComment(item.getComment());
+            if (item.comment() != null) {
+                score.setComment(item.comment());
             }
         }
 
-        // 8. Cập nhật nhận xét chung
-        if (request.getOverallComment() != null) {
-            evaluation.setOverallComment(request.getOverallComment());
+        // 8. Cập nhật nhận xét chung nếu có
+        if (request.overallComment() != null) {
+            evaluation.setOverallComment(request.overallComment());
         }
 
-        // 9. Lưu
+        // 9. Lưu vào cơ sở dữ liệu
         evaluationRepository.save(evaluation);
     }
 
-    @Transactional
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void submitEvaluation(Long evaluationId, Long mentorId) {
+        // 1. Tìm phiếu đánh giá
         Evaluation evaluation =
                 evaluationRepository
                         .findById(evaluationId)
-                        .orElseThrow(
-                                () ->
-                                        new ResponseStatusException(
-                                                HttpStatus.NOT_FOUND, "Evaluation not found"));
+                        .orElseThrow(EvaluationNotFoundException::new);
 
-        // Chỉ mentor tạo phiếu mới được submit
-        if (!evaluation.getMentor().getId().equals(mentorId)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Evaluation not found");
+        // 2. IDOR check: Chỉ mentor tạo phiếu mới được submit (404 NOT_FOUND)
+        if (!evaluation.getMentorId().equals(mentorId)) {
+            throw new EvaluationNotFoundException();
         }
 
-        // Không cho submit lại
+        // 3. Trạng thái khác DRAFT -> ném 409 CONFLICT
         if (evaluation.getStatus() != EvaluationStatus.DRAFT) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Evaluation already submitted");
+            throw new EvaluationAlreadySubmittedException(
+                    "Phiếu đánh giá đã được gửi, không thể gửi lại");
         }
 
-        // Lấy toàn bộ tiêu chí của template từ database
+        // 4. Lấy toàn bộ tiêu chí của template kèm skill để tối ưu hóa truy vấn
         List<EvaluationCriteria> criteria =
-                criteriaRepository.findAllByTemplateId(evaluation.getTemplate().getId());
+                criteriaRepository.findAllByTemplateIdWithSkill(evaluation.getTemplate().getId());
+        if (criteria.isEmpty()) {
+            criteria = criteriaRepository.findAllByTemplateId(evaluation.getTemplate().getId());
+        }
 
-        // Lấy điểm đã nhập
+        // 5. Kiểm tra tính đầy đủ 100% tiêu chí có điểm
         Map<Long, EvaluationScore> scoreMap =
                 evaluation.getScores().stream()
                         .collect(
@@ -282,54 +293,66 @@ public class EvaluationServiceImpl implements EvaluationService {
                                         score -> score.getCriterion().getId(),
                                         Function.identity()));
 
-        // Kiểm tra tất cả tiêu chí đều có điểm
         for (EvaluationCriteria criterion : criteria) {
             EvaluationScore score = scoreMap.get(criterion.getId());
 
             if (score == null || score.getScore() == null) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "Missing score for criterion: " + criterion.getId());
+                throw new EvaluationIncompleteException(
+                        "Chưa chấm điểm cho tiêu chí: " + criterion.getId());
             }
         }
 
-        // Tạo SkillEvidence
-        List<SkillEvidence> evidences =
-                criteria.stream()
-                        .map(
-                                criterion -> {
-                                    EvaluationScore score = scoreMap.get(criterion.getId());
+        // 6. Chuẩn hóa trọng số tiêu chí an toàn sang khoảng (0, 1] scale 3 và xây dựng evidence
+        // DTOs
+        OffsetDateTime evaluatedAt = OffsetDateTime.now(clock);
+        List<MentorSkillEvidenceDto> evidences = new ArrayList<>();
 
-                                    BigDecimal normalizedWeight =
-                                            criterion
-                                                    .getWeight()
-                                                    .divide(
-                                                            BigDecimal.valueOf(100),
-                                                            3,
-                                                            RoundingMode.HALF_UP);
+        for (EvaluationCriteria criterion : criteria) {
+            EvaluationScore score = scoreMap.get(criterion.getId());
 
-                                    return new SkillEvidence(
-                                            evaluation.getUser().getId(),
-                                            Math.toIntExact(criterion.getSkill().getId()),
-                                            EvidenceSource.MENTOR,
-                                            evaluation.getId().toString(),
-                                            criterion.getDescription(),
-                                            BigDecimal.valueOf(score.getScore()),
-                                            normalizedWeight,
-                                            OffsetDateTime.now(),
-                                            true);
-                                })
-                        .toList();
+            BigDecimal rawWeight = criterion.getWeight();
+            if (rawWeight == null) {
+                throw new ValidationException("Trọng số tiêu chí không được để trống");
+            }
 
-        skillEvidenceRepository.saveAll(evidences);
+            BigDecimal normalizedWeight;
+            if (rawWeight.compareTo(BigDecimal.ONE) > 0) {
+                normalizedWeight =
+                        rawWeight.divide(BigDecimal.valueOf(100), 3, RoundingMode.HALF_UP);
+            } else {
+                normalizedWeight = rawWeight.setScale(3, RoundingMode.HALF_UP);
+            }
 
-        // Tính toán lại điểm kỹ năng HS-01
-        skillRecomputeService.recomputeSkills(evaluation.getUser().getId());
+            if (normalizedWeight.compareTo(BigDecimal.ZERO) <= 0
+                    || normalizedWeight.compareTo(BigDecimal.ONE) > 0) {
+                throw new ValidationException("Trọng số tiêu chí không hợp lệ: " + rawWeight);
+            }
 
-        // Đánh dấu phiếu đã submit
+            Integer skillId = criterion.getSkill() != null ? criterion.getSkill().getId() : null;
+            String skillCode = criterion.getSkill() != null ? criterion.getSkill().getCode() : null;
+
+            evidences.add(
+                    new MentorSkillEvidenceDto(
+                            skillId,
+                            skillCode,
+                            BigDecimal.valueOf(score.getScore()),
+                            normalizedWeight,
+                            evaluation.getId(),
+                            criterion.getDescription(),
+                            evaluatedAt));
+        }
+
+        // 7. Ghi nhận bằng chứng kỹ năng qua CandidatePublicService
+        candidatePublicService.recordMentorEvidences(evaluation.getUserId(), evidences);
+
+        // 8. Kích hoạt tính toán lại điểm kỹ năng ứng viên
+        candidatePublicService.recomputeCandidateSkills(evaluation.getUserId());
+
+        // 9. Cập nhật trạng thái phiếu sang SUBMITTED và ghi nhận thời điểm submit qua Clock
         evaluation.setStatus(EvaluationStatus.SUBMITTED);
-        evaluation.setSubmittedAt(LocalDateTime.now());
+        evaluation.setSubmittedAt(evaluatedAt);
 
-        evaluationRepository.save(evaluation);
+        // 10. Lưu và flush để Hibernate kích hoạt @Version optimistic locking check
+        evaluationRepository.saveAndFlush(evaluation);
     }
 }

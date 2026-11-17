@@ -1,4 +1,3 @@
-<!-- cspell:ignore opentest4j spotless -->
 # Behavioural Test Scenario 03: Test-Driven Development (Red-Green-Refactor) & Domain Boundaries
 
 ## 1. Metadata & Target Standards

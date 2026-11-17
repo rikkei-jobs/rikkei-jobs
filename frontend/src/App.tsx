@@ -6,6 +6,7 @@ import { HealthBadge } from './shared/components/HealthBadge';
 import { ModuleCard } from './shared/components/ModuleCard';
 import { fetchBackendHealth, type BackendHealthStatus } from './shared/api/health';
 import { BUSINESS_MODULES } from './features';
+import { JobRecommendationsSection } from './features/candidate';
 import { SkillProfilePage } from './features/candidate';
 
 import { AuthProvider } from './features/identity/context/AuthContext';
@@ -20,6 +21,8 @@ import { ForgotPasswordPage } from './features/identity/pages/ForgotPasswordPage
 import { ResetPasswordPage } from './features/identity/pages/ResetPasswordPage';
 import { CandidateHomePage } from './features/identity/pages/role-homes/CandidateHomePage';
 import { CandidateSkillsPage } from './features/identity/pages/role-homes/CandidateSkillsPage';
+import { CandidateGapAnalysisPage } from './features/identity/pages/role-homes/CandidateGapAnalysisPage';
+import { CandidateJobDetailPage } from './features/identity/pages/role-homes/CandidateJobDetailPage';
 import { HrHomePage } from './features/identity/pages/role-homes/HrHomePage';
 import { MentorHomePage } from './features/identity/pages/role-homes/MentorHomePage';
 import { StaffHomePage } from './features/identity/pages/role-homes/StaffHomePage';
@@ -33,7 +36,7 @@ export const APP_SUBTITLE =
   'Giải pháp cầu nối minh bạch giữa Sinh viên, Doanh nghiệp tuyển dụng và Cán bộ đào tạo';
 
 export const HomeSkeleton: React.FC = () => {
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
   const [backendStatus, setBackendStatus] = useState<BackendHealthStatus>('CONNECTING...');
   const [statusDetails, setStatusDetails] = useState<string>(
     'Đang thiết lập kết nối tới Backend...',
@@ -153,6 +156,8 @@ export const HomeSkeleton: React.FC = () => {
             />
           </section>
 
+          {user?.role === 'CANDIDATE' && <JobRecommendationsSection />}
+
           <section className="section-modules">
             <div className="section-header">
               <h2 className="section-title">7 Module Nghiệp vụ Hệ thống</h2>
@@ -247,6 +252,24 @@ export const AppRoutes: React.FC = () => {
         element={
           <RequireRole allowedRoles={['CANDIDATE']}>
             <CandidateSkillsPage />
+          </RequireRole>
+        }
+      />
+
+      {/* DT-01 gap analysis and JD detail routes */}
+      <Route
+        path="/candidate/gap-analysis"
+        element={
+          <RequireRole allowedRoles={['CANDIDATE']}>
+            <CandidateGapAnalysisPage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/candidate/jobs/:jobId"
+        element={
+          <RequireRole allowedRoles={['CANDIDATE']}>
+            <CandidateJobDetailPage />
           </RequireRole>
         }
       />

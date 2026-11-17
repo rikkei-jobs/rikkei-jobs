@@ -610,5 +610,53 @@ public class AuthControllerIntegrationTest {
         assertTrue(recompute.has("200"), "POST /me/skills/recompute must document 200");
         assertTrue(recompute.has("401"), "POST /me/skills/recompute must document 401");
         assertTrue(recompute.has("403"), "POST /me/skills/recompute must document 403");
+
+        // 9. DT-01 target and gap analysis endpoints
+        JsonNode chooseTarget = paths.path("/api/v1/me/target").path("put").path("responses");
+        assertTrue(chooseTarget.has("200"), "PUT /me/target must document 200");
+        assertTrue(chooseTarget.has("400"), "PUT /me/target must document 400");
+        assertTrue(chooseTarget.has("401"), "PUT /me/target must document 401");
+        assertTrue(chooseTarget.has("403"), "PUT /me/target must document 403");
+        assertTrue(chooseTarget.has("404"), "PUT /me/target must document 404");
+        assertTrue(
+                chooseTarget.path("400").path("description").asText().contains("VALIDATION_ERROR"),
+                "PUT /me/target 400 must document VALIDATION_ERROR");
+        assertTrue(
+                chooseTarget.path("404").path("description").asText().contains("NOT_FOUND"),
+                "PUT /me/target 404 must document NOT_FOUND");
+
+        JsonNode currentTarget = paths.path("/api/v1/me/target").path("get").path("responses");
+        assertTrue(currentTarget.has("200"), "GET /me/target must document 200");
+        assertTrue(currentTarget.has("401"), "GET /me/target must document 401");
+        assertTrue(currentTarget.has("403"), "GET /me/target must document 403");
+        assertTrue(currentTarget.has("404"), "GET /me/target must document 404");
+
+        JsonNode gapAnalysis = paths.path("/api/v1/me/gap-analysis").path("get").path("responses");
+        assertTrue(gapAnalysis.has("200"), "GET /me/gap-analysis must document 200");
+        assertTrue(gapAnalysis.has("400"), "GET /me/gap-analysis must document 400");
+        assertTrue(gapAnalysis.has("401"), "GET /me/gap-analysis must document 401");
+        assertTrue(gapAnalysis.has("403"), "GET /me/gap-analysis must document 403");
+        assertTrue(gapAnalysis.has("404"), "GET /me/gap-analysis must document 404");
+        assertTrue(
+                gapAnalysis.path("400").path("description").asText().contains("VALIDATION_ERROR"),
+                "GET /me/gap-analysis 400 must document VALIDATION_ERROR");
+        assertTrue(
+                gapAnalysis.path("404").path("description").asText().contains("NOT_FOUND"),
+                "GET /me/gap-analysis 404 must document NOT_FOUND");
+
+        JsonNode targetPositions =
+                paths.path("/api/v1/target-positions").path("get").path("responses");
+        assertTrue(targetPositions.has("200"), "GET /target-positions must document 200");
+        assertTrue(targetPositions.has("401"), "GET /target-positions must document 401");
+        assertTrue(targetPositions.has("403"), "GET /target-positions must document 403");
+
+        JsonNode jobDetail = paths.path("/api/v1/jobs/{jobId}").path("get").path("responses");
+        assertTrue(jobDetail.has("200"), "GET /jobs/{jobId} must document 200");
+        assertTrue(jobDetail.has("401"), "GET /jobs/{jobId} must document 401");
+        assertTrue(jobDetail.has("403"), "GET /jobs/{jobId} must document 403");
+        assertTrue(jobDetail.has("404"), "GET /jobs/{jobId} must document 404");
+        assertTrue(
+                jobDetail.path("404").path("description").asText().contains("NOT_FOUND"),
+                "GET /jobs/{jobId} 404 must document NOT_FOUND");
     }
 }

@@ -336,7 +336,9 @@ public class SecurityHardeningIntegrationTest {
                             "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                             Integer.class);
             assertEquals(
-                    5, migrationCount, "Non-dev profile must apply exactly 5 schema migrations");
+                    6,
+                    migrationCount,
+                    "Only schema migrations V1, V3, V5, V7, V11 and V13 must be applied");
 
             Boolean hasV2 =
                     jdbcTemplate.queryForObject(
@@ -386,7 +388,7 @@ public class SecurityHardeningIntegrationTest {
 
         @Test
         @DisplayName(
-                "Default profile strictly isolates seed data (0 users, only V1 and V3 migrations)")
+                "Default profile strictly isolates seed data (0 users, only V1, V3, V5, V7, V11 and V13 migrations)")
         void testDefaultProfileDatabaseState() {
             assertEquals(0L, userRepository.count(), "Default profile must have 0 users");
 
@@ -395,9 +397,9 @@ public class SecurityHardeningIntegrationTest {
                             "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                             Integer.class);
             assertEquals(
-                    5,
+                    6,
                     totalMigrations,
-                    "Default profile must have exactly 3 schema migrations (V1, V3, V5, V7, V9)");
+                    "Default profile must have exactly 6 schema migrations (V1, V3, V5, V7, V11, V13)");
 
             Integer v2Count =
                     jdbcTemplate.queryForObject(

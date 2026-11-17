@@ -96,31 +96,25 @@ public class SecurityConfig {
                                             "/swagger-ui/**",
                                             "/api-docs/**",
                                             "/v3/api-docs/**",
-                                            "/api/v1/auth/**",
-                                            "/auth/**",
-                                            "/login",
-                                            "/sso-callback",
-                                            "/change-password",
-                                            "/forgot-password",
-                                            "/reset-password",
-                                            "/dashboard",
-                                            "/*.html",
-                                            "/static/**",
                                             "/error")
                                     .permitAll();
                             if (environment.matchesProfiles("dev")) {
-                                auth.requestMatchers(
-                                                "/api/v1/test/**",
-                                                "/api/v1/me/job-recommendations",
-                                                "/api/v1/candidates/me/job-recommendations",
-                                                "/me/job-recommendations",
-                                                "/api/v1/evaluation-templates")
-                                        .permitAll();
+                                auth.requestMatchers("/api/v1/test/**").permitAll();
                             }
                             auth.requestMatchers(HttpMethod.POST, "/api/v1/auth/change-password")
                                     .authenticated()
                                     .requestMatchers(HttpMethod.GET, "/api/v1/auth/me")
                                     .authenticated()
+                                    .requestMatchers(
+                                            HttpMethod.GET, "/api/v1/me/job-recommendations")
+                                    .hasRole("CANDIDATE")
+                                    .requestMatchers("/api/v1/evaluations/**")
+                                    .hasRole("MENTOR")
+                                    .requestMatchers("/api/v1/evaluation-templates/**")
+                                    .hasRole("MENTOR")
+                                    .requestMatchers(
+                                            HttpMethod.GET, "/api/v1/profiles/*/evaluations")
+                                    .hasAnyRole("CANDIDATE", "HR")
                                     .anyRequest()
                                     .authenticated();
                         });

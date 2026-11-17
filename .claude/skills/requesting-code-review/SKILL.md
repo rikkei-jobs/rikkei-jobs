@@ -15,7 +15,7 @@ A code review request is not a dump of raw diffs. It is an engineering dossier t
 
 ### When to Use
 
-- When all code modifications for an assigned task or feature are complete, and all 25 active quality gates pass with exit code 0.
+- When all code modifications for an assigned task or feature are complete, and all 26 active quality gates pass with exit code 0.
 - When preparing a pull request description or handoff review dossier for the Team Lead.
 - When an intermediate architectural milestone requires peer review before proceeding to subsequent implementation phases.
 
@@ -50,7 +50,7 @@ A code review request is not a dump of raw diffs. It is an engineering dossier t
 ### Step 3: Assemble Empirical Verification Evidence
 
 1. Run the project verification gate: `powershell -File .\check.ps1` (or `./check.sh`).
-2. Collect the raw console output showing that all 25 active runtime quality gates passed.
+2. Collect the raw console output showing that all 26 active runtime quality gates passed.
 3. Record the exact test counts (e.g., number of unit, integration, and contract tests executed) and execution time.
 
 ### Step 4: Author the Code Review Dossier
@@ -110,4 +110,4 @@ A code review request is not a dump of raw diffs. It is an engineering dossier t
 - Quality gate execution:
   - PowerShell runner: `powershell -File .\check.ps1`
   - Shell runner: `./check.sh`
-- Required verification passes: 25 active runtime gates.
+- Required verification passes: 26 active runtime gates.
