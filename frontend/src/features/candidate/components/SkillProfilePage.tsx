@@ -2,15 +2,22 @@ import React, { useCallback, useContext, useEffect, useMemo, useState } from 're
 import { ApiError } from '../../../shared/api/auth';
 import { Icon } from '../../../shared/components/Icon';
 import { fetchMySkills, recomputeMySkills, type SkillProfileItem } from '../api/skillProfile';
-import { GROUP_LABELS, GROUP_ORDER, LEVEL_LABELS, LEVEL_RANGES } from './skillLabels';
+import { GROUP_LABELS, GROUP_ORDER, LEVEL_LABELS, LEVEL_RANGES } from '../skillLabels';
 import { SkillItem } from './SkillItem';
+import { CandidateEvaluations } from './CandidateEvaluations';
 import { AuthContext } from '../../identity/context/authContextDef';
-import '../styles/skillProfile.css';
+import '../skillProfile.css';
 
 export interface SkillProfilePageProps {
   readonly onLogout?: () => void;
   /** Hide the in-page logout button when the surrounding shell already provides one. */
   readonly showLogout?: boolean;
+  /** Target candidate user ID for mentor evaluations; defaults to authenticated user ID. */
+  readonly userId?: number;
+  /** Optional candidate name for display header. */
+  readonly candidateName?: string;
+  /** Toggle visibility of mentor evaluations block; defaults to true. */
+  readonly showEvaluations?: boolean;
 }
 
 type LoadState =
@@ -33,9 +40,14 @@ const groupItems = (items: readonly SkillProfileItem[]) => {
 export const SkillProfilePage: React.FC<SkillProfilePageProps> = ({
   onLogout,
   showLogout = true,
+  userId,
+  candidateName,
+  showEvaluations = true,
 }) => {
   const authContext = useContext(AuthContext);
   const handleLogout = onLogout ?? authContext?.logout ?? (() => {});
+  const resolvedUserId = userId ?? authContext?.user?.id;
+  const resolvedCandidateName = candidateName ?? authContext?.user?.fullName;
 
   const [state, setState] = useState<LoadState>({ kind: 'loading' });
   const [recomputing, setRecomputing] = useState(false);
@@ -138,6 +150,13 @@ export const SkillProfilePage: React.FC<SkillProfilePageProps> = ({
                 </ul>
               </section>
             ))}
+
+            {showEvaluations && (
+              <CandidateEvaluations
+                userId={resolvedUserId}
+                candidateName={resolvedCandidateName}
+              />
+            )}
           </div>
 
           <aside className="sp-aside" aria-label="Tóm tắt hồ sơ">

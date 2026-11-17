@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, waitFor, within, fireEvent } from '@testing-library/react';
-import { SkillProfilePage } from '../components/SkillProfilePage';
+import { SkillProfilePage } from './SkillProfilePage';
 import type { SkillProfileItem } from '../api/skillProfile';
 import {
   setAuthSessionHandlers,

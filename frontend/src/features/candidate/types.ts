@@ -2,7 +2,7 @@ import { ApiError } from '../../shared/api/auth';
 
 /**
  * Types and DTOs for Candidate Evaluations feature.
- * Exactly matches Backend Spring Boot DTOs and evaluation response contract.
+ * Matches Backend Spring Boot DTOs and evaluation response contract.
  */
 
 export type EvaluationContext = 'INTERVIEW' | 'INTERNSHIP';
@@ -10,11 +10,13 @@ export type EvaluationContext = 'INTERVIEW' | 'INTERNSHIP';
 export interface EvaluationMentorDto {
   id: number;
   name: string;
+  email?: string;
 }
 
 export interface EvaluationScoreDto {
   criterionId: number;
   criterionDescription: string;
+  skillCode?: string;
   score: number;
   comment: string | null;
 }
