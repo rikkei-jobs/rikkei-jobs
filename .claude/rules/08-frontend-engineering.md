@@ -25,7 +25,15 @@ Enforce compiler constraints defined in frontend/tsconfig.app.json:
 - Component Contracts: Declare explicit TypeScript interfaces for all component props, state objects, and API response models.
 - Immutable Data: Prefer readonly properties for props and state to prevent accidental state mutations.
 
-## 4. Feature-Slice Architecture
+## 4. Single HTTP Client & Memory-Only Token Storage
+
+Centralize all frontend network requests and authentication token lifecycle management:
+
+- Single HTTP Client: All API requests must route exclusively through `frontend/src/shared/api/httpClient.ts`. It centralizes authorization header injection, request timeouts, and unified error mapping. Direct `fetch()` calls or independent Axios/client instances outside `httpClient.ts` are strictly prohibited.
+- Memory-Only Token Storage: JWT access tokens must reside strictly in JavaScript memory state (within React `AuthContext`). Never store authentication tokens in `localStorage`, `sessionStorage`, or accessible browser cookies to prevent Cross-Site Scripting (XSS) credential theft.
+- CSS Tokens Alias: `frontend/src/shared/styles/tokens.css` serves as the authoritative backward-compatible alias file importing `frontend/src/shared/styles/design-tokens.css`.
+
+## 5. Feature-Slice Architecture
 
 Organize frontend source code strictly under frontend/src/features/:
 
@@ -43,7 +51,7 @@ Organize frontend source code strictly under frontend/src/features/:
   - Centralize module registry in frontend/src/features/index.ts via BUSINESS_MODULES.
   - Place cross-cutting UI components, base API clients, and utilities in frontend/src/shared/.
 
-## 5. Web Accessibility Standards (WCAG 2.2 AA)
+## 6. Web Accessibility Standards (WCAG 2.2 AA)
 
 Enforce WCAG 2.2 Level AA accessibility criteria across all components:
 
@@ -52,7 +60,7 @@ Enforce WCAG 2.2 Level AA accessibility criteria across all components:
 - ARIA Semantics: Supply aria-label for icon buttons, aria-live="polite" for dynamic status updates (as in HealthBadge.tsx), and aria-describedby for form errors.
 - Keyboard Navigation: Ensure every interactive element is focusable via Tab, provides visible :focus-visible outlines, and handles Enter and Space keys.
 
-## 6. Verification Commands
+## 7. Verification Commands
 
 Verify frontend code cleanliness and correctness locally:
 
