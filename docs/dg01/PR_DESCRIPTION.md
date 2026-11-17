@@ -1,5 +1,5 @@
 
-# [DG-01] Phiếu đánh giá của mentor theo khung kỹ năng (Mentor Evaluation on Candidate Skill Framework) #3
+# DG-01: Phiếu đánh giá của mentor theo khung kỹ năng (Mentor Evaluation on Candidate Skill Framework) #3
 
 ## Pull Request Information / Thông Tin Pull Request
 
