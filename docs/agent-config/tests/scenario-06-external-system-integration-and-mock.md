@@ -1,4 +1,3 @@
-<!-- cspell:ignore Testcontainers -->
 # Behavioural Test Scenario 06: External System Integration, Transaction Isolation & Mock Contract
 
 ## 1. Metadata & Target Standards

@@ -60,7 +60,7 @@ The `writing-implementation-plans` skill formalizes the authoring of comprehensi
    - **STRICT PROHIBITION**: Never use `git checkout`, `git restore`, `git reset`, or `git stash` for rollback.
 
 6. **Integrate Final Quality Gates**:
-   - Mandate running `powershell -File .\check.ps1` (or `./check.sh`) at the end of Phase 5 to ensure all 25 active quality gates pass without regression.
+   - Mandate running `powershell -File .\check.ps1` (or `./check.sh`) at the end of Phase 5 to ensure all 26 active quality gates pass without regression.
 
 ## 4. Iron Laws
 

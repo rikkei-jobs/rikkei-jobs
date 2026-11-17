@@ -61,7 +61,6 @@ ai:
     model: ${CLAUDE_MODEL:claude-3-5-sonnet-20241022}
     base-url: ${CLAUDE_BASE_URL:https://api.anthropic.com/v1}
 
-
 springdoc:
   api-docs:
     path: /api-docs

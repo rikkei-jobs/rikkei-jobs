@@ -18,8 +18,8 @@ Nguồn điểm hiện tại là `skill_scores.verified_score` của HS-01 (khô
 
 ## 2. Thiết Kế Cơ Sở Dữ Liệu
 
-Migration schema: `backend/src/main/resources/db/migration/V9__target_positions_gap_analysis.sql`.
-Migration seed dev: `backend/src/main/resources/db/migration-dev/V10__dev_gap_analysis_seed.sql`.
+Migration schema: `backend/src/main/resources/db/migration/V11__target_positions_gap_analysis.sql`.
+Migration seed dev: `backend/src/main/resources/db/migration-dev/V12__dev_gap_analysis_seed.sql`.
 
 | Bảng | Cột chính | Ghi chú |
 | --- | --- | --- |
@@ -134,8 +134,8 @@ npm run dev
 ```
 
 Lưu ý khi dùng lại database dev cũ: nếu database đã từng chạy bản trước khi merge develop (bản có
-`V5__jobs_and_recommendations.sql`), cần tạo lại database/volume để Flyway không báo lệch checksum.
-Database mới chỉ cần chạy tới V10.
+`V7__jobs_and_recommendations.sql`), cần tạo lại database/volume để Flyway không báo lệch checksum.
+Database mới chỉ cần chạy tới V12.
 
 ### 5.3. Gọi API bằng cURL
 
@@ -238,7 +238,7 @@ chọn và đổi mục tiêu, kỹ năng thiếu đúng, readiness, priority HI
 
 | Tiêu chí | Cách đáp ứng |
 | --- | --- |
-| Seed ứng viên có điểm biết trước, kết quả thiếu đúng từng kỹ năng | `V10__dev_gap_analysis_seed.sql` + HS-01 recompute; test `positionGapAnalysis` |
+| Seed ứng viên có điểm biết trước, kết quả thiếu đúng từng kỹ năng | `V12__dev_gap_analysis_seed.sql` + HS-01 recompute; test `positionGapAnalysis` |
 | Đổi mục tiêu thì kết quả đổi theo | `switchingTargetChangesResult`; UI `GapAnalysisSection` gọi PUT rồi GET |
 | Kỹ năng đã đạt không nằm trong danh sách thiếu | Calculator bỏ qua gap <= 0; test assert JAVA/SPRING_BOOT/SQL không có trong items |
 | Phân tích theo JD dùng đúng min_score của JD | `jdAnalysisUsesJobSkillRequirements`, `jdMinScoreComesFromTheSelectedJob` |

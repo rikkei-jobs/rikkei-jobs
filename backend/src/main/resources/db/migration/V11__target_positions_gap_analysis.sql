@@ -1,4 +1,4 @@
--- Migration V9: Target positions and skill gap analysis (DT-01)
+-- Migration V11: Target positions and skill gap analysis (DT-01)
 -- Module Candidate: target_positions, position_skills, candidate_targets, gap_results
 -- No cross-module foreign keys: user_id / skill_id / position_id / job_id are plain scalar references.
 -- gap_results stores only deficits (gap > 0); satisfied skills are intentionally not persisted.

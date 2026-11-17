@@ -1,4 +1,3 @@
-<!-- cspell:ignore Persimmon -->
 # Behavioural Test Scenario 05: Frontend Visual Design, Motion, Iconography & Anti-AI Standard
 
 ## 1. Metadata & Target Standards

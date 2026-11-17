@@ -1,4 +1,4 @@
--- Migration V10: Dev seed for target positions and skill gap analysis (DT-01).
+-- Migration V12: Dev seed for target positions and skill gap analysis (DT-01).
 -- Loaded only in the 'dev' profile. Positions reference the 20-skill catalogue by code so the
 -- seed stays stable even when sequence values change.
 
