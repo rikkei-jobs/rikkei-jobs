@@ -1,7 +1,5 @@
 # 02 — Git Workflow, Delivery Discipline & Agent Read-Only Mandate
 
-<!-- cspell:ignore toplevel -->
-
 ## 1. Branching Strategy
 
 Follow the Git Flow branching model centered on active integration into `develop`:

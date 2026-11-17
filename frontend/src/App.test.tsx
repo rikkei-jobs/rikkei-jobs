@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import App, { APP_NAME } from './App';
+import { request, setAuthToken } from './shared/api/httpClient';
 
 describe('App Component', () => {
   const originalFetch = globalThis.fetch;
@@ -180,6 +181,117 @@ describe('App Component', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('backend-status-badge')).toHaveTextContent('UP');
+    });
+  });
+
+  it('displays login CTA linking to /login when unauthenticated visitor navigates to skill profile tab', async () => {
+    globalThis.fetch = vi.fn().mockImplementation(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ status: 'UP' }),
+      } as unknown as Response),
+    );
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('backend-status-badge')).toHaveTextContent('UP');
+    });
+
+    const skillsTab = screen.getByRole('button', { name: 'Hồ sơ năng lực' });
+    expect(skillsTab).toBeInTheDocument();
+
+    fireEvent.click(skillsTab);
+
+    expect(
+      screen.getByText(/Vui lòng đăng nhập bằng tài khoản học viên \(LMS SSO\) hoặc tài khoản doanh nghiệp/i),
+    ).toBeInTheDocument();
+
+    const ctaLink = screen.getByRole('link', { name: /Đăng nhập để xem hồ sơ năng lực/i });
+    expect(ctaLink).toBeInTheDocument();
+    expect(ctaLink).toHaveAttribute('href', '/login');
+  });
+
+  it('confirms interim LoginForm has been completely removed from application and DOM', async () => {
+    globalThis.fetch = vi.fn().mockImplementation(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ status: 'UP' }),
+      } as unknown as Response),
+    );
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('backend-status-badge')).toHaveTextContent('UP');
+    });
+
+    const skillsTab = screen.getByRole('button', { name: 'Hồ sơ năng lực' });
+    fireEvent.click(skillsTab);
+
+    // Assert no password input or inline form exists
+    expect(screen.queryByLabelText(/Mật khẩu/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Đăng nhập$/i })).not.toBeInTheDocument();
+    expect(document.querySelector('.sp-login')).toBeNull();
+  });
+
+  it('redirects to /login and renders LoginPage when mounted <App /> encounters 401 on protected request without handler overwrite', async () => {
+    globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+      if (String(url).includes('/api/v1/health')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ status: 'UP' }),
+        } as unknown as Response);
+      }
+      return Promise.resolve({
+        ok: false,
+        status: 401,
+        json: () => Promise.resolve({ code: 'UNAUTHORIZED', message: 'Phiên hết hạn' }),
+      } as unknown as Response);
+    });
+
+    render(<App />);
+    setAuthToken('stale-jwt-token');
+
+    // Trigger protected request that encounters 401
+    await act(async () => {
+      await expect(request('/api/v1/profiles/me/skills')).rejects.toThrow();
+    });
+
+    // Assert router successfully navigated to /login and rendered LoginPage
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: /Cổng Đăng Nhập/i })).toBeInTheDocument();
+    });
+  });
+
+  it('redirects to /change-password and renders ChangePasswordPage when mounted <App /> encounters 403 MUST_CHANGE_PASSWORD', async () => {
+    // Set URL search params to initialize with candidate user needing password change
+    window.history.pushState({}, '', '/?mockRole=CANDIDATE&mustChange=true');
+
+    globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+      if (String(url).includes('/api/v1/health')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ status: 'UP' }),
+        } as unknown as Response);
+      }
+      return Promise.resolve({
+        ok: false,
+        status: 403,
+        json: () => Promise.resolve({ code: 'MUST_CHANGE_PASSWORD', message: 'Cần đổi mật khẩu' }),
+      } as unknown as Response);
+    });
+
+    render(<App />);
+
+    // Trigger request that encounters 403 MUST_CHANGE_PASSWORD
+    await act(async () => {
+      await expect(request('/api/v1/profiles/me/skills')).rejects.toThrow();
+    });
+
+    // Assert router successfully navigated to /change-password and rendered ChangePasswordPage
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: /Đổi Mật Khẩu/i })).toBeInTheDocument();
     });
   });
 });

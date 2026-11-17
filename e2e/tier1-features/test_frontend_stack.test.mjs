@@ -38,6 +38,42 @@ describe('Tier 1: Frontend Proxy & Infrastructure Stack (Feature Coverage)', asy
   });
 
   // ------------------------------------------------------------------------
+  // Feature F07: Favicon Static Assets & HTML Verification (Round E / E7)
+  // ------------------------------------------------------------------------
+  describe('F07 - Favicon Static Assets & HTML Verification', () => {
+    it('should serve /favicon.svg with HTTP 200 and image/svg+xml content-type', async () => {
+      assert.ok(frontendOnline, `Frontend service at ${FRONTEND_BASE_URL} is offline`);
+
+      const res = await http.get(`${FRONTEND_BASE_URL}/favicon.svg`);
+      assert.strictEqual(res.status, 200);
+      const contentType = res.headers.get('content-type') || '';
+      assert.ok(contentType.includes('image/svg+xml'), `Expected image/svg+xml but got ${contentType}`);
+      assert.ok(typeof res.rawText === 'string');
+      assert.ok(res.rawText.includes('<svg'), 'Expected SVG markup in favicon.svg');
+    });
+
+    it('should serve /favicon.png with HTTP 200 and image/png content-type', async () => {
+      assert.ok(frontendOnline, `Frontend service at ${FRONTEND_BASE_URL} is offline`);
+
+      const res = await http.get(`${FRONTEND_BASE_URL}/favicon.png`);
+      assert.strictEqual(res.status, 200);
+      const contentType = res.headers.get('content-type') || '';
+      assert.ok(contentType.includes('image/png'), `Expected image/png but got ${contentType}`);
+    });
+
+    it('should reference favicon.svg and favicon.png in HTML and eliminate /vite.svg', async () => {
+      assert.ok(frontendOnline, `Frontend service at ${FRONTEND_BASE_URL} is offline`);
+
+      const res = await http.get(`${FRONTEND_BASE_URL}/`);
+      assert.strictEqual(res.status, 200);
+      const html = res.rawText || '';
+      assert.ok(html.includes('/favicon.svg'), 'HTML must reference /favicon.svg');
+      assert.ok(html.includes('/favicon.png'), 'HTML must reference /favicon.png');
+      assert.ok(!html.includes('/vite.svg'), 'HTML must not reference /vite.svg');
+    });
+  });
+
+  // ------------------------------------------------------------------------
   // Feature F20: Nginx Reverse Proxy (/api/v1/health)
   // ------------------------------------------------------------------------
   describe('F20 - Frontend Nginx Reverse Proxy (/api/)', () => {

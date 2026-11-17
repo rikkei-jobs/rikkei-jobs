@@ -20,7 +20,7 @@ The 6 CI Jobs:
 
 Local tooling provides two tiers of execution:
 
-- Host-level quick verification via `check.ps1` (Windows) and `check.sh` (Linux) covering 25 active gates.
+- Host-level quick verification via `check.ps1` (Windows) and `check.sh` (Linux) covering 26 active gates.
 - Clean containerized replication via `scripts/run-ci-in-docker.ps1` and `scripts/run-ci-in-docker.sh` using `scripts/ci-runner.Dockerfile` with Docker-out-of-Docker socket mapping.
 
 ## 2. When to Use / When NOT to Use
@@ -54,7 +54,7 @@ Local tooling provides two tiers of execution:
 ./check.sh
 ```
 
-- Observe terminal gate indicators to identify which of the 25 active gates failed.
+- Observe terminal gate indicators to identify which of the 26 active gates failed.
 
 ### Step 2: Triage Failures by Subsystem
 
@@ -133,7 +133,7 @@ gh run view <RUN_ID> --log-failed
 
 ### Step 6: Full Verification Pass
 
-- Re-run `.\check.ps1` or `./check.sh` and ensure all 25 active gates PASS with Exit Code 0.
+- Re-run `.\check.ps1` or `./check.sh` and ensure all 26 active gates PASS with Exit Code 0.
 
 ## 4. Iron Laws
 
@@ -159,7 +159,7 @@ gh run view <RUN_ID> --log-failed
 
 ## 7. Verification Checklist
 
-- [ ] `.\check.ps1` or `./check.sh` exits with code 0 and reports all 25 active gates PASS.
+- [ ] `.\check.ps1` or `./check.sh` exits with code 0 and reports all 26 active gates PASS.
 - [ ] No machine-specific paths leaked across repository files.
 - [ ] No lingering TODO/FIXME comments in `backend/src/main`, `frontend/src`, or `mock`.
 - [ ] No private keys or secret patterns detected across the repository.
