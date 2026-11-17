@@ -7,15 +7,20 @@ import com.rikkei.jobs.assessment.model.EvaluationTemplate;
 import com.rikkei.jobs.assessment.repository.EvaluationTemplateRepository;
 import com.rikkei.jobs.assessment.service.EvaluationTemplateService;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
 public class EvaluationTemplateServiceImpl implements EvaluationTemplateService {
     private final EvaluationTemplateRepository templateRepository;
     private final EvaluationTemplateMapper templateMapper;
+
+    public EvaluationTemplateServiceImpl(
+            EvaluationTemplateRepository templateRepository,
+            EvaluationTemplateMapper templateMapper) {
+        this.templateRepository = templateRepository;
+        this.templateMapper = templateMapper;
+    }
 
     @Override
     @Transactional(readOnly = true)

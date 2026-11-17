@@ -1,86 +1,95 @@
 package com.rikkei.jobs.candidate.service.impl;
 
-import com.rikkei.jobs.assessment.model.Evaluation;
-import com.rikkei.jobs.assessment.model.EvaluationStatus;
-import com.rikkei.jobs.assessment.repository.EvaluationRepository;
+import com.rikkei.jobs.assessment.dto.ProfileEvaluationDto;
+import com.rikkei.jobs.assessment.service.EvaluationPublicService;
 import com.rikkei.jobs.candidate.dto.response.ProfileEvaluationsResponse;
 import com.rikkei.jobs.candidate.mapper.ProfileEvaluationMapper;
-import com.rikkei.jobs.candidate.model.CandidateProfile;
 import com.rikkei.jobs.candidate.repository.CandidateProfileRepository;
 import com.rikkei.jobs.candidate.service.ProfileEvaluationService;
-import com.rikkei.jobs.identity.model.User;
-import com.rikkei.jobs.identity.repository.UserRepository;
+import com.rikkei.jobs.common.exception.ResourceNotFoundException;
+import com.rikkei.jobs.identity.dto.UserSummaryDto;
+import com.rikkei.jobs.identity.service.IdentityPublicService;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.core.context.SecurityContextHolder;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * Service for retrieving evaluations of a candidate profile (Gate G4 & G5). Complies with Rule 14
+ * module boundaries and prevents N+1 queries.
+ */
 @Service
-@RequiredArgsConstructor
 public class ProfileEvaluationServiceImpl implements ProfileEvaluationService {
-    private final EvaluationRepository evaluationRepository;
-    private final UserRepository userRepository;
+
+    private final EvaluationPublicService evaluationPublicService;
+    private final IdentityPublicService identityPublicService;
     private final CandidateProfileRepository candidateProfileRepository;
     private final ProfileEvaluationMapper profileEvaluationMapper;
 
+    public ProfileEvaluationServiceImpl(
+            EvaluationPublicService evaluationPublicService,
+            IdentityPublicService identityPublicService,
+            CandidateProfileRepository candidateProfileRepository,
+            ProfileEvaluationMapper profileEvaluationMapper) {
+        this.evaluationPublicService = evaluationPublicService;
+        this.identityPublicService = identityPublicService;
+        this.candidateProfileRepository = candidateProfileRepository;
+        this.profileEvaluationMapper = profileEvaluationMapper;
+    }
+
     @Override
-    @Transactional
-    public ProfileEvaluationsResponse getProfileEvaluations(Long userId, Long viewerId) {
-        // 1. Kiểm tra ứng viên tồn tại
-        User candidate =
-                userRepository
-                        .findById(userId)
-                        .orElseThrow(
-                                () ->
-                                        new ResponseStatusException(
-                                                HttpStatus.NOT_FOUND, "Candidate not found"));
-
-        // 2. Kiểm tra người đang đăng nhập
-        User currentUser =
-                userRepository
-                        .findById(viewerId)
-                        .orElseThrow(
-                                () ->
-                                        new ResponseStatusException(
-                                                HttpStatus.UNAUTHORIZED,
-                                                "Authenticated user not found"));
-
-        // 3. Kiểm tra quyền HR
+    @Transactional(readOnly = true)
+    public ProfileEvaluationsResponse getProfileEvaluations(
+            Long userId, Long viewerId, String viewerRole) {
         boolean isHr =
-                SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
-                        .anyMatch(authority -> authority.getAuthority().equals("ROLE_HR"));
+                viewerRole != null
+                        && (viewerRole.equalsIgnoreCase("HR")
+                                || viewerRole.equalsIgnoreCase("ROLE_HR"));
 
         if (isHr) {
-            CandidateProfile profile =
-                    candidateProfileRepository
-                            .findById(userId)
-                            .orElseThrow(
-                                    () ->
-                                            new ResponseStatusException(
-                                                    HttpStatus.NOT_FOUND,
-                                                    "Candidate profile not found"));
-
-            if (!profile.isPublicProfile()) {
-                throw new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Candidate profile not found");
+            // HR chỉ được xem khi hồ sơ tồn tại và ở chế độ PUBLIC (is_public == true)
+            // Nếu không tồn tại hoặc private -> trả về 404 NOT_FOUND để không làm lộ dữ liệu
+            if (!candidateProfileRepository.existsByUserIdAndPublicProfileTrue(userId)) {
+                throw new ResourceNotFoundException("Hồ sơ ứng viên không tồn tại");
             }
         } else {
-            // Candidate chỉ được xem hồ sơ của chính mình
-            if (!candidate.getId().equals(currentUser.getId())) {
-                throw new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Candidate profile not found");
+            // CANDIDATE chỉ được xem của chính mình (IDOR protection -> 404 NOT_FOUND)
+            if (viewerId == null || !viewerId.equals(userId)) {
+                throw new ResourceNotFoundException("Hồ sơ ứng viên không tồn tại");
+            }
+            // Xác nhận candidate tồn tại
+            if (!identityPublicService.existsById(userId)) {
+                throw new ResourceNotFoundException("Hồ sơ ứng viên không tồn tại");
             }
         }
 
-        // 4. Lấy các phiếu đánh giá đã SUBMITTED
-        List<Evaluation> evaluations =
-                evaluationRepository.findAllByUserIdAndStatusOrderBySubmittedAtDesc(
-                        userId, EvaluationStatus.SUBMITTED);
+        // Lấy danh sách evaluations đã SUBMITTED qua EvaluationPublicService (1 query SQL duy nhất)
+        List<ProfileEvaluationDto> evaluations =
+                evaluationPublicService.getSubmittedEvaluationsForProfile(userId);
 
-        // 5. Chuyển Entity sang DTO bằng Mapper
-        return profileEvaluationMapper.toEvaluationsResponse(userId, evaluations);
+        if (evaluations.isEmpty()) {
+            return new ProfileEvaluationsResponse(userId, List.of());
+        }
+
+        // Batch fetch thông tin mentor qua IdentityPublicService trong O(1) query SQL
+        Set<Long> mentorIds =
+                evaluations.stream()
+                        .map(ProfileEvaluationDto::mentorId)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toSet());
+
+        Map<Long, UserSummaryDto> mentorMap = identityPublicService.getUsersByIds(mentorIds);
+
+        // Ghép dữ liệu in-memory qua mapper
+        return profileEvaluationMapper.toEvaluationsResponse(userId, evaluations, mentorMap);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ProfileEvaluationsResponse getProfileEvaluations(Long userId, Long viewerId) {
+        return getProfileEvaluations(userId, viewerId, null);
     }
 }

@@ -1,20 +1,12 @@
 package com.rikkei.jobs.assessment.model;
 
-import com.rikkei.jobs.identity.model.User;
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "evaluations")
-@Builder
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class Evaluation {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,13 +16,11 @@ public class Evaluation {
     @JoinColumn(name = "template_id", nullable = false)
     private EvaluationTemplate template;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "mentor_id", nullable = false)
-    private User mentor;
+    @Column(name = "mentor_id", nullable = false)
+    private Long mentorId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -50,8 +40,110 @@ public class Evaluation {
     private String overallComment;
 
     @Column(name = "submitted_at")
-    private LocalDateTime submittedAt;
+    private OffsetDateTime submittedAt;
+
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version = 0L;
 
     @OneToMany(mappedBy = "evaluation", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<EvaluationScore> scores;
+    private List<EvaluationScore> scores = new ArrayList<>();
+
+    public Evaluation() {}
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public EvaluationTemplate getTemplate() {
+        return template;
+    }
+
+    public void setTemplate(EvaluationTemplate template) {
+        this.template = template;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
+    public Long getMentorId() {
+        return mentorId;
+    }
+
+    public void setMentorId(Long mentorId) {
+        this.mentorId = mentorId;
+    }
+
+    public EvaluationContext getContext() {
+        return context;
+    }
+
+    public void setContext(EvaluationContext context) {
+        this.context = context;
+    }
+
+    public Long getBatchId() {
+        return batchId;
+    }
+
+    public void setBatchId(Long batchId) {
+        this.batchId = batchId;
+    }
+
+    public Long getInterviewRoundId() {
+        return interviewRoundId;
+    }
+
+    public void setInterviewRoundId(Long interviewRoundId) {
+        this.interviewRoundId = interviewRoundId;
+    }
+
+    public EvaluationStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(EvaluationStatus status) {
+        this.status = status;
+    }
+
+    public String getOverallComment() {
+        return overallComment;
+    }
+
+    public void setOverallComment(String overallComment) {
+        this.overallComment = overallComment;
+    }
+
+    public OffsetDateTime getSubmittedAt() {
+        return submittedAt;
+    }
+
+    public void setSubmittedAt(OffsetDateTime submittedAt) {
+        this.submittedAt = submittedAt;
+    }
+
+    public Long getVersion() {
+        return version;
+    }
+
+    public void setVersion(Long version) {
+        this.version = version;
+    }
+
+    public List<EvaluationScore> getScores() {
+        return scores;
+    }
+
+    public void setScores(List<EvaluationScore> scores) {
+        this.scores = scores;
+    }
 }
