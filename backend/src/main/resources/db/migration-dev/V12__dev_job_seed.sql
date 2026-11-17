@@ -1,47 +1,10 @@
--- Migration V10: Dev seed for job catalogue and AI recommendations (T023D8B). Loaded only in the 'dev' profile.
--- Provides sample companies, verified candidate skills, approved/expired/draft JDs and their
--- required skills so the recommendation matcher has realistic data to work with.
+-- Migration V12: Dev seed for the job catalogue and AI recommendations (T023D8B).
+-- Loaded only in the 'dev' profile. Candidate competency comes from the HS-01 dev seed
+-- (V4__dev_skill_profile_seed.sql) and the startup recompute, so no duplicate skill snapshot is
+-- seeded here. The companies table is owned by the company module (DN-01); jobs keep the company
+-- name and id as plain scalars.
 
--- 1. Insert Sample Companies
-INSERT INTO companies (id, name, industry, location, logo_url) VALUES
-(1, 'Rikkeisoft', 'Software Engineering & IT Outsourcing', 'Hà Nội', 'https://rikkei.vn/wp-content/uploads/2021/08/logo-rikkei.png'),
-(2, 'FPT Software', 'Information Technology', 'Đà Nẵng', 'https://fptsoftware.com/logo.png'),
-(3, 'VTI Group', 'Technology Solutions', 'Hà Nội', 'https://vti.com.vn/logo.png'),
-(4, 'CMC Global', 'IT Services', 'TP. Hồ Chí Minh', 'https://cmcglobal.vn/logo.png'),
-(5, 'NashTech Vietnam', 'Software Development', 'TP. Hồ Chí Minh', 'https://nashtechglobal.com/logo.png')
-ON CONFLICT (id) DO NOTHING;
-
-SELECT setval('companies_id_seq', COALESCE((SELECT MAX(id) FROM companies), 1));
-
--- 2. Insert Sample Candidate Skills (Verified competency data)
-INSERT INTO candidate_skills (user_id, skill_code, score, verified) VALUES
--- Candidate 1: Nguyễn Văn An (Strong Java, Spring Boot, SQL, REST API)
-(1, 'JAVA', 85, TRUE),
-(1, 'SPRING_BOOT', 80, TRUE),
-(1, 'SQL', 75, TRUE),
-(1, 'REST_API', 85, TRUE),
-(1, 'GIT', 80, TRUE),
-(1, 'OOP', 80, TRUE),
-(1, 'DOCKER', 45, TRUE),
-
--- Candidate 2: Trần Thị Bình (Strong ReactJS, Frontend, JavaScript)
-(2, 'REACTJS', 85, TRUE),
-(2, 'JAVASCRIPT', 80, TRUE),
-(2, 'HTML_CSS', 85, TRUE),
-(2, 'GIT', 75, TRUE),
-(2, 'REST_API', 65, TRUE),
-(2, 'JAVA', 30, TRUE),
-
--- Candidate 3: Lê Minh Châu (Fresher / Basic Skills)
-(3, 'JAVA', 40, TRUE),
-(3, 'SQL', 35, TRUE),
-(3, 'GIT', 40, TRUE),
-(3, 'HTML_CSS', 45, TRUE)
-ON CONFLICT DO NOTHING;
-
-SELECT setval('candidate_skills_id_seq', COALESCE((SELECT MAX(id) FROM candidate_skills), 1));
-
--- 3. Insert Sample Jobs (10 Approved Active, 1 Draft, 1 Expired)
+-- 1. Insert Sample Jobs (10 Approved Active, 1 Draft, 1 Expired)
 INSERT INTO jobs (id, title, company_id, company_name, location, salary_range, status, deadline, description) VALUES
 (1, 'Kỹ sư Lập trình Java Backend (Junior/Middle)', 1, 'Rikkeisoft', 'Hà Nội', '15 - 25 triệu', 'APPROVED', '2027-12-31 23:59:59+07', 'Tham gia phát triển hệ thống Enterprise quy mô lớn bằng Java 25 & Spring Boot.'),
 (2, 'Fresher Java Developer', 2, 'FPT Software', 'Đà Nẵng', '8 - 14 triệu', 'APPROVED', '2027-12-31 23:59:59+07', 'Được đào tạo bài bản và tham gia dự án thực chiến với khách hàng Nhật Bản.'),
@@ -59,7 +22,7 @@ ON CONFLICT (id) DO NOTHING;
 
 SELECT setval('jobs_id_seq', COALESCE((SELECT MAX(id) FROM jobs), 1));
 
--- 4. Insert Job Required Skills
+-- 2. Insert Job Required Skills
 INSERT INTO job_skills (job_id, skill_code, required_level, mandatory) VALUES
 -- Job 1 (Rikkei Java Backend): JAVA, SPRING_BOOT, SQL, REST_API, DOCKER
 (1, 'JAVA', 75, TRUE),

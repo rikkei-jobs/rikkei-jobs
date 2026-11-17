@@ -3,14 +3,13 @@ package com.rikkei.jobs.ai.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rikkei.jobs.ai.config.AiProperties;
+import com.rikkei.jobs.common.client.ExternalApiClient;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.MediaType;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClient;
 
 @Component
 public class ClaudeAiClient implements AiClient {
@@ -19,10 +18,15 @@ public class ClaudeAiClient implements AiClient {
 
     private final AiProperties aiProperties;
     private final ObjectMapper objectMapper;
+    private final ExternalApiClient externalApiClient;
 
-    public ClaudeAiClient(AiProperties aiProperties, ObjectMapper objectMapper) {
+    public ClaudeAiClient(
+            AiProperties aiProperties,
+            ObjectMapper objectMapper,
+            ExternalApiClient externalApiClient) {
         this.aiProperties = aiProperties;
         this.objectMapper = objectMapper;
+        this.externalApiClient = externalApiClient;
     }
 
     @Override
@@ -37,18 +41,7 @@ public class ClaudeAiClient implements AiClient {
             throw new IllegalStateException("Claude API key is not configured");
         }
 
-        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        int timeoutMs = Math.max(1, aiProperties.getTimeoutSeconds()) * 1000;
-        requestFactory.setConnectTimeout(timeoutMs);
-        requestFactory.setReadTimeout(timeoutMs);
-
-        RestClient restClient =
-                RestClient.builder()
-                        .baseUrl(aiProperties.getClaude().getBaseUrl())
-                        .requestFactory(requestFactory)
-                        .defaultHeader("x-api-key", apiKey)
-                        .defaultHeader("anthropic-version", "2023-06-01")
-                        .build();
+        String url = aiProperties.getClaude().getBaseUrl().replaceAll("/+$", "") + "/messages";
 
         Map<String, Object> body =
                 Map.of(
@@ -57,19 +50,17 @@ public class ClaudeAiClient implements AiClient {
                         "messages", List.of(Map.of("role", "user", "content", prompt)));
 
         String responseBody =
-                restClient
-                        .post()
-                        .uri("/messages")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(body)
-                        .retrieve()
-                        .body(String.class);
+                externalApiClient.postJson(
+                        url,
+                        body,
+                        Map.of("x-api-key", apiKey, "anthropic-version", "2023-06-01"),
+                        Duration.ofSeconds(Math.max(1, aiProperties.getTimeoutSeconds())));
 
         try {
             JsonNode root = objectMapper.readTree(responseBody);
             return root.path("content").get(0).path("text").asText().trim();
         } catch (Exception e) {
-            log.error("Failed to parse Claude response: {}", e.getMessage());
+            log.error("Failed to parse Claude response: {}", e.getClass().getSimpleName());
             throw new RuntimeException("Failed to parse Claude response", e);
         }
     }

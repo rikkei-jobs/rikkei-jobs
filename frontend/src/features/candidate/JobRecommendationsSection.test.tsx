@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { JobRecommendationsSection } from './JobRecommendationsSection';
-import * as api from './api';
+import * as api from './api/jobRecommendations';
 import type { JobRecommendationsResponse } from './types';
 
 describe('JobRecommendationsSection Component', () => {
@@ -73,7 +73,7 @@ describe('JobRecommendationsSection Component', () => {
   it('renders section title and recommendations cards correctly', async () => {
     vi.spyOn(api, 'fetchJobRecommendations').mockResolvedValueOnce(mockResponse);
 
-    render(<JobRecommendationsSection initialUserId={1} />);
+    render(<JobRecommendationsSection />);
 
     expect(screen.getByText(/Việc làm phù hợp với bạn/i)).toBeInTheDocument();
     expect(screen.getByText(/Đang phân tích hồ sơ kỹ năng/i)).toBeInTheDocument();
@@ -85,9 +85,21 @@ describe('JobRecommendationsSection Component', () => {
 
     expect(screen.getByText('95% khớp')).toBeInTheDocument();
     expect(screen.getByText('70% khớp')).toBeInTheDocument();
-    expect(screen.getByText('✨ Do AI tạo')).toBeInTheDocument();
-    expect(screen.getByText('⚙️ Gợi ý hệ thống')).toBeInTheDocument();
+    expect(document.querySelector('.ai-label')).toHaveTextContent('Do AI tạo');
+    expect(document.querySelector('.system-label')).toHaveTextContent('Gợi ý hệ thống');
     expect(screen.getByText(/Đã lưu bộ nhớ đệm/i)).toBeInTheDocument();
+  });
+
+  it('does not expose a candidate selector anymore', async () => {
+    vi.spyOn(api, 'fetchJobRecommendations').mockResolvedValueOnce(mockResponse);
+
+    render(<JobRecommendationsSection />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Kỹ sư Java Backend')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByLabelText(/Chọn ứng viên/i)).not.toBeInTheDocument();
   });
 
   it('triggers fresh calculation when clicking "Làm mới"', async () => {
@@ -99,48 +111,36 @@ describe('JobRecommendationsSection Component', () => {
         isCached: false,
       });
 
-    render(<JobRecommendationsSection initialUserId={1} />);
+    render(<JobRecommendationsSection />);
 
     await waitFor(() => {
       expect(screen.getByText('Kỹ sư Java Backend')).toBeInTheDocument();
     });
 
-    const refreshBtn = screen.getByRole('button', { name: /Làm mới/i });
-    fireEvent.click(refreshBtn);
+    fireEvent.click(screen.getByRole('button', { name: /Làm mới/i }));
 
     await waitFor(() => {
-      expect(fetchSpy).toHaveBeenCalledWith(10, true, 1);
+      expect(fetchSpy).toHaveBeenCalledWith(10, true);
     });
   });
 
-  it('changes candidate when selecting from dropdown', async () => {
-    const fetchSpy = vi.spyOn(api, 'fetchJobRecommendations').mockResolvedValue(mockResponse);
+  it('displays error message when API call fails and retries on demand', async () => {
+    const fetchSpy = vi
+      .spyOn(api, 'fetchJobRecommendations')
+      .mockRejectedValueOnce(new Error('Mạng không khả dụng'))
+      .mockResolvedValueOnce(mockResponse);
 
-    render(<JobRecommendationsSection initialUserId={1} />);
-
-    await waitFor(() => {
-      expect(screen.getByText('Kỹ sư Java Backend')).toBeInTheDocument();
-    });
-
-    const select = screen.getByLabelText(/Chọn ứng viên/i);
-    fireEvent.change(select, { target: { value: '2' } });
-
-    await waitFor(() => {
-      expect(fetchSpy).toHaveBeenCalledWith(10, false, 2);
-    });
-  });
-
-  it('displays error message when API call fails', async () => {
-    vi.spyOn(api, 'fetchJobRecommendations').mockRejectedValueOnce(
-      new Error('Mạng không khả dụng'),
-    );
-
-    render(<JobRecommendationsSection initialUserId={1} />);
+    render(<JobRecommendationsSection />);
 
     await waitFor(() => {
       expect(screen.getByText(/Mạng không khả dụng/i)).toBeInTheDocument();
     });
 
-    expect(screen.getByRole('button', { name: /Thử lại/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Thử lại/i }));
+
+    await waitFor(() => {
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
+      expect(screen.getByText('Kỹ sư Java Backend')).toBeInTheDocument();
+    });
   });
 });

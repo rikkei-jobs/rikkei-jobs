@@ -1,19 +1,16 @@
-import { request } from '../../shared/api/httpClient';
-import type { JobRecommendationsResponse } from './types';
+import { request } from '../../../shared/api/httpClient';
+import type { JobRecommendationsResponse } from '../types';
 
+/** Fetches recommendations for the authenticated candidate (identity comes from the JWT). */
 export async function fetchJobRecommendations(
   limit = 10,
   refresh = false,
-  userId?: number,
   signal?: AbortSignal,
 ): Promise<JobRecommendationsResponse> {
   const params = new URLSearchParams();
   params.set('limit', limit.toString());
   if (refresh) {
     params.set('refresh', 'true');
-  }
-  if (userId && userId > 0) {
-    params.set('userId', userId.toString());
   }
 
   return request<JobRecommendationsResponse>(

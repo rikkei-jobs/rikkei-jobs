@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -18,18 +20,21 @@ import com.rikkei.jobs.ai.repository.JobRecommendationRepository;
 import com.rikkei.jobs.ai.service.AiClient;
 import com.rikkei.jobs.ai.service.AiProvider;
 import com.rikkei.jobs.ai.service.AiService;
+import com.rikkei.jobs.ai.service.JobRecommendationCacheStore;
 import com.rikkei.jobs.ai.service.JobRecommendationService;
 import com.rikkei.jobs.ai.service.MockAiClient;
-import com.rikkei.jobs.assessment.model.Skill;
-import com.rikkei.jobs.assessment.repository.SkillRepository;
-import com.rikkei.jobs.candidate.model.CandidateSkill;
-import com.rikkei.jobs.candidate.repository.CandidateSkillRepository;
-import com.rikkei.jobs.company.model.Job;
-import com.rikkei.jobs.company.model.JobSkill;
-import com.rikkei.jobs.company.repository.JobRepository;
-import com.rikkei.jobs.company.repository.JobSkillRepository;
+import com.rikkei.jobs.candidate.dto.CandidateSkillScoreDto;
+import com.rikkei.jobs.candidate.service.CandidatePublicService;
+import com.rikkei.jobs.common.exception.RateLimitException;
+import com.rikkei.jobs.company.dto.JobSkillRequirementDto;
+import com.rikkei.jobs.company.dto.OpenJobDto;
+import com.rikkei.jobs.company.service.JobQueryService;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -40,14 +45,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class JobRecommendationServiceTest {
 
-    @Mock private JobRepository jobRepository;
-    @Mock private JobSkillRepository jobSkillRepository;
-    @Mock private CandidateSkillRepository candidateSkillRepository;
+    private static final Clock CLOCK =
+            Clock.fixed(Instant.parse("2026-11-17T09:00:00Z"), ZoneOffset.UTC);
+    private static final OffsetDateTime NOW = OffsetDateTime.now(CLOCK);
+
+    @Mock private JobQueryService jobQueryService;
+    @Mock private CandidatePublicService candidatePublicService;
     @Mock private JobRecommendationRepository jobRecommendationRepository;
-    @Mock private SkillRepository skillRepository;
+    @Mock private JobRecommendationCacheStore cacheStore;
 
     private AiProperties aiProperties;
-    private MockAiClient mockAiClient;
     private AiService aiService;
     private JobRecommendationService recommendationService;
 
@@ -55,114 +62,72 @@ public class JobRecommendationServiceTest {
     void setUp() {
         aiProperties = new AiProperties();
         aiProperties.setProvider("mock");
-        mockAiClient = new MockAiClient(aiProperties);
-        aiService = new AiService(aiProperties, List.of(mockAiClient));
+        aiService = new AiService(aiProperties, List.of(new MockAiClient(aiProperties)));
         recommendationService =
                 new JobRecommendationService(
-                        jobRepository,
-                        jobSkillRepository,
-                        candidateSkillRepository,
+                        jobQueryService,
+                        candidatePublicService,
                         jobRecommendationRepository,
-                        skillRepository,
-                        aiService);
+                        cacheStore,
+                        aiService,
+                        CLOCK);
     }
 
     @Test
     @DisplayName(
-            "AI_PROVIDER=mock: executes end-to-end recommendation flow and returns mock explanation")
+            "AI_PROVIDER=mock: executes end-to-end recommendation flow and labels the mock text as system-generated")
     void testAiProviderMockFlow() {
-        Long userId = 1L;
-        when(jobRecommendationRepository.findByUserIdOrderByScoreDesc(userId))
+        when(jobRecommendationRepository.findByUserIdOrderByScoreDescJobIdAsc(1L))
                 .thenReturn(List.of());
-
-        // Candidate with Java (80)
-        CandidateSkill candJava = new CandidateSkill(userId, "JAVA", 80, true);
-        when(candidateSkillRepository.findByUserIdAndVerifiedTrue(userId))
-                .thenReturn(List.of(candJava));
-
-        // Two jobs: Job 1 requires Java (80), Job 2 requires React (80)
-        OffsetDateTime future = OffsetDateTime.now().plusDays(30);
-        Job job1 =
-                new Job(
-                        1L,
-                        "Java Dev",
-                        1L,
-                        "Company A",
-                        "Hanoi",
-                        "20M",
-                        "APPROVED",
-                        future,
-                        "Desc 1");
-        Job job2 =
-                new Job(
-                        2L,
-                        "React Dev",
-                        1L,
-                        "Company A",
-                        "Hanoi",
-                        "20M",
-                        "APPROVED",
-                        future,
-                        "Desc 2");
-        when(jobRepository.findByStatusAndDeadlineAfter(eq("APPROVED"), any()))
-                .thenReturn(List.of(job1, job2));
-
-        JobSkill reqJava = new JobSkill(1L, "JAVA", 80, true);
-        JobSkill reqReact = new JobSkill(2L, "REACTJS", 80, true);
-        when(jobSkillRepository.findByJobIdIn(any())).thenReturn(List.of(reqJava, reqReact));
-
-        Skill skillJava = new Skill("JAVA", "Lập trình Java", "Java Programming", "0-100", "Desc");
-        Skill skillReact = new Skill("REACTJS", "Thư viện ReactJS", "ReactJS", "0-100", "Desc");
-        when(skillRepository.findAll()).thenReturn(List.of(skillJava, skillReact));
+        when(candidatePublicService.getVerifiedSkillScores(1L))
+                .thenReturn(List.of(new CandidateSkillScoreDto("JAVA", 80)));
+        when(jobQueryService.findOpenJobs())
+                .thenReturn(
+                        List.of(
+                                job(1L, "Java Dev", requirement("JAVA", 80, true)),
+                                job(2L, "React Dev", requirement("REACTJS", 80, true))));
 
         JobRecommendationsResponse response =
-                recommendationService.getRecommendations(userId, 10, false);
+                recommendationService.getRecommendations(1L, 10, false);
 
         assertNotNull(response);
         assertEquals(2, response.items().size());
         assertEquals("MOCK", response.activeProvider());
         assertFalse(response.isCached());
 
-        // Top 1 should be Java Dev with 100% score
         assertEquals(1L, response.items().get(0).jobId());
         assertEquals(100, response.items().get(0).score());
-        assertTrue(response.items().get(0).isAiGenerated());
+        assertFalse(
+                response.items().get(0).isAiGenerated(),
+                "MOCK provider must not be labelled as real AI");
         assertEquals(
                 aiProperties.getMock().getExplanation(), response.items().get(0).explanation());
 
-        // Top 2 should be React Dev with 0% score
         assertEquals(2L, response.items().get(1).jobId());
         assertEquals(0, response.items().get(1).score());
+
+        verify(cacheStore).replaceForUser(eq(1L), argThat(list -> list.size() == 2));
     }
 
     @Test
     @DisplayName("Recommendations must be strictly ordered by matching score descending")
     void testMatchingScoreOrdering() {
-        Long userId = 1L;
-        when(jobRecommendationRepository.findByUserIdOrderByScoreDesc(userId))
+        when(jobRecommendationRepository.findByUserIdOrderByScoreDescJobIdAsc(1L))
                 .thenReturn(List.of());
-
-        CandidateSkill candJava = new CandidateSkill(userId, "JAVA", 80, true);
-        CandidateSkill candSql = new CandidateSkill(userId, "SQL", 60, true);
-        when(candidateSkillRepository.findByUserIdAndVerifiedTrue(userId))
-                .thenReturn(List.of(candJava, candSql));
-
-        OffsetDateTime future = OffsetDateTime.now().plusDays(30);
-        Job jobLow = new Job(10L, "Low Match", 1L, "Co", "HN", "10M", "APPROVED", future, "Desc");
-        Job jobHigh = new Job(20L, "High Match", 1L, "Co", "HN", "20M", "APPROVED", future, "Desc");
-        Job jobMid = new Job(30L, "Mid Match", 1L, "Co", "HN", "15M", "APPROVED", future, "Desc");
-        when(jobRepository.findByStatusAndDeadlineAfter(eq("APPROVED"), any()))
-                .thenReturn(List.of(jobLow, jobHigh, jobMid));
-
-        JobSkill sLow = new JobSkill(10L, "PYTHON", 80, true); // candidate has 0 -> 0%
-        JobSkill sHigh = new JobSkill(20L, "JAVA", 80, true); // candidate has 80 -> 100%
-        JobSkill sMid = new JobSkill(30L, "SQL", 100, true); // candidate has 60 -> 60%
-        when(jobSkillRepository.findByJobIdIn(any())).thenReturn(List.of(sLow, sHigh, sMid));
-
-        when(skillRepository.findAll()).thenReturn(List.of());
+        when(candidatePublicService.getVerifiedSkillScores(1L))
+                .thenReturn(
+                        List.of(
+                                new CandidateSkillScoreDto("JAVA", 80),
+                                new CandidateSkillScoreDto("SQL", 60)));
+        when(jobQueryService.findOpenJobs())
+                .thenReturn(
+                        List.of(
+                                job(10L, "Low Match", requirement("PYTHON", 80, true)),
+                                job(20L, "High Match", requirement("JAVA", 80, true)),
+                                job(30L, "Mid Match", requirement("SQL", 100, true))));
 
         JobRecommendationsResponse response =
-                recommendationService.getRecommendations(userId, 10, false);
+                recommendationService.getRecommendations(1L, 10, false);
 
         assertEquals(3, response.items().size());
         assertEquals(20L, response.items().get(0).jobId(), "Highest match must be rank 1");
@@ -174,43 +139,71 @@ public class JobRecommendationServiceTest {
     }
 
     @Test
-    @DisplayName("Prompt and logging must strictly not contain PII (name, email, phone)")
+    @DisplayName("Jobs without required skills are excluded from recommendations")
+    void testJobsWithoutRequiredSkillsAreExcluded() {
+        when(jobRecommendationRepository.findByUserIdOrderByScoreDescJobIdAsc(1L))
+                .thenReturn(List.of());
+        when(candidatePublicService.getVerifiedSkillScores(1L)).thenReturn(List.of());
+        when(jobQueryService.findOpenJobs())
+                .thenReturn(
+                        List.of(
+                                job(1L, "No skills JD"),
+                                job(2L, "Java", requirement("JAVA", 50, true))));
+
+        JobRecommendationsResponse response =
+                recommendationService.getRecommendations(1L, 10, false);
+
+        assertEquals(1, response.items().size());
+        assertEquals(2L, response.items().get(0).jobId());
+        verify(cacheStore).replaceForUser(eq(1L), argThat(list -> list.size() == 1));
+    }
+
+    @Test
+    @DisplayName("Cache always stores the full top 10 even when the request asks for fewer items")
+    void testCacheAlwaysStoresTopTen() {
+        when(jobRecommendationRepository.findByUserIdOrderByScoreDescJobIdAsc(1L))
+                .thenReturn(List.of());
+        when(candidatePublicService.getVerifiedSkillScores(1L)).thenReturn(List.of());
+        when(jobQueryService.findOpenJobs())
+                .thenReturn(
+                        List.of(
+                                job(1L, "Job 1", requirement("JAVA", 50, true)),
+                                job(2L, "Job 2", requirement("JAVA", 60, true))));
+
+        JobRecommendationsResponse response =
+                recommendationService.getRecommendations(1L, 1, false);
+
+        assertEquals(1, response.items().size());
+        verify(cacheStore).replaceForUser(eq(1L), argThat(list -> list.size() == 2));
+    }
+
+    @Test
+    @DisplayName("Prompt must not contain PII and the job title is sanitized and fenced")
     void testPromptDoesNotContainPii() {
-        Job job =
-                new Job(
+        OpenJobDto job =
+                new OpenJobDto(
                         1L,
-                        "Java Backend",
-                        1L,
+                        "Java\u0007Backend\nfor   freshers with a very long title that keeps going",
                         "Rikkei",
                         "HN",
                         "20M",
-                        "APPROVED",
-                        OffsetDateTime.now(),
-                        "D");
-        JobSkill js = new JobSkill(1L, "JAVA", 70, true);
-        Skill skill = new Skill("JAVA", "Lập trình Java", "Java", "0-100", "D");
+                        NOW.plusDays(10),
+                        List.of(requirement("JAVA", 70, true)));
 
-        var matchResult =
-                recommendationService.calculateMatch(
-                        job,
-                        List.of(js),
-                        java.util.Map.of("JAVA", 80),
-                        java.util.Map.of("JAVA", skill));
+        JobRecommendationService.JobMatchResult match =
+                recommendationService.calculateMatch(job, Map.of("JAVA", 80));
+        String prompt = recommendationService.buildAnonymizedPrompt(match, Map.of("JAVA", 80));
 
-        String prompt =
-                recommendationService.buildAnonymizedPrompt(
-                        matchResult, java.util.Map.of("JAVA", 80), java.util.Map.of("JAVA", skill));
-
-        // Assert strictly no PII
         assertFalse(prompt.contains("candidate1@rikkeijobs.test"), "Prompt must not contain email");
         assertFalse(prompt.contains("@"), "Prompt must not contain @ character");
         assertFalse(prompt.contains("Nguyễn Văn An"), "Prompt must not contain candidate name");
         assertFalse(prompt.contains("098"), "Prompt must not contain phone numbers");
+        assertFalse(prompt.contains("\u0007"), "Control characters must be removed");
+        assertTrue(prompt.contains("<<<Java Backend for freshers"), "Title must be fenced data");
+        assertTrue(prompt.length() < 1000, "Title must be bounded");
 
-        // Verification passes through AiService validator
         aiService.validateNoPii(prompt);
 
-        // Assert that privacy violation is caught if email or phone is injected
         assertThrows(
                 IllegalArgumentException.class,
                 () -> aiService.validateNoPii("Test prompt containing student@gmail.com"));
@@ -220,9 +213,8 @@ public class JobRecommendationServiceTest {
     }
 
     @Test
-    @DisplayName("AI failure or timeout falls back seamlessly to rule-based explanation")
+    @DisplayName("AI failure falls back seamlessly to the rule-based explanation")
     void testAiFailureFallback() {
-        // Create an AiClient that throws an exception (simulating wrong key or network issue)
         AiClient brokenClient =
                 new AiClient() {
                     @Override
@@ -241,55 +233,91 @@ public class JobRecommendationServiceTest {
         AiService resilientService = new AiService(brokenProps, List.of(brokenClient));
 
         String fallback = "Hồ sơ của bạn phù hợp 90% với vị trí này. Điểm mạnh: Java.";
-        String result =
+        AiService.AiExplanation result =
                 resilientService.generateJobExplanation("Safe prompt without PII", fallback);
 
-        assertEquals(
-                fallback, result, "Should gracefully fall back to default explanation on error");
+        assertEquals(fallback, result.text(), "Should fall back on AI error");
+        assertFalse(result.aiGenerated(), "Fallback text must not be labelled AI-generated");
     }
 
     @Test
-    @DisplayName("24-Hour cache: calling endpoint again within 24h does NOT invoke AI again")
+    @DisplayName("PII in the prompt must not produce a 500: the fallback is returned")
+    void testPiiRejectionFallsBack() {
+        String fallback = "Giải thích mặc định";
+        AiService.AiExplanation result =
+                aiService.generateJobExplanation(
+                        "Liên hệ student@gmail.com để biết thêm", fallback);
+
+        assertEquals(fallback, result.text());
+        assertFalse(result.aiGenerated());
+    }
+
+    @Test
+    @DisplayName("24-Hour cache: calling again within 24h does NOT invoke AI again")
     void testCache24HoursAvoidsAiCall() {
-        Long userId = 1L;
-        OffsetDateTime oneHourAgo = OffsetDateTime.now().minusHours(1);
-
+        OffsetDateTime oneHourAgo = NOW.minusHours(1);
         JobRecommendation cachedRec =
-                new JobRecommendation(1L, userId, 100L, 85, "Cached AI Explanation", oneHourAgo);
-        when(jobRecommendationRepository.findByUserIdOrderByScoreDesc(userId))
+                new JobRecommendation(1L, 1L, 100L, 85, "Cached AI Explanation", true, oneHourAgo);
+        when(jobRecommendationRepository.findByUserIdOrderByScoreDescJobIdAsc(1L))
                 .thenReturn(List.of(cachedRec));
-
-        // Candidate skills updated 2 hours ago (before cache)
-        CandidateSkill candSkill = new CandidateSkill(userId, "JAVA", 80, true);
-        candSkill.setUpdatedAt(OffsetDateTime.now().minusHours(2));
-        when(candidateSkillRepository.findByUserId(userId)).thenReturn(List.of(candSkill));
-        when(candidateSkillRepository.findByUserIdAndVerifiedTrue(userId))
-                .thenReturn(List.of(candSkill));
-
-        // Jobs updated 2 hours ago (before cache)
-        Job job =
-                new Job(
-                        100L,
-                        "Spring Dev",
-                        1L,
-                        "Co",
-                        "HN",
-                        "20M",
-                        "APPROVED",
-                        OffsetDateTime.now().plusDays(10),
-                        "Desc");
-        job.setUpdatedAt(OffsetDateTime.now().minusHours(2));
-        when(jobRepository.findByStatusAndDeadlineAfter(eq("APPROVED"), any()))
-                .thenReturn(List.of(job));
-        when(jobRepository.findAllById(any())).thenReturn(List.of(job));
-        when(jobSkillRepository.findByJobIdIn(any())).thenReturn(List.of());
-        when(skillRepository.findAll()).thenReturn(List.of());
+        when(candidatePublicService.getSkillsUpdatedAt(1L)).thenReturn(NOW.minusHours(2));
+        when(jobQueryService.getLatestUpdateAt()).thenReturn(NOW.minusHours(2));
+        when(candidatePublicService.getVerifiedSkillScores(1L)).thenReturn(List.of());
+        when(jobQueryService.findOpenJobs())
+                .thenReturn(List.of(job(100L, "Spring Dev", requirement("JAVA", 80, true))));
 
         JobRecommendationsResponse response =
-                recommendationService.getRecommendations(userId, 10, false);
+                recommendationService.getRecommendations(1L, 10, false);
 
         assertTrue(response.isCached(), "Response should be marked as cached");
         assertEquals("Cached AI Explanation", response.items().get(0).explanation());
-        verify(jobRecommendationRepository, never()).deleteByUserId(any());
+        assertTrue(
+                response.items().get(0).isAiGenerated(),
+                "Stored ai_generated flag must be reused from the cache");
+        verify(cacheStore, never()).replaceForUser(anyLong(), any());
+    }
+
+    @Test
+    @DisplayName("Cache is invalidated when the candidate skills changed after it was written")
+    void testCacheInvalidatedBySkillUpdate() {
+        OffsetDateTime oneHourAgo = NOW.minusHours(1);
+        JobRecommendation cachedRec =
+                new JobRecommendation(1L, 1L, 100L, 85, "Old", false, oneHourAgo);
+        when(jobRecommendationRepository.findByUserIdOrderByScoreDescJobIdAsc(1L))
+                .thenReturn(List.of(cachedRec));
+        when(candidatePublicService.getSkillsUpdatedAt(1L)).thenReturn(NOW.minusMinutes(10));
+        when(candidatePublicService.getVerifiedSkillScores(1L))
+                .thenReturn(List.of(new CandidateSkillScoreDto("JAVA", 80)));
+        when(jobQueryService.findOpenJobs())
+                .thenReturn(List.of(job(1L, "Java", requirement("JAVA", 80, true))));
+
+        JobRecommendationsResponse response =
+                recommendationService.getRecommendations(1L, 10, false);
+
+        assertFalse(response.isCached());
+        verify(cacheStore).replaceForUser(eq(1L), argThat(list -> list.size() == 1));
+    }
+
+    @Test
+    @DisplayName("Forced refresh within the cooldown returns HTTP 429 instead of burning AI calls")
+    void testRefreshCooldownReturns429() {
+        JobRecommendation cachedRec =
+                new JobRecommendation(1L, 1L, 100L, 85, "Recent", false, NOW.minusMinutes(1));
+        when(jobRecommendationRepository.findByUserIdOrderByScoreDescJobIdAsc(1L))
+                .thenReturn(List.of(cachedRec));
+
+        assertThrows(
+                RateLimitException.class,
+                () -> recommendationService.getRecommendations(1L, 10, true));
+    }
+
+    private static OpenJobDto job(Long id, String title, JobSkillRequirementDto... requirements) {
+        return new OpenJobDto(
+                id, title, "Company A", "Hanoi", "20M", NOW.plusDays(30), List.of(requirements));
+    }
+
+    private static JobSkillRequirementDto requirement(
+            String skillCode, int requiredLevel, boolean mandatory) {
+        return new JobSkillRequirementDto(skillCode, skillCode, requiredLevel, mandatory);
     }
 }

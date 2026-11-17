@@ -9,4 +9,7 @@ public interface SkillCatalogService {
 
     /** Returns the requested skills keyed by id. Unknown ids are omitted. */
     Map<Integer, SkillDto> findByIds(Collection<Integer> ids);
+
+    /** Returns the requested skills keyed by code. Unknown codes are omitted. */
+    Map<String, SkillDto> findByCodes(Collection<String> codes);
 }

@@ -34,7 +34,7 @@ export const APP_SUBTITLE =
   'Giải pháp cầu nối minh bạch giữa Sinh viên, Doanh nghiệp tuyển dụng và Cán bộ đào tạo';
 
 export const HomeSkeleton: React.FC = () => {
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
   const [backendStatus, setBackendStatus] = useState<BackendHealthStatus>('CONNECTING...');
   const [statusDetails, setStatusDetails] = useState<string>(
     'Đang thiết lập kết nối tới Backend...',
@@ -154,7 +154,7 @@ export const HomeSkeleton: React.FC = () => {
             />
           </section>
 
-          <JobRecommendationsSection />
+          {user?.role === 'CANDIDATE' && <JobRecommendationsSection />}
 
           <section className="section-modules">
             <div className="section-header">

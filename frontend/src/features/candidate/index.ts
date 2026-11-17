@@ -21,7 +21,7 @@ export const candidateModuleConfig = {
 };
 
 export * from './types';
-export * from './api';
+export * from './api/jobRecommendations';
 export * from './JobRecommendationsSection';
 
 // Skill profile components and API

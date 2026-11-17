@@ -338,7 +338,7 @@ public class SecurityHardeningIntegrationTest {
             assertEquals(
                     5,
                     migrationCount,
-                    "Only schema migrations V1, V3, V5, V7 and V9 must be applied");
+                    "Only schema migrations V1, V3, V5, V7 and V11 must be applied");
 
             Boolean hasV2 =
                     jdbcTemplate.queryForObject(
@@ -388,7 +388,7 @@ public class SecurityHardeningIntegrationTest {
 
         @Test
         @DisplayName(
-                "Default profile strictly isolates seed data (0 users, only V1, V3, V5, V7 and V9 migrations)")
+                "Default profile strictly isolates seed data (0 users, only V1, V3, V5, V7 and V11 migrations)")
         void testDefaultProfileDatabaseState() {
             assertEquals(0L, userRepository.count(), "Default profile must have 0 users");
 
@@ -399,7 +399,7 @@ public class SecurityHardeningIntegrationTest {
             assertEquals(
                     5,
                     totalMigrations,
-                    "Default profile must have exactly 5 schema migrations (V1, V3, V5, V7, V9)");
+                    "Default profile must have exactly 5 schema migrations (V1, V3, V5, V7, V11)");
 
             Integer v2Count =
                     jdbcTemplate.queryForObject(

@@ -3,14 +3,13 @@ package com.rikkei.jobs.ai.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rikkei.jobs.ai.config.AiProperties;
+import com.rikkei.jobs.common.client.ExternalApiClient;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.MediaType;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClient;
 
 @Component
 public class GeminiAiClient implements AiClient {
@@ -19,10 +18,15 @@ public class GeminiAiClient implements AiClient {
 
     private final AiProperties aiProperties;
     private final ObjectMapper objectMapper;
+    private final ExternalApiClient externalApiClient;
 
-    public GeminiAiClient(AiProperties aiProperties, ObjectMapper objectMapper) {
+    public GeminiAiClient(
+            AiProperties aiProperties,
+            ObjectMapper objectMapper,
+            ExternalApiClient externalApiClient) {
         this.aiProperties = aiProperties;
         this.objectMapper = objectMapper;
+        this.externalApiClient = externalApiClient;
     }
 
     @Override
@@ -37,40 +41,28 @@ public class GeminiAiClient implements AiClient {
             throw new IllegalStateException("Gemini API key is not configured");
         }
 
-        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        int timeoutMs = Math.max(1, aiProperties.getTimeoutSeconds()) * 1000;
-        requestFactory.setConnectTimeout(timeoutMs);
-        requestFactory.setReadTimeout(timeoutMs);
-
-        RestClient restClient =
-                RestClient.builder()
-                        .baseUrl(aiProperties.getGemini().getBaseUrl())
-                        .requestFactory(requestFactory)
-                        .build();
-
-        String uri =
-                String.format(
-                        "/models/%s:generateContent?key=%s",
-                        aiProperties.getGemini().getModel(), apiKey);
+        String url =
+                aiProperties.getGemini().getBaseUrl().replaceAll("/+$", "")
+                        + "/models/"
+                        + aiProperties.getGemini().getModel()
+                        + ":generateContent";
 
         Map<String, Object> body =
                 Map.of("contents", List.of(Map.of("parts", List.of(Map.of("text", prompt)))));
 
         String responseBody =
-                restClient
-                        .post()
-                        .uri(uri)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(body)
-                        .retrieve()
-                        .body(String.class);
+                externalApiClient.postJson(
+                        url,
+                        body,
+                        Map.of("x-goog-api-key", apiKey),
+                        Duration.ofSeconds(Math.max(1, aiProperties.getTimeoutSeconds())));
 
         try {
             JsonNode root = objectMapper.readTree(responseBody);
             JsonNode candidate = root.path("candidates").get(0);
             return candidate.path("content").path("parts").get(0).path("text").asText().trim();
         } catch (Exception e) {
-            log.error("Failed to parse Gemini response: {}", e.getMessage());
+            log.error("Failed to parse Gemini response: {}", e.getClass().getSimpleName());
             throw new RuntimeException("Failed to parse Gemini response", e);
         }
     }
