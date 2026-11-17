@@ -1,7 +1,11 @@
 package com.rikkei.jobs.candidate.repository;
 
 import com.rikkei.jobs.candidate.model.ExternalRecord;
+
 import java.util.List;
+import java.util.Optional;
+
+import com.rikkei.jobs.candidate.model.ExternalSource;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -13,4 +17,11 @@ public interface ExternalRecordRepository extends JpaRepository<ExternalRecord, 
 
     @Query("SELECT DISTINCT r.userId FROM ExternalRecord r")
     List<Long> findDistinctUserIds();
+
+    Optional<ExternalRecord> findByUserIdAndSourceAndSourceCodeAndTitle(
+        Long userId,
+        ExternalSource source,
+        String sourceCode,
+        String title
+    );
 }

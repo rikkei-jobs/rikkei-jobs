@@ -37,7 +37,7 @@ public class Evaluation {
     private EvaluationContext context;
 
     @Column(name = "batch_id")
-    private Long batchId;
+    private String batchId;
 
     @Column(name = "interview_round_id")
     private Long interviewRoundId;

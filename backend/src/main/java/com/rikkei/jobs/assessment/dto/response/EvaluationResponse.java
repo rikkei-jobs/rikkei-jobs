@@ -24,7 +24,7 @@ public class EvaluationResponse {
 
     private EvaluationContext context;
 
-    private Long batchId;
+    private String batchId;
 
     private Long interviewRoundId;
 

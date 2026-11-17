@@ -23,7 +23,7 @@ public class CreateEvaluationRequest {
     @NotNull(message = "Context không được để trống")
     private EvaluationContext context;
 
-    private Long batchId;
+    private String batchId;
 
     private Long interviewRoundId;
 
