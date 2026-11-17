@@ -120,7 +120,7 @@ Prior to editing, creating, or deleting any file in the workspace, the engineeri
 | Skill 07 | verification-before-completion | Never claim completion without executing .\check.ps1 and ./check.sh and verifying that all 25 active gates pass with raw output. |
 | Skill 08 | requesting-code-review | Self-audit 100% of the working tree diff, calculate Anti-AI rubric scores, and package verifiable terminal outputs prior to review request. |
 | Skill 09 | receiving-code-review | Classify review feedback into 4 priority tiers and create reproducing tests for verified defects before modifying code. |
-| Skill 10 | handoff-to-team-lead | Deliver uncommitted working tree; formulate proposed English commit messages prefixed with T022B63: and PR title starting with [NT-01]. |
+| Skill 10 | handoff-to-team-lead | Deliver uncommitted working tree; formulate proposed English commit messages prefixed with T022B63: and PR title starting with `[NT-01]`. |
 | Skill 11 | backend-module-feature | Implement layered Controller-Service-Repository architecture in package com.rikkei.jobs.identity; use Java records for DTOs; never leak JPA entities to REST APIs. |
 | Skill 12 | backend-persistence-performance | Create B-Tree indexes on used_sso_tickets.ticket and password_reset_tokens.token_hash; keep transactions minimal and short. |
 | Skill 13 | backend-module-boundaries | Treat company_id on users table as a plain scalar Long; forbid physical Foreign Key referencing company module tables. |
@@ -156,7 +156,7 @@ The following 6 conflicts and ambiguities have been identified and definitively 
 ### Conflict 2: Task Code and Proposed Commit Message Prefix
 
 - Ambiguity: CLAUDE.md and Rule 02 reference sprint skeleton code `T022DB0`.
-- Direct Spec Instruction: `PROMPT_NT01_EN.txt` defines task code as `NT-01 (code T022B63)` and mandates: "T022B63: prefix for proposed commits; the PR title for GitHub must start with [NT-01]".
+- Direct Spec Instruction: `PROMPT_NT01_EN.txt` defines task code as `NT-01 (code T022B63)` and mandates: "T022B63: prefix for proposed commits; the PR title for GitHub must start with `[NT-01]`".
 - Resolution: Prompt wins. All proposed commit messages in handoff documentation must strictly use prefix `T022B63:` and pull request title must begin with `[NT-01]`.
 
 ### Conflict 3: Scalar Role vs Relational `roles` Table in Monorepo
@@ -199,42 +199,42 @@ The engineering implementation is structured into 6 sequential phases following 
 
 ### Phase 2: Database Schema & Migration TDD (V3 & V4)
 
-- Step 2.1 [RED]: Author `FlywayMigrationIntegrationTest` asserting presence of new columns on `users` (`company_id`, `must_change_password`, `failed_login_count`, `locked_until`, `status`) and tables `used_sso_tickets`, `password_reset_tokens`. Run `./mvnw test -D "test=FlywayMigrationIntegrationTest"`. Verify test fails (RED).
-- Step 2.2 [GREEN]: Author `backend/src/main/resources/db/migration/V3__auth_identity_evolution.sql` with PostgreSQL 18.6 DDL, proper constraints, and B-Tree indexes. Re-run test and verify it passes (GREEN).
-- Step 2.3 [RED]: Author `ProfileSeparationIntegrationTest` asserting `hr1` has `must_change_password = true` in dev profile and zero dev rows in prod profile. Verify test fails (RED).
-- Step 2.4 [GREEN]: Author `backend/src/main/resources/db/migration-dev/V4__dev_seed_nt01.sql` updating `hr1` flags. Update migration count assertions (prod=2, dev=4). Verify tests pass (GREEN).
-- Step 2.5 [REFACTOR]: Format SQL files with SQLFluff (`docker run --rm -v ${PWD}:/workspace sqlfluff/sqlfluff:4.5.0 lint ...`).
+- Step 2.1 `RED`: Author `FlywayMigrationIntegrationTest` asserting presence of new columns on `users` (`company_id`, `must_change_password`, `failed_login_count`, `locked_until`, `status`) and tables `used_sso_tickets`, `password_reset_tokens`. Run `./mvnw test -D "test=FlywayMigrationIntegrationTest"`. Verify test fails (RED).
+- Step 2.2 `GREEN`: Author `backend/src/main/resources/db/migration/V3__auth_identity_evolution.sql` with PostgreSQL 18.6 DDL, proper constraints, and B-Tree indexes. Re-run test and verify it passes (GREEN).
+- Step 2.3 `RED`: Author `ProfileSeparationIntegrationTest` asserting `hr1` has `must_change_password = true` in dev profile and zero dev rows in prod profile. Verify test fails (RED).
+- Step 2.4 `GREEN`: Author `backend/src/main/resources/db/migration-dev/V4__dev_seed_nt01.sql` updating `hr1` flags. Update migration count assertions (prod=2, dev=4). Verify tests pass (GREEN).
+- Step 2.5 `REFACTOR`: Format SQL files with SQLFluff (`docker run --rm -v ${PWD}:/workspace sqlfluff/sqlfluff:4.5.0 lint ...`).
 
 ### Phase 3: Core Security, Deterministic Clock & Fail-Fast Validation
 
 - Step 3.1: Define `@Bean public Clock clock() { return Clock.systemUTC(); }` in backend configuration.
 - Step 3.2: Create immutable Java Record DTOs under `com.rikkei.jobs.identity.dto` (`SsoLoginRequest`, `LoginRequest`, `ChangePasswordRequest`, `ForgotPasswordRequest`, `ResetPasswordRequest`, `AuthResponse`, `UserResponse`).
-- Step 3.3 [RED]: Author `ProdEnvironmentValidatorTest` asserting that running prod profile with missing or weak `JWT_SECRET` (< 32 chars or default insecure string) throws `IllegalStateException`. Verify test fails (RED).
-- Step 3.4 [GREEN]: Extend `ProdEnvironmentValidator` to validate `JWT_SECRET` during `ApplicationPreparedEvent`. Verify test passes (GREEN).
+- Step 3.3 `RED`: Author `ProdEnvironmentValidatorTest` asserting that running prod profile with missing or weak `JWT_SECRET` (< 32 chars or default insecure string) throws `IllegalStateException`. Verify test fails (RED).
+- Step 3.4 `GREEN`: Extend `ProdEnvironmentValidator` to validate `JWT_SECRET` during `ApplicationPreparedEvent`. Verify test passes (GREEN).
 
 ### Phase 4: Backend Auth APIs & Domain Services TDD
 
 - Step 4.1 (Password Policy & Hashing):
-  - [RED]: Author unit test asserting password validation (>= 8 chars, letters and digits) and BCrypt encoding.
-  - [GREEN]: Implement `PasswordValidator` and integrate with `BCryptPasswordEncoder`.
+  - `RED`: Author unit test asserting password validation (>= 8 chars, letters and digits) and BCrypt encoding.
+  - `GREEN`: Implement `PasswordValidator` and integrate with `BCryptPasswordEncoder`.
 - Step 4.2 (SSO Ticket Verification):
-  - [RED]: Author integration tests for `POST /api/v1/auth/sso`: valid ticket -> returns JWT + user; expired ticket (> 60s via fixed Clock) -> 401 `TICKET_EXPIRED`; reused ticket -> 401 `TICKET_ALREADY_USED`; concurrent replay -> exactly one succeeds.
-  - [GREEN]: Implement `AuthService.ssoLogin()` executing atomic insert-then-verify in `used_sso_tickets` and `ExternalApiClient` call.
+  - `RED`: Author integration tests for `POST /api/v1/auth/sso`: valid ticket -> returns JWT + user; expired ticket (> 60s via fixed Clock) -> 401 `TICKET_EXPIRED`; reused ticket -> 401 `TICKET_ALREADY_USED`; concurrent replay -> exactly one succeeds.
+  - `GREEN`: Implement `AuthService.ssoLogin()` executing atomic insert-then-verify in `used_sso_tickets` and `ExternalApiClient` call.
 - Step 4.3 (HR Login & Lockout State Machine):
-  - [RED]: Author integration tests for `POST /api/v1/auth/login`: valid credentials -> returns JWT + `mustChangePassword`; 5 consecutive failed attempts -> locks account for 15 minutes reporting remaining minutes; correct password during active lock rejected with 401 `ACCOUNT_LOCKED`; auto-unlock when Clock advances past 15 minutes.
-  - [GREEN]: Implement `AuthService.login()` with lockout counter and Clock-driven state transitions.
+  - `RED`: Author integration tests for `POST /api/v1/auth/login`: valid credentials -> returns JWT + `mustChangePassword`; 5 consecutive failed attempts -> locks account for 15 minutes reporting remaining minutes; correct password during active lock rejected with 401 `ACCOUNT_LOCKED`; auto-unlock when Clock advances past 15 minutes.
+  - `GREEN`: Implement `AuthService.login()` with lockout counter and Clock-driven state transitions.
 - Step 4.4 (Forced Password Change Guard):
-  - [RED]: Author security test asserting authenticated requests from users with `must_change_password = true` to non-whitelisted endpoints return 403 `MUST_CHANGE_PASSWORD`.
-  - [GREEN]: Implement `MustChangePasswordFilter` in Spring Security filter chain with explicit allow-list (`/api/v1/auth/change-password`, `/api/v1/auth/me`).
+  - `RED`: Author security test asserting authenticated requests from users with `must_change_password = true` to non-whitelisted endpoints return 403 `MUST_CHANGE_PASSWORD`.
+  - `GREEN`: Implement `MustChangePasswordFilter` in Spring Security filter chain with explicit allow-list (`/api/v1/auth/change-password`, `/api/v1/auth/me`).
 - Step 4.5 (Change Password Endpoint):
-  - [RED]: Author tests for `POST /api/v1/auth/change-password`: incorrect old password -> 400; weak new password -> 400; valid payload -> updates password hash, sets `must_change_password = false`.
-  - [GREEN]: Implement `AuthService.changePassword()`.
+  - `RED`: Author tests for `POST /api/v1/auth/change-password`: incorrect old password -> 400; weak new password -> 400; valid payload -> updates password hash, sets `must_change_password = false`.
+  - `GREEN`: Implement `AuthService.changePassword()`.
 - Step 4.6 (Forgot & Reset Password with Mailpit):
-  - [RED]: Author tests for `POST /api/v1/auth/forgot-password` (anti-enumeration 200 OK, 256-bit secure token generated, SHA-256 hash stored in DB, email sent to Mailpit SMTP 1025) and `POST /api/v1/auth/reset-password` (valid token resets password, token > 30 mins -> 400 `RESET_TOKEN_EXPIRED`, reused token -> 400).
-  - [GREEN]: Implement `AuthService.forgotPassword()` and `resetPassword()` integrating Spring Mail with Mailpit.
+  - `RED`: Author tests for `POST /api/v1/auth/forgot-password` (anti-enumeration 200 OK, 256-bit secure token generated, SHA-256 hash stored in DB, email sent to Mailpit SMTP 1025) and `POST /api/v1/auth/reset-password` (valid token resets password, token > 30 mins -> 400 `RESET_TOKEN_EXPIRED`, reused token -> 400).
+  - `GREEN`: Implement `AuthService.forgotPassword()` and `resetPassword()` integrating Spring Mail with Mailpit.
 - Step 4.7 (Me Endpoint & Status Reload):
-  - [RED]: Author test for `GET /api/v1/auth/me`: returns authenticated profile; if user is marked `LOCKED` in database, request rejected with 401 `ACCOUNT_LOCKED`.
-  - [GREEN]: Implement `AuthController.getMe()` and finalize stateless `JwtAuthenticationFilter`.
+  - `RED`: Author test for `GET /api/v1/auth/me`: returns authenticated profile; if user is marked `LOCKED` in database, request rejected with 401 `ACCOUNT_LOCKED`.
+  - `GREEN`: Implement `AuthController.getMe()` and finalize stateless `JwtAuthenticationFilter`.
 - Step 4.8: Run full backend regression pass (`./mvnw test`). Verify all 124 existing backend tests remain green alongside new tests. Verify Spotless, SpotBugs, and zero compiler warnings (`-Xlint:all -Werror`).
 
 ### Phase 5: Frontend Identity Feature Slice & UI/UX TDD
@@ -244,7 +244,7 @@ The engineering implementation is structured into 6 sequential phases following 
 - Step 5.3: Implement `SsoCallbackView`, `ChangePasswordView`, `ForgotPasswordView`, `ResetPasswordView`, and role home placeholders (`/candidate/home`, `/hr/home`, `/mentor/home`, `/staff/home`, `/admin/home`).
 - Step 5.4: Implement route guards (`RequireAuth` redirecting to `/login`, `RequireMustChangePassword` redirecting to `/change-password`).
 - Step 5.5: Integrate custom 24px `<Icon />` component, bespoke palette tokens, and motion tokens supporting `prefers-reduced-motion`. Verify ZERO EMOJI across all frontend files.
-- Step 5.6 [TDD]: Author Vitest component tests covering forms, validations, lockout timers, and route transitions. Verify `npm run test --prefix frontend` passes cleanly.
+- Step 5.6 `TDD`: Author Vitest component tests covering forms, validations, lockout timers, and route transitions. Verify `npm run test --prefix frontend` passes cleanly.
 
 ### Phase 6: E2E Integration, Visual Verification & Final Quality Gates
 
@@ -1518,3 +1518,281 @@ User / Team Lead Prompt (ORIGINAL_REQUEST.md & PROMPT_NT01F_EN.txt) > Enterprise
   3. Run `node scripts/validate-agent-config.mjs --check` and `node scripts/compute-contrast.mjs`.
   4. Run markdownlint and cspell ensuring 0 violations.
   5. Run `git status` verifying only designated files (.gitignore, docs/nt01/*, controller annotations, test) are modified and all changes are uncommitted.
+
+---
+
+## 16. Phase 0 Round 2C Acknowledgement (Task T022DB0: Hardening Agent Rules, Skills, and Tooling)
+
+### 16.1 Inventory of Authoritative Files Read Prior to Round 2C
+
+Prior to executing any modification in the workspace, the team has read and verified in full:
+
+1. CLAUDE.md (Root Claude Code configuration, operational constraints, tech stack)
+2. GEMINI.md (Root Gemini CLI & Antigravity configuration, memory directives, tool settings)
+3. AGENTS.md (Canonical instructions for AI coding agents, rules and skills architecture)
+4. All 16 rules in .claude/rules/ (01-project-context through 16-backend-integrations)
+5. All 28 canonical skills in agent-config/skills/ (api-contract-and-errors through writing-skills)
+6. docs/agent-config/README.md (AI configuration architecture, Option A parity, validator tiers)
+7. docs/agent-config/UNTRACKED_AUDIT.md (Forensic audit of untracked test infrastructure files)
+8. docs/agent-config/SOURCES.md (Authoritative standards, vendor doc URLs, typography specs)
+9. docs/design/DESIGN_SYSTEM.md (Anti-AI standards, bespoke palette, 66 contrast pairs, typography)
+10. D:\GitHub\Rikkei\.agents\PROMPT_2C_EN.txt (Round 2C authoritative requirements and constraints)
+11. D:\GitHub\Rikkei\.agents\PROMPT_BASE_RULES_EN.txt (Base rules R0/R1 for all team rounds)
+
+### 16.2 Concrete Applicable Constraint per Rule and Skill
+
+| Identifier | Name | Exact Concrete Constraint for Round 2C |
+|---|---|---|
+| Rule 01 | Project Context & Monorepo Overview | Scope is strictly limited to agent configuration, rules, skills, validation tooling, harness scripts, and their docs (task code T022DB0); backend, frontend, and mock application code are strictly out of bounds. |
+| Rule 02 | Git Workflow & Agent Read-Only Mandate | Git is strictly READ-ONLY (no commit, push, stage, amend, rebase, reset, stash, tag, branch-switch, or restore); all modifications remain uncommitted in the working tree for the Team Lead; proposed commit messages must use English with prefix T022DB0:. |
+| Rule 03 | Safety, Host Boundaries & Secret Hygiene | File system write operations are strictly bounded to rikkei-jobs/ (external directories like Tai lieu du an, .agents/, .vscode/ are read-only); never open, read, print, or log .env, *.pem, or credentials (specifically never touch D:\GitHub\Rikkei\first-key.pem); temporary files only in OS temp and deleted immediately. |
+| Rule 04 | Honest Verification & Quality Gates | Every PASS claim must provide verifiable raw command execution output; no fake passes, no arbitrary sleeps, no invented numbers; gate definitions in rules must mechanically match check-gate-sync.mjs (29 unique definitions: 26 active + 3 fallbacks, 23 CI checks, 25 Docker harness gates). |
+| Rule 05 | Java 25 & Spring Boot 4 Backend Standards | Do not modify backend application code; update rule citations to reflect that UserPrincipal resides in package com.rikkei.jobs.identity, baseline test count is 346 tests, and compile with -Xlint:all -Werror. |
+| Rule 06 | Database Migrations and Flyway Discipline | Flyway migrations are strictly immutable (never edit, rename, or delete existing migrations); update rule 06 to document the real numbering rule: production DDL in db/migration uses odd numbers (V1, V3, V5) and dev seeds in db/migration-dev use even numbers (V2, V4, V6), unique across both directories. |
+| Rule 07 | Security Architecture and RBAC | Update rule 07 to align with real code post NT-01: SSO ticket single-use enforcement (60s TTL via used_sso_tickets), account lockout (5 failed attempts / 15 mins), ProdEnvironmentValidator JWT_SECRET fail-fast check, and unified error codes are now implemented facts (EXISTS), no longer TARGET. |
+| Rule 08 | Frontend Engineering Standards | Do not modify frontend application code; update rule 08 to document the single HTTP client in frontend/src/shared/api/httpClient.ts, in-memory JWT storage, and tokens.css alias file. |
+| Rule 09 | Frontend Design Bar & Anti-AI Standards | Zero emoji across all UI and docs; 100% colors sourced through design tokens (Check 9 colour guard); BrandMark component encapsulates official red logo (#C8161D) within blue-led UI; motion tokens support prefers-reduced-motion with 100ms cross-fade and 0.001ms duration. |
+| Rule 10 | Testing Strategy and Quality Assurance | Maintain test baseline without regression (backend 346 tests, frontend 108 tests, E2E 17 suites / 221 cases); break-tests for validation checks must use hermetic backup/restore with SHA-256 verification. |
+| Rule 11 | Documentation, Bilingual Standards & Linters | Absolute zero inline cspell:ignore comments; all valid technical terms added to cspell.json; cspell and markdownlint must report raw 0 issues; maintain version parity with docs/03-version-table.md verified by check-version-drift.mjs. |
+| Rule 12 | Continuous Integration and Quality Gates | Synchronize gate counts in rule 12 to match check-gate-sync.mjs: 29 definitions (26 active + 3 fallbacks), 23 CI checks, 25 Docker CI harness gates; ensure ./check.sh and .\check.ps1 exit 0 with identical 26/26 counts without Git Bash path conversion override. |
+| Rule 13 | Backend Data Access Performance | Update rule 13 to reflect that tables used_sso_tickets and password_reset_tokens (and their B-Tree indexes) exist in the schema; keep open-in-view=false and do not execute external HTTP/email calls inside transactions. |
+| Rule 14 | Backend Module Boundaries | Update rule 14 table ownership: module identity owns users, roles, used_sso_tickets, password_reset_tokens; candidate module owns skill and candidate profile tables (candidate_skills, etc.); cross-module references use scalar IDs only. |
+| Rule 15 | Backend Observability and Operations | Zero logging of passwords, tokens, tickets, or PII; Swagger UI and api-docs disabled in production profile, enabled only under dev profile. |
+| Rule 16 | Backend Integrations | External interactions route through ExternalApiClient with X-Service-Key: dev-key; OpenAPI 3.2.0 SpringDoc annotations on dev profile only; eliminate all VS Code link.no-such-reference warnings (EXISTS and TARGET marker syntax conversion). |
+| Skill 01 | api-contract-and-errors | Align API documentation and error code contracts in rules (standardized ErrorResponse {code, message}, RFC 7807 avoidance) without modifying application code. |
+| Skill 02 | backend-module-boundaries | Preserve modular monolith boundaries across 7 modules (identity, company, candidate, job, application, notification, assessment); enforce scalar ID references in all rule examples. |
+| Skill 03 | backend-module-feature | Maintain Controller-Service-Repository architecture standards; Java records for DTOs; never leak JPA entities to REST boundaries in documented examples. |
+| Skill 04 | backend-persistence-performance | Enforce spring.jpa.open-in-view=false; document B-Tree indexes for auth lookup tables; verify no external HTTP/email calls occur inside transactional blocks. |
+| Skill 05 | brainstorming-before-building | Conduct architectural evaluation and impact analysis before authoring modifications; never invent unconfirmed business logic or arbitrary conventions. |
+| Skill 06 | ci-local-and-debug | Execute local quality gates (check.sh, check.ps1); do NOT run scripts/run-ci-in-docker.* before C1 is fixed and proven; ensure complete container and volume cleanup. |
+| Skill 07 | dispatching-parallel-agents | Coordinate subagent dispatches with clear, self-contained boundaries, unambiguous constraints, and independent verification criteria. |
+| Skill 08 | docs-bilingual-update | Maintain strict synchronization and full Vietnamese diacritics when updating bilingual documentation in docs/ (SOURCES.md, DESIGN_SYSTEM.md, THIRD_PARTY_NOTICES.md, etc.). |
+| Skill 09 | executing-plans | Execute milestones sequentially without skipping steps; maintain liveness heartbeat in progress.md. |
+| Skill 10 | external-system-integration-and-mock | Document external integrations routing through ExternalApiClient with X-Service-Key: dev-key; Mailpit on port 1025/8025; mock LMS on port 9000. |
+| Skill 11 | flyway-migration-authoring | Flyway migrations are strictly immutable (V1-V6 untouched); production DDL in db/migration uses odd numbers (V1, V3, V5) and dev seed in db/migration-dev uses even numbers (V2, V4, V6). |
+| Skill 12 | frontend-accessibility-audit | Verify WCAG 2.2 AA compliance; contrast ratios >= 4.5:1 (66 color pairs verified by compute-contrast.mjs); eliminate all undefined reference links. |
+| Skill 13 | frontend-feature-slice | Preserve feature slice directory layout; frontend application code remains strictly out of bounds during Round 2C. |
+| Skill 14 | frontend-iconography | Custom 24px Icon component; zero emoji across all UI and documentation; preserve official BrandMark (#C8161D) and blue-led UI. |
+| Skill 15 | frontend-motion-design | Calibrate motion budgets to <= 150ms; mandatory support for prefers-reduced-motion with 100ms cross-fade and 0.001ms duration. |
+| Skill 16 | frontend-visual-design | Technical Iron Cobalt (#132F52) & Cyber Persimmon (#D9480F); 100% token-based colors (Check 9 colour guard); verify font self-hosting and glyph coverage. |
+| Skill 17 | handoff-to-team-lead | Deliver 100% uncommitted working tree; compose final report in Vietnamese with raw evidence and English commit proposals prefixed T022DB0:. |
+| Skill 18 | module-domain-knowledge | Reflect identity module domain capabilities (5 roles, SSO ticket single-use, account lockout, forced password change) accurately in canonical rules. |
+| Skill 19 | receiving-code-review | Classify review feedback into priority tiers and address defects objectively without introducing regressions. |
+| Skill 20 | requesting-code-review | Self-audit 100% working tree diff; ensure zero emoji, zero leaked secrets, and raw terminal execution evidence before requesting review. |
+| Skill 21 | security-review-checklist | Guarantee zero credential leakage, never inspect private keys (*.pem), preserve production fail-fast validations, and protect .env. |
+| Skill 22 | spring-security-rbac-endpoint | Document Spring Security deny-by-default posture; 5 system roles; stateless JWT; verify rule 07 statements match production code. |
+| Skill 23 | systematic-debugging | Root cause analysis and minimal reproductions for any validation or harness failure; never bypass failing checks. |
+| Skill 24 | test-driven-development | Red-Green-Refactor testing discipline; execute break-tests for all validator extensions with hermetic backup/restore and SHA-256 verification. |
+| Skill 25 | using-rikkei-skills | Apply strict order of authority: User/Prompt Invariants > Rules 01-16 > Skills; trigger procedures according to explicit phases. |
+| Skill 26 | verification-before-completion | Execute and document raw outputs of check.sh, check.ps1, validate-agent-config, compute-contrast, and check-gate-sync before claiming task completion. |
+| Skill 27 | writing-implementation-plans | Structure implementation into granular, independently verifiable milestones with explicit test commands and safety checks. |
+| Skill 28 | writing-skills | Author or update skills following canonical format (name, description, triggers, workflow, verification) without altering runtime behavior without approval. |
+
+### 16.3 Step-by-Step Proof Methods for Items C1 through C7
+
+#### Item C1: Docker CI Harness Isolation and Dev Stack Preservation
+
+- Proof Method:
+  1. Patch scripts/run-ci-in-docker.sh and run-ci-in-docker.ps1: export COMPOSE_PROJECT_NAME=`rikkei-ci-<id>` and delete host-side docker compose down -v calls.
+  2. Implement port-conflict detection: if ports 5433, 8080, 3000, 9000, 8025, 1025 are occupied, fail fast with informative error message without altering host containers.
+  3. Start local dev stack (docker compose up -d --build --wait), insert a marker row into PostgreSQL inside postgres container (INSERT INTO users ...).
+  4. Run harness: prove port-conflict refusal or isolated execution without interfering with host stack.
+  5. Query PostgreSQL container: prove marker row and dev stack containers remain completely intact.
+  6. Run harness with no dev stack running: demonstrate all jobs PASS.
+  7. Conduct break-test on check-gate-sync.mjs (deliberately change a gate name, verify exit code 1, restore and verify SHA-256).
+  8. Tear down dev stack at session end (docker compose down -v) and confirm zero rikkei containers or volumes remain.
+
+#### Item C2: Font Evidence Attribution and Glyph Coverage
+
+- Proof Method:
+  1. Run containerized Python fontTools check in throwaway Docker container (python:3.11-slim) over frontend/public/fonts/.
+  2. Capture raw output verifying 134 Vietnamese precomposed characters, 5 combining marks (U+0300, U+0301, U+0303, U+0309, U+0323), and advance width 600 units for digits 0-9 in JetBrains Mono (0 missing).
+  3. Record tool, font versions, file SHA-256 hashes, upstream repository URLs, license URLs, and dates in docs/agent-config/SOURCES.md, docs/design/DESIGN_SYSTEM.md, and docs/agent-config/THIRD_PARTY_NOTICES.md.
+  4. Verify exact attribution text matches upstream OFL/AUTHORS files.
+
+#### Item C3: Contrast Verification Parity
+
+- Proof Method:
+  1. Run node scripts/compute-contrast.mjs and capture raw output proving all 66 color pairs pass WCAG 2.2 AA / AAA, APCA Lc, and CIELAB surface separation.
+  2. Conduct break-test by altering a color token in DESIGN_SYSTEM.md, assert failure exit code 1, then restore with SHA-256 verification.
+
+#### Item C4: develop Inconsistencies Fixes
+
+- Proof Method:
+  1. Remove all 11 inline cspell:ignore comments across agent-config, .claude, .gemini, and docs.
+  2. Add verified technical words to cspell.json without modifying ignorePaths.
+  3. Execute npx cspell verifying raw output: 0 issues.
+  4. Update validate-agent-config.mjs to count and print actual scanned files matching sync total.
+  5. Update stale gate counts in rules and entrypoints to 29 definitions (26 active + 3 fallbacks), 23 CI checks, 25 Docker harness gates.
+  6. Add mechanical check in validate-agent-config.mjs comparing rule counts against check-gate-sync.mjs with break-test.
+  7. Retain Gemini/Antigravity NOT VERIFIED AT RUNTIME status and document 2-minute human verification checklist in docs/agent-config/README.md.
+
+#### Item C5: Untracked Files Audit
+
+- Proof Method:
+  1. Expand docs/agent-config/UNTRACKED_AUDIT.md with complete table covering all 10 untracked items (keep / fold / drop).
+  2. Audit assertions in tests/agent-config/*.test.mjs: fold valid assertions into validate-agent-config.mjs (with break-tests) or document one-line rationale for dropped assertions.
+  3. Verify with grep that no CI workflow or check script references untracked files.
+  4. Leave all untracked files untouched without staging or deletion.
+
+#### Item C6: Marker Syntax and VS Code Problems Warnings Elimination
+
+- Proof Method:
+  1. Replace `[EXISTS]` and `[TARGET]` markers across all Markdown files with non-link syntax (e.g. inline code `EXISTS` and `TARGET`) that eliminates VS Code link.no-such-reference warnings.
+  2. Audit and fix any other dangling bracketed reference words across all documentation.
+  3. Update validate-agent-config.mjs Check 6 to parse new marker syntax.
+  4. Add validator check detecting undefined reference links outside code blocks, verified by break-test.
+  5. Re-sync mirrors via sync-agent-config.mjs.
+
+#### Item C7: Rule Modernization Post NT-01 and HS-01
+
+- Proof Method:
+  1. Construct verification table per rule: Statement -> Real Code Location -> Action.
+  2. Update canonical rules (agent-config/rules/) to reflect current codebase reality: Flyway migration numbering (prod odd V1/V3/V5, dev even V2/V4/V6), implemented auth tables (used_sso_tickets, password_reset_tokens), UserPrincipal in com.rikkei.jobs.identity, httpClient.ts, tokens.css, BrandMark component, and dev-only OpenAPI.
+  3. Re-sync mirrors with sync-agent-config.mjs.
+  4. Execute validate-agent-config.mjs Check 6 verifying 100% of EXISTS markers resolve to valid paths, backed by break-test.
+
+### 16.4 Invariant Operational Constraints & Strict Prohibitions Checklist
+
+- [ ] Git is strictly READ-ONLY: zero commit, push, stage, amend, rebase, reset, stash, tag, or checkout executed.
+- [ ] Working Tree: all modifications left uncommitted on branch feature/T022DB0-agent-config-2c.
+- [ ] Application Code Isolated: backend, frontend, and mock application code untouched.
+- [ ] Flyway Migrations Immutable: V1 through V6 untouched.
+- [ ] Secret Hygiene: zero real secrets read or leaked; first-key.pem untouched; .env isolated.
+- [ ] Host Safety: zero software or packages installed on host machine.
+- [ ] Temp File Cleanup: temporary files restricted to OS temp and deleted immediately.
+- [ ] Harness Safety: scripts/run-ci-in-docker.* not executed before C1 fix and proof.
+- [ ] Final Teardown: docker compose down -v executed at session end; zero containers or volumes remain.
+- [ ] Zero Emoji Invariant: zero emoji characters across code, comments, documentation, and reports.
+- [ ] Mandatory Working Method Retained: working method sentence quoted verbatim in notes and report.
+- [ ] Conventional Commit Proposals: English commit proposals formulated with prefix T022DB0:.
+
+---
+
+## 17. Phase 0 Round 2C-fix Acknowledgement (Task T022DB0: CI Harness Isolation Hardening & Mechanical Validation Parity)
+
+### 17.1 Inventory of Authoritative Files Read Prior to Round 2C-fix
+
+Prior to executing any modification in the workspace for Round 2C-fix, the team has read, analyzed, and cross-referenced in full:
+
+1. D:\GitHub\Rikkei\.agents\PROMPT_2CFIX_EN.txt (Authoritative task instructions, isolation requirements, and acceptance criteria)
+2. D:\GitHub\Rikkei\.agents\PROMPT_BASE_RULES_EN.txt (Base rules R0/R1 for all team rounds, precedence hierarchy, read-only mandates)
+3. CLAUDE.md (Root Claude Code configuration, operational constraints, slash commands specification)
+4. GEMINI.md (Root Gemini CLI & Antigravity configuration, hierarchical memory directives, tool definitions)
+5. AGENTS.md (Canonical instructions for AI coding agents, rules and skills architecture, gate sync standards)
+6. agent-config/rules/04-honest-verification.md (Rule 04: Honest Verification and Quality Gates)
+7. agent-config/rules/12-ci-and-quality-gates.md (Rule 12: Continuous Integration and Quality Gates)
+8. scripts/check-gate-sync.mjs (Single Source of Truth for gate counts: 29 definitions, 26 active, 3 fallbacks, 23 CI checks, 25 harness gates)
+9. scripts/validate-agent-config.mjs (Validator tiers, Check 10 gate count validation, inline directive checks)
+10. scripts/run-ci-in-docker.sh and scripts/run-ci-in-docker.ps1 (CI Docker harness scripts, container orchestration, DooD volume management)
+11. docker-compose.yml (Dev stack service names, container names, volume rikkei_postgres_data, and network rikkei-network)
+12. docs/agent-config/README.md (AI configuration architecture, Option A parity, 2-minute human verification checklist)
+13. docs/agent-config/BREAK_TESTS.md (Canonical registry of mutation break-tests for validation checks)
+14. docs/02-local-development-troubleshooting.md and README.md (Local development guides, Docker isolation and port sharing documentation)
+
+### 17.2 Concrete Applicable Constraint per Rule and Skill
+
+| Identifier | Name | Exact Concrete Constraint for Round 2C-fix |
+|---|---|---|
+| Rule 01 | Project Context & Monorepo Overview | Scope is strictly confined to CI harness scripts (scripts/run-ci-in-docker.*), validator tooling (scripts/validate-agent-config.mjs, scripts/check-gate-sync.mjs), documentation (README.md, docs/02-local-development-troubleshooting.md, docs/agent-config/README.md, docs/agent-config/BREAK_TESTS.md, docs/nt01/PHASE0_ACK.md), cspell.json, and agent-config rules/skills only where gate counts or sync require updates; backend, frontend, mock, and e2e code are strictly read-only. |
+| Rule 02 | Git Workflow & Agent Read-Only Mandate | Git remains strictly READ-ONLY: zero commit, push, stage, amend, rebase, reset, stash, tag, branch checkout, or restore; all 71 uncommitted changes from Round 2C are preserved intact; all proposed commit messages must use English with prefix T022DB0:. |
+| Rule 03 | Safety, Host Boundaries & Secret Hygiene | File writes restricted to rikkei-jobs/; never open, read, or print .env, *.pem, or credentials (specifically never touch D:\GitHub\Rikkei\first-key.pem); temporary files restricted strictly to OS temp and deleted immediately. |
+| Rule 04 | Honest Verification & Quality Gates | Every pass claim must be backed by verifiable raw terminal execution evidence; no fake passes, no synthetic logs; gate counts across all rules, skills, and docs must mechanically match the Single Source of Truth in scripts/check-gate-sync.mjs. |
+| Rule 05 | Java 25 & Spring Boot 4 Backend Standards | Backend application code is strictly read-only and out of bounds; no modifications to Java source or POM files. |
+| Rule 06 | Database Migrations and Flyway Discipline | Flyway migrations in db/migration/ and db/migration-dev/ are strictly immutable (do not edit, rename, or touch); verify that no incorrect migration names exist across rules, skills, and docs. |
+| Rule 07 | Security Architecture and RBAC | Security implementation remains intact; do not touch authentication, RBAC, or token handlers. |
+| Rule 08 | Frontend Engineering Standards | Frontend application code is strictly read-only and out of bounds; no edits to Vue components, stores, or router. |
+| Rule 09 | Frontend Design Bar & Anti-AI Standards | Zero emoji across all documentation, scripts, and reports; all Vietnamese documentation and reports must maintain full, correct diacritics. |
+| Rule 10 | Testing Strategy and Quality Assurance | Maintain test suite integrity; execute 6 mutation break-tests for Check 10 and 1 break-test for F1 harness isolation using hermetic backup, mutation, failure assertion, restoration, and SHA-256 verification. |
+| Rule 11 | Documentation, Bilingual Standards & Linters | Zero inline cspell:disable or cspell:ignore comments in tracked files; add required tokens (bxox, eyj, xox, ghp) to cspell.json; markdownlint and cspell must report raw 0 errors; maintain bilingual sync in docs. |
+| Rule 12 | Continuous Integration and Quality Gates | Add explicit citation for the 25 Docker CI harness gates to rule 12; run sync-agent-config.mjs to propagate changes across .claude, .gemini, and .agents mirrors; verify check.sh and check.ps1 parity without MSYS_NO_PATHCONV. |
+| Rule 13 | Backend Data Access Performance | Backend database configuration and repository code remain untouched. |
+| Rule 14 | Backend Module Boundaries | Modular monolith module boundaries remain untouched. |
+| Rule 15 | Backend Observability and Operations | Zero logging of sensitive environment variables or credentials during test and CI executions. |
+| Rule 16 | Backend Integrations | External service integrations remain untouched; mock LMS and Mailpit configurations preserved. |
+| Skill 01 | api-contract-and-errors | Preserve API contract definitions and error structures without modifying application code. |
+| Skill 02 | backend-module-boundaries | Preserve modular architecture boundaries; avoid cross-module coupling in scripts and docs. |
+| Skill 03 | backend-module-feature | Maintain Controller-Service-Repository separation; no backend feature code authoring in Round 2C-fix. |
+| Skill 04 | backend-persistence-performance | Database access and transaction scopes remain untouched. |
+| Skill 05 | brainstorming-before-building | Perform rigorous impact and safety analysis prior to modifying harness scripts or validator logic. |
+| Skill 06 | ci-local-and-debug | Execute local CI verification; ensure complete Docker container, volume, and network cleanup; prove non-interference with host dev stack. |
+| Skill 07 | dispatching-parallel-agents | Coordinate execution with clear role boundaries, explicit deliverables, and verifiable outputs. |
+| Skill 08 | docs-bilingual-update | Maintain strict synchronization and full Vietnamese diacritics when updating README.md and docs/02-local-development-troubleshooting.md. |
+| Skill 09 | executing-plans | Execute milestones strictly in order: Phase 0 ACK -> F2 Dynamic Check 10 -> F3 Documentation & Hygiene -> F1 Docker Isolation -> Verification & Cleanup. |
+| Skill 10 | external-system-integration-and-mock | External mock integrations remain untouched; preserve Mailpit and LMS ports. |
+| Skill 11 | flyway-migration-authoring | Flyway migrations remain immutable; verify zero instances of wrong migration names across all project documentation. |
+| Skill 12 | frontend-accessibility-audit | Maintain WCAG 2.2 AA contrast compliance; verify zero regression via compute-contrast.mjs. |
+| Skill 13 | frontend-feature-slice | Frontend architecture remains untouched. |
+| Skill 14 | frontend-iconography | Zero emoji invariant enforced across all modified documentation, code, and reports. |
+| Skill 15 | frontend-motion-design | Motion design tokens and preferences remain untouched. |
+| Skill 16 | frontend-visual-design | Color tokens and typography standards remain untouched. |
+| Skill 17 | handoff-to-team-lead | Deliver 100% uncommitted working tree; compose comprehensive final report in Vietnamese with raw evidence and English commit proposals prefixed T022DB0:. |
+| Skill 18 | module-domain-knowledge | Preserve domain knowledge accuracy across rules and skills. |
+| Skill 19 | receiving-code-review | Address defects and findings objectively without introducing regressions or altering approved baseline files. |
+| Skill 20 | requesting-code-review | Audit working tree diff; ensure zero emoji, zero secret leaks, and raw terminal execution evidence for every claim. |
+| Skill 21 | security-review-checklist | Ensure zero credential exposure, never inspect private keys (*.pem), protect .env, and preserve fail-fast security checks. |
+| Skill 22 | spring-security-rbac-endpoint | Security architecture and RBAC endpoints remain untouched. |
+| Skill 23 | systematic-debugging | Apply root cause analysis and minimal reproducible mutations for all break-tests; never bypass or weaken failing checks. |
+| Skill 24 | test-driven-development | Red-Green-Refactor discipline; execute all break-tests with hermetic temp backup and SHA-256 validation. |
+| Skill 25 | using-rikkei-skills | Apply strict order of authority: User/Prompt Invariants > Rules 01-16 > Skills. |
+| Skill 26 | verification-before-completion | Execute and document raw outputs of all 8 verification tools before reporting completion. |
+| Skill 27 | writing-implementation-plans | Structure implementation into granular, verifiable steps with exact terminal verification commands. |
+| Skill 28 | writing-skills | Author or update skills following canonical format without modifying runtime behavior without approval. |
+
+### 17.3 Step-by-Step Proof Methods for Items F1 through F3
+
+#### Item F1: Docker CI Harness Isolation and Dev Stack Protection
+
+- Proof Method:
+  1. Pre-flight Compose Config Proof: Generate an ephemeral `docker-compose.override.yml` inside `/ci-workspace` (in runner container) dynamically overriding container_name (`${COMPOSE_PROJECT_NAME}-<service>`), volume name (`${COMPOSE_PROJECT_NAME}_postgres_data`), and network name (`${COMPOSE_PROJECT_NAME}_network`). Run `docker compose config` under CI project name and prove zero collisions with developer stack resource names.
+  2. Scenario A (Dev stack STOPPED with volume and marker row):
+     - Start dev stack with `docker compose up -d --build --wait`, insert marker row into PostgreSQL inside postgres container, then run `docker compose stop`.
+     - Record baseline container list and IDs, volume inspect labels, marker row SELECT query, and volume root directory contents via `docker run --rm -v rikkei_postgres_data:/d alpine ls -la /d`.
+     - Execute CI harness (`scripts/run-ci-in-docker.ps1` or `.sh`) and confirm all 6 jobs PASS.
+     - Post-run verification: Dev containers remain stopped with identical IDs; volume inspect labels remain intact; volume root directory contents are unchanged (specifically zero new `18/` directory); restart dev postgres and query marker row proving 100% integrity; confirm `rikkei-network` is not deleted.
+  3. Scenario B (Dev stack RUNNING):
+     - With dev stack active and listening on ports 5433, 8080, etc., run the CI harness.
+     - Confirm harness fails fast with exit code 1 and explicit error message indicating port conflict.
+     - Confirm dev stack remains running and unaffected, and marker row remains intact.
+  4. Scenario C (Clean environment):
+     - Run `docker compose down -v` to ensure clean host state (zero rikkei containers, volumes, or networks).
+     - Run CI harness and confirm all 6 jobs PASS.
+     - Confirm 100% cleanup: zero CI containers, volumes, or networks remain on Docker daemon.
+  5. Break-test F1:
+     - Temporarily remove isolation mechanism on a temporary test copy, execute Scenario A, and capture raw output demonstrating volume pollution or conflict error.
+     - Restore isolation files and verify 100% SHA-256 match.
+  6. Bilingual Documentation:
+     - Update README.md and docs/02-local-development-troubleshooting.md (English and full-diacritic Vietnamese) accurately describing isolated resources (containers, volume, network) versus shared host ports.
+
+#### Item F2: Dynamic Check 10 & 6 Mutation Break-Tests
+
+- Proof Method:
+  1. Refactor scripts/check-gate-sync.mjs to export `getAuthoritativeGateCounts(targetRepoRoot)` returning dynamic gate counts (29 definitions, 26 active runtime gates, 3 fallbacks, 23 CI checks, 25 Docker harness gates), while keeping CLI execution behind `process.argv[1] === __filename` guard.
+  2. Refactor Check 10 in scripts/validate-agent-config.mjs to import `getAuthoritativeGateCounts`, expand scanned files to include CLAUDE.md, GEMINI.md, AGENTS.md, README.md, and replace hardcoded patterns with dynamic regex capture groups `(\d+)` that validate every sentence declaring gate counts line-by-line against SSOT.
+  3. Add statement regarding 25 Docker CI harness gates to agent-config/rules/12-ci-and-quality-gates.md, and run `node scripts/sync-agent-config.mjs` to synchronize mirrors.
+  4. Execute 6 mutation break-tests (BT-10A through BT-10F: 4 in rule 12, 1 in rule 04, 1 in skill) following the 7-step safe procedure (backup temp -> mutate -> assert Check 10 fail -> restore -> verify SHA-256 -> assert pass 0).
+  5. Record all raw terminal outputs in docs/agent-config/BREAK_TESTS.md.
+
+#### Item F3: Documentation Corrections & Code Hygiene
+
+- Proof Method:
+  1. Human Checklist Verification: Audit docs/agent-config/README.md checklist (Section 5.1 EN and 8.1.1 VI); eliminate non-existent `/rules` command for Claude Code; update with official commands (`/context`, `/memory`, slash auto-complete `/` or `/help`), retain verified Gemini CLI commands (`/memory show`, `/skills list`), and cite official vendor documentation URLs from Anthropic and Google.
+  2. Elimination of `/* cspell:disable */`: Add missing words (`bxox`, `eyj`, `xox`, `ghp`) to cspell.json; delete inline `/* cspell:disable */` and `/* cspell:enable */` comments in scripts/validate-agent-config.mjs; run `npx cspell` proving 0 errors and zero inline directives.
+  3. Migration Name Integrity: Audit entire repository confirming zero occurrences of incorrect migration names (`V5__nt01_auth_hardening` or `V3__hs01_skill_profile_tables`); confirm all actual migration files on disk follow canonical naming (DDL V1, V3, V5; dev seed V2, V4, V6).
+  4. Transparent Historical Reporting: Formulate honest historical explanation in the final report regarding `run-ci-in-docker` execution in Round 2C.
+
+### 17.4 Invariant Operational Constraints & Strict Prohibitions Checklist
+
+- [ ] Git is strictly READ-ONLY: zero commit, push, stage, amend, rebase, reset, stash, tag, branch-switch, or restore executed.
+- [ ] Working Tree: all 71 uncommitted modifications of Round 2C kept intact on branch feature/T022DB0-agent-config-2c.
+- [ ] Application Code Isolated: backend, frontend, mock, and e2e code remain untouched.
+- [ ] Flyway Migrations Immutable: V1 through V6 untouched.
+- [ ] Untracked Files Protected: 10 untracked C5 files untouched and uncommitted.
+- [ ] Docker Compose File Untouched: docker-compose.yml has zero modifications.
+- [ ] Secret Hygiene: zero real secrets read, printed, or leaked; first-key.pem untouched; .env isolated.
+- [ ] Host Safety: zero software or global packages installed on host machine.
+- [ ] Temp File Cleanup: temporary files restricted to OS temp and deleted immediately.
+- [ ] Final Teardown: docker compose down -v executed at session end; zero rikkei containers, volumes, or networks remain.
+- [ ] Zero Emoji Invariant: zero emoji characters across code, comments, documentation, and reports.
+- [ ] Full Vietnamese Diacritics: all documentation and reports in Vietnamese keep full, correct diacritics.
+- [ ] Conventional Commit Proposals: English commit proposals formulated with prefix T022DB0:.

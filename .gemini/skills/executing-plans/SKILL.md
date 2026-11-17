@@ -56,7 +56,7 @@ The `executing-plans` skill enforces disciplined, incremental implementation of 
 
 8. **Execute Full Quality Gate Suite**:
    - Run the full project gate runner (`powershell -File .\check.ps1` on Windows or `./check.sh` on Linux).
-   - Ensure all 25 active runtime gates exit with status 0 before initiating handoff.
+   - Ensure all 26 active runtime gates exit with status 0 before initiating handoff.
 
 ## 4. Iron Laws
 

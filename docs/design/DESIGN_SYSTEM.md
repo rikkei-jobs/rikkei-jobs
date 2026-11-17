@@ -490,7 +490,7 @@ $$c = \frac{C_{\text{8bit}}}{255}$$
 
 Giá trị độ chói tuyến tính $C_{\text{linear}}$ được xác định bởi:
 
-$$C_{\text{linear}} = \begin{cases} \dfrac{c}{12.92} & \text{khi } c \le 0.04045 \\[10pt] \left(\dfrac{c + 0.055}{1.055}\right)^{2.4} & \text{khi } c > 0.04045 \end{cases}$$
+$$C_{\text{linear}} = \begin{cases} \dfrac{c}{12.92} & \text{khi } c \le 0.04045 \\ \left(\dfrac{c + 0.055}{1.055}\right)^{2.4} & \text{khi } c > 0.04045 \end{cases}$$
 
 #### 2. Bước 2: Tính toán Độ chói Tương đối (Relative Luminance $L$)
 
@@ -720,13 +720,38 @@ table td.numeric,
 Ứng dụng tuân thủ nguyên tắc bảo mật và hiệu năng: không gọi CDN runtime từ Google Fonts hoặc bên thứ ba. Toàn bộ font được định hướng self-hosted định dạng **WOFF2** với cơ chế nén tối ưu:
 
 ```css
-/* Self-Hosted @font-face Specifications (Định hướng triển khai asset cho vòng sau) */
+/* Self-Hosted @font-face Specifications (8 tệp WOFF2 thực tế trong frontend/public/fonts/) */
+
+/* Plus Jakarta Sans (Display) */
 @font-face {
   font-family: 'Plus Jakarta Sans';
   font-style: normal;
-  font-weight: 600 700;
+  font-weight: 600;
   font-display: swap;
-  src: url('/fonts/plus-jakarta-sans-vietnamese.woff2') format('woff2');
+  src: url('/fonts/PlusJakartaSans-SemiBold.woff2') format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, 
+                 U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, 
+                 U+1EA0-1EF9, U+20AB;
+}
+
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/PlusJakartaSans-Bold.woff2') format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, 
+                 U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, 
+                 U+1EA0-1EF9, U+20AB;
+}
+
+/* Be Vietnam Pro (Body) */
+@font-face {
+  font-family: 'Be Vietnam Pro';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/BeVietnamPro-Regular.woff2') format('woff2');
   unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, 
                  U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, 
                  U+1EA0-1EF9, U+20AB;
@@ -735,25 +760,70 @@ table td.numeric,
 @font-face {
   font-family: 'Be Vietnam Pro';
   font-style: normal;
-  font-weight: 400 500 600;
+  font-weight: 500;
   font-display: swap;
-  src: url('/fonts/be-vietnam-pro-vietnamese.woff2') format('woff2');
+  src: url('/fonts/BeVietnamPro-Medium.woff2') format('woff2');
   unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, 
                  U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, 
                  U+1EA0-1EF9, U+20AB;
 }
 
 @font-face {
+  font-family: 'Be Vietnam Pro';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/BeVietnamPro-SemiBold.woff2') format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, 
+                 U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, 
+                 U+1EA0-1EF9, U+20AB;
+}
+
+@font-face {
+  font-family: 'Be Vietnam Pro';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/BeVietnamPro-Bold.woff2') format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, 
+                 U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, 
+                 U+1EA0-1EF9, U+20AB;
+}
+
+/* JetBrains Mono (Code & Tabular Figures) */
+@font-face {
   font-family: 'JetBrains Mono';
   font-style: normal;
-  font-weight: 400 500;
+  font-weight: 400;
   font-display: swap;
-  src: url('/fonts/jetbrains-mono-tabular.woff2') format('woff2');
+  src: url('/fonts/JetBrainsMono-Regular.woff2') format('woff2');
+  unicode-range: U+0030-0039, U+0024, U+00A5, U+20AB, U+0025, U+002C, U+002E;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/JetBrainsMono-SemiBold.woff2') format('woff2');
   unicode-range: U+0030-0039, U+0024, U+00A5, U+20AB, U+0025, U+002C, U+002E;
 }
 ```
 
-*Lưu ý Ràng buộc R0*: Trong vòng này, không tự ý tải hoặc lưu file font nhị phân (binary) vào thư mục `frontend/`. Toàn bộ thông số trên đóng vai trò đặc tả kỹ thuật hoàn chỉnh để tích hợp trong vòng triển khai frontend được phê duyệt.
+*Xác Thực Asset Độc Lập*: Toàn bộ 8 tệp WOFF2 trên được lưu trữ self-hosted tại `frontend/public/fonts/`, không phụ thuộc bất kỳ external CDN hay Google Fonts endpoint nào khi chạy production. Đã được kiểm chứng thực nghiệm bằng `fontTools 4.x / brotli` trong container throwaway `python:3.11-slim` đảm bảo đầy đủ 100% 134 ký tự tiếng Việt dựng sẵn, 5 dấu thanh kết hợp và tabular figures (advance width = 600 units).
+
+### 5.6. Bảng Nguồn Gốc & Thông Số Kỹ Thuật 8 Phông Chữ WOFF2 (Font Attribution & Cryptographic Hashes)
+
+| # | Phông chữ | Phiên bản | Tên tệp WOFF2 | Kích thước | SHA-256 Checksum | Kho mã nguồn & Giấy phép | Tác giả & Bản quyền | Kiểm định Glyph |
+|---|---|---|---|---|---|---|---|---|
+| 1 | Plus Jakarta Sans SemiBold | v2.600 | `PlusJakartaSans-SemiBold.woff2` | 42,356 bytes | `16387125b045457b8d49123d31bcc143e696cf9e867831f8ae41eb244b11106e` | [GitHub](https://github.com/tokotype/PlusJakartaSans) / [OFL 1.1](https://github.com/tokotype/PlusJakartaSans/blob/master/OFL.txt) | Tokotype / Gumpita Rahayu | 134 chữ VN, 5 dấu thanh: PASS (0 missing) |
+| 2 | Plus Jakarta Sans Bold | v2.600 | `PlusJakartaSans-Bold.woff2` | 42,556 bytes | `8d76ee4c4f645bc12ebdeae87f8ec2468bade2d4f04458416848229bcc804342` | [GitHub](https://github.com/tokotype/PlusJakartaSans) / [OFL 1.1](https://github.com/tokotype/PlusJakartaSans/blob/master/OFL.txt) | Tokotype / Gumpita Rahayu | 134 chữ VN, 5 dấu thanh: PASS (0 missing) |
+| 3 | Be Vietnam Pro Regular | v1.002 | `BeVietnamPro-Regular.woff2` | 38,064 bytes | `907ebfa4a4bd967cdcb313b2889655ff9fb90d5fd4f193723aa99142d14a1652` | [GitHub](https://github.com/bettergui/BeVietnamPro) / [OFL 1.1](https://github.com/bettergui/BeVietnamPro/blob/master/OFL.txt) | VietAnh Nguyen / Omnibus-Type | 134 chữ VN, 5 dấu thanh: PASS (0 missing) |
+| 4 | Be Vietnam Pro Medium | v1.002 | `BeVietnamPro-Medium.woff2` | 40,232 bytes | `15a399b6a57023c665fa8aca7f4691d36c512b17cc36f74bd9dc077487ac9ffc` | [GitHub](https://github.com/bettergui/BeVietnamPro) / [OFL 1.1](https://github.com/bettergui/BeVietnamPro/blob/master/OFL.txt) | VietAnh Nguyen / Omnibus-Type | 134 chữ VN, 5 dấu thanh: PASS (0 missing) |
+| 5 | Be Vietnam Pro SemiBold | v1.002 | `BeVietnamPro-SemiBold.woff2` | 40,464 bytes | `91329e727900425300269d9402c32e9e020943783fc0b9457f0b7419bef90dbf` | [GitHub](https://github.com/bettergui/BeVietnamPro) / [OFL 1.1](https://github.com/bettergui/BeVietnamPro/blob/master/OFL.txt) | VietAnh Nguyen / Omnibus-Type | 134 chữ VN, 5 dấu thanh: PASS (0 missing) |
+| 6 | Be Vietnam Pro Bold | v1.002 | `BeVietnamPro-Bold.woff2` | 41,212 bytes | `32eb3a183490d280351f9676cc0b8e1725d95090988db57503dc83879b5fe602` | [GitHub](https://github.com/bettergui/BeVietnamPro) / [OFL 1.1](https://github.com/bettergui/BeVietnamPro/blob/master/OFL.txt) | VietAnh Nguyen / Omnibus-Type | 134 chữ VN, 5 dấu thanh: PASS (0 missing) |
+| 7 | JetBrains Mono Regular | v2.304 | `JetBrainsMono-Regular.woff2` | 92,380 bytes | `f1a7a03672cdd494ce0d5543fac6e4360fe22403c6de297fdc2e55a815f7baff` | [GitHub](https://github.com/JetBrains/JetBrainsMono) / [OFL 1.1](https://github.com/JetBrains/JetBrainsMono/blob/master/OFL.txt) | JetBrains s.r.o. | 134 chữ VN: PASS, Tabular digits width = 600 units |
+| 8 | JetBrains Mono SemiBold | v2.304 | `JetBrainsMono-SemiBold.woff2` | 94,484 bytes | `8f20245500c375a63879b47c12560a07bcaf7a88672d272f4d8e79b68f9186ae` | [GitHub](https://github.com/JetBrains/JetBrainsMono) / [OFL 1.1](https://github.com/JetBrains/JetBrainsMono/blob/master/OFL.txt) | JetBrains s.r.o. | 134 chữ VN: PASS, Tabular digits width = 600 units |
 
 ---
 
