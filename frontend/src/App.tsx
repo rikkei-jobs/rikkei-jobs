@@ -6,6 +6,7 @@ import { HealthBadge } from './shared/components/HealthBadge';
 import { ModuleCard } from './shared/components/ModuleCard';
 import { fetchBackendHealth, type BackendHealthStatus } from './shared/api/health';
 import { BUSINESS_MODULES } from './features';
+import { JobRecommendationsSection } from './features/candidate';
 import { SkillProfilePage } from './features/candidate';
 
 import { AuthProvider } from './features/identity/context/AuthContext';
@@ -33,7 +34,7 @@ export const APP_SUBTITLE =
   'Giải pháp cầu nối minh bạch giữa Sinh viên, Doanh nghiệp tuyển dụng và Cán bộ đào tạo';
 
 export const HomeSkeleton: React.FC = () => {
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
   const [backendStatus, setBackendStatus] = useState<BackendHealthStatus>('CONNECTING...');
   const [statusDetails, setStatusDetails] = useState<string>(
     'Đang thiết lập kết nối tới Backend...',
@@ -152,6 +153,8 @@ export const HomeSkeleton: React.FC = () => {
               isLoading={isChecking}
             />
           </section>
+
+          {user?.role === 'CANDIDATE' && <JobRecommendationsSection />}
 
           <section className="section-modules">
             <div className="section-header">

@@ -20,23 +20,24 @@ export const candidateModuleConfig = {
   badge: 'Module 1',
 };
 
+export * from './types';
+export * from './api/jobRecommendations';
+export * from './JobRecommendationsSection';
+
 // Skill profile components and API
 export { SkillProfilePage, type SkillProfilePageProps } from './components/SkillProfilePage';
-export { fetchMySkills, fetchUserSkills, recomputeMySkills, type SkillProfileItem } from './api/skillProfile';
+export {
+  fetchMySkills,
+  fetchUserSkills,
+  recomputeMySkills,
+  type SkillProfileItem,
+} from './api/skillProfile';
 
 // Mentor evaluations components and API (DG-01)
-export { CandidateEvaluations, type CandidateEvaluationsProps } from './components/CandidateEvaluations';
+export {
+  CandidateEvaluations,
+  type CandidateEvaluationsProps,
+} from './components/CandidateEvaluations';
 export { EvaluationCard, type EvaluationCardProps } from './components/EvaluationCard';
 export { EvaluationScoreItem, type EvaluationScoreItemProps } from './components/EvaluationScoreItem';
 export { fetchCandidateEvaluations, getProfileEvaluations } from './api/candidateEvaluations';
-
-// Types & DTOs
-export type {
-  EvaluationContext,
-  EvaluationMentorDto,
-  EvaluationScoreDto,
-  CandidateEvaluation,
-  CandidateEvaluationsData,
-  ErrorResponse,
-} from './types';
-export { CandidateEvaluationsApiError } from './types';

@@ -75,6 +75,49 @@ public class ExternalApiClient {
         return executeRequest("GET", path, null, null);
     }
 
+    /**
+     * Sends a JSON POST to an absolute URL with caller-supplied headers and timeout. Used by
+     * integrations (for example AI providers) that live on a different host than the mock LMS and
+     * therefore cannot reuse the X-Service-Key contract. No request or response body is written to
+     * the logs, so provider keys and prompts are never leaked.
+     */
+    public String postJson(
+            String absoluteUrl, Object payload, Map<String, String> headers, Duration timeout) {
+        String jsonPayload;
+        try {
+            jsonPayload = objectMapper.writeValueAsString(payload);
+        } catch (JsonProcessingException e) {
+            throw new ValidationException("Không thể tạo dữ liệu JSON cho yêu cầu ngoài");
+        }
+
+        HttpRequest.Builder requestBuilder =
+                HttpRequest.newBuilder()
+                        .uri(URI.create(absoluteUrl))
+                        .timeout(timeout)
+                        .header("Accept", "application/json")
+                        .header("Content-Type", "application/json")
+                        .POST(HttpRequest.BodyPublishers.ofString(jsonPayload));
+        if (headers != null) {
+            headers.forEach(requestBuilder::header);
+        }
+
+        try {
+            HttpResponse<String> response =
+                    httpClient.send(requestBuilder.build(), HttpResponse.BodyHandlers.ofString());
+            int status = response.statusCode();
+            if (status >= 200 && status < 300) {
+                return response.body();
+            }
+            log.warn("External POST {} returned HTTP {}", absoluteUrl, status);
+            throw new ExternalUnavailableException("Hệ thống ngoài phản hồi HTTP " + status);
+        } catch (IOException e) {
+            throw new ExternalUnavailableException("Không thể kết nối tới hệ thống ngoài", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ExternalUnavailableException("Yêu cầu tới hệ thống ngoài bị gián đoạn", e);
+        }
+    }
+
     /** Core execution method with retry and error transformation. */
     public String executeRequest(String method, String path, String body, String customServiceKey) {
         String serviceKey =

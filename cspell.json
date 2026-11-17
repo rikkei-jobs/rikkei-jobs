@@ -229,7 +229,8 @@
     "cfix",
     "desynchronized",
     "idor",
-    "tablename"
+    "tablename",
+    "dtos"
   ],
   "ignorePaths": [
     "**/node_modules/**",

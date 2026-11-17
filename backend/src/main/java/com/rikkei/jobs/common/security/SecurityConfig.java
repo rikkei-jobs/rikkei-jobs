@@ -105,6 +105,9 @@ public class SecurityConfig {
                                     .authenticated()
                                     .requestMatchers(HttpMethod.GET, "/api/v1/auth/me")
                                     .authenticated()
+                                    .requestMatchers(
+                                            HttpMethod.GET, "/api/v1/me/job-recommendations")
+                                    .hasRole("CANDIDATE")
                                     .requestMatchers("/api/v1/evaluations/**")
                                     .hasRole("MENTOR")
                                     .requestMatchers("/api/v1/evaluation-templates/**")
