@@ -18,8 +18,8 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
  * Verifies that the default profile (no active profiles specified) executes ONLY prod schema
- * migrations (V1, V3, V5, V7 and V9) and does NOT seed any sample users (neither V2, V4, V6, V8
- * nor V10).
+ * migrations (V1, V3, V5, V7 and V9) and does NOT seed any sample users (neither V2, V4, V6, V8 nor
+ * V10).
  */
 @SpringBootTest
 @Testcontainers
