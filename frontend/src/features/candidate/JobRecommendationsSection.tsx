@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Icon } from '../../shared/components/Icon';
 import type { JobRecommendation, JobRecommendationsResponse } from './types';
 import { fetchJobRecommendations } from './api/jobRecommendations';
@@ -247,9 +248,9 @@ export const JobRecommendationsSection: React.FC = () => {
                 <button type="button" className="apply-button">
                   Ứng tuyển ngay
                 </button>
-                <button type="button" className="details-button">
+                <Link to={`/candidate/jobs/${job.jobId}`} className="details-button">
                   Chi tiết JD
-                </button>
+                </Link>
               </div>
             </article>
           ))}

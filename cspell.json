@@ -21,6 +21,7 @@
     "spotbugs",
     "flyway",
     "testcontainers",
+    "ryuk",
     "typecheck",
     "bigint",
     "bigserial",
@@ -230,7 +231,8 @@
     "desynchronized",
     "idor",
     "tablename",
-    "dtos"
+    "dtos",
+    "xact"
   ],
   "ignorePaths": [
     "**/node_modules/**",

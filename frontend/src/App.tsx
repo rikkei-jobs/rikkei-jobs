@@ -21,6 +21,8 @@ import { ForgotPasswordPage } from './features/identity/pages/ForgotPasswordPage
 import { ResetPasswordPage } from './features/identity/pages/ResetPasswordPage';
 import { CandidateHomePage } from './features/identity/pages/role-homes/CandidateHomePage';
 import { CandidateSkillsPage } from './features/identity/pages/role-homes/CandidateSkillsPage';
+import { CandidateGapAnalysisPage } from './features/identity/pages/role-homes/CandidateGapAnalysisPage';
+import { CandidateJobDetailPage } from './features/identity/pages/role-homes/CandidateJobDetailPage';
 import { HrHomePage } from './features/identity/pages/role-homes/HrHomePage';
 import { MentorHomePage } from './features/identity/pages/role-homes/MentorHomePage';
 import { StaffHomePage } from './features/identity/pages/role-homes/StaffHomePage';
@@ -250,6 +252,24 @@ export const AppRoutes: React.FC = () => {
         element={
           <RequireRole allowedRoles={['CANDIDATE']}>
             <CandidateSkillsPage />
+          </RequireRole>
+        }
+      />
+
+      {/* DT-01 gap analysis and JD detail routes */}
+      <Route
+        path="/candidate/gap-analysis"
+        element={
+          <RequireRole allowedRoles={['CANDIDATE']}>
+            <CandidateGapAnalysisPage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/candidate/jobs/:jobId"
+        element={
+          <RequireRole allowedRoles={['CANDIDATE']}>
+            <CandidateJobDetailPage />
           </RequireRole>
         }
       />

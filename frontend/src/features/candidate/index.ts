@@ -22,8 +22,8 @@ export const candidateModuleConfig = {
 
 export * from './types';
 export * from './api/jobRecommendations';
+export * from './api/gapAnalysis';
 export * from './JobRecommendationsSection';
-
 // Skill profile components and API
 export { SkillProfilePage, type SkillProfilePageProps } from './components/SkillProfilePage';
 export {
@@ -32,6 +32,11 @@ export {
   recomputeMySkills,
   type SkillProfileItem,
 } from './api/skillProfile';
+
+// DT-01 gap analysis components and API
+export { GapAnalysisSection } from './components/GapAnalysisSection';
+export { GapSkillsTable } from './components/GapSkillsTable';
+export { JobDetailPanel } from './components/JobDetailPanel';
 
 // Mentor evaluations components and API (DG-01)
 export {

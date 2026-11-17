@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { JobRecommendationsSection } from './JobRecommendationsSection';
 import * as api from './api/jobRecommendations';
 import type { JobRecommendationsResponse } from './types';
@@ -66,6 +67,13 @@ describe('JobRecommendationsSection Component', () => {
     activeProvider: 'MOCK',
   };
 
+  const renderSection = () =>
+    render(
+      <MemoryRouter>
+        <JobRecommendationsSection />
+      </MemoryRouter>,
+    );
+
   beforeEach(() => {
     vi.restoreAllMocks();
   });
@@ -73,7 +81,7 @@ describe('JobRecommendationsSection Component', () => {
   it('renders section title and recommendations cards correctly', async () => {
     vi.spyOn(api, 'fetchJobRecommendations').mockResolvedValueOnce(mockResponse);
 
-    render(<JobRecommendationsSection />);
+    renderSection();
 
     expect(screen.getByText(/Việc làm phù hợp với bạn/i)).toBeInTheDocument();
     expect(screen.getByText(/Đang phân tích hồ sơ kỹ năng/i)).toBeInTheDocument();
@@ -93,13 +101,26 @@ describe('JobRecommendationsSection Component', () => {
   it('does not expose a candidate selector anymore', async () => {
     vi.spyOn(api, 'fetchJobRecommendations').mockResolvedValueOnce(mockResponse);
 
-    render(<JobRecommendationsSection />);
+    renderSection();
 
     await waitFor(() => {
       expect(screen.getByText('Kỹ sư Java Backend')).toBeInTheDocument();
     });
 
     expect(screen.queryByLabelText(/Chọn ứng viên/i)).not.toBeInTheDocument();
+  });
+
+  it('links each card to the JD detail route', async () => {
+    vi.spyOn(api, 'fetchJobRecommendations').mockResolvedValueOnce(mockResponse);
+
+    renderSection();
+
+    await waitFor(() => {
+      expect(screen.getByText('Kỹ sư Java Backend')).toBeInTheDocument();
+    });
+
+    const links = screen.getAllByRole('link', { name: /Chi tiết JD/i });
+    expect(links[0]).toHaveAttribute('href', '/candidate/jobs/1');
   });
 
   it('triggers fresh calculation when clicking "Làm mới"', async () => {
@@ -111,7 +132,7 @@ describe('JobRecommendationsSection Component', () => {
         isCached: false,
       });
 
-    render(<JobRecommendationsSection />);
+    renderSection();
 
     await waitFor(() => {
       expect(screen.getByText('Kỹ sư Java Backend')).toBeInTheDocument();
@@ -130,7 +151,7 @@ describe('JobRecommendationsSection Component', () => {
       .mockRejectedValueOnce(new Error('Mạng không khả dụng'))
       .mockResolvedValueOnce(mockResponse);
 
-    render(<JobRecommendationsSection />);
+    renderSection();
 
     await waitFor(() => {
       expect(screen.getByText(/Mạng không khả dụng/i)).toBeInTheDocument();
