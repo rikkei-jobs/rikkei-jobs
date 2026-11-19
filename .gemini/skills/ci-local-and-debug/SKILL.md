@@ -16,7 +16,7 @@ The 6 CI Jobs:
 - `backend-check`: Executes Spotless 3.11.0 format check, SpotBugs 4.10.5.0 static analysis, Maven compiler validation under Java 25 (`-Xlint:all -Werror`), and JUnit 5 tests with Testcontainers 2.0.5.
 - `docker-compose-check`: Verifies `docker compose config` syntax and builds all service container images.
 - `clean-code-and-linters`: Enforces hygiene scans (machine-specific path leaks, lingering TODO comments, private keys), Markdownlint 0.24.0, CSpell 10.4.1 (with Vietnamese dictionary), Version drift, Gate synchronization, Yamllint, Hadolint, Actionlint, and SQLFluff.
-- `smoke-test`: Boots the complete container stack (`docker compose up -d --build --wait`), verifies Flyway V1+V2 migrations, verifies PostgreSQL seed data (8 users, 20 skills), verifies `/api/v1/health`, verifies frontend HTTP 200, and executes multi-tier E2E tests (`node e2e/run-all.mjs`).
+- `smoke-test`: Boots the complete container stack (`docker compose up -d --build --wait`), verifies Flyway V1+V2 migrations, verifies PostgreSQL seed data (9 users, 20 skills), verifies `/api/v1/health`, verifies frontend HTTP 200, and executes multi-tier E2E tests (`node e2e/run-all.mjs`).
 
 Local tooling provides two tiers of execution:
 

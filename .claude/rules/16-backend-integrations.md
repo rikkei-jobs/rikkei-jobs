@@ -18,7 +18,7 @@ spring:
 - Mailpit runs inside `docker-compose.yml` using pinned image `axllent/mailpit:v1.33.1` `EXISTS`.
 - Bound to loopback interfaces `EXISTS`: SMTP server on `127.0.0.1:1025` and web UI on `127.0.0.1:8025`.
 - Never send real outbound emails to external SMTP relays during testing or development `EXISTS`.
-- Inspect delivered emails during automated testing via Mailpit REST API at `http://127.0.0.1:8025/api/v1/messages` `TARGET`.
+- Inspect delivered emails during automated testing via Mailpit REST API at `http://127.0.0.1:8025/api/v1/messages` `EXISTS`.
 
 ## 2. Background and Scheduled Tasks
 
@@ -56,7 +56,7 @@ springdoc:
 Route all external HTTP interactions through `com.rikkei.jobs.common.client.ExternalApiClient` `EXISTS`:
 
 - Direct HTTP calls via raw `HttpClient` or `RestTemplate` in business modules are strictly forbidden `EXISTS`.
-- Inject `X-Service-Key` header on all outbound requests to external mock services `EXISTS`.
+- Inject `X-Service-Key` header on outbound requests to internal partner mock services (`/lms/*`, `/exam/*`, `/pm/*`, `/meet/*`); `postFormUrlEncoded` (Cloudinary) and `postJson` to absolute third-party URLs must NEVER attach `X-Service-Key` and must NEVER log request/response bodies, URL query values, or secrets `EXISTS`.
 - Configure timeout and retry properties in `application.yml` `EXISTS`:
 
 ```yaml
@@ -81,7 +81,7 @@ external:
 ./mvnw test -D "test=ExternalApiClientIntegrationTest"
 ```
 
-- Target mock server listening on port 9000 (`mock/server.js`) implementing the 11 business endpoints documented in `docs/mock-contract.md` `EXISTS`.
+- Target mock server listening on port 9000 (`mock/server.js`) implementing 11 business endpoints, the Cloudinary mock namespace (`/cloudinary/*`), and 5 testing tools documented in `docs/mock-contract.md` `EXISTS`.
 
 ## 5. Third-Party Dependency Governance
 

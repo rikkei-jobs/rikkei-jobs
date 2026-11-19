@@ -515,7 +515,7 @@ Khoảng giá trị: $CR \in [1.0, 21.0]$.
 
 ### 4.2. Ma trận Chứng minh Tương phản Toán học — Light Mode (Zero Emoji)
 
-Toàn bộ 36 cặp màu thực tế trong hệ thống Rikkei Jobs ở chế độ Sáng (Light Mode - Technical Deep Cobalt / Round E) được kiểm chứng qua giải thuật toán học thực nghiệm WCAG 2.2 Relative Luminance và W3C/Myndex APCA 0.98G-4g, tuyệt đối không dùng emoji, chỉ sử dụng văn bản thuần PASS:
+Toàn bộ 46 cặp màu thực tế trong hệ thống Rikkei Jobs ở chế độ Sáng (Light Mode - Technical Deep Cobalt / Round E + Custom Select) được kiểm chứng qua giải thuật toán học thực nghiệm WCAG 2.2 Relative Luminance và W3C/Myndex APCA 0.98G-4g, tuyệt đối không dùng emoji, chỉ sử dụng văn bản thuần PASS:
 
 | STT | Thành phần Giao diện (Role) | Token Màu Chữ / FG | Hex FG | Token Màu Nền / BG | Hex BG | $L_{\text{FG}}$ | $L_{\text{BG}}$ | Tỷ lệ $CR$ | Ngưỡng Chuẩn | APCA $L_c$ | Kết luận |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -555,10 +555,20 @@ Toàn bộ 36 cặp màu thực tế trong hệ thống Rikkei Jobs ở chế đ
 | 34 | Chữ Thành Công trên Nền Alert | `--rj-color-status-success-text` | `#0E6251` | `--rj-color-status-success-bg` | `#E8F8F5` | 0.0942 | 0.9088 | **6.65:1** | $\ge 4.5:1$ | +78.6 | PASS (AA) |
 | 35 | Chữ Cảnh Báo trên Nền Alert | `--rj-color-status-warning-text` | `#7A4305` | `--rj-color-status-warning-bg` | `#FEF9E7` | 0.0816 | 0.9459 | **7.57:1** | $\ge 4.5:1$ | +83.6 | PASS (AAA) |
 | 36 | Huy hiệu Thương hiệu Brand Badge | `--rj-color-badge-brand-text` | `#0D55B8` | `--rj-color-badge-brand-bg` | `#EBF2FC` | 0.1004 | 0.8819 | **6.20:1** | $\ge 4.5:1$ | +75.3 | PASS (AA) |
+| 37 | Select Option thường trên Panel Nổi | `--rj-color-select-option-text` | `#0B1A2C` | `--rj-color-select-panel-bg` | `#FFFFFF` | 0.0099 | 1.0000 | **17.52:1** | $\ge 4.5:1$ | +104.3 | PASS (AAA) |
+| 38 | Select Placeholder Option trên Panel Nổi | `--rj-color-select-option-placeholder-text` | `#475B70` | `--rj-color-select-panel-bg` | `#FFFFFF` | 0.0999 | 1.0000 | **7.00:1** | $\ge 4.5:1$ | +84.2 | PASS (AAA) |
+| 39 | Select Nhãn Optgroup trên Panel Nổi | `--rj-color-select-option-optgroup-text` | `#25394E` | `--rj-color-select-panel-bg` | `#FFFFFF` | 0.0387 | 1.0000 | **11.84:1** | $\ge 4.5:1$ | +97.1 | PASS (AAA) |
+| 40 | Select Option Hover trên Panel Sáng | `--rj-color-select-option-text` | `#0B1A2C` | `--rj-color-select-option-hover-bg` | `#EEF2F8` | 0.0099 | 0.8846 | **15.60:1** | $\ge 4.5:1$ | +96.3 | PASS (AAA) |
+| 41 | Select Option Active trên Panel Sáng | `--rj-color-select-option-text` | `#0B1A2C` | `--rj-color-select-option-active-bg` | `#E1E8F2` | 0.0099 | 0.8013 | **14.21:1** | $\ge 4.5:1$ | +90.3 | PASS (AAA) |
+| 42 | Select Option Đang chọn & Icon Check | `--rj-color-select-option-selected-text` | `#0D55B8` | `--rj-color-select-option-selected-bg` | `#EBF2FC` | 0.1004 | 0.8819 | **6.20:1** | $\ge 4.5:1$ | +75.3 | PASS (AA) |
+| 43 | Select Option Đang chọn + Hover & Icon Check | `--rj-color-select-option-selected-hover-text` | `#0D55B8` | `--rj-color-select-option-hover-bg` | `#EEF2F8` | 0.1004 | 0.8846 | **6.21:1** | $\ge 4.5:1$ | +75.5 | PASS (AA) |
+| 44 | Select Option Đang chọn + Active & Icon Check | `--rj-color-select-option-selected-hover-text` | `#0D55B8` | `--rj-color-select-option-active-bg` | `#E1E8F2` | 0.1004 | 0.8013 | **5.66:1** | $\ge 4.5:1$ | +69.4 | PASS (AA) |
+| 45 | Viền Panel Select trên Nền Panel | `--rj-color-select-panel-border` | `#6F8094` | `--rj-color-select-panel-bg` | `#FFFFFF` | 0.2096 | 1.0000 | **4.05:1** | $\ge 3.0:1$ | +67.7 | PASS (UI) |
+| 46 | Viền Panel Select trên Nền Canvas | `--rj-color-select-panel-border` | `#6F8094` | `--rj-primitive-neutral-100` | `#EEF2F8` | 0.2096 | 0.8846 | **3.60:1** | $\ge 3.0:1$ | +59.7 | PASS (UI) |
 
 ### 4.3. Ma trận Chứng minh Tương phản Toán học — Dark Mode (Zero Emoji)
 
-Toàn bộ 30 cặp màu thực tế trong hệ thống Rikkei Jobs ở chế độ Tối (Dark Mode - Technical Iron Obsidian / Round E) được kiểm chứng qua giải thuật toán học thực nghiệm WCAG 2.2 Relative Luminance và W3C/Myndex APCA 0.98G-4g, tuyệt đối không dùng emoji, chỉ sử dụng văn bản thuần PASS:
+Toàn bộ 42 cặp màu thực tế trong hệ thống Rikkei Jobs ở chế độ Tối (Dark Mode - Technical Iron Obsidian / Round E + Custom Select) được kiểm chứng qua giải thuật toán học thực nghiệm WCAG 2.2 Relative Luminance và W3C/Myndex APCA 0.98G-4g, tuyệt đối không dùng emoji, chỉ sử dụng văn bản thuần PASS:
 
 | STT | Thành phần Giao diện (Role) | Token Màu Chữ / FG | Hex FG | Token Màu Nền / BG | Hex BG | $L_{\text{FG}}$ | $L_{\text{BG}}$ | Tỷ lệ $CR$ | Ngưỡng Chuẩn | APCA $L_c$ | Kết luận |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -592,6 +602,18 @@ Toàn bộ 30 cặp màu thực tế trong hệ thống Rikkei Jobs ở chế đ
 | 28 | Chữ Báo Lỗi trên Nền Alert Tối | `--rj-color-status-error-text` | `#F1707A` | `--rj-color-status-error-bg` | `#2D0A0E` | 0.3169 | 0.0081 | **6.32:1** | $\ge 4.5:1$ | -46.4 | PASS (AAA) |
 | 29 | Chữ Thành Công trên Nền Alert Tối | `--rj-color-status-success-text` | `#48C78E` | `--rj-color-status-success-bg` | `#06281E` | 0.4418 | 0.0165 | **7.40:1** | $\ge 4.5:1$ | -58.0 | PASS (AAA) |
 | 30 | Huy hiệu Thương hiệu Brand Badge Tối | `--rj-color-badge-brand-text` | `#6EA2F4` | `--rj-color-badge-brand-bg` | `#16243A` | 0.3569 | 0.0174 | **6.04:1** | $\ge 4.5:1$ | -48.9 | PASS (AA) |
+| 31 | Select Option thường trên Panel Tối | `--rj-color-select-option-text` | `#EDF2F7` | `--rj-color-select-panel-bg` | `#1E2C42` | 0.8822 | 0.0247 | **12.48:1** | $\ge 4.5:1$ | -94.7 | PASS (AAA) |
+| 32 | Select Placeholder Option trên Panel Tối | `--rj-color-select-option-placeholder-text` | `#94A3B8` | `--rj-color-select-panel-bg` | `#1E2C42` | 0.3595 | 0.0247 | **5.48:1** | $\ge 4.5:1$ | -47.5 | PASS (AA) |
+| 33 | Select Nhãn Optgroup trên Panel Tối | `--rj-color-select-option-optgroup-text` | `#CBD5E1` | `--rj-color-select-panel-bg` | `#1E2C42` | 0.6572 | 0.0247 | **9.47:1** | $\ge 4.5:1$ | -76.2 | PASS (AAA) |
+| 34 | Select Option Hover trên Panel Tối | `--rj-color-select-option-text` | `#EDF2F7` | `--rj-color-select-option-hover-bg` | `#243B60` | 0.8822 | 0.0435 | **9.97:1** | $\ge 4.5:1$ | -90.6 | PASS (AAA) |
+| 35 | Select Option Active trên Panel Tối | `--rj-color-select-option-text` | `#EDF2F7` | `--rj-color-select-option-active-bg` | `#2D4366` | 0.8822 | 0.0553 | **8.85:1** | $\ge 4.5:1$ | -88.0 | PASS (AAA) |
+| 36 | Select Option Đang chọn & Icon Check Tối | `--rj-color-select-option-selected-text` | `#6EA2F4` | `--rj-color-select-option-selected-bg` | `#16243A` | 0.3569 | 0.0174 | **6.04:1** | $\ge 4.5:1$ | -48.9 | PASS (AA) |
+| 37 | Select Option Đang chọn + Hover & Icon Check Tối | `--rj-color-select-option-selected-hover-text` | `#A3C5F3` | `--rj-color-select-option-hover-bg` | `#243B60` | 0.5419 | 0.0435 | **6.33:1** | $\ge 4.5:1$ | -62.5 | PASS (AA) |
+| 38 | Select Option Đang chọn + Active & Icon Check Tối | `--rj-color-select-option-selected-hover-text` | `#A3C5F3` | `--rj-color-select-option-active-bg` | `#2D4366` | 0.5419 | 0.0553 | **5.62:1** | $\ge 4.5:1$ | -59.5 | PASS (AA) |
+| 39 | Select Option Disabled trên Panel Tối | `--rj-color-select-option-disabled-text` | `#879BB0` | `--rj-color-select-panel-bg` | `#1E2C42` | 0.3173 | 0.0247 | **4.92:1** | $\ge 4.5:1$ | -42.9 | PASS (AA) |
+| 40 | Viền Panel Select Tối trên Panel | `--rj-color-select-panel-border` | `#94A3B8` | `--rj-color-select-panel-bg` | `#1E2C42` | 0.3595 | 0.0247 | **5.48:1** | $\ge 3.0:1$ | -47.5 | PASS (UI) |
+| 41 | Viền Panel Select Tối trên Thẻ Tối | `--rj-color-select-panel-border` | `#94A3B8` | `--rj-color-surface-card` | `#162030` | 0.3595 | 0.0142 | **6.38:1** | $\ge 3.0:1$ | -49.6 | PASS (UI) |
+| 42 | Viền Panel Select Tối trên Nền Canvas Tối | `--rj-color-select-panel-border` | `#94A3B8` | `--rj-color-surface-page` | `#0B1019` | 0.3595 | 0.0051 | **7.43:1** | $\ge 3.0:1$ | -51.3 | PASS (UI) |
 
 ### 4.4. Ma trận Phân tách Bề mặt CIELAB Delta L* & Ranh giới Viền (Zero Emoji)
 
@@ -1426,3 +1448,133 @@ Page Canvas (#0B1019, L=0.005, L*=4.62)
 | **3** | **Lạm Dụng Bóng Đổ Mờ Đậm (Heavy Blurry Drop Shadows) Để Tách Thẻ** | Sử dụng bóng mờ `box-shadow: 0 20px 40px rgba(0,0,0,0.25)` để nâng card khỏi canvas. | **BÁC BỎ**: Vi phạm tiêu chuẩn Chống Rập khuôn AI (P-AI-03). Bóng mờ nhòe lớn tạo cảm giác bẩn nhòe giao diện, không giải quyết được bài toán phân tách phẳng (flat tonal separation) trên các màn hình có độ sáng thấp. |
 | **4** | **Sử Dụng Màu Nhấn Xanh Neon Bão Hòa 100% (`#00FFFF` / `#00E5FF`) Trên Nền Tối** | Dùng sắc xanh cyan huỳnh quang rực sáng để tạo hiệu ứng công nghệ cao trong Dark Mode. | **BÁC BỎ**: Gây ra hiện tượng quang sai sắc (chromatic aberration) trên võng mạc, làm chữ và viền tương tác bị rung nhấp nháy, gây căng thẳng cơ thể mi và thị giác người dùng. |
 | **5** | **Vẽ Lại Hoặc Đổi Màu Biểu Trưng SVG (Recolour / Redraw Brand Mark Asset)** | Tô lại nền logo SVG sang màu xanh hoặc điều chỉnh các cột trắng để đồng bộ với UI. | **BÁC BỎ**: Vi phạm nguyên tắc bảo toàn tính chân thực của tài sản thương hiệu gốc (Authentic Asset Mandate). Biểu trưng phải được sao chép nguyên vẹn từng byte từ thư mục dự án với mã băm SHA-256 xác thực. |
+
+---
+
+## 12. Shared Select Component (Thành phần Select dùng chung)
+
+Thành phần `Select` (`frontend/src/shared/components/Select.tsx` + `Select.css`) triển khai mẫu **WAI-ARIA APG Select-Only Combobox / Listbox** tùy chỉnh hoàn toàn theo token thiết kế, thay thế popup gốc của hệ điều hành để bảo đảm đồng bộ 1:1 với `.rj-input` về hình học, trạng thái tương tác và độ tương phản trên cả Light Mode và Dark Mode.  
+The shared `Select` component (`frontend/src/shared/components/Select.tsx` + `Select.css`) implements a fully tokenized custom **WAI-ARIA APG Select-Only Combobox / Listbox** pattern, replacing OS-native dropdown popups to guarantee 1:1 geometry, interactive state, and Light/Dark contrast parity with `.rj-input`.
+
+### 12.1. Anatomy (Cấu trúc Thành phần)
+
+- **Outer Field (`.rj-form-group.rj-select-field`)**: Bọc nhãn, nút kích hoạt, gợi ý và thông báo lỗi theo nhịp dọc chuẩn (`gap: var(--rj-primitive-space-1)`).  
+  Wraps the label, trigger, hint, and validation error with consistent vertical spacing (`gap: var(--rj-primitive-space-1)`).
+- **Label Row (`.rj-label`)**: Liên kết trực tiếp với nút kích hoạt qua `htmlFor={selectId}` và `aria-labelledby`; hỗ trợ `labelAction` căn phải và dấu `*` (`aria-hidden="true"`) khi `required` được bật.  
+  Directly linked to the trigger via `htmlFor={selectId}` and `aria-labelledby`; supports optional right-aligned `labelAction` and an `aria-hidden="true"` `*` indicator when `required` is enabled.
+- **Combobox Trigger (`<button type="button" role="combobox">` `.rj-select`)**: Khớp 1:1 thông số `.rj-input` (`min-height: var(--rj-density-input-height)` `44px`, `font-family: var(--rj-font-body)`, `0.9375rem`, `--rj-radius-md`, `150ms ease-out`), kết hợp `.rj-select-chevron` (`<Icon name="chevron-down" size={18} />`) tự động xoay 180 độ khi `[aria-expanded="true"]`.  
+  Matches `.rj-input` metrics 1:1 (`min-height: var(--rj-density-input-height)` `44px`, `font-family: var(--rj-font-body)`, `0.9375rem`, `--rj-radius-md`, `150ms ease-out`), paired with `.rj-select-chevron` (`<Icon name="chevron-down" size={18} />`) rotating 180 degrees when `[aria-expanded="true"]`.
+- **Portal Listbox (`<ul role="listbox">` `.rj-select-listbox`)**: Render qua `createPortal(..., document.body)` với `position: fixed`, `z-index: var(--rj-primitive-z-dropdown)` (`1000`), tránh mọi cắt xén do `overflow: hidden` trên thẻ cha. Mỗi `<li role="option">` có `min-height: var(--rj-density-input-height)` (`44px`) đạt chuẩn cảm ứng và hiển thị `<Icon name="check" size={16} />` (`aria-hidden="true"`) tại mục đang chọn (`[aria-selected="true"]`). Hỗ trợ `<optgroup>` qua cấu trúc `role="group"` và `aria-labelledby`.  
+  Rendered via `createPortal(..., document.body)` with `position: fixed` and `z-index: var(--rj-primitive-z-dropdown)` (`1000`) to avoid parent `overflow: hidden` clipping. Each `<li role="option">` enforces a `44px` minimum touch target (`--rj-density-input-height`) and displays `<Icon name="check" size={16} />` (`aria-hidden="true"`) on `[aria-selected="true"]`. Supports `<optgroup>` via `role="group"` + `aria-labelledby`.
+- **Hidden Native Sync (`<select aria-hidden="true" tabIndex={-1}>` `.rj-select-native-hidden`)**: Giữ khả năng `FormData`, `ref` (`HTMLSelectElement`), ủy quyền `.focus()` sang nút combobox, đồng bộ `.value` qua `useLayoutEffect` (chống lệch `restoreControlledState` của React 19 trong chế độ controlled), và phát `React.ChangeEvent<HTMLSelectElement>` chuẩn cho biểu mẫu (`CompanyProfileForm`, `GapAnalysisSection`) mà không làm thay đổi API consumer.  
+  Preserves native `FormData`, `HTMLSelectElement` `ref` forwarding, `.focus()` delegation to the combobox trigger, `useLayoutEffect` `.value` synchronization against React 19 controlled-input restoration, and standard `React.ChangeEvent<HTMLSelectElement>` emission for form consumers (`CompanyProfileForm`, `GapAnalysisSection`) with zero consumer JSX changes.
+- **Supporting Copy**: Hiển thị `#<id>-hint` (`.rj-form-hint`) và `#<id>-error` (`.rj-field-error` với `aria-live="polite"`, không trùng lặp `role="alert"`).  
+  Renders `#<id>-hint` (`.rj-form-hint`) and `#<id>-error` (`.rj-field-error` with `aria-live="polite"` and no duplicate `role="alert"`).
+
+### 12.2. States & Tokens (Trạng thái & Token Thiết kế)
+
+Mọi giá trị màu sắc, bán kính, bóng đổ và z-index đều sử dụng 100% biến `--rj-*` (tuân thủ Check 9, không dùng mã màu thô ngay cả trong comment):  
+All colors, radii, shadows, and z-index layers consume `--rj-*` CSS variables exclusively (Check 9 compliant, zero raw color literals even in comments):
+
+| State (Trạng thái) | Light Mode Tokens | Dark Mode Tokens | Behavior / Notes (Hành vi & Ghi chú) |
+|---|---|---|---|
+| **Trigger Default** | `--rj-color-surface-input`, `--rj-color-border-interactive`, `--rj-color-text-primary` | `--rj-color-surface-input`, `--rj-color-border-interactive`, `--rj-color-text-primary` | `min-height: var(--rj-density-input-height)` (`44px`), `border-radius: var(--rj-radius-md)` (`6px`), `0.9375rem` / `400`, `150ms ease-out` transition |
+| **Trigger Hover** | `border-color: var(--rj-color-border-hover)` | `border-color: var(--rj-color-border-hover)` | Áp dụng khi `:not(:disabled):not([aria-invalid='true'])` / Applied only when enabled and valid |
+| **Trigger Focus / Open (`[aria-expanded="true"]`)** | `border-color: var(--rj-color-brand-primary)`, `box-shadow: 0 0 0 3px var(--rj-color-focus-halo)` | `border-color: var(--rj-color-brand-primary)`, `box-shadow: 0 0 0 3px var(--rj-color-focus-halo)` | Vòng tỏa 3px đồng nhất với `.rj-input:focus` và xoay chevron 180 độ / 3px focus halo matching `.rj-input:focus` plus 180-degree chevron rotation |
+| **Trigger Focus Visible** | `outline: 2px solid var(--rj-color-focus-ring)`, `outline-offset: 2px` | `outline: 2px solid var(--rj-color-focus-ring)`, `outline-offset: 2px` | Hiển thị rõ khi điều hướng bàn phím / High-contrast keyboard ring |
+| **Trigger Invalid (`[aria-invalid="true"]`)** | `--rj-color-status-danger-text`, `--rj-color-status-danger-bg`, `--rj-color-danger-halo` | `--rj-color-status-danger-text`, `--rj-color-status-danger-bg`, `--rj-color-danger-halo` | Viền đỏ ngữ nghĩa, nền tint lỗi, kèm icon `alert-circle` và văn bản lỗi / Semantic crimson border, danger tint, `alert-circle` icon, and error message |
+| **Trigger Disabled (`:disabled`)** | `--rj-color-surface-disabled`, `--rj-color-text-disabled`, `opacity: 0.72` | `--rj-color-surface-disabled`, `--rj-color-text-disabled`, `opacity: 0.72` | `cursor: not-allowed` trên cả trigger và biểu tượng chevron; chặn mọi thao tác mở / Blocks open on click and keyboard |
+| **Listbox Panel** | `--rj-color-select-panel-bg`, `--rj-color-select-panel-border`, `--rj-shadow-3` | `--rj-color-select-panel-bg`, `--rj-color-select-panel-border` (`#94A3B8`), `--rj-shadow-3` | `z-index: var(--rj-primitive-z-dropdown)` (`1000`), viền panel đạt `CR >= 3.0:1` (`4.05:1` Light, `5.48:1` Dark) / Panel border meets `CR >= 3.0:1` |
+| **Option Default & Placeholder** | `--rj-color-select-option-text`, `--rj-color-select-option-placeholder-text` | `--rj-color-select-option-text`, `--rj-color-select-option-placeholder-text` | `min-height: 44px`, văn bản thường `CR >= 12.48:1`, placeholder `CR >= 5.48:1` |
+| **Option Hover / Active-Descendant** | `--rj-color-select-option-hover-bg`, `--rj-color-select-option-active-bg` | `--rj-color-select-option-hover-bg`, `--rj-color-select-option-active-bg` | Đánh dấu mục đang trỏ bằng chuột hoặc `aria-activedescendant` / Highlights pointer hover or active keyboard descendant |
+| **Option Selected & Selected+Hover** | `--rj-color-select-option-selected-bg`, `--rj-color-select-option-selected-text`, `--rj-color-select-option-selected-hover-text` | `--rj-color-select-option-selected-bg`, `--rj-color-select-option-selected-text`, `--rj-color-select-option-selected-hover-text` | Dark Selected+Hover nâng chữ/icon lên `--rj-primitive-brand-200` (`6.33:1` trên `#243B60`, `5.62:1` trên `#2D4366`) / Elevates Dark Selected+Hover text & check icon to `--rj-primitive-brand-200` |
+| **Option Disabled (`[aria-disabled="true"]`)** | `--rj-color-select-option-disabled-text` | `--rj-color-select-option-disabled-text` | Bỏ qua khi điều hướng bàn phím và không đóng/đổi giá trị khi click / Skipped by keyboard nav and ignored on click |
+
+### 12.3. Theme `color-scheme` & Dead Native Rules Removal (Giữ `color-scheme` & Gỡ bỏ CSS Native Select Chết)
+
+- **Global `color-scheme` (`design-tokens.css`)**: Giữ nguyên toàn bộ khai báo `color-scheme: light` cho `:root` và `[data-theme="light"]`, và `color-scheme: dark` cho `[data-theme="dark"]` và `@media (prefers-color-scheme: dark)` trên `:root:not([data-theme="light"])` để bảo vệ các ô nhập gốc (`input`, `textarea`, scrollbars).  
+  All `color-scheme: light` / `color-scheme: dark` declarations in `design-tokens.css` remain intact for native form inputs and browser scrollbars.
+- **Removed Obsolete Native Popup CSS**: Gỡ bỏ hoàn toàn các rule CSS chết dành cho popup native trước đây (`select option, select optgroup`, `select optgroup`, `select option:disabled` trong `design-tokens.css`, và `appearance: none`, `::-ms-expand`, `::picker-icon` trong `Select.css`).  
+  Obsolete native-select popup rules (`select option, select optgroup` in `design-tokens.css` and `appearance: none`, `::-ms-expand`, `::picker-icon` in `Select.css`) have been cleanly removed.
+
+### 12.4. Keyboard, Touch, Portal Positioning & Reduced Motion (Bàn phím, Cảm ứng, Portal & Chuyển động)
+
+- **WAI-ARIA APG Keyboard & Type-Ahead**:
+  - Đang đóng: `Enter`, `Space`, `ArrowDown`, `ArrowUp` mở danh sách và đặt `aria-activedescendant` vào mục đang chọn (hoặc mục khả dụng đầu/cuối).  
+    When closed: `Enter`, `Space`, `ArrowDown`, and `ArrowUp` open the listbox and set `aria-activedescendant` to the currently selected option (or first/last enabled option).
+  - Đang mở: `ArrowDown` / `ArrowUp` di chuyển tuần tự và bỏ qua các mục `[aria-disabled="true"]`; `Home` / `End` nhảy tới mục khả dụng đầu / cuối; `Enter` / `Space` chọn và đóng danh sách kèm trả focus về trigger (triệt tiêu synthetic `click` kế tiếp trong cửa sổ `50ms`, reset ngay khi `mousedown`); `Escape` hủy bỏ (giữ nguyên giá trị cũ) và trả focus về trigger; `Tab` đóng danh sách mà không chặn chuyển focus tự nhiên; nhấn `mousedown` bên ngoài đóng danh sách.  
+    When open: `ArrowDown` / `ArrowUp` move while skipping `[aria-disabled="true"]`; `Home` / `End` jump to first/last enabled option; `Enter` / `Space` commit selection and return focus to trigger (suppressing the trailing synthetic `click` within `50ms`, cleared on `mousedown`); `Escape` cancels (preserving prior value) and restores focus; `Tab` closes without calling `preventDefault()`; outside `mousedown` closes the listbox.
+  - **Type-ahead (~500 ms)**: Hỗ trợ tìm tiền tố không phân biệt hoa/thường và hỗ trợ tiếng Việt có dấu lẫn không dấu (NFD folding + `đ -> d`), bỏ qua mục bị vô hiệu hóa.  
+    Supports case-insensitive and Vietnamese diacritic-aware prefix matching (`~500 ms` buffer reset), skipping disabled options.
+- **Mobile 375 px, Flip-Up & Scroll/Resize**: Tính toán vị trí động theo `getBoundingClientRect()` với lề tối thiểu `8px` (`width <= clientWidth - 16px`), tự động lật lên trên (`[data-placement="top"]`) khi khoảng trống phía dưới `< 200px` và phía trên rộng hơn, `max-height <= 280px` có cuộn nội bộ `overscroll-behavior: contain`, cập nhật theo `resize` và tự đóng nếu trigger bị cuộn khuất hoặc container cha cuộn tách khỏi trigger.  
+  Dynamically positioned via `getBoundingClientRect()` with `8px` viewport padding (`width <= clientWidth - 16px`), automatic upward flip (`[data-placement="top"]`) when space below is `< 200px` and space above is larger, `max-height <= 280px` with `overscroll-behavior: contain`, `resize` repositioning, and clean dismissal when scrolled out of view or when an ancestor scroll container scrolls.
+- **Motion & Reduced Motion**: Mở danh sách dùng GPU-only `opacity` + `transform` trong `--rj-duration-fast` (`150ms`) với `--rj-ease-spring-snappy`; xoay chevron trong `150ms ease-out`. Dưới `@media (prefers-reduced-motion: reduce)`, các transition đặt `0.001ms !important` (bảo toàn `transitionend` trên WebKit) và panel chuyển sang `100ms` fade-in chỉ dùng `opacity` (`transform: none !important`).  
+  Listbox reveal animates compositor-only `opacity` + `transform` within `--rj-duration-fast` (`150ms`), while chevron rotation uses `150ms ease-out`. Under `@media (prefers-reduced-motion: reduce)`, transitions use `0.001ms !important` and the listbox falls back to a `100ms` opacity-only cross-fade (`transform: none !important`).
+
+---
+
+## 13. Button System, Card Density Tiers & Badge Taxonomy (Hệ Thống Nút, Phân Tầng Thẻ & Phân Loại Nhãn)
+
+Mục này chuẩn hóa phân loại thành phần sau kiểm toán trình duyệt `DN-01-polish` (`D1`–`D3`, `D6`, `D7`), phân tách rõ chuẩn mặc định với các biến thể kích thước/mật độ có chủ đích.  
+This section establishes the component taxonomy following the `DN-01-polish` browser audit (`D1`–`D3`, `D6`, `D7`), separating baseline defaults from intentional size and density variants.
+
+### 13.1. Button System & Intentional Variants (Hệ thống Nút bấm & Biến thể Có chủ đích — D1–D3)
+
+1. **Global Typography Inheritance (`frontend/src/index.css`)**:
+   - Đặt quy tắc toàn cục `button { font: inherit; }` để mọi phần tử `<button>` kế thừa `--rj-font-body` (`'Be Vietnam Pro'`) thay vì rơi về font mặc định trình duyệt (`Arial 13.3333px`).
+   - Toàn bộ các lớp nút dùng chung và tính năng (`.rj-btn`, `.rj-tab-btn`, `.rj-input-toggle`, `.rj-ticket-chip`, `.ce-btn`, `.sp-btn`) đồng thời khai báo tường minh `font-family: var(--rj-font-body);` để bảo đảm cả `<a class="rj-btn">` bên trong `.app-container` (`-apple-system`) vẫn giữ đúng font thiết kế.
+2. **Standard Action Button Baseline (`.rj-btn`, `.ce-btn`, `.sp-btn`, `.refresh-btn`)**:
+   - **Geometry**: `min-height: var(--rj-density-button-height)` (`44px`), `padding: var(--rj-primitive-space-2) var(--rj-primitive-space-4)` (`8px 16px`), `border-radius: var(--rj-radius-md)` (`6px`).
+   - **Typography**: `font-family: var(--rj-font-body)` (`'Be Vietnam Pro'`), `font-size: 0.9375rem` (`15px`), `font-weight: 600`. Áp dụng đồng nhất cho cả nút trong header (`.rj-theme-toggle`, `.rj-nav-logout`) và nút nội dung (`D2` resolved).
+   - **Secondary / Quiet Surface**: `.rj-btn-secondary`, `.ce-btn-quiet`, và `.sp-btn-quiet` dùng chung nền `--rj-color-surface-card`, chữ `--rj-color-text-primary`, và viền `--rj-color-border-interactive` (`#6F8094` / `rgb(111, 128, 148)` Light; `#33465C` / `rgb(51, 70, 92)` Dark).
+   - **Motion & Focus**: Transition `150ms` (`transform`, `background-color`, `box-shadow`, `border-color`); `:focus-visible` dùng `outline: 2px solid var(--rj-color-focus-ring); outline-offset: 2px;`.
+3. **Intentional Button Size & Role Variants (Biến thể có chủ đích)**:
+   - **Auth Tab Button (`.rj-tab-btn`)**: `44px` min-height, `6px` radius, `15px / 600` (`.active: 700`) trên desktop; ở `@media (max-width: 480px)` chuyển sang `0.875rem` (`14px`) + `white-space: nowrap` để giữ 2 tab nằm gọn `1` dòng `44px` tại chiều rộng `375px`.
+   - **Icon-Only Input Toggle (`.rj-input-toggle`)**: `44px x 44px`, `padding: 0`, `border-radius: var(--rj-radius-md)` (`6px`), `0.9375rem / 600`, `150ms ease-out` transition trên `color` và `background-color`.
+   - **Dev Ticket Chip (`.rj-ticket-chip`, chỉ render khi `import.meta.env.DEV`)**: `border-radius: var(--rj-radius-md)` (`6px`), `0.8125rem / 600`, `150ms ease-out` transition.
+   - **Logo Drop Zone Button (`.cp-logo-drop-zone`)**: `min-height: 76px`, `border-radius: var(--rj-radius-md)` (`6px`), `1px dashed`, `0.9375rem / 600`, `150ms` transition.
+   - **Airy Accordion Row Button (`.sp-skill-head`)**: `min-height: 56px`, `border: 0`, `border-radius: 0`, `font: inherit` (`16px / 400`) — nút mở rộng hàng danh sách trong Airy Mode (`HS-01`), không phải nút hành động dạng hộp.
+   - **Action Button in Candidate Aside (`.sp-btn` tại `/candidate/skills`)**: Khi căn `.sp-btn` về chuẩn `15px / 600` (`Be Vietnam Pro`), `6px` radius và `150ms` transition, nút `"Tính lại từ LMS, Exam, PM"` giữ gọn **1 dòng `44px`** trên cả `1440x900` (`249.78 x 44`) lẫn `375x812` (`262.45 x 44`) (`[/browser 5dbb289a Steps 72–74]`, `index-CD2hyvGG.css`).
+   - **Teammate Out-of-Scope Buttons (`PR #6`, `/` & `/candidate/skills`)**: `.app-nav-btn`, `.refresh-button` (`36px / 8px`), `.apply-button` & `.details-button` (`38.6px`) thuộc mã nguồn `HomeSkeleton` / `PR #6` (`-apple-system` / `jobRecommendations.css`) được ghi nhận nguyên trạng để nhóm phụ trách xử lý sau.
+
+### 13.2. Card Density Tiers (Phân tầng Mật độ Thẻ — D6)
+
+Quy ước phân tầng có chủ đích theo ngữ cảnh mật độ vai trò: **HR Dense workspace (`8px / 20px`)** cho màn hình tác nghiệp doanh nghiệp và thẻ danh sách mật độ cao, tách biệt rõ với **Auth / Candidate Airy focal (`12px / 24–32px`)** cho khối tập trung đơn lẻ và vùng phân tích ứng viên thoáng đãng.
+
+| Tier (Phân tầng) | Border Radius | Padding | Target Components & Rationale (Thành phần áp dụng & Lý do) |
+|---|---|---|---|
+| **Auth / Candidate Airy Focal Card** | `12px` (`--rj-radius-xl`) | `24px`–`32px` (`--rj-primitive-space-6`..`8`) | `.rj-auth-card` (`12px / 32px 24px` desktop; chuyển `8px` / `24px 16px` dưới `1024px`), `.gap-section` (`12px` / `24px`), `.jd-card` (`12px` / `24px`). Dành cho thẻ tập trung đơn lẻ và vùng phân tích ứng viên thoáng đãng. |
+| **HR Dense Workspace Card** | `8px` (`--rj-radius-lg`) | `16px`–`20px` (`--rj-primitive-space-4`..`5`) | `.cp-main-card`, `.cp-aside-card` (`8px / 20px` tại `/hr/company`), và các thẻ danh sách mật độ cao `.ce-card` (`8px / 20px`), `.sp-card` (`8px / 16px 20px`). Tối ưu mật độ hiển thị cho biểu mẫu doanh nghiệp và danh sách thẻ nhiều mục. |
+| **Teammate Card (`PR #6`)** | `10px` | `20px` | `.job-card` trong `jobRecommendations.css` (mã nguồn sẵn có của `PR #6`, ngoài phạm vi `DN-01`). |
+
+### 13.3. Badge Pills vs Inline Metadata Tags (Huy hiệu Trạng thái vs Thẻ Siêu dữ liệu — D7)
+
+1. **Pill Badges (`border-radius: 9999px` `--rj-radius-full`, `font-weight: 700`)**:
+   - Dùng cho danh tính vai trò và trạng thái/mức độ ưu tiên nổi bật: `.rj-role-badge` (`0.8125rem / 700`), `.cp-status-badge` (`0.8125rem / 700`), `.gap-readiness` (`0.875rem / 700`), `.gap-priority` (`0.75rem / 700`).
+   - **Light Mode WCAG 2.2 AA Contrast Fix (`design-tokens.css`)**: Toàn bộ `5` màu chữ role badge Light Mode trên nền tint `rgba(..., 0.12)` phủ trên `#FFFFFF` đều đạt ngưỡng văn bản thường `CR >= 4.5:1`:
+     - Candidate (`--rj-color-role-candidate-text`): `#0369a1` (`4.98:1`)
+     - HR (`--rj-color-role-hr-text`): `#047857` (`4.63:1`)
+     - Mentor (`--rj-color-role-mentor-text`): `#7e22ce` (`5.71:1`)
+     - Staff (`--rj-color-role-staff-text`): `#92400e` (`6.00:1`)
+     - Admin (`--rj-color-role-admin-text`): `#be123c` (`5.12:1`)
+   - Dark Mode (`rgba(..., 0.16)` phủ trên `#162030`) đạt `6.78:1` đến `9.31:1`.
+2. **Inline Category & Metadata Tags (`border-radius: 4px` `--rj-radius-sm`, `font-weight: 600`)**:
+   - Dùng cho nhãn phân loại ngữ cảnh, mã kỹ năng và điểm số lồng trong thẻ hoặc bảng: `.ce-tag` (`0.8125rem / 600`), `.sp-tag` (`0.8125rem / 600`), `.ce-skill-code` (`0.75rem / 600` monospace), `.ce-score-badge` (`0.75rem / 600`), `.module-code` (`0.75rem / 700`).
+   - Không gộp `.ce-tag` (`4px`) về `9999px` để giữ phân cấp thị giác rõ ràng giữa pill vai trò hệ thống và thẻ metadata nội bộ.
+
+### 13.4. Localized Role & Status Labels Decision (Quyết định Chuẩn hóa Nhãn Vai trò & Trạng thái — R1)
+
+Theo quyết định sản phẩm tại `Round DN-01-polish2` (`T0231B5`), mọi bề mặt giao diện hiển thị vai trò người dùng hoặc trạng thái tài khoản / công ty đều dùng chung module `frontend/src/shared/i18n/enumLabels.ts`, tuyệt đối không hiển thị mã enum thô hay chuỗi `"N/A"` trong UI (trong khi mã enum nội bộ trong logic, API payload, định tuyến và `data-testid` giữ nguyên).  
+Per the product decision recorded in `Round DN-01-polish2` (`T0231B5`), every UI surface displaying user roles or account/company statuses consumes `frontend/src/shared/i18n/enumLabels.ts`, never rendering raw enum identifiers or `"N/A"` while preserving internal enum values across logic, API payloads, routes, and `data-testid` attributes.
+
+| Domain Key (Mã nội bộ) | Localized UI Label (Nhãn hiển thị) | Decision Rationale (Lý do chuẩn hóa) |
+|---|---|---|
+| `HR` | `"HR"` | Giữ nguyên thuật ngữ chuyên ngành tuyển dụng theo quyết định người dùng / Kept untranslated per user decision |
+| `MENTOR` | `"Mentor"` | Giữ nguyên thuật ngữ cố vấn học tập theo quyết định người dùng / Kept untranslated per user decision |
+| `CANDIDATE` | `"Ứng viên"` | Việt hóa đầy đủ dấu / Full Vietnamese localization |
+| `STAFF` | `"Nhân viên"` | Việt hóa đầy đủ dấu / Full Vietnamese localization |
+| `ADMIN` | `"Quản trị viên"` | Việt hóa đầy đủ dấu / Full Vietnamese localization |
+| `ACTIVE` | `"Đang hoạt động"` | Trạng thái tài khoản & công ty / Account & company active status |
+| `LOCKED` | `"Đã khóa"` | Trạng thái khóa tài khoản & công ty (ưu tiên hiển thị nếu đồng thời bật cờ đổi mật khẩu) / Locked state |
+| `MUST_CHANGE_PASSWORD` | `"Yêu cầu đổi mật khẩu"` | Trạng thái bắt buộc đổi mật khẩu / Forced password change status |
+| Unknown / empty / null | `"Không xác định"` | Fallback tiếng Việt thống nhất, thay thế mọi `"N/A"` và enum chưa nhận diện / Unified Vietnamese fallback |

@@ -12,14 +12,14 @@ Structure automated testing across three distinct pyramid tiers adhering to esta
 
 - Unit Tests (~70% of total test suite):
   - Scope: Test pure business logic, domain models, validations, state transitions, and utility functions in complete isolation.
-  - Backend: JUnit 5 with Mockito for service and domain layer tests (baseline 346 tests).
-  - Frontend: Vitest 5.1.0 with @testing-library/react for component and hook testing (baseline 108 tests).
+  - Backend: JUnit 5 with Mockito for service and domain layer tests (baseline 526 tests).
+  - Frontend: Vitest 5.1.0 with @testing-library/react for component and hook testing (baseline 242 tests across 28 files).
 - Integration Tests (~20% of total test suite):
   - Scope: Verify component interactions, database operations, security filters, and HTTP error boundaries.
   - Backend: Spring Boot @SpringBootTest combined with Testcontainers 2.0.5 for PostgreSQL integration tests.
-  - Mock Server: Standalone integration suite in mock/test-runner.js verifying all 11 endpoints and 4 testing tools.
+  - Mock Server: Standalone integration suite in mock/test-runner.js verifying 11 business endpoints + Cloudinary mock namespace and 5 testing tools.
 - End-to-End Tests (~10% of total test suite):
-  - Scope: Validate full-stack user journeys and contracts using opaque-box testing across 4 Tiers via e2e/run-all.mjs (17 suites, 221 test cases).
+  - Scope: Validate full-stack user journeys and contracts using opaque-box testing across 4 Tiers via e2e/run-all.mjs (24 suites, 304 test cases, 1702 assertions).
 
 ## 3. Test-Driven Development (TDD) Default
 
@@ -52,15 +52,15 @@ Treat any intermittent or non-deterministic test failure as a critical severity 
 Execute the verified testing commands locally:
 
 ```bash
-# Run backend unit and Testcontainers integration tests (346 tests)
+# Run backend unit and Testcontainers integration tests (526 tests)
 ./mvnw test
 
-# Run frontend Vitest unit test suite (108 tests)
+# Run frontend Vitest unit test suite (242 tests across 28 files)
 npm run test --prefix frontend
 
 # Run external mock server integration test suite
 node mock/test-runner.js
 
-# Execute complete opaque-box 4-tier E2E test suite (17 suites, 221 test cases)
+# Execute complete opaque-box 4-tier E2E test suite (24 suites, 304 test cases, 1702 assertions)
 node e2e/run-all.mjs
 ```

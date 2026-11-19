@@ -74,4 +74,8 @@ public class SkillScore {
     public SkillLevel getLevel() {
         return level;
     }
+
+    public OffsetDateTime getUpdatedAt() {
+        return updatedAt;
+    }
 }

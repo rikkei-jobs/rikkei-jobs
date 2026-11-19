@@ -16,6 +16,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Map;
+import java.util.TreeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -73,6 +74,146 @@ public class ExternalApiClient {
             path = "/lms/courses?skill=" + encodedSkill;
         }
         return executeRequest("GET", path, null, null);
+    }
+
+    /**
+     * Sends a JSON POST to an absolute URL with caller-supplied headers and timeout. Used by
+     * integrations (for example AI providers) that live on a different host than the mock LMS and
+     * therefore cannot reuse the X-Service-Key contract. No request or response body is written to
+     * the logs, so provider keys and prompts are never leaked.
+     */
+    public String postJson(
+            String absoluteUrl, Object payload, Map<String, String> headers, Duration timeout) {
+        String jsonPayload;
+        try {
+            jsonPayload = objectMapper.writeValueAsString(payload);
+        } catch (JsonProcessingException e) {
+            throw new ValidationException("Không thể tạo dữ liệu JSON cho yêu cầu ngoài");
+        }
+
+        HttpRequest.Builder requestBuilder =
+                HttpRequest.newBuilder()
+                        .uri(URI.create(absoluteUrl))
+                        .timeout(timeout)
+                        .header("Accept", "application/json")
+                        .header("Content-Type", "application/json")
+                        .POST(HttpRequest.BodyPublishers.ofString(jsonPayload));
+        if (headers != null) {
+            headers.forEach(requestBuilder::header);
+        }
+
+        try {
+            HttpResponse<String> response =
+                    httpClient.send(requestBuilder.build(), HttpResponse.BodyHandlers.ofString());
+            int status = response.statusCode();
+            if (status >= 200 && status < 300) {
+                return response.body();
+            }
+            log.warn("External POST {} returned HTTP {}", absoluteUrl, status);
+            throw new ExternalUnavailableException("Hệ thống ngoài phản hồi HTTP " + status);
+        } catch (IOException e) {
+            throw new ExternalUnavailableException("Không thể kết nối tới hệ thống ngoài", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ExternalUnavailableException("Yêu cầu tới hệ thống ngoài bị gián đoạn", e);
+        }
+    }
+
+    /**
+     * Sends an application/x-www-form-urlencoded POST to an absolute URL with caller-supplied
+     * timeout. Never attaches X-Service-Key and never logs URLs, query parameters, bodies, or
+     * secrets. Allows at most one quick retry on transient IOException bounded by remaining
+     * timeout.
+     */
+    public String postFormUrlEncoded(
+            String absoluteUrl, Map<String, String> formParams, Duration timeout) {
+        if (absoluteUrl == null || absoluteUrl.isBlank()) {
+            throw new ValidationException("URL yêu cầu ngoài không hợp lệ");
+        }
+        if (formParams == null) {
+            throw new ValidationException("Dữ liệu biểu mẫu yêu cầu ngoài không hợp lệ");
+        }
+
+        URI uri;
+        try {
+            uri = URI.create(absoluteUrl.trim());
+        } catch (IllegalArgumentException ex) {
+            throw new ValidationException("URL yêu cầu ngoài không hợp lệ");
+        }
+
+        Duration effectiveTimeout =
+                (timeout == null || timeout.isNegative() || timeout.isZero())
+                        ? Duration.ofSeconds(Math.max(1, properties.getTimeoutSeconds()))
+                        : timeout;
+
+        TreeMap<String, String> sortedParams = new TreeMap<>();
+        for (Map.Entry<String, String> entry : formParams.entrySet()) {
+            if (entry.getKey() != null && entry.getValue() != null) {
+                sortedParams.put(entry.getKey(), entry.getValue());
+            }
+        }
+
+        StringBuilder encodedBody = new StringBuilder();
+        for (Map.Entry<String, String> entry : sortedParams.entrySet()) {
+            if (!encodedBody.isEmpty()) {
+                encodedBody.append('&');
+            }
+            encodedBody
+                    .append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8))
+                    .append('=')
+                    .append(URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8));
+        }
+
+        byte[] bodyBytes = encodedBody.toString().getBytes(StandardCharsets.UTF_8);
+        long deadlineNanos = System.nanoTime() + effectiveTimeout.toNanos();
+
+        for (int attempt = 1; attempt <= 2; attempt++) {
+            long remainingNanos = deadlineNanos - System.nanoTime();
+            if (remainingNanos <= 0L) {
+                throw new ExternalUnavailableException(
+                        "Hết thời gian chờ phản hồi từ hệ thống ngoài");
+            }
+
+            HttpRequest request =
+                    HttpRequest.newBuilder()
+                            .uri(uri)
+                            .timeout(Duration.ofNanos(remainingNanos))
+                            .header("Accept", "application/json")
+                            .header(
+                                    "Content-Type",
+                                    "application/x-www-form-urlencoded; charset=UTF-8")
+                            .POST(HttpRequest.BodyPublishers.ofByteArray(bodyBytes))
+                            .build();
+
+            try {
+                HttpResponse<String> response =
+                        httpClient.send(
+                                request,
+                                HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+                int status = response.statusCode();
+                if (status >= 200 && status < 300) {
+                    return response.body();
+                }
+                int statusClass = status / 100;
+                log.warn("External form POST failed with HTTP {}xx", statusClass);
+                throw new ExternalUnavailableException(
+                        "Hệ thống ngoài phản hồi mã lỗi HTTP " + statusClass + "xx");
+            } catch (IOException e) {
+                if (attempt == 1 && (deadlineNanos - System.nanoTime()) > 0L) {
+                    log.warn(
+                            "External form POST network error on attempt 1, retrying within timeout");
+                    continue;
+                }
+                log.warn("External form POST failed due to network error");
+                throw new ExternalUnavailableException("Không thể kết nối tới hệ thống ngoài", e);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new ExternalUnavailableException(
+                        "Yêu cầu tới hệ thống ngoài bị gián đoạn", e);
+            }
+        }
+
+        throw new ExternalUnavailableException("Không thể kết nối tới hệ thống ngoài");
     }
 
     /** Core execution method with retry and error transformation. */

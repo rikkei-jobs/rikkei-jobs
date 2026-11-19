@@ -6,6 +6,7 @@ import { HealthBadge } from './shared/components/HealthBadge';
 import { ModuleCard } from './shared/components/ModuleCard';
 import { fetchBackendHealth, type BackendHealthStatus } from './shared/api/health';
 import { BUSINESS_MODULES } from './features';
+import { JobRecommendationsSection } from './features/candidate';
 import { SkillProfilePage } from './features/candidate';
 
 import { AuthProvider } from './features/identity/context/AuthContext';
@@ -20,12 +21,15 @@ import { ForgotPasswordPage } from './features/identity/pages/ForgotPasswordPage
 import { ResetPasswordPage } from './features/identity/pages/ResetPasswordPage';
 import { CandidateHomePage } from './features/identity/pages/role-homes/CandidateHomePage';
 import { CandidateSkillsPage } from './features/identity/pages/role-homes/CandidateSkillsPage';
+import { CandidateGapAnalysisPage } from './features/identity/pages/role-homes/CandidateGapAnalysisPage';
+import { CandidateJobDetailPage } from './features/identity/pages/role-homes/CandidateJobDetailPage';
 import { HrHomePage } from './features/identity/pages/role-homes/HrHomePage';
 import { MentorHomePage } from './features/identity/pages/role-homes/MentorHomePage';
 import { StaffHomePage } from './features/identity/pages/role-homes/StaffHomePage';
 import { AdminHomePage } from './features/identity/pages/role-homes/AdminHomePage';
 import { Icon } from './shared/components/Icon';
 import { CandidateEvaluationsPage } from './features/candidate/pages/CandidateEvaluationsPage';
+import { CompanyProfilePage } from './features/company';
 
 export const APP_NAME = 'Rikkei Jobs - Nền tảng kết nối việc làm theo năng lực đã xác thực';
 export const APP_VERSION = 'v1.0.0-sprint1';
@@ -33,7 +37,7 @@ export const APP_SUBTITLE =
   'Giải pháp cầu nối minh bạch giữa Sinh viên, Doanh nghiệp tuyển dụng và Cán bộ đào tạo';
 
 export const HomeSkeleton: React.FC = () => {
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
   const [backendStatus, setBackendStatus] = useState<BackendHealthStatus>('CONNECTING...');
   const [statusDetails, setStatusDetails] = useState<string>(
     'Đang thiết lập kết nối tới Backend...',
@@ -118,8 +122,8 @@ export const HomeSkeleton: React.FC = () => {
                 Hồ sơ năng lực
               </h2>
               <p className="sp-lead">
-                Vui lòng đăng nhập bằng tài khoản học viên (LMS SSO) hoặc tài khoản doanh nghiệp để xem
-                chỉ số kỹ năng đã xác thực.
+                Vui lòng đăng nhập bằng tài khoản học viên (LMS SSO) hoặc tài khoản doanh nghiệp để
+                xem chỉ số kỹ năng đã xác thực.
               </p>
               <Link to="/login" className="rj-btn rj-btn-primary">
                 <Icon name="shield" size={18} />
@@ -134,11 +138,7 @@ export const HomeSkeleton: React.FC = () => {
         <main className="app-main">
           {/* Quick Identity Portal Entry */}
           <section style={{ textAlign: 'center', margin: '0 0 16px 0' }}>
-            <Link
-              to="/login"
-              className="rj-btn rj-btn-primary"
-              style={{ display: 'inline-flex', padding: '12px 24px', fontSize: '1rem' }}
-            >
+            <Link to="/login" className="rj-btn rj-btn-primary">
               <Icon name="shield" size={20} />
               <span>Đến Cổng Đăng Nhập NT-01 (LMS SSO / Doanh Nghiệp)</span>
             </Link>
@@ -152,6 +152,8 @@ export const HomeSkeleton: React.FC = () => {
               isLoading={isChecking}
             />
           </section>
+
+          {user?.role === 'CANDIDATE' && <JobRecommendationsSection />}
 
           <section className="section-modules">
             <div className="section-header">
@@ -251,6 +253,24 @@ export const AppRoutes: React.FC = () => {
         }
       />
 
+      {/* DT-01 gap analysis and JD detail routes */}
+      <Route
+        path="/candidate/gap-analysis"
+        element={
+          <RequireRole allowedRoles={['CANDIDATE']}>
+            <CandidateGapAnalysisPage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/candidate/jobs/:jobId"
+        element={
+          <RequireRole allowedRoles={['CANDIDATE']}>
+            <CandidateJobDetailPage />
+          </RequireRole>
+        }
+      />
+
       <Route
         path="/candidate/evaluations"
         element={
@@ -274,6 +294,14 @@ export const AppRoutes: React.FC = () => {
         element={
           <RequireRole allowedRoles={['HR']}>
             <HrHomePage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/hr/company"
+        element={
+          <RequireRole allowedRoles={['HR']}>
+            <CompanyProfilePage />
           </RequireRole>
         }
       />

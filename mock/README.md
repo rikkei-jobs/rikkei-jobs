@@ -8,19 +8,20 @@ Dịch vụ này chạy độc lập trên **Node.js + Express** ở cổng `900
 
 ## 1. Giới Thiệu Các Hệ Thống Được Giả Lập
 
-Mock Service giả lập 4 hệ thống nghiệp vụ ngoài:
+Mock Service giả lập 5 hệ thống ngoài:
 
 1. **LMS Core**: Xác thực SSO Ticket, hồ sơ sinh viên, điểm quá trình học tập, danh mục khóa học đào tạo bổ sung và ghi danh khóa học.
 2. **Exam System (Khảo thí)**: Điểm thi các môn và chứng chỉ chuyên môn.
 3. **LMS Project Management (lms-pm)**: Quản lý đợt thực tập tốt nghiệp IOC, danh sách sinh viên, điểm đánh giá dự án và nghiệm thu task.
 4. **Rikkei Meet**: Giả lập API tạo phòng phỏng vấn trực tuyến.
+5. **Cloudinary Upload & Delivery (`/cloudinary/*`)**: Giả lập API tải lên có chữ ký SHA-1, phân phối ảnh trực tiếp cho trình duyệt theo `Content-Type` và xóa ảnh.
 
 ### Đặc Điểm Kiến Trúc Cốt Lõi
 
 - **Không sử dụng Cơ sở dữ liệu (Database)**: Dữ liệu cố định được đọc từ `data.json` khi khởi động.
-- **Trạng thái lưu hoàn toàn trên RAM (In-Memory State)**: Vé SSO, danh sách ghi danh khóa học, danh sách thành viên đợt thực tập và log request được lưu trong bộ nhớ tạm thời (`Map`, `Array`). Khi tắt tiến trình mock, dữ liệu runtime này sẽ tự động biến mất.
-- **Bảo mật dịch vụ**: Mọi request tới các route nghiệp vụ (`/lms/*`, `/exam/*`, `/pm/*`, `/meet/*`) bắt buộc phải có header `X-Service-Key: dev-key`. Các route công cụ kiểm thử `/mock/*` không yêu cầu key.
-- **Frontend Isolation**: Mã nguồn Frontend không bao giờ được phép gọi trực tiếp đến Mock. Chỉ Backend mới nắm giữ khóa dịch vụ `X-Service-Key` và gọi tới Mock.
+- **Trạng thái lưu hoàn toàn trên RAM (In-Memory State)**: Vé SSO, danh sách ghi danh khóa học, danh sách thành viên đợt thực tập, log request, ảnh logo Cloudinary đã tải lên và cờ giả lập lỗi được lưu trong bộ nhớ tạm thời (`Map`, `Array`). Khi tắt tiến trình mock, dữ liệu runtime này sẽ tự động biến mất.
+- **Bảo mật dịch vụ**: Mọi request tới 11 route nghiệp vụ (`/lms/*`, `/exam/*`, `/pm/*`, `/meet/*`) bắt buộc phải có header `X-Service-Key: dev-key`. Các route công cụ kiểm thử `/mock/*` và router `/cloudinary/*` không yêu cầu `X-Service-Key` (riêng `/cloudinary/*` xác thực bằng `api_key` và chữ ký SHA-1 cho upload/destroy, đồng thời không ghi log vào `/mock/requests`).
+- **Frontend Isolation**: Mã nguồn Frontend không bao giờ được phép gọi các route cần `X-Service-Key` và Nginx của Frontend tuyệt đối không proxy `/mock` hay `/cloudinary`. Trình duyệt chỉ tải ảnh logo qua URL công khai `secure_url` do backend lưu từ phản hồi Cloudinary mock (`http://127.0.0.1:9000/cloudinary/...`).
 
 ---
 
@@ -67,7 +68,10 @@ docker run -d -p 9000:9000 --name rikkei-jobs-mock rikkei-jobs-mock
 | Biến Môi Trường | Mặc Định | Mô Tả |
 |---|---|---|
 | `PORT` | `9000` | Cổng HTTP mà Mock server lắng nghe |
-| `SERVICE_KEY` | `dev-key` | Khóa xác thực bắt buộc truyền qua header `X-Service-Key` |
+| `SERVICE_KEY` | `dev-key` | Khóa xác thực bắt buộc truyền qua header `X-Service-Key` cho 11 endpoint nghiệp vụ |
+| `PUBLIC_BASE_URL` | `http://127.0.0.1:9000` | URL công khai trình duyệt truy cập được, ghép vào `secure_url` trả về từ `/cloudinary/*` (khớp `CLOUDINARY_DELIVERY_BASE_URL`) |
+| `CLOUDINARY_API_KEY` | `dev-key` | API key giả lập dùng khi xác thực request Cloudinary mock |
+| `CLOUDINARY_API_SECRET` | `dev-secret` | API secret giả lập dùng để kiểm chứng chữ ký SHA-1 Cloudinary mock |
 
 ---
 
@@ -102,7 +106,19 @@ Tất cả các endpoint này **bắt buộc** phải có header `X-Service-Key:
 
 ---
 
-## 5. Bảng 4 Công Cụ Kiểm Thử Cho Mentor (`/mock/*`)
+## 5. Không Gian Tên Cloudinary Mock (`/cloudinary/*`)
+
+Router `/cloudinary/*` tách biệt với 11 endpoint nghiệp vụ, không yêu cầu `X-Service-Key` và không ghi vào `requestLog`:
+
+| Phương Thức | Đường Dẫn | Nội Dung | Phản Hồi |
+|---|---|---|---|
+| `POST` | `/cloudinary/v1_1/:cloud/image/upload` | Form `application/x-www-form-urlencoded` (tối đa `5mb`): `api_key`, `timestamp`, `public_id`, `overwrite`, `invalidate`, `unique_filename`, `file` (data URI `png`/`jpeg`), `signature` SHA-1 | `200` JSON `{ public_id, secure_url, version, format, bytes }`, `401` nếu sai key/signature, `400` nếu sai data URI/`public_id`, `503` (hoặc mã cấu hình) nếu bật `fail-next` |
+| `GET` | `/cloudinary/:cloud/image/upload/*` | Đường dẫn phân phối ảnh (ví dụ `v1763437800/rikkei-jobs/company-logos/company-1.png`) | `200` byte ảnh gốc + `Content-Type` (`image/png` hoặc `image/jpeg`) + `Cache-Control: no-store`, hoặc `404` |
+| `POST` | `/cloudinary/v1_1/:cloud/image/destroy` | Form `application/x-www-form-urlencoded`: `api_key`, `timestamp`, `public_id`, `signature` | `200` `{ result: "ok" \| "not found" }`, `401` nếu sai key/signature |
+
+---
+
+## 6. Bảng 5 Công Cụ Kiểm Thử Cho Mentor (`/mock/*`)
 
 Các công cụ này:
 
@@ -113,13 +129,14 @@ Các công cụ này:
 | STT | Phương Thức | Đường Dẫn | Body | Ý Nghĩa / Mục Đích Kiểm Thử |
 |---|---|---|---|---|
 | 1 | `POST` | `/mock/reload` | Trống hoặc `{}` | Nạp lại file `data.json` vào RAM tức thì mà không cần khởi động lại tiến trình (phục vụ test NT-05, TT-01 khi sửa điểm) |
-| 2 | `GET` | `/mock/requests` | Không có | Lấy danh sách 100 request gần nhất Backend đã gửi tới Mock (chứa URL, method, body, cờ `hasKey`) |
+| 2 | `GET` | `/mock/requests` | Không có | Lấy danh sách 100 request gần nhất Backend đã gửi tới 11 endpoint nghiệp vụ (loại trừ `/mock/*` và `/cloudinary/*`) |
 | 3 | `PATCH` | `/mock/enrollments` | `{lmsUserId, courseId, progress, score, status}` | Cập nhật tiến độ/điểm/trạng thái khóa học ghi danh trong RAM (phục vụ test DT-02, DT-03 chuyển COMPLETED) |
-| 4 | `POST` | `/mock/reset` | Trống hoặc `{}` | Xóa sạch toàn bộ vé, lượt ghi danh, thành viên đợt và log request (đưa mock về trạng thái sạch ban đầu) |
+| 4 | `POST` | `/mock/reset` | Trống hoặc `{}` | Xóa sạch vé SSO, lượt ghi danh, thành viên đợt, log request, ảnh Cloudinary đã lưu và cờ `fail-next` (đưa mock về trạng thái sạch ban đầu) |
+| 5 | `POST` | `/mock/cloudinary/fail-next` | `{status?, message?}` (tùy chọn, mặc định `503`) | Ép lần gọi upload Cloudinary kế tiếp thất bại một lần (single-shot) để kiểm thử xử lý lỗi `502 LOGO_STORAGE_UNAVAILABLE` |
 
 ---
 
-## 6. Hướng Dẫn Sử Dụng Script `send-evaluation-links.js`
+## 7. Hướng Dẫn Sử Dụng Script `send-evaluation-links.js`
 
 Script này giả lập hệ thống lms-pm gọi sang Rikkei Jobs để lấy đường link phiếu đánh giá cho mentor (dùng cho kịch bản kiểm thử tác vụ TT-04).
 
@@ -144,9 +161,9 @@ Trong Sprint 1, Backend chưa triển khai endpoint `/api/v1/integrations/pm/eva
 
 ---
 
-## 7. Kiểm Thử API Bằng Bộ Test Có Sẵn
+## 8. Kiểm Thử API Bằng Bộ Test Có Sẵn
 
-Dự án cung cấp sẵn file `mock/api-test.http` chứa toàn bộ 22 ca kiểm thử cho cả 11 endpoints nghiệp vụ, 4 test tools và các ca kiểm thử lỗi (thiếu key, sai key, ghi danh trùng, thiếu trường).
+Dự án cung cấp bộ kiểm thử tự động `mock/test-runner.js` (`node mock/test-runner.js` hoặc `npm test --prefix mock`) kiểm tra cả 11 endpoint nghiệp vụ, 5 công cụ `/mock/*` và không gian tên `/cloudinary/*`, cùng file `mock/api-test.http`.
 
 Bạn có thể chạy trực tiếp bằng tiện ích mở rộng **REST Client** trên VS Code hoặc dùng lệnh `curl`:
 

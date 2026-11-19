@@ -4,7 +4,7 @@ import { RoleHomeLayout } from './RoleHomeLayout';
 export const AdminHomePage: React.FC = () => {
   return (
     <RoleHomeLayout
-      roleTitle="Quản Trị Viên (Admin)"
+      roleTitle="Quản trị viên"
       roleBadgeClass="rj-role-admin"
       roleIcon="shield"
       description="Trung tâm điều hành cấu hình phân quyền hệ thống, tài khoản và tích hợp dịch vụ"

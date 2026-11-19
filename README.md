@@ -30,7 +30,7 @@ rikkei-jobs/
 │   ├── src/shared/     # Reusable components and API client
 │   └── nginx.conf      # Production non-root reverse proxy configuration
 ├── mock/               # External systems mock service (Node.js 24 + Express)
-│   ├── server.js       # 11 business endpoints + 4 testing tools
+│   ├── server.js       # 11 business endpoints + Cloudinary mock namespace and 5 testing tools
 │   ├── data.json       # In-memory test fixtures (students, batches, courses)
 │   └── api-test.http   # Executable HTTP contract verification requests
 ├── docs/               # Technical architecture, conventions, and bilingual specifications
@@ -69,6 +69,7 @@ cd rikkei-jobs
 
 # 2. Initialize environment configuration from safe defaults
 cp .env.example .env
+# (Cloudinary mock works out of the box via .env.example defaults; for real Cloudinary uploads, set CLOUDINARY_* and CLOUDINARY_API_BASE_URL=https://api.cloudinary.com/v1_1 + CLOUDINARY_DELIVERY_BASE_URL=https://res.cloudinary.com/<your-cloud-name>/image/upload in .env — see docs/dn01/README.md Section 5.4)
 
 # 3. Spin up all 5 containers with health checking
 docker compose up -d --build --wait
@@ -174,7 +175,7 @@ You can run automated quality checks (linting, tests, static analysis, formattin
 
 ## 👥 Default Sample Accounts (Dev Profile)
 
-The database seed migration automatically provisions 8 sample testing accounts when running in the `dev` profile. All accounts share the password: **`Test@123`**.
+The database seed migration automatically provisions 9 sample testing accounts when running in the `dev` profile (`V2__dev_seed.sql` + `V8__dev_evaluation_seed.sql`). All accounts share the password: **`Test@123`**.
 
 | Email | Full Name | Role | LMS User ID | Description |
 |---|---|---|---|---|
@@ -184,10 +185,45 @@ The database seed migration automatically provisions 8 sample testing accounts w
 | `hr1@rikkeijobs.test` | Đại diện Doanh nghiệp A | `HR` | *(None)* | Corporate recruiter for Company A |
 | `hr2@rikkeijobs.test` | Đại diện Doanh nghiệp B | `HR` | *(None)* | Corporate recruiter for Company B |
 | `mentor1@rikkeijobs.test` | Phạm Quốc Dũng | `MENTOR` | `lms-mt-001` | Project mentor for IOC batch `IOC-JB-2026-09` |
+| `mentor2@rikkeijobs.test` | Trần Minh Tuấn | `MENTOR` | `lms-mt-002` | Second IOC project mentor (`V8` seed) |
 | `staff1@rikkeijobs.test` | Hoàng Thu Hà | `STAFF` | `lms-st-001` | University placement coordinator |
 | `admin1@rikkeijobs.test` | Đỗ Thanh Hải | `ADMIN` | `lms-ad-001` | Full system administrator |
 
 *Note: In the `prod` profile or default profile without dev configuration, zero seed accounts are loaded.*
+
+---
+
+## AI Conventions & Career Assistant
+
+The Rikkei Jobs system incorporates an AI Assistant designed to provide personalized job recommendations based on **verified competency data** (sourced from the LMS, examination systems, IOC internship programs, and mentors).
+
+### 1. General AI Conventions
+
+- **`AI_PROVIDER` Environment Variable**: Supports four modes: `openai`, `gemini`, `claude`, and `mock` (default: `mock`).
+- **`mock` Mode**: Always returns a standardized response, allowing mentors and developers to test the entire workflow without requiring an API key.
+- **`openai` / `gemini` / `claude` Modes**: Integrate directly with Large Language Models (LLMs) via a secure, centralized gateway.
+- **Centralized AI Gateway Service (`AiService`)**: All AI-related calls within the system must pass through a single `AiService`. This architecture is designed to support future expansions (Task **AI-05**), including data masking, rate limiting, and audit logging.
+- **Privacy & Data Protection (No PII)**: Prompts sent to the AI and system logs must **never contain** a candidate’s full name, email address, or phone number. Data transmitted is limited strictly to verified skill categories, associated scores, and the requirements specified in the Job Description (JD).
+
+### 2. Competency-Based Job Recommendation API (for Candidates)
+
+- **Endpoint**: `GET /api/v1/me/job-recommendations?limit=10`. The endpoint requires an authenticated `CANDIDATE` JWT and always resolves the candidate from the token, so no `userId` parameter or header is accepted.
+- **Processing Workflow**:
+  1. Retrieve a list of job descriptions (JDs) that are in the `APPROVED` status and still open for applications (`deadline > now`).
+  2. Calculate competency similarity scores (using the **DN-06** algorithm): Compare the candidate’s verified skill levels against the JD requirements (mandatory skills are weighted $\times 2$, while preferred skills are weighted $\times 1$).
+  3. Sort the results in descending order by match score (`score DESC`) and select the top 10 positions.
+  4. For the **Top 5** positions: Invoke an AI model to generate a concise explanation ($\le 60$ words) detailing why the candidate is a good fit and identifying any missing skills. For positions 6–10, a standardized, default explanation is used.
+  5. **24-Hour Caching**: Results are stored in the `job_recommendations` table. If a candidate revisits the platform within 24 hours, the system retrieves the data from the cache, bypassing the AI call (to save costs and improve response time). If the candidate’s skill profile or a JD is updated, the system automatically recalculates the recommendations.
+  6. **Fault-Tolerance Mechanism**: In the event of an AI error (e.g., invalid API key, network failure) or a timeout (exceeding 10 seconds), the system will still return the list of positions, accompanied by a default explanation derived from the matching data.
+
+### 3. User Interface (Candidate Portal)
+
+The **"Jobs Matched for You"** section is prominently displayed on the candidate’s homepage:
+
+- Detailed job cards featuring a **"% match"** badge.
+- Explanations labeled as either **"AI-generated"** or **"System-suggested"**.
+- A breakdown of skills that meet the requirements and those that still need to be developed.
+- A **"Refresh"** button for immediate recalculation (guarded by a 2-minute cooldown). To preview another profile, sign in with another seeded candidate account.
 
 ---
 
@@ -229,7 +265,7 @@ This harness:
 
 - Builds a hermetic Ubuntu 22.04 runner image (`scripts/ci-runner.Dockerfile`) equipped with Node.js 24 LTS, Temurin Java 25 LTS, and Docker CLI/Compose.
 - Mounts the repository read-only (`:ro`) and synchronizes it into an ephemeral workspace volume, strictly excluding host `node_modules`, `backend/target`, and `.m2` caches.
-- Runs all 6 quality gate jobs in sequence: `mock-test`, `frontend-check`, `backend-check` (Spotless, SpotBugs, Testcontainers), `docker-compose-check`, `clean-code-and-linters` (11 hygiene checks), and `smoke-test` (multi-container stack, Flyway assertions, seed data, health, mock security gates, and 9/9 E2E test suites).
+- Runs all 6 quality gate jobs in sequence: `mock-test`, `frontend-check`, `backend-check` (Spotless, SpotBugs, Testcontainers), `docker-compose-check`, `clean-code-and-linters` (11 hygiene checks), and `smoke-test` (multi-container stack, Flyway assertions, seed data, health, mock security gates, and 24/24 E2E test suites).
 - Automatically tears down compose services and cleans up ephemeral volumes upon completion.
 - **Docker CI Harness Isolation & Resource Boundary (F1)**:
   - **Isolated Resources (Containers, Volumes, Networks)**: The harness dynamically generates an ephemeral `docker-compose.override.yml` within the throwaway workspace volume (`/ci-workspace`) prefixing all container names (`${COMPOSE_PROJECT_NAME}-<service>`), volume name (`${COMPOSE_PROJECT_NAME}_postgres_data`), and network name (`${COMPOSE_PROJECT_NAME}_network`). The Docker CLI wrapper automatically translates container target names for E2E tests. Cleanup on host filters strictly by `label=com.docker.compose.project=${COMPOSE_PROJECT_NAME}`. This ensures that even when the developer stack is stopped, the developer's volume `rikkei_postgres_data` and network `rikkei-network` are 100% protected and never polluted with CI data.
@@ -245,7 +281,7 @@ This harness:
 For detailed architectural decisions and operational guides, consult the `docs/` directory:
 
 - [Shared Conventions](docs/conventions.md) — API standards, error codes, 20 skills catalogue, and roles.
-- [External Mock Contract](docs/mock-contract.md) — Specification of the 11 external endpoints and 4 testing tools.
+- [External Mock Contract](docs/mock-contract.md) — Specification of the 11 business endpoints, Cloudinary mock namespace, and 5 testing tools.
 - [01 — Architecture Overview](docs/01-architecture-overview.md) *(Bilingual)* — Modular monolith rationale and domain boundaries.
 - [02 — Local Development & Troubleshooting](docs/02-local-development-troubleshooting.md) *(Bilingual)* — Developer guide and issue fixes.
 - [03 — Version Table](docs/03-version-table.md) *(Bilingual)* — Verified toolchain versions and official source registries.

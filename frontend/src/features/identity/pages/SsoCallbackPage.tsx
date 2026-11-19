@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { Icon } from '../../../shared/components/Icon';
+import { getRoleLabel } from '../../../shared/i18n/enumLabels';
 import { useAuth } from '../context/useAuth';
 import { type UserDto } from '../types';
 import { AuthEditorialLayout } from '../components/AuthEditorialLayout';
@@ -220,7 +221,7 @@ export const SsoCallbackPage: React.FC = () => {
               Đăng Nhập Thành Công!
             </h2>
             <p className="rj-auth-subtitle">
-              Chào mừng <strong>{authedUser.fullName}</strong> ({authedUser.role}). Đang chuyển hướng về trang chủ...
+              Chào mừng <strong>{authedUser.fullName}</strong> ({getRoleLabel(authedUser.role)}). Đang chuyển hướng về trang chủ...
             </p>
 
             {/* Timeline for Success State */}

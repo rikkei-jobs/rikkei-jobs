@@ -37,8 +37,12 @@ Create database indexes in Flyway migrations based on actual query patterns:
 
 - Existing indexes across Flyway production migrations:
   - Baseline in `backend/src/main/resources/db/migration/V1__init_schema.sql` `EXISTS`: `idx_users_email`, `idx_users_lms_user_id`, and `idx_skills_code`.
-  - Candidate in `backend/src/main/resources/db/migration/V3__skill_profile.sql` `EXISTS`: `idx_skill_profiles_candidate_id`, `idx_skill_profiles_skill_id`, and `idx_profile_evidences_profile_id`.
-  - Identity in `backend/src/main/resources/db/migration/V5__auth_identity_evolution.sql` `EXISTS`: `idx_used_sso_tickets_ticket_id`, `idx_used_sso_tickets_used_at`, `idx_password_reset_tokens_user_id`, and `idx_password_reset_tokens_token_hash`.
+  - Candidate in `backend/src/main/resources/db/migration/V3__skill_profile.sql` `EXISTS`: `idx_skills_skill_group`, `idx_external_records_user_id`, `idx_skill_mappings_source_code`, and `idx_skill_evidences_user_skill`.
+  - Identity in `backend/src/main/resources/db/migration/V5__auth_identity_evolution.sql` `EXISTS`: `idx_users_company_id`, `idx_password_reset_tokens_token_hash`, and `idx_password_reset_tokens_user_id`.
+  - Assessment in `backend/src/main/resources/db/migration/V7__evaluation.sql` `EXISTS`: `idx_evaluations_user_status`, `idx_evaluations_mentor_id`, and `idx_evaluation_scores_evaluation_id`.
+  - Company in `backend/src/main/resources/db/migration/V9__company_profile.sql` `EXISTS`: `idx_companies_status` and `idx_companies_created_by`.
+  - Company & AI in `backend/src/main/resources/db/migration/V11__jobs_and_recommendations.sql` `EXISTS`: `idx_jobs_status_deadline`, `idx_job_skills_job_id`, `idx_job_skills_code`, `idx_job_recommendations_user_id`, and `idx_job_recommendations_created_at`.
+  - Candidate in `backend/src/main/resources/db/migration/V13__target_positions_gap_analysis.sql` `EXISTS`: `idx_position_skills_position_id` and `idx_gap_results_user_target`.
 - Add B-Tree indexes for all foreign key columns, unique lookup fields, and frequently filtered columns `TARGET`.
 - Use GIN (Generalized Inverted Index) for PostgreSQL JSONB columns (e.g., `skills.level_bands`) when executing JSON path or containment queries `TARGET`.
 - Validate query execution plans using `EXPLAIN (ANALYZE, BUFFERS)` in integration tests before approving index designs `TARGET`.
@@ -57,8 +61,8 @@ Demarcate database transactions cleanly at the service layer:
 
 Protect entities subject to concurrent updates against lost update anomalies:
 
-- Declare a version field on mutable business entities: `@Version private Long version;` `TARGET`. Note: Existing baseline entities (`User`, `Role`, `Skill`) do not currently declare `@Version` `EXISTS`.
-- Handle `ObjectOptimisticLockingFailureException` in `GlobalExceptionHandler.java` and map it to HTTP 409 Conflict `TARGET`.
+- Declare a version field on mutable business entities: `@Version private Long version;` `EXISTS` on `Evaluation` and `Company` (baseline entities `User`, `Role`, `Skill` do not declare `@Version`).
+- Handle `ObjectOptimisticLockingFailureException` in `GlobalExceptionHandler.java` and map it to HTTP 409 Conflict `EXISTS`.
 - Use optimistic locking on resources with concurrent user edits, including Candidate Profiles, Job Descriptions, and Assessment Forms `TARGET`.
 
 ## 7. Idempotency and Transient Error Retry

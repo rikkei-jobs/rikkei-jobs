@@ -61,6 +61,41 @@ describe('SsoCallbackPage', () => {
       expect(authApi.ssoLogin).toHaveBeenCalledWith({ ticket: 'valid-ticket-123' });
       expect(screen.getByText('Đăng Nhập Thành Công!')).toBeInTheDocument();
       expect(screen.getByText(/Nguyen Thi Sinh Vien/i)).toBeInTheDocument();
+      expect(screen.getByText(/\(Ứng viên\)/)).toBeInTheDocument();
+      expect(screen.queryByText(/CANDIDATE/)).not.toBeInTheDocument();
+    });
+  });
+
+  it('displays localized Vietnamese role label for STAFF SSO login', async () => {
+    vi.mocked(authApi.ssoLogin).mockResolvedValueOnce({
+      accessToken: 'valid-sso-jwt-staff',
+      user: {
+        id: 12,
+        email: 'staff@rikkei.edu.vn',
+        fullName: 'Trần Thị Minh',
+        role: 'STAFF',
+        companyId: null,
+        lmsUserId: 'lms-staff-001',
+        status: 'ACTIVE',
+        mustChangePassword: false,
+      },
+    });
+
+    render(
+      <AuthProvider>
+        <MemoryRouter initialEntries={['/sso-callback?ticket=valid-staff-ticket']}>
+          <Routes>
+            <Route path="/sso-callback" element={<SsoCallbackPage />} />
+          </Routes>
+        </MemoryRouter>
+      </AuthProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Đăng Nhập Thành Công!')).toBeInTheDocument();
+      expect(screen.getByText(/Trần Thị Minh/i)).toBeInTheDocument();
+      expect(screen.getByText(/\(Nhân viên\)/)).toBeInTheDocument();
+      expect(screen.queryByText(/STAFF/)).not.toBeInTheDocument();
     });
   });
 

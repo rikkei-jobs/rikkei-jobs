@@ -6,6 +6,11 @@ export const BACKEND_BASE_URL = (process.env.BACKEND_URL || 'http://127.0.0.1:80
 export const FRONTEND_BASE_URL = (process.env.FRONTEND_URL || 'http://127.0.0.1:3000').replace(/\/+$/, '');
 export const MAILPIT_BASE_URL = (process.env.MAILPIT_URL || 'http://127.0.0.1:8025').replace(/\/+$/, '');
 export const SERVICE_KEY = process.env.SERVICE_KEY || 'dev-key';
+export const CLOUDINARY_PUBLIC_URL = (
+  process.env.CLOUDINARY_PUBLIC_URL ||
+  process.env.CLOUDINARY_DELIVERY_BASE_URL ||
+  `${MOCK_BASE_URL}/cloudinary`
+).replace(/\/+$/, '');
 
 export const REQUEST_TIMEOUT_MS = parseInt(process.env.REQUEST_TIMEOUT_MS || '4000', 10);
 

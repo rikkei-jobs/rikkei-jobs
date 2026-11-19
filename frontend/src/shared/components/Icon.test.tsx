@@ -30,6 +30,9 @@ describe('Icon Component', () => {
     'sparkles',
     'user-check',
     'network',
+    'upload',
+    'sun',
+    'moon',
   ];
 
   it('renders all icons without crashing', () => {

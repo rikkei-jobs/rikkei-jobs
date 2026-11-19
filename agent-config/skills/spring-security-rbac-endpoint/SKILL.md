@@ -59,7 +59,7 @@ Identify the required role permissions for the target endpoint:
 2. All endpoints under `/api/v1/**` must require authentication (`anyRequest().authenticated()`).
 3. Only explicit whitelisted routes may be declared with `permitAll()`:
    - `GET /api/v1/health` (Service health check)
-   - `/v3/api-docs/**` and `/swagger-ui/**` (Enabled only in `dev` profile)
+   - `/api-docs/**`, `/swagger-ui.html`, and `/swagger-ui/**` (Enabled only in `dev` profile; `/v3/api-docs/**` also remains permitted in `SecurityConfig`)
 4. Handle authentication failures via `CustomAuthenticationEntryPoint`:
    - Return HTTP 401 with body:
 
