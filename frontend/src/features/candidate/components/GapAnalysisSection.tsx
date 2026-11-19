@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ApiError } from '../../../shared/api/auth';
+import { Select } from '../../../shared/components/Select';
 import { fetchGapAnalysis, fetchMyTarget, fetchTargetPositions, setMyTarget } from '../api/gapAnalysis';
 import type { GapAnalysisResponse, GapTarget, TargetPosition } from '../types';
 import { GapSkillsTable } from './GapSkillsTable';
@@ -108,23 +109,21 @@ export const GapAnalysisSection: React.FC = () => {
         </div>
 
         <div className="gap-controls">
-          <label className="gap-field" htmlFor="target-position-select">
-            <span>Vị trí mục tiêu</span>
-            <select
-              id="target-position-select"
-              className="gap-select"
-              value={selectedPosition}
-              onChange={handlePositionChange}
-              disabled={loading || analyzing || positions.length === 0}
-            >
-              <option value="">Chọn vị trí mục tiêu</option>
-              {positions.map((position) => (
-                <option key={position.id} value={position.id}>
-                  {position.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <Select
+            id="target-position-select"
+            wrapperClassName="gap-field"
+            label="Vị trí mục tiêu"
+            placeholder="Chọn vị trí mục tiêu"
+            value={selectedPosition}
+            onChange={handlePositionChange}
+            disabled={loading || analyzing || positions.length === 0}
+          >
+            {positions.map((position) => (
+              <option key={position.id} value={position.id}>
+                {position.name}
+              </option>
+            ))}
+          </Select>
         </div>
       </div>
 

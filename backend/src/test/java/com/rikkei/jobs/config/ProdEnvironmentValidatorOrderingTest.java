@@ -41,7 +41,12 @@ public class ProdEnvironmentValidatorOrderingTest {
                                     "EXTERNAL_SERVICE_KEY=dev-key", // Insecure placeholder value
                                     // to trigger validation
                                     // failure
-                                    "CORS_ALLOWED_ORIGINS=https://rikkeijobs.com");
+                                    "CORS_ALLOWED_ORIGINS=https://rikkeijobs.com",
+                                    "CLOUDINARY_CLOUD_NAME=prod-rikkei-cloud",
+                                    "CLOUDINARY_API_KEY=prod-cloudinary-key-123",
+                                    "CLOUDINARY_API_SECRET=prod-cloudinary-secret-xyz-987",
+                                    "CLOUDINARY_API_BASE_URL=https://api.cloudinary.com/v1_1",
+                                    "CLOUDINARY_DELIVERY_BASE_URL=https://res.cloudinary.com/prod-rikkei-cloud/image/upload");
 
             IllegalStateException ex = assertThrows(IllegalStateException.class, builder::run);
 
@@ -91,7 +96,12 @@ public class ProdEnvironmentValidatorOrderingTest {
                                     "spring.datasource.hikari.initialization-fail-timeout=1",
                                     "EXTERNAL_BASE_URL=https://partner.api.example.com",
                                     "EXTERNAL_SERVICE_KEY=prod-external-service-key-valid-32-chars-long",
-                                    "CORS_ALLOWED_ORIGINS=https://rikkeijobs.com"
+                                    "CORS_ALLOWED_ORIGINS=https://rikkeijobs.com",
+                                    "CLOUDINARY_CLOUD_NAME=prod-rikkei-cloud",
+                                    "CLOUDINARY_API_KEY=prod-cloudinary-key-123",
+                                    "CLOUDINARY_API_SECRET=prod-cloudinary-secret-xyz-987",
+                                    "CLOUDINARY_API_BASE_URL=https://api.cloudinary.com/v1_1",
+                                    "CLOUDINARY_DELIVERY_BASE_URL=https://res.cloudinary.com/prod-rikkei-cloud/image/upload"
                                     // JWT_SECRET intentionally omitted!
                                     );
 

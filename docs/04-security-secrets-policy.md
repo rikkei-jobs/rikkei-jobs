@@ -30,7 +30,7 @@ The security of Rikkei Jobs is built on the strict enforcement of the **Zero Rea
 
 - **Default Deny Strategy**: The Spring Security layer enforces a default-deny posture. All API routes under `/api/v1/**` require a valid JWT Bearer token, except for explicitly whitelisted public endpoints:
   - `GET /api/v1/health` (Health verification)
-  - `GET /v3/api-docs/**` and `GET /swagger-ui/**` (Enabled only in `dev` profile)
+  - `GET /api-docs/**` and `GET /swagger-ui/**` (Enabled only in `dev` profile)
 - **Unauthenticated Handling**: Any request attempting to access protected resources without an Authorization header or with an invalid token returns HTTP `401 Unauthorized` with the standard error body:
 
   ```json
@@ -90,7 +90,7 @@ An ninh của nền tảng Rikkei Jobs được xây dựng dựa trên nguyên 
 
 - **Chiến lược Từ chối Mặc định (Default Deny)**: Tầng Spring Security áp dụng quy tắc đóng toàn bộ các API `/api/v1/**`, ngoại trừ các endpoint công khai được chỉ định rõ:
   - `GET /api/v1/health` (Kiểm tra sức khỏe hệ thống)
-  - `GET /v3/api-docs/**` và `GET /swagger-ui/**` (Chỉ kích hoạt trên profile `dev`)
+  - `GET /api-docs/**` và `GET /swagger-ui/**` (Chỉ kích hoạt trên profile `dev`)
 - **Xử lý Khi Chưa Xác thực**: Bất kỳ yêu cầu nào không có header Authorization hợp lệ đều bị chặn và trả về HTTP `401 Unauthorized` kèm cấu trúc JSON chuẩn:
 
   ```json

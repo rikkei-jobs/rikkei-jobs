@@ -115,6 +115,11 @@ public class SecurityConfig {
                                     .requestMatchers(
                                             HttpMethod.GET, "/api/v1/profiles/*/evaluations")
                                     .hasAnyRole("CANDIDATE", "HR")
+                                    .requestMatchers("/api/v1/staff/**")
+                                    .hasRole("STAFF")
+                                    .requestMatchers(
+                                            "/api/v1/companies/me", "/api/v1/companies/me/**")
+                                    .hasRole("HR")
                                     .anyRequest()
                                     .authenticated();
                         });
