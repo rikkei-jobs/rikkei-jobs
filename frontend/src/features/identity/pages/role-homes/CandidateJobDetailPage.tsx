@@ -21,7 +21,7 @@ const JobDetailContent: React.FC = () => {
 export const CandidateJobDetailPage: React.FC = () => {
   return (
     <RoleHomeLayout
-      roleTitle="Ứng Viên (Candidate)"
+      roleTitle="Ứng viên"
       roleBadgeClass="rj-role-candidate"
       roleIcon="user"
       description="Chi tiết JD và phân tích khoảng thiếu hụt năng lực"

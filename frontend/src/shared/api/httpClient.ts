@@ -105,103 +105,114 @@ export interface ErrorResponseBody {
   message?: string;
 }
 
-/**
- * Centralized HTTP request client with in-memory Bearer token injection,
- * unified error response handling, debounced 401 session clearance,
- * and 403 MUST_CHANGE_PASSWORD interceptor.
- */
-export async function request<T>(
-  endpoint: string,
-  options: RequestOptions = {},
-): Promise<T> {
+function buildRequestUrl(endpoint: string): string {
   const baseUrl = getApiBaseUrl();
-  const url = endpoint.startsWith('http://') || endpoint.startsWith('https://')
+  return endpoint.startsWith('http://') || endpoint.startsWith('https://')
     ? endpoint
     : `${baseUrl}${endpoint}`;
+}
 
+async function executeFetch(
+  endpoint: string,
+  options: RequestOptions,
+  defaultAccept: string,
+): Promise<Response> {
+  const url = buildRequestUrl(endpoint);
   const headers = new Headers(options.headers);
+
   if (!headers.has('Accept')) {
-    headers.set('Accept', 'application/json');
+    headers.set('Accept', defaultAccept);
   }
 
-  // Set Content-Type only if request has a JSON string body and no content-type is provided
-  if (options.body && typeof options.body === 'string' && !headers.has('Content-Type')) {
+  // Browser must generate the multipart boundary automatically when sending FormData
+  if (typeof FormData !== 'undefined' && options.body instanceof FormData) {
+    headers.delete('Content-Type');
+  } else if (options.body && typeof options.body === 'string' && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
 
-  // Automatically attach Bearer token if present and not explicitly skipped
   const token = getAuthToken();
   if (token && !options.skipAuth && !headers.has('Authorization')) {
     headers.set('Authorization', `Bearer ${token}`);
   }
 
-  const response = await fetch(url, {
+  return fetch(url, {
     ...options,
     headers,
   });
+}
 
-  if (!response.ok) {
-    let errorCode = 'UNKNOWN_ERROR';
-    let errorMessage = `Yêu cầu thất bại với mã trạng thái ${response.status}`;
+async function handleErrorResponse(response: Response, options: RequestOptions): Promise<never> {
+  let errorCode = 'UNKNOWN_ERROR';
+  let errorMessage = `Yêu cầu thất bại với mã trạng thái ${response.status}`;
 
-    try {
-      const errorJson = (await response.json()) as ErrorResponseBody;
-      if (errorJson && typeof errorJson === 'object') {
-        if (errorJson.code) errorCode = errorJson.code;
-        if (errorJson.message) errorMessage = errorJson.message;
-      }
-    } catch {
-      // Non-JSON response body, fallback to default status message
+  try {
+    const errorJson = (await response.json()) as ErrorResponseBody;
+    if (errorJson && typeof errorJson === 'object') {
+      if (errorJson.code) errorCode = errorJson.code;
+      if (errorJson.message) errorMessage = errorJson.message;
     }
+  } catch {
+    // Non-JSON response body, fallback to default status message
+  }
 
-    // Centralized 401 Unauthorized handling: clear session and redirect once (debounced)
-    // Only triggers session clearance and redirection for authenticated requests (!options.skipAuth)
-    if (response.status === 401) {
-      if (!options.skipAuth) {
-        setAuthToken(null);
-        if (!isRedirectingToLogin) {
-          isRedirectingToLogin = true;
-          if (sessionHandlers.onUnauthorized) {
-            try {
-              sessionHandlers.onUnauthorized();
-            } catch {
-              // Handlers should not interrupt error propagation
-            }
-          } else if (typeof window !== 'undefined' && typeof window.location?.assign === 'function') {
-            try {
-              window.location.assign('/login');
-            } catch {
-              // Safe fallback in test environments where jsdom navigation is restricted
-            }
-          }
-        }
-      }
-      throw new ApiError(response.status, errorMessage, errorCode, response.statusText);
-    }
-
-    // Centralized 403 MUST_CHANGE_PASSWORD handling
-    // Only triggers redirection if request is not flagged with skipAuth
-    if (response.status === 403 && errorCode === 'MUST_CHANGE_PASSWORD' && !options.skipAuth) {
-      if (!isRedirectingToChangePassword) {
-        isRedirectingToChangePassword = true;
-        if (sessionHandlers.onMustChangePassword) {
+  // Clear session once per burst for authenticated requests receiving 401
+  if (response.status === 401) {
+    if (!options.skipAuth) {
+      setAuthToken(null);
+      if (!isRedirectingToLogin) {
+        isRedirectingToLogin = true;
+        if (sessionHandlers.onUnauthorized) {
           try {
-            sessionHandlers.onMustChangePassword();
+            sessionHandlers.onUnauthorized();
           } catch {
             // Handlers should not interrupt error propagation
           }
         } else if (typeof window !== 'undefined' && typeof window.location?.assign === 'function') {
           try {
-            window.location.assign('/change-password');
+            window.location.assign('/login');
           } catch {
-            // Safe fallback in test environments
+            // Safe fallback in test environments where jsdom navigation is restricted
           }
         }
       }
-      throw new ApiError(response.status, errorMessage, errorCode, response.statusText);
     }
-
     throw new ApiError(response.status, errorMessage, errorCode, response.statusText);
+  }
+
+  if (response.status === 403 && errorCode === 'MUST_CHANGE_PASSWORD' && !options.skipAuth) {
+    if (!isRedirectingToChangePassword) {
+      isRedirectingToChangePassword = true;
+      if (sessionHandlers.onMustChangePassword) {
+        try {
+          sessionHandlers.onMustChangePassword();
+        } catch {
+          // Handlers should not interrupt error propagation
+        }
+      } else if (typeof window !== 'undefined' && typeof window.location?.assign === 'function') {
+        try {
+          window.location.assign('/change-password');
+        } catch {
+          // Safe fallback in test environments
+        }
+      }
+    }
+    throw new ApiError(response.status, errorMessage, errorCode, response.statusText);
+  }
+
+  throw new ApiError(response.status, errorMessage, errorCode, response.statusText);
+}
+
+/**
+ * Centralized HTTP request client with in-memory Bearer token injection,
+ * unified error response handling, debounced 401 session clearance,
+ * and 403 MUST_CHANGE_PASSWORD interceptor.
+ */
+export async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
+  const response = await executeFetch(endpoint, options, 'application/json');
+
+  if (!response.ok) {
+    return handleErrorResponse(response, options);
   }
 
   if (response.status === 204) {
@@ -215,8 +226,24 @@ export async function request<T>(
   }
 }
 
+/**
+ * Upload multipart FormData while letting the browser generate the multipart boundary.
+ */
+export async function postFormData<T>(
+  endpoint: string,
+  formData: FormData,
+  options: Omit<RequestOptions, 'body' | 'method'> = {},
+): Promise<T> {
+  return request<T>(endpoint, {
+    ...options,
+    method: 'POST',
+    body: formData,
+  });
+}
+
 export const httpClient = {
   request,
+  postFormData,
   setAuthToken,
   getAuthToken,
   getAuthSessionHandlers,

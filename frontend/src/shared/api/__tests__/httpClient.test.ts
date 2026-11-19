@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   httpClient,
   request,
+  postFormData,
   setAuthToken,
   getAuthToken,
   setAuthSessionHandlers,
@@ -44,6 +45,8 @@ describe('Centralized HTTP Auth Client (httpClient)', () => {
 
   it('exports httpClient wrapper object matching functional interface', () => {
     expect(httpClient.request).toBe(request);
+    expect(`${'request'}Blob` in httpClient).toBe(false);
+    expect(httpClient.postFormData).toBe(postFormData);
     expect(httpClient.setAuthToken).toBe(setAuthToken);
     expect(httpClient.getAuthToken).toBe(getAuthToken);
     expect(httpClient.setAuthSessionHandlers).toBe(setAuthSessionHandlers);
@@ -199,7 +202,9 @@ describe('Centralized HTTP Auth Client (httpClient)', () => {
       }),
     );
 
-    await expect(request('/api/v1/public-must-change', { skipAuth: true })).rejects.toThrow(ApiError);
+    await expect(request('/api/v1/public-must-change', { skipAuth: true })).rejects.toThrow(
+      ApiError,
+    );
     expect(onMustChangePassword).not.toHaveBeenCalled();
   });
 
@@ -228,6 +233,108 @@ describe('Centralized HTTP Auth Client (httpClient)', () => {
     );
 
     await expect(request('/api/v1/test-must-change')).rejects.toThrow(ApiError);
+  });
+
+  it('omits Content-Type for FormData even when caller provides one, attaches Bearer, and parses JSON', async () => {
+    setAuthToken('hr-jwt-token');
+    const formData = new FormData();
+    formData.append('file', new Blob(['png-bytes'], { type: 'image/png' }), 'logo.png');
+
+    const cdnLogoUrl =
+      'https://res.cloudinary.com/dev-cloud/image/upload/v1/rikkei-jobs/company-logos/company-1.png';
+    const fetchMock = vi.fn().mockResolvedValue(
+      okResponse({
+        id: 1,
+        logoUrl: cdnLogoUrl,
+      }),
+    );
+    globalThis.fetch = fetchMock;
+
+    const result = await postFormData<{ id: number; logoUrl: string }>(
+      '/api/v1/companies/me/logo',
+      formData,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    );
+
+    expect(result).toEqual({ id: 1, logoUrl: cdnLogoUrl });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('/api/v1/companies/me/logo');
+    expect(init.method).toBe('POST');
+    expect(init.body).toBe(formData);
+
+    const headers = new Headers(init.headers);
+    expect(headers.get('Authorization')).toBe('Bearer hr-jwt-token');
+    expect(headers.has('Content-Type')).toBe(false);
+  });
+
+  it('maps 413, 400, and 502 (JSON & non-JSON) FormData upload error responses to ApiError', async () => {
+    setAuthToken('hr-jwt-token');
+    const formData = new FormData();
+    formData.append('file', new Blob(['oversize'], { type: 'image/png' }), 'huge.png');
+
+    globalThis.fetch = vi.fn().mockResolvedValueOnce(
+      errorResponse(413, {
+        code: 'FILE_TOO_LARGE',
+        message: 'Tệp vượt quá giới hạn 2 MB',
+      }),
+    );
+
+    await expect(postFormData('/api/v1/companies/me/logo', formData)).rejects.toMatchObject({
+      name: 'ApiError',
+      status: 413,
+      code: 'FILE_TOO_LARGE',
+      message: 'Tệp vượt quá giới hạn 2 MB',
+    });
+
+    globalThis.fetch = vi.fn().mockResolvedValueOnce(
+      errorResponse(400, {
+        code: 'VALIDATION_ERROR',
+        message: 'Định dạng tệp không hợp lệ',
+      }),
+    );
+
+    await expect(
+      request('/api/v1/companies/me/logo', { method: 'POST', body: formData }),
+    ).rejects.toMatchObject({
+      name: 'ApiError',
+      status: 400,
+      code: 'VALIDATION_ERROR',
+      message: 'Định dạng tệp không hợp lệ',
+    });
+
+    globalThis.fetch = vi.fn().mockResolvedValueOnce(
+      errorResponse(502, {
+        code: 'LOGO_STORAGE_UNAVAILABLE',
+        message: 'Dịch vụ lưu trữ logo tạm thời không khả dụng',
+      }),
+    );
+
+    await expect(postFormData('/api/v1/companies/me/logo', formData)).rejects.toMatchObject({
+      name: 'ApiError',
+      status: 502,
+      code: 'LOGO_STORAGE_UNAVAILABLE',
+      message: 'Dịch vụ lưu trữ logo tạm thời không khả dụng',
+    });
+
+    globalThis.fetch = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 502,
+      statusText: 'Bad Gateway',
+      headers: new Headers({ 'content-type': 'text/html' }),
+      json: () => Promise.reject(new Error('Invalid JSON')),
+    } as unknown as Response);
+
+    await expect(postFormData('/api/v1/companies/me/logo', formData)).rejects.toMatchObject({
+      name: 'ApiError',
+      status: 502,
+      code: 'UNKNOWN_ERROR',
+      message: 'Yêu cầu thất bại với mã trạng thái 502',
+    });
   });
 
   it('statically scans frontend/src to confirm no manual Authorization headers outside httpClient', () => {
@@ -276,9 +383,7 @@ describe('Centralized HTTP Auth Client (httpClient)', () => {
 
     const fileKeys = Object.keys(modules).filter(
       (path) =>
-        !path.includes('.test.') &&
-        !path.includes('__tests__') &&
-        !path.includes('httpClient.ts'),
+        !path.includes('.test.') && !path.includes('__tests__') && !path.includes('httpClient.ts'),
     );
 
     expect(fileKeys.length).toBeGreaterThan(10);

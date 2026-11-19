@@ -45,16 +45,8 @@
   color: var(--rj-color-text-secondary);
 }
 
-.gap-select {
-  min-height: var(--rj-density-input-height);
+.gap-field .rj-select-wrapper {
   min-width: 16rem;
-  padding: 8px 12px;
-  border: 1px solid var(--rj-color-border-interactive);
-  border-radius: var(--rj-radius-lg);
-  background: var(--rj-color-surface-input);
-  color: var(--rj-color-text-primary);
-  font: inherit;
-  cursor: pointer;
 }
 
 .gap-target-line {
@@ -314,7 +306,7 @@
     padding: var(--rj-primitive-space-4);
   }
 
-  .gap-select {
+  .gap-field .rj-select-wrapper {
     min-width: 100%;
   }
 

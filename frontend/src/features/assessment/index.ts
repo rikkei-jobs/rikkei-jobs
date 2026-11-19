@@ -1,3 +1,5 @@
+import { formatRoleList } from '../../shared/i18n/enumLabels';
+
 /**
  * Module 4: Assessment (Đánh giá năng lực)
  * Phiếu đánh giá của Mentor theo khung 20 kỹ năng, tính chỉ số năng lực tổng hợp (0-100).
@@ -14,6 +16,6 @@ export const assessmentModuleConfig = {
   name: 'Đánh giá năng lực (Assessment)',
   description:
     'Phiếu đánh giá Mentor theo 20 kỹ năng chuẩn hóa, tự đánh giá, tính chỉ số năng lực tổng hợp (0-100) và cấp huy hiệu.',
-  roleTarget: 'MENTOR, CANDIDATE, ADMIN',
+  roleTarget: formatRoleList(['MENTOR', 'CANDIDATE', 'ADMIN']),
   badge: 'Module 4',
 };

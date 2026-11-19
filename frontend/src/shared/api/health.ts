@@ -1,5 +1,6 @@
 import { request, getApiBaseUrl } from './httpClient';
 import { ApiError } from './auth';
+import { UNKNOWN_LABEL } from '../i18n/enumLabels';
 
 export type BackendHealthStatus = 'UP' | 'DOWN' | 'CONNECTING...';
 
@@ -29,7 +30,7 @@ export const fetchBackendHealth = async (
 
     return {
       status: 'DOWN',
-      details: `Trạng thái không xác định: ${data?.status || 'N/A'}`,
+      details: `Trạng thái không xác định: ${data?.status || UNKNOWN_LABEL}`,
     };
   } catch (err: unknown) {
     if (err instanceof Error && err.name === 'AbortError') {

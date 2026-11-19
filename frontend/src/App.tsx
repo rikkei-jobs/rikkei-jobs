@@ -29,6 +29,7 @@ import { StaffHomePage } from './features/identity/pages/role-homes/StaffHomePag
 import { AdminHomePage } from './features/identity/pages/role-homes/AdminHomePage';
 import { Icon } from './shared/components/Icon';
 import { CandidateEvaluationsPage } from './features/candidate/pages/CandidateEvaluationsPage';
+import { CompanyProfilePage } from './features/company';
 
 export const APP_NAME = 'Rikkei Jobs - Nền tảng kết nối việc làm theo năng lực đã xác thực';
 export const APP_VERSION = 'v1.0.0-sprint1';
@@ -121,8 +122,8 @@ export const HomeSkeleton: React.FC = () => {
                 Hồ sơ năng lực
               </h2>
               <p className="sp-lead">
-                Vui lòng đăng nhập bằng tài khoản học viên (LMS SSO) hoặc tài khoản doanh nghiệp để xem
-                chỉ số kỹ năng đã xác thực.
+                Vui lòng đăng nhập bằng tài khoản học viên (LMS SSO) hoặc tài khoản doanh nghiệp để
+                xem chỉ số kỹ năng đã xác thực.
               </p>
               <Link to="/login" className="rj-btn rj-btn-primary">
                 <Icon name="shield" size={18} />
@@ -137,11 +138,7 @@ export const HomeSkeleton: React.FC = () => {
         <main className="app-main">
           {/* Quick Identity Portal Entry */}
           <section style={{ textAlign: 'center', margin: '0 0 16px 0' }}>
-            <Link
-              to="/login"
-              className="rj-btn rj-btn-primary"
-              style={{ display: 'inline-flex', padding: '12px 24px', fontSize: '1rem' }}
-            >
+            <Link to="/login" className="rj-btn rj-btn-primary">
               <Icon name="shield" size={20} />
               <span>Đến Cổng Đăng Nhập NT-01 (LMS SSO / Doanh Nghiệp)</span>
             </Link>
@@ -297,6 +294,14 @@ export const AppRoutes: React.FC = () => {
         element={
           <RequireRole allowedRoles={['HR']}>
             <HrHomePage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/hr/company"
+        element={
+          <RequireRole allowedRoles={['HR']}>
+            <CompanyProfilePage />
           </RequireRole>
         }
       />

@@ -6,7 +6,7 @@ import { Icon } from '../../../../shared/components/Icon';
 export const CandidateHomePage: React.FC = () => {
   return (
     <RoleHomeLayout
-      roleTitle="Ứng Viên (Candidate)"
+      roleTitle="Ứng viên"
       roleBadgeClass="rj-role-candidate"
       roleIcon="user"
       description="Trang chủ dành cho học viên và ứng viên tìm kiếm cơ hội thực tập, việc làm"

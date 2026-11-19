@@ -184,8 +184,25 @@ describe('App Component', () => {
     ];
 
     for (const key of moduleKeys) {
-      expect(screen.getByTestId(`module-${key}`)).toBeInTheDocument();
+      const card = screen.getByTestId(`module-${key}`);
+      expect(card).toBeInTheDocument();
+      const targetEl = card.querySelector('.module-target');
+      expect(targetEl).not.toBeNull();
+      expect(targetEl?.textContent).not.toMatch(/\b(CANDIDATE|MENTOR|STAFF|ADMIN)\b/);
     }
+
+    expect(screen.getByTestId('module-candidate').querySelector('.module-target')).toHaveTextContent(
+      /Ứng viên/,
+    );
+    expect(screen.getByTestId('module-company').querySelector('.module-target')).toHaveTextContent(
+      /HR/,
+    );
+    expect(screen.getByTestId('module-assessment').querySelector('.module-target')).toHaveTextContent(
+      /Mentor, Ứng viên, Quản trị viên/,
+    );
+    expect(screen.getByTestId('module-internship').querySelector('.module-target')).toHaveTextContent(
+      /Ứng viên, Mentor, Nhân viên/,
+    );
 
     expect(screen.getByText('MOD-01')).toBeInTheDocument();
     expect(screen.getByText('MOD-07')).toBeInTheDocument();
@@ -193,6 +210,23 @@ describe('App Component', () => {
     await waitFor(() => {
       expect(screen.getByTestId('backend-status-badge')).toHaveTextContent('UP');
     });
+  });
+
+  it('uses Vietnamese fallback Không xác định instead of N/A when health payload has missing status', async () => {
+    globalThis.fetch = vi.fn().mockImplementation(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({}),
+      } as unknown as Response),
+    );
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('backend-status-badge')).toHaveTextContent('DOWN');
+    });
+    expect(screen.getByText(/Trạng thái không xác định: Không xác định/)).toBeInTheDocument();
+    expect(screen.queryByText(/N\/A/)).not.toBeInTheDocument();
   });
 
   it('displays login CTA linking to /login when unauthenticated visitor navigates to skill profile tab', async () => {
