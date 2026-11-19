@@ -155,7 +155,8 @@ public class ApplicationServiceTest {
         assertThrows(
                 DuplicateApplicationException.class,
                 () -> applicationService.apply(jobId, userId, request));
-        verify(applicationRepository).existsByJobIdAndUserIdAndStatusIn(eq(jobId), eq(userId), any());
+        verify(applicationRepository)
+                .existsByJobIdAndUserIdAndStatusIn(eq(jobId), eq(userId), any());
     }
 
     @Test

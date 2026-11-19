@@ -73,7 +73,8 @@ public class ApplicationServiceImpl implements ApplicationService {
         // Once withdrawn, candidate is allowed to apply again.
         if (applicationRepository.existsByJobIdAndUserIdAndStatusIn(
                 jobId, candidateUserId, OPEN_STATUSES)) {
-            throw new DuplicateApplicationException("Ứng viên đã có đơn ứng tuyển đang mở cho vị trí này.");
+            throw new DuplicateApplicationException(
+                    "Ứng viên đã có đơn ứng tuyển đang mở cho vị trí này.");
         }
 
         // 3. Capture immutable CV snapshot at application time
