@@ -1,5 +1,8 @@
 package com.rikkei.jobs.identity.service;
 
+import com.rikkei.jobs.identity.dto.CreateHrUserCommand;
+import com.rikkei.jobs.identity.dto.CreatedHrUserResult;
+import com.rikkei.jobs.identity.dto.SendHrOnboardingEmailCommand;
 import com.rikkei.jobs.identity.dto.UserSummaryDto;
 import java.util.Map;
 import java.util.Set;
@@ -19,4 +22,8 @@ public interface IdentityPublicService {
     boolean isCandidate(Long userId);
 
     boolean isMentor(Long userId);
+
+    CreatedHrUserResult createHrAccount(CreateHrUserCommand command);
+
+    void sendHrOnboardingEmail(SendHrOnboardingEmailCommand command);
 }
