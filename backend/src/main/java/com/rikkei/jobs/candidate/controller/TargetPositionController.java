@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -31,6 +32,9 @@ public class TargetPositionController {
 
     @Operation(
             summary = "Danh sách vị trí mục tiêu",
+            description =
+                    "Chính sách authenticated-any (D6): danh mục vị trí mục tiêu chuẩn mở cho mọi"
+                            + " vai trò đã đăng nhập.",
             responses = {
                 @ApiResponse(
                         responseCode = "200",
@@ -55,6 +59,7 @@ public class TargetPositionController {
                         content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             })
     @SecurityRequirement(name = "bearerAuth")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public List<TargetPositionDto> positions() {
         return gapAnalysisService.listTargetPositions();

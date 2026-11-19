@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -60,18 +61,23 @@ public class SkillProfileController {
                 @ApiResponse(
                         responseCode = "403",
                         description =
-                                "Yêu cầu đổi mật khẩu trước khi tiếp tục: MUST_CHANGE_PASSWORD",
+                                "Không có quyền CANDIDATE hoặc yêu cầu đổi mật khẩu: FORBIDDEN,"
+                                        + " MUST_CHANGE_PASSWORD",
                         content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             })
     @SecurityRequirement(name = "bearerAuth")
+    @PreAuthorize("hasRole('CANDIDATE')")
     @GetMapping("/me/skills")
     public List<SkillProfileItemDto> mySkills(@AuthenticationPrincipal UserPrincipal user) {
-        return skillProfileService.getSkills(user.getId(), user.getId());
+        return skillProfileService.getSkills(user.getId(), user.getRoleName(), user.getId());
     }
 
     @Operation(
             summary = "Danh sách kỹ năng của một ứng viên",
-            description = "Chủ hồ sơ luôn xem được; người khác chỉ xem được hồ sơ đã công khai.",
+            description =
+                    "Ứng viên (CANDIDATE) chỉ xem được hồ sơ của chính mình; nhà tuyển dụng (HR)"
+                            + " xem được hồ sơ đã công khai (is_public = true). Trường hợp khác trả"
+                            + " về 404 NOT_FOUND; vai trò khác nhận 403 FORBIDDEN.",
             responses = {
                 @ApiResponse(
                         responseCode = "200",
@@ -92,7 +98,8 @@ public class SkillProfileController {
                 @ApiResponse(
                         responseCode = "403",
                         description =
-                                "Yêu cầu đổi mật khẩu trước khi tiếp tục: MUST_CHANGE_PASSWORD",
+                                "Không có quyền CANDIDATE/HR hoặc yêu cầu đổi mật khẩu: FORBIDDEN,"
+                                        + " MUST_CHANGE_PASSWORD",
                         content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
                 @ApiResponse(
                         responseCode = "404",
@@ -100,10 +107,11 @@ public class SkillProfileController {
                         content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             })
     @SecurityRequirement(name = "bearerAuth")
+    @PreAuthorize("hasAnyRole('HR', 'CANDIDATE')")
     @GetMapping("/{userId}/skills")
     public List<SkillProfileItemDto> skillsOf(
             @AuthenticationPrincipal UserPrincipal user, @PathVariable Long userId) {
-        return skillProfileService.getSkills(user.getId(), userId);
+        return skillProfileService.getSkills(user.getId(), user.getRoleName(), userId);
     }
 
     @Operation(
@@ -128,14 +136,16 @@ public class SkillProfileController {
                 @ApiResponse(
                         responseCode = "403",
                         description =
-                                "Yêu cầu đổi mật khẩu trước khi tiếp tục: MUST_CHANGE_PASSWORD",
+                                "Không có quyền CANDIDATE hoặc yêu cầu đổi mật khẩu: FORBIDDEN,"
+                                        + " MUST_CHANGE_PASSWORD",
                         content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             })
     @SecurityRequirement(name = "bearerAuth")
+    @PreAuthorize("hasRole('CANDIDATE')")
     @PostMapping("/me/skills/recompute")
     public List<SkillProfileItemDto> recomputeMySkills(
             @AuthenticationPrincipal UserPrincipal user) {
         skillRecomputeService.recomputeSkills(user.getId());
-        return skillProfileService.getSkills(user.getId(), user.getId());
+        return skillProfileService.getSkills(user.getId(), user.getRoleName(), user.getId());
     }
 }

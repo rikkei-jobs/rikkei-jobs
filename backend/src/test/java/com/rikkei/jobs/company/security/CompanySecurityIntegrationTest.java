@@ -261,26 +261,81 @@ class CompanySecurityIntegrationTest {
 
     @Test
     @DisplayName(
-            "Cross-tenant PUT and GET /api/v1/companies/{idOfCompanyB} returns 404 unified ErrorResponse and keeps Company B intact")
+            "Cross-tenant GET /api/v1/companies/{id} returns 404; PUT /{id} returns identical 405 for own/other/missing (401 anonymous) and leaves DB unchanged")
     void shouldReturn404OnCrossTenantCompanyIdRoutes() throws Exception {
         Company companyOneBefore = companyRepository.findById(1L).orElseThrow();
+        Company companyTwoBefore = companyRepository.findById(2L).orElseThrow();
 
-        mockMvc.perform(
-                        put("/api/v1/companies/1")
-                                .with(asUser(hr2))
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content("{\"name\":\"Hijack Attempt\"}"))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.code").value("NOT_FOUND"))
-                .andExpect(jsonPath("$.message").isNotEmpty());
+        // Anonymous PUT /api/v1/companies/{id} must return 401 UNAUTHORIZED
+        for (long targetId : new long[] {1L, 2L, 999999L}) {
+            mockMvc.perform(
+                            put("/api/v1/companies/" + targetId)
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content("{\"name\":\"Anon Attempt\"}"))
+                    .andExpect(status().isUnauthorized())
+                    .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+        }
+
+        // HR PUT /api/v1/companies/{id} on own (2), other (1), and nonexistent (999999)
+        // must all return identical 405 METHOD_NOT_ALLOWED JSON without leaking company existence
+        String otherPutBody =
+                mockMvc.perform(
+                                put("/api/v1/companies/1")
+                                        .with(asUser(hr2))
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content("{\"name\":\"Hijack Attempt\"}"))
+                        .andExpect(status().isMethodNotAllowed())
+                        .andExpect(jsonPath("$.code").value("METHOD_NOT_ALLOWED"))
+                        .andExpect(jsonPath("$.message").isNotEmpty())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+
+        String ownPutBody =
+                mockMvc.perform(
+                                put("/api/v1/companies/2")
+                                        .with(asUser(hr2))
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content("{\"name\":\"Own Put Attempt\"}"))
+                        .andExpect(status().isMethodNotAllowed())
+                        .andExpect(jsonPath("$.code").value("METHOD_NOT_ALLOWED"))
+                        .andExpect(jsonPath("$.message").isNotEmpty())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+
+        String missingPutBody =
+                mockMvc.perform(
+                                put("/api/v1/companies/999999")
+                                        .with(asUser(hr2))
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content("{\"name\":\"Missing Put Attempt\"}"))
+                        .andExpect(status().isMethodNotAllowed())
+                        .andExpect(jsonPath("$.code").value("METHOD_NOT_ALLOWED"))
+                        .andExpect(jsonPath("$.message").isNotEmpty())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+
+        assertEquals(missingPutBody, otherPutBody);
+        assertEquals(missingPutBody, ownPutBody);
+
+        Company companyTwoAfterPut = companyRepository.findById(2L).orElseThrow();
+        assertEquals(companyTwoBefore.getName(), companyTwoAfterPut.getName());
+        assertEquals(companyTwoBefore.getVersion(), companyTwoAfterPut.getVersion());
 
         mockMvc.perform(get("/api/v1/companies/1").with(asUser(hr2)))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("NOT_FOUND"))
                 .andExpect(jsonPath("$.message").isNotEmpty());
 
+        mockMvc.perform(get("/api/v1/companies/2").with(asUser(hr2)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(2));
+
         Company companyOneAfter = companyRepository.findById(1L).orElseThrow();
         assertEquals(companyOneBefore.getName(), companyOneAfter.getName());
+        assertEquals(companyOneBefore.getVersion(), companyOneAfter.getVersion());
 
         // Also confirm sending another company's id in PUT /me body only updates hr2's own company
         // (id=2).

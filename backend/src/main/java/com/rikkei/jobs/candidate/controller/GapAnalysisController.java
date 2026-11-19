@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -62,7 +63,8 @@ public class GapAnalysisController {
                 @ApiResponse(
                         responseCode = "403",
                         description =
-                                "Yêu cầu đổi mật khẩu trước khi tiếp tục: MUST_CHANGE_PASSWORD",
+                                "Không có quyền CANDIDATE hoặc yêu cầu đổi mật khẩu: FORBIDDEN,"
+                                        + " MUST_CHANGE_PASSWORD",
                         content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
                 @ApiResponse(
                         responseCode = "404",
@@ -70,6 +72,7 @@ public class GapAnalysisController {
                         content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             })
     @SecurityRequirement(name = "bearerAuth")
+    @PreAuthorize("hasRole('CANDIDATE')")
     @PutMapping("/target")
     public GapTargetDto chooseTarget(
             @AuthenticationPrincipal UserPrincipal user,
@@ -91,7 +94,8 @@ public class GapAnalysisController {
                 @ApiResponse(
                         responseCode = "403",
                         description =
-                                "Yêu cầu đổi mật khẩu trước khi tiếp tục: MUST_CHANGE_PASSWORD",
+                                "Không có quyền CANDIDATE hoặc yêu cầu đổi mật khẩu: FORBIDDEN,"
+                                        + " MUST_CHANGE_PASSWORD",
                         content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
                 @ApiResponse(
                         responseCode = "404",
@@ -99,6 +103,7 @@ public class GapAnalysisController {
                         content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             })
     @SecurityRequirement(name = "bearerAuth")
+    @PreAuthorize("hasRole('CANDIDATE')")
     @GetMapping("/target")
     public GapTargetDto target(@AuthenticationPrincipal UserPrincipal user) {
         return gapAnalysisService.getTarget(user.getId());
@@ -134,7 +139,8 @@ public class GapAnalysisController {
                 @ApiResponse(
                         responseCode = "403",
                         description =
-                                "Yêu cầu đổi mật khẩu trước khi tiếp tục: MUST_CHANGE_PASSWORD",
+                                "Không có quyền CANDIDATE hoặc yêu cầu đổi mật khẩu: FORBIDDEN,"
+                                        + " MUST_CHANGE_PASSWORD",
                         content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
                 @ApiResponse(
                         responseCode = "404",
@@ -142,6 +148,7 @@ public class GapAnalysisController {
                         content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             })
     @SecurityRequirement(name = "bearerAuth")
+    @PreAuthorize("hasRole('CANDIDATE')")
     @GetMapping("/gap-analysis")
     public GapAnalysisResponse gapAnalysis(
             @AuthenticationPrincipal UserPrincipal user,
