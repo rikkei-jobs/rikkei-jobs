@@ -22,6 +22,7 @@ import { REQUEST_TIMEOUT_MS } from '../config.mjs';
  * @param {Object} [options.headers={}]
  * @param {any} [options.body]
  * @param {string} [options.responseType] - Set to 'buffer' for binary responses
+ * @param {RequestRedirect} [options.redirect] - Optional redirect mode ('follow', 'manual', 'error')
  * @param {number} [options.timeoutMs=REQUEST_TIMEOUT_MS]
  * @returns {Promise<HttpResponse>}
  */
@@ -60,12 +61,16 @@ export async function sendRequest(url, options = {}) {
 
   const startTime = Date.now();
   try {
-    const res = await fetch(url, {
+    const fetchInit = {
       method,
       headers,
       body: requestBody,
       signal: controller.signal
-    });
+    };
+    if (options.redirect) {
+      fetchInit.redirect = options.redirect;
+    }
+    const res = await fetch(url, fetchInit);
     const durationMs = Date.now() - startTime;
     clearTimeout(timer);
 

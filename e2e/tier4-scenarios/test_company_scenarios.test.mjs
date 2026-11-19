@@ -240,33 +240,69 @@ describe('Tier 4: DN-01 Enterprise Scenarios & Security Audit', () => {
     assertCloudinaryLogoUrl(upBeta.body.logoUrl, beta.company.id, 'jpg');
     assertNoCloudinarySecrets(upBeta.rawText);
 
+    const alphaBaseline = await http.get(`${BACKEND_BASE_URL}/api/v1/companies/me`, {
+      headers: authHeaders(alpha.hrToken)
+    });
+    assert.strictEqual(alphaBaseline.status, 200);
+
     const betaBaseline = await http.get(`${BACKEND_BASE_URL}/api/v1/companies/me`, {
       headers: authHeaders(beta.hrToken)
     });
     assert.strictEqual(betaBaseline.status, 200);
 
-    // Alpha attempts cross-tenant PUT and GET targeting Beta's numeric id
+    // Anonymous PUT targeting Beta returns 401 UNAUTHORIZED
+    const anonPut = await http.put(
+      `${BACKEND_BASE_URL}/api/v1/companies/${beta.company.id}`,
+      { name: 'Anonymous Beta Put', size: '1-50' }
+    );
+    assert.strictEqual(anonPut.status, 401);
+    assertUnifiedErrorResponse(anonPut);
+    assert.strictEqual(anonPut.body.code, 'UNAUTHORIZED');
+
+    // Alpha attempts PUT on Beta, own Alpha id, and nonexistent 999999 -> identical 405 METHOD_NOT_ALLOWED; cross-tenant GET -> 404 NOT_FOUND
+    const attackOwnPut = await http.put(
+      `${BACKEND_BASE_URL}/api/v1/companies/${alpha.company.id}`,
+      { name: 'Compromised Alpha', size: '1-50' },
+      { headers: authHeaders(alpha.hrToken) }
+    );
     const attackPut = await http.put(
       `${BACKEND_BASE_URL}/api/v1/companies/${beta.company.id}`,
       { name: 'Compromised Beta', size: '1-50' },
       { headers: authHeaders(alpha.hrToken) }
     );
-    assert.strictEqual(attackPut.status, 404);
-    assert.notStrictEqual(attackPut.status, 403);
-    assert.notStrictEqual(attackPut.status, 200);
-    assertUnifiedErrorResponse(attackPut);
-    assert.strictEqual(attackPut.body.code, 'NOT_FOUND');
+    const attackMissingPut = await http.put(
+      `${BACKEND_BASE_URL}/api/v1/companies/999999`,
+      { name: 'Compromised Missing', size: '1-50' },
+      { headers: authHeaders(alpha.hrToken) }
+    );
+    for (const res of [attackOwnPut, attackPut, attackMissingPut]) {
+      assert.strictEqual(res.status, 405);
+      assert.notStrictEqual(res.status, 403);
+      assert.notStrictEqual(res.status, 200);
+      assertUnifiedErrorResponse(res);
+      assert.strictEqual(res.body.code, 'METHOD_NOT_ALLOWED');
+      assert.ok(VIETNAMESE_DIACRITIC_REGEX.test(res.body.message));
+      assert.strictEqual(EMOJI_REGEX.test(res.body.message), false);
+    }
+    assert.strictEqual(attackOwnPut.rawText, attackPut.rawText);
+    assert.strictEqual(attackMissingPut.rawText, attackPut.rawText);
+    assert.deepStrictEqual(attackOwnPut.body, attackPut.body);
+    assert.deepStrictEqual(attackMissingPut.body, attackPut.body);
 
     const attackGet = await http.get(`${BACKEND_BASE_URL}/api/v1/companies/${beta.company.id}`, {
       headers: authHeaders(alpha.hrToken)
     });
     assert.strictEqual(attackGet.status, 404);
     assertUnifiedErrorResponse(attackGet);
+    assert.strictEqual(attackGet.body.code, 'NOT_FOUND');
 
-    // Alpha attempts injecting Beta's id/companyId in PUT /companies/me JSON payload
+    // Alpha profile remains unchanged after PUT /companies/{alpha.company.id} 405 before legit injectionPut
     const alphaMe = await http.get(`${BACKEND_BASE_URL}/api/v1/companies/me`, {
       headers: authHeaders(alpha.hrToken)
     });
+    assert.strictEqual(alphaMe.status, 200);
+    assert.strictEqual(alphaMe.body.name, alphaBaseline.body.name);
+    assert.strictEqual(alphaMe.body.version, alphaBaseline.body.version);
     const injectionPut = await http.put(
       `${BACKEND_BASE_URL}/api/v1/companies/me`,
       {
