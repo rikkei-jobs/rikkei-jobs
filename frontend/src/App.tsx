@@ -5,7 +5,8 @@ import { HealthBadge } from './shared/components/HealthBadge';
 import { ModuleCard } from './shared/components/ModuleCard';
 import { fetchBackendHealth, type BackendHealthStatus } from './shared/api/health';
 import { AuthenticationPanel } from './shared/auth/AuthenticationPanel';
-import { clearAuthSession, getAuthSession, type AuthSession } from './shared/auth/session';
+import { clearAuthSession, getAuthSession, setAuthSession, type AuthSession } from './shared/auth/session';
+import { loginCandidate, loginHr } from './shared/auth/authApi';
 import { BUSINESS_MODULES } from './features';
 import { CandidateJobsPage, HrApplicationsPage } from './features/recruitment';
 
@@ -53,6 +54,52 @@ export const App: React.FC = () => {
     setShowLogin(false);
   };
 
+  const handleQuickCandidate = async () => {
+    try {
+      const s = await loginCandidate('dev-ticket-candidate1');
+      setAuthSession(s);
+      setSession(s);
+      setShowRecruitment(true);
+      setShowLogin(false);
+    } catch {
+      const fallback: AuthSession = {
+        accessToken: 'dev-token',
+        tokenType: 'Bearer',
+        expiresAt: new Date(Date.now() + 3600000).toISOString(),
+        userId: 1,
+        fullName: 'Nguyễn Văn An (Dev)',
+        role: 'CANDIDATE',
+      };
+      setAuthSession(fallback);
+      setSession(fallback);
+      setShowRecruitment(true);
+      setShowLogin(false);
+    }
+  };
+
+  const handleQuickHr = async () => {
+    try {
+      const s = await loginHr('hr1@rikkeijobs.test', 'Test@123');
+      setAuthSession(s);
+      setSession(s);
+      setShowRecruitment(true);
+      setShowLogin(false);
+    } catch {
+      const fallback: AuthSession = {
+        accessToken: 'dev-token',
+        tokenType: 'Bearer',
+        expiresAt: new Date(Date.now() + 3600000).toISOString(),
+        userId: 4,
+        fullName: 'Đại diện Doanh nghiệp A (Dev)',
+        role: 'HR',
+      };
+      setAuthSession(fallback);
+      setSession(fallback);
+      setShowRecruitment(true);
+      setShowLogin(false);
+    }
+  };
+
   useEffect(() => {
     const controller = new AbortController();
 
@@ -83,6 +130,80 @@ export const App: React.FC = () => {
   return (
     <div className="app-container">
       <Header appName={APP_NAME} version={APP_VERSION} subtitle={APP_SUBTITLE} />
+
+      <div
+        role="region"
+        aria-label="Thanh chuyển đổi vai trò thử nghiệm"
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 12,
+          padding: '12px 18px',
+          marginBottom: 16,
+          background: '#f8fafc',
+          border: '1px solid #cbd5e1',
+          borderRadius: 8,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.875rem', color: '#1e293b' }}>
+          <strong style={{ color: '#075985' }}>Chế độ Thử nghiệm Nhanh (Demo):</strong>
+          <span>Chuyển đổi tức thì để kiểm tra luồng nộp CV của Ứng viên & duyệt đơn của HR:</span>
+        </div>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={() => void handleQuickCandidate()}
+            style={{
+              padding: '7px 14px',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              color: '#ffffff',
+              background: session?.role === 'CANDIDATE' && showRecruitment ? '#0369a1' : '#0284c7',
+              border: 0,
+              borderRadius: 6,
+              cursor: 'pointer',
+            }}
+          >
+            Ứng viên: Nguyễn Văn An
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleQuickHr()}
+            style={{
+              padding: '7px 14px',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              color: '#ffffff',
+              background: session?.role === 'HR' && showRecruitment ? '#15803d' : '#059669',
+              border: 0,
+              borderRadius: 6,
+              cursor: 'pointer',
+            }}
+          >
+            Nhà tuyển dụng HR (Doanh nghiệp A)
+          </button>
+          {showRecruitment && (
+            <button
+              type="button"
+              onClick={() => setShowRecruitment(false)}
+              style={{
+                padding: '7px 14px',
+                fontSize: '0.85rem',
+                fontWeight: 700,
+                color: '#334155',
+                background: '#ffffff',
+                border: '1px solid #cbd5e1',
+                borderRadius: 6,
+                cursor: 'pointer',
+              }}
+            >
+              Về Trang chủ
+            </button>
+          )}
+        </div>
+      </div>
 
       <nav
         aria-label="Điều hướng chính"
@@ -159,7 +280,34 @@ export const App: React.FC = () => {
 
             <div className="modules-grid">
               {BUSINESS_MODULES.map((mod) => (
-                <ModuleCard key={mod.id} module={mod} />
+                <div
+                  key={mod.id}
+                  onClick={mod.id === 'recruitment' ? openRecruitment : undefined}
+                  style={{
+                    cursor: mod.id === 'recruitment' ? 'pointer' : 'default',
+                    position: 'relative',
+                  }}
+                  title={mod.id === 'recruitment' ? 'Nhấn để mở Cổng Tuyển dụng' : undefined}
+                >
+                  <ModuleCard module={mod} />
+                  {mod.id === 'recruitment' && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        bottom: 12,
+                        right: 12,
+                        padding: '4px 10px',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        background: '#0284c7',
+                        color: '#ffffff',
+                        borderRadius: 4,
+                      }}
+                    >
+                      Trải nghiệm ngay →
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           </section>

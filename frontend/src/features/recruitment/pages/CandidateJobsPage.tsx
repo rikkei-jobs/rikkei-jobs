@@ -72,7 +72,13 @@ export const CandidateJobsPage: React.FC = () => {
     return () => controller.abort();
   }, [loadData]);
 
-  const appliedJobIds = new Set(applications.map((application) => application.jobId));
+  // Only WITHDRAWN applications allow re-applying ("rút rồi ứng tuyển lại được").
+  // Active and terminal states (REJECTED, HIRED, SUBMITTED, etc.) remain disabled as "Đã ứng tuyển".
+  const appliedJobIds = new Set(
+    applications
+      .filter((app) => app.status !== 'WITHDRAWN')
+      .map((app) => app.jobId),
+  );
 
   const validateCv = async (file: File): Promise<string | null> => {
     if (

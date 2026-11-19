@@ -36,6 +36,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class ApplicationServiceImpl implements ApplicationService {
 
+    private static final List<ApplicationStatus> OPEN_STATUSES =
+            List.of(
+                    ApplicationStatus.SUBMITTED,
+                    ApplicationStatus.SCREENING,
+                    ApplicationStatus.INTERVIEW,
+                    ApplicationStatus.OFFER);
+
     private final ApplicationRepository applicationRepository;
     private final ApplicationStatusHistoryRepository historyRepository;
     private final JobVerificationClient jobVerificationClient;
@@ -61,9 +68,12 @@ public class ApplicationServiceImpl implements ApplicationService {
         // 1. Verify JD eligibility (approved and deadline valid)
         JobSummaryDto job = jobVerificationClient.verifyJobEligible(jobId);
 
-        // 2. Enforce the one-application-per-job rule across every status.
-        if (applicationRepository.existsByJobIdAndUserId(jobId, candidateUserId)) {
-            throw new DuplicateApplicationException();
+        // 2. Enforce the rule: each candidate has at most 1 open application per JD.
+        // If candidate already has an active application, return 409 Conflict.
+        // Once withdrawn, candidate is allowed to apply again.
+        if (applicationRepository.existsByJobIdAndUserIdAndStatusIn(
+                jobId, candidateUserId, OPEN_STATUSES)) {
+            throw new DuplicateApplicationException("Ứng viên đã có đơn ứng tuyển đang mở cho vị trí này.");
         }
 
         // 3. Capture immutable CV snapshot at application time

@@ -80,7 +80,8 @@ public class ApplicationServiceTest {
                         OffsetDateTime.now().plusMonths(1),
                         "hr@company.test");
         when(jobVerificationClient.verifyJobEligible(jobId)).thenReturn(job);
-        when(applicationRepository.existsByJobIdAndUserId(jobId, userId)).thenReturn(false);
+        when(applicationRepository.existsByJobIdAndUserIdAndStatusIn(eq(jobId), eq(userId), any()))
+                .thenReturn(false);
         when(cvSnapshotService.captureSnapshot(cvId, userId))
                 .thenReturn(new CvSnapshotData("candidate.pdf", "%PDF-1.4".getBytes()));
 
@@ -124,7 +125,8 @@ public class ApplicationServiceTest {
                         OffsetDateTime.now().plusMonths(1),
                         "hr@company.test");
         when(jobVerificationClient.verifyJobEligible(jobId)).thenReturn(job);
-        when(applicationRepository.existsByJobIdAndUserId(jobId, userId)).thenReturn(true);
+        when(applicationRepository.existsByJobIdAndUserIdAndStatusIn(eq(jobId), eq(userId), any()))
+                .thenReturn(true);
 
         assertThrows(
                 DuplicateApplicationException.class,
@@ -132,8 +134,8 @@ public class ApplicationServiceTest {
     }
 
     @Test
-    @DisplayName("Đơn REJECTED hoặc WITHDRAWN vẫn ngăn ứng tuyển lại cùng JD")
-    void testApply_DuplicateHistoricalApplication_ThrowsConflict() {
+    @DisplayName("Ứng viên có đơn đang mở -> Ném DuplicateApplicationException (409)")
+    void testApply_DuplicateActiveApplication_ThrowsConflict() {
         Long jobId = 101L;
         Long userId = 1L;
         ApplyJobRequest request = new ApplyJobRequest(10L, "Thư ứng tuyển");
@@ -146,12 +148,13 @@ public class ApplicationServiceTest {
                         OffsetDateTime.now().plusMonths(1),
                         "hr@company.test");
         when(jobVerificationClient.verifyJobEligible(jobId)).thenReturn(job);
-        when(applicationRepository.existsByJobIdAndUserId(jobId, userId)).thenReturn(true);
+        when(applicationRepository.existsByJobIdAndUserIdAndStatusIn(eq(jobId), eq(userId), any()))
+                .thenReturn(true);
 
         assertThrows(
                 DuplicateApplicationException.class,
                 () -> applicationService.apply(jobId, userId, request));
-        verify(applicationRepository).existsByJobIdAndUserId(jobId, userId);
+        verify(applicationRepository).existsByJobIdAndUserIdAndStatusIn(eq(jobId), eq(userId), any());
     }
 
     @Test
@@ -168,7 +171,8 @@ public class ApplicationServiceTest {
                         OffsetDateTime.now().plusMonths(1),
                         "hr@company.test");
         when(jobVerificationClient.verifyJobEligible(jobId)).thenReturn(job);
-        when(applicationRepository.existsByJobIdAndUserId(jobId, userId)).thenReturn(false);
+        when(applicationRepository.existsByJobIdAndUserIdAndStatusIn(eq(jobId), eq(userId), any()))
+                .thenReturn(false);
         when(cvSnapshotService.captureSnapshot(10L, userId))
                 .thenReturn(new CvSnapshotData("candidate.pdf", "%PDF-1.4".getBytes()));
         when(applicationRepository.saveAndFlush(any(Application.class)))
@@ -271,7 +275,8 @@ public class ApplicationServiceTest {
                         OffsetDateTime.now().plusMonths(1),
                         "hr@company.test");
         when(jobVerificationClient.verifyJobEligible(jobId)).thenReturn(job);
-        when(applicationRepository.existsByJobIdAndUserId(jobId, userId)).thenReturn(true);
+        when(applicationRepository.existsByJobIdAndUserIdAndStatusIn(eq(jobId), eq(userId), any()))
+                .thenReturn(true);
 
         assertThrows(
                 DuplicateApplicationException.class,

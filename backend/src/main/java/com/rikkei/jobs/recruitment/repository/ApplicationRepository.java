@@ -2,6 +2,7 @@ package com.rikkei.jobs.recruitment.repository;
 
 import com.rikkei.jobs.recruitment.model.Application;
 import com.rikkei.jobs.recruitment.model.ApplicationStatus;
+import java.util.Collection;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -11,6 +12,10 @@ import org.springframework.stereotype.Repository;
 /** Spring Data JPA Repository for Application entities. */
 @Repository
 public interface ApplicationRepository extends JpaRepository<Application, Long> {
+
+    /** Checks whether the candidate has an open/active application for this job. */
+    boolean existsByJobIdAndUserIdAndStatusIn(
+            Long jobId, Long userId, Collection<ApplicationStatus> statuses);
 
     /** Checks whether the candidate has ever applied to this job. */
     boolean existsByJobIdAndUserId(Long jobId, Long userId);

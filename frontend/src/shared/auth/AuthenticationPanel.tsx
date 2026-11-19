@@ -93,6 +93,77 @@ export const AuthenticationPanel: React.FC<AuthenticationPanelProps> = ({
           </button>
         ))}
       </div>
+      <div
+        style={{
+          marginBottom: 16,
+          padding: 12,
+          background: '#f8fafc',
+          border: '1px dashed #0284c7',
+          borderRadius: 6,
+        }}
+      >
+        <p style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 700, color: '#0369a1' }}>
+          Đăng nhập nhanh phục vụ thử nghiệm / Demo:
+        </p>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={async () => {
+              setIsSubmitting(true);
+              setErrorMessage(null);
+              try {
+                const s = await loginCandidate('dev-ticket-candidate1');
+                setAuthSession(s);
+                onAuthenticated(s);
+              } catch (e: unknown) {
+                setErrorMessage(e instanceof Error ? e.message : 'Không thể đăng nhập ứng viên');
+              } finally {
+                setIsSubmitting(false);
+              }
+            }}
+            style={{
+              padding: '6px 10px',
+              fontSize: 12,
+              background: '#0284c7',
+              color: '#fff',
+              border: 0,
+              borderRadius: 4,
+              cursor: 'pointer',
+              fontWeight: 600,
+            }}
+          >
+            Ứng viên: Nguyễn Văn An
+          </button>
+          <button
+            type="button"
+            onClick={async () => {
+              setIsSubmitting(true);
+              setErrorMessage(null);
+              try {
+                const s = await loginHr('hr1@rikkeijobs.test', 'Test@123');
+                setAuthSession(s);
+                onAuthenticated(s);
+              } catch (e: unknown) {
+                setErrorMessage(e instanceof Error ? e.message : 'Không thể đăng nhập HR');
+              } finally {
+                setIsSubmitting(false);
+              }
+            }}
+            style={{
+              padding: '6px 10px',
+              fontSize: 12,
+              background: '#047857',
+              color: '#fff',
+              border: 0,
+              borderRadius: 4,
+              cursor: 'pointer',
+              fontWeight: 600,
+            }}
+          >
+            HR: hr1@rikkeijobs.test
+          </button>
+        </div>
+      </div>
       <form
         id="recruitment-login-form"
         onSubmit={submit}
@@ -106,6 +177,7 @@ export const AuthenticationPanel: React.FC<AuthenticationPanelProps> = ({
               name="email"
               type="email"
               autoComplete="username"
+              defaultValue="hr1@rikkeijobs.test"
               required
               style={inputStyle}
             />
@@ -115,6 +187,7 @@ export const AuthenticationPanel: React.FC<AuthenticationPanelProps> = ({
               name="password"
               type="password"
               autoComplete="current-password"
+              defaultValue="Test@123"
               required
               style={inputStyle}
             />
@@ -122,9 +195,16 @@ export const AuthenticationPanel: React.FC<AuthenticationPanelProps> = ({
         ) : (
           <>
             <label htmlFor="login-ticket">Vé SSO từ cổng LMS</label>
-            <input id="login-ticket" name="ticket" autoComplete="off" required style={inputStyle} />
+            <input
+              id="login-ticket"
+              name="ticket"
+              autoComplete="off"
+              defaultValue="dev-ticket-candidate1"
+              required
+              style={inputStyle}
+            />
             <p style={{ margin: '8px 0 0', color: '#475569', fontSize: 14 }}>
-              Vé SSO chỉ sử dụng được một lần và hết hạn sau 60 giây.
+              Vé SSO chỉ sử dụng được một lần và hết hạn sau 60 giây (Mẫu dev: <code>dev-ticket-candidate1</code>).
             </p>
           </>
         )}
