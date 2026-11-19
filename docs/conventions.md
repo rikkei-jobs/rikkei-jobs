@@ -181,7 +181,7 @@ The Rikkei Jobs access control system comprises five distinct user roles:
 
 ## 3. Sample Accounts for Development (Dev Profile)
 
-For local development and continuous integration testing, exactly 8 fictitious accounts are provisioned via the dev database seed.
+For local development and continuous integration testing, exactly 9 fictitious accounts are provisioned via the dev database seeds (`V2__dev_seed.sql` + `V8__dev_evaluation_seed.sql`).
 
 - **Universal Password**: `Test@123` (Stored as BCrypt hash: `$2a$10$...`)
 - **Email Domain**: `@rikkeijobs.test`
@@ -194,6 +194,7 @@ For local development and continuous integration testing, exactly 8 fictitious a
 | `hr1@rikkeijobs.test` | Đại diện Doanh nghiệp A | `HR` | *(None / NULL)* | Enterprise recruiter for Company A |
 | `hr2@rikkeijobs.test` | Đại diện Doanh nghiệp B | `HR` | *(None / NULL)* | Enterprise recruiter for Company B |
 | `mentor1@rikkeijobs.test` | Phạm Quốc Dũng | `MENTOR` | `lms-mt-001` | Mentor for internship batch `IOC-JB-2026-09` |
+| `mentor2@rikkeijobs.test` | Trần Minh Tuấn | `MENTOR` | `lms-mt-002` | Second IOC project mentor (`V8` seed) |
 | `staff1@rikkeijobs.test` | Hoàng Thu Hà | `STAFF` | `lms-st-001` | Placement coordinator reviewing candidates and JDs |
 | `admin1@rikkeijobs.test` | Đỗ Thanh Hải | `ADMIN` | `lms-ad-001` | System administrator with full permissions |
 
@@ -206,9 +207,9 @@ For local development and continuous integration testing, exactly 8 fictitious a
 Full details and schema examples are documented in [`docs/mock-contract.md`](mock-contract.md).
 
 - **Mock Process**: Standalone Node.js Express server running on port `9000`.
-- **Authentication**: Requires HTTP header `X-Service-Key: dev-key` for all `/lms`, `/exam`, `/pm`, and `/meet` routes.
-- **11 Business Endpoints**: Covers LMS SSO authentication, student results, course recommendations, course enrollment, exam scores, PM internships, batch member addition, and Rikkei Meet room generation.
-- **4 Testing Tools**: Non-authenticated testing tools at `/mock/reload`, `/mock/requests`, `/mock/enrollments`, and `/mock/reset`.
+- **Authentication**: Requires HTTP header `X-Service-Key: dev-key` for all `/lms`, `/exam`, `/pm`, and `/meet` routes. The separate `/cloudinary/*` mock namespace uses Cloudinary `api_key` + SHA-1 `signature` validation instead of `X-Service-Key`.
+- **11 Business Endpoints + Cloudinary Mock Namespace**: Covers LMS SSO authentication, student results, course recommendations, course enrollment, exam scores, PM internships, batch member addition, Rikkei Meet room generation, plus `/cloudinary/*` signed upload, delivery, and destroy simulation for local company logo storage.
+- **5 Testing Tools**: Non-authenticated testing tools at `/mock/reload`, `/mock/requests`, `/mock/enrollments`, `/mock/reset`, and `/mock/cloudinary/fail-next`.
 - **SSO Single-Use & Expiration Rule**: The mock server deliberately does NOT enforce single-use or 60-second expiration (it returns 200 on repeated calls). The **Backend** is strictly responsible for enforcing single-use and the 60s TTL window in subsequent task `NT-01` via the `used_sso_tickets` table. Neither mock nor backend implements this rejection logic in Sprint 1.
 
 ---

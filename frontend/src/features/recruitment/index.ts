@@ -1,3 +1,5 @@
+import { formatRoleList } from '../../shared/i18n/enumLabels';
+
 /**
  * Module 6: Recruitment (Ứng tuyển & Tuyển dụng)
  * Quy trình nộp hồ sơ, sàng lọc, tạo phòng phỏng vấn qua Rikkei Meet, gửi offer.
@@ -21,6 +23,6 @@ export const recruitmentModuleConfig = {
   name: 'Ứng tuyển & Tuyển dụng (Recruitment)',
   description:
     'Nộp hồ sơ ứng tuyển bằng CV chuẩn, quy trình sàng lọc, tạo phòng phỏng vấn Rikkei Meet và quản lý gửi nhận offer.',
-  roleTarget: 'CANDIDATE, HR, STAFF',
+  roleTarget: formatRoleList(['CANDIDATE', 'HR', 'STAFF']),
   badge: 'Module 6',
 };

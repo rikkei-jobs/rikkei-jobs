@@ -7,11 +7,88 @@ const { spawn } = require('child_process');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 9000;
 const BASE_URL = `http://localhost:${PORT}`;
 const SERVICE_KEY = 'dev-key';
+const CLOUDINARY_CLOUD = 'dev-cloud';
+const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || 'dev-key';
+const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET || 'dev-secret';
 const DATA_FILE = path.join(__dirname, 'data.json');
+
+// Helper to make raw HTTP requests (supports form-urlencoded and binary responses)
+function requestRaw(method, pathUrl, headers = {}, rawBody = null) {
+  return new Promise((resolve, reject) => {
+    const url = new URL(pathUrl, BASE_URL);
+    const options = {
+      method,
+      hostname: url.hostname,
+      port: url.port,
+      path: url.pathname + url.search,
+      headers: { ...headers }
+    };
+
+    if (rawBody !== null && options.headers['Content-Length'] === undefined) {
+      options.headers['Content-Length'] = Buffer.byteLength(rawBody);
+    }
+
+    const req = http.request(options, res => {
+      const chunks = [];
+      res.on('data', chunk => {
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+      });
+      res.on('end', () => {
+        const bodyBuffer = Buffer.concat(chunks);
+        let data = null;
+        const text = bodyBuffer.toString('utf8');
+        try {
+          data = JSON.parse(text);
+        } catch (_) {
+          data = text;
+        }
+        resolve({
+          status: res.statusCode,
+          headers: res.headers,
+          bodyBuffer,
+          data
+        });
+      });
+    });
+
+    req.on('error', reject);
+
+    if (rawBody !== null) {
+      req.write(rawBody);
+    }
+    req.end();
+  });
+}
+
+function computeCloudinarySignature(params, apiSecret) {
+  const excluded = new Set(['file', 'cloud_name', 'resource_type', 'api_key', 'signature']);
+  const keys = Object.keys(params)
+    .filter(k => !excluded.has(k) && params[k] !== undefined && params[k] !== null && String(params[k]) !== '')
+    .sort();
+  const payload = keys.map(k => `${k}=${String(params[k])}`).join('&');
+  return crypto
+    .createHash('sha1')
+    .update(payload + apiSecret, 'utf8')
+    .digest('hex');
+}
+
+function requestForm(pathUrl, params, headers = {}) {
+  const encoded = new URLSearchParams(params).toString();
+  return requestRaw(
+    'POST',
+    pathUrl,
+    {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      ...headers
+    },
+    encoded
+  );
+}
 
 // Helper to make HTTP requests
 function request(method, pathUrl, headers = {}, body = null) {
@@ -395,9 +472,238 @@ async function runTests() {
     }
     console.log('[PASS] Hoàn thành kiểm tra PATCH /mock/enrollments và POST /mock/reset.\n');
 
+    // -------------------------------------------------------------
+    // Tiêu chí 9: Cloudinary Mock Router & Tool #5 (/mock/cloudinary/fail-next)
+    // -------------------------------------------------------------
+    console.log('--- Kiểm tra Cloudinary Mock Router (/cloudinary/*) & fail-next ---');
+
+    // 1. Official Cloudinary signature vector
+    const docVectorSig = computeCloudinarySignature(
+      {
+        eager: 'w_400,h_300,c_pad|w_260,h_200,c_crop',
+        public_id: 'sample_image',
+        timestamp: '1315060510'
+      },
+      'abcd'
+    );
+    if (docVectorSig !== 'bfd09f95f331f558cbd1320e67aa8d488770583e') {
+      throw new Error(`Thất bại: Vector chữ ký Cloudinary không khớp (${docVectorSig})`);
+    }
+
+    // Minimal valid 1x1 PNG & minimal JPEG bytes
+    const pngBytes = Buffer.from(
+      '89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000a49444154789c63000100000500010d0a2db40000000049454e44ae426082',
+      'hex'
+    );
+    const jpegBytes = Buffer.from(
+      'ffd8ffe000104a46494600010101004800480000ffdb0043000302020302020303030304030304050805050404050a070706080c0a0c0c0b0a0b0b0d0e12100d0e110e0b0b1016101113141515150c0f171816141812141514ffc0000b080001000101011100ffc40014000100000000000000000000000000000009ffc40014100100000000000000000000000000000000ffda0008010100003f00d2cf20ffd9',
+      'hex'
+    );
+
+    // 2. Upload PNG without X-Service-Key
+    const pngPublicId = 'rikkei-jobs/company-logos/company-1';
+    const pngParams = {
+      api_key: CLOUDINARY_API_KEY,
+      timestamp: '1763437800',
+      public_id: pngPublicId,
+      overwrite: 'true',
+      invalidate: 'true',
+      unique_filename: 'false',
+      file: `data:image/png;base64,${pngBytes.toString('base64')}`
+    };
+    pngParams.signature = computeCloudinarySignature(pngParams, CLOUDINARY_API_SECRET);
+
+    const resPngUpload = await requestForm(`/cloudinary/v1_1/${CLOUDINARY_CLOUD}/image/upload`, pngParams);
+    console.log('  PNG upload -> Status:', resPngUpload.status, 'Data:', resPngUpload.data);
+    const expectedPrefix = `http://127.0.0.1:${PORT}/cloudinary/${CLOUDINARY_CLOUD}/image/upload/v`;
+    if (
+      resPngUpload.status !== 200 ||
+      resPngUpload.data.public_id !== pngPublicId ||
+      resPngUpload.data.format !== 'png' ||
+      resPngUpload.data.bytes !== pngBytes.length ||
+      typeof resPngUpload.data.version !== 'number' ||
+      !String(resPngUpload.data.secure_url).startsWith(expectedPrefix)
+    ) {
+      throw new Error('Thất bại: Upload PNG tới Cloudinary mock không hợp lệ');
+    }
+
+    // 3. Deliver PNG bytes & Content-Type without X-Service-Key
+    const pngDeliveryUrl = new URL(resPngUpload.data.secure_url);
+    const resPngGet = await requestRaw('GET', pngDeliveryUrl.pathname);
+    if (
+      resPngGet.status !== 200 ||
+      resPngGet.headers['content-type'] !== 'image/png' ||
+      resPngGet.headers['cache-control'] !== 'no-store' ||
+      !resPngGet.bodyBuffer.equals(pngBytes)
+    ) {
+      throw new Error('Thất bại: Delivery PNG không trả về đúng bytes hoặc Content-Type');
+    }
+
+    // 4. Upload JPEG & verify Content-Type + monotonic version
+    const jpegPublicId = 'rikkei-jobs/company-logos/company-2';
+    const jpegParams = {
+      api_key: CLOUDINARY_API_KEY,
+      timestamp: '1763437801',
+      public_id: jpegPublicId,
+      overwrite: 'true',
+      invalidate: 'true',
+      unique_filename: 'false',
+      file: `data:image/jpeg;base64,${jpegBytes.toString('base64')}`
+    };
+    jpegParams.signature = computeCloudinarySignature(jpegParams, CLOUDINARY_API_SECRET);
+
+    const resJpegUpload = await requestForm(`/cloudinary/v1_1/${CLOUDINARY_CLOUD}/image/upload`, jpegParams);
+    if (resJpegUpload.status !== 200 || resJpegUpload.data.format !== 'jpg') {
+      throw new Error('Thất bại: Upload JPEG tới Cloudinary mock không trả về format jpg');
+    }
+    const resJpegGet = await requestRaw('GET', new URL(resJpegUpload.data.secure_url).pathname);
+    if (
+      resJpegGet.status !== 200 ||
+      resJpegGet.headers['content-type'] !== 'image/jpeg' ||
+      !resJpegGet.bodyBuffer.equals(jpegBytes)
+    ) {
+      throw new Error('Thất bại: Delivery JPEG không trả về đúng bytes hoặc Content-Type');
+    }
+
+    // Re-upload PNG same public_id -> monotonic version bump, old version 404
+    const resPngReupload = await requestForm(`/cloudinary/v1_1/${CLOUDINARY_CLOUD}/image/upload`, pngParams);
+    if (resPngReupload.status !== 200 || resPngReupload.data.version <= resPngUpload.data.version) {
+      throw new Error('Thất bại: Re-upload cùng public_id không tăng version đơn điệu');
+    }
+    const resOldVersion = await requestRaw('GET', pngDeliveryUrl.pathname);
+    if (resOldVersion.status !== 404) {
+      throw new Error('Thất bại: Version cũ sau khi overwrite phải trả 404');
+    }
+
+    // 5. 401 on bad signature or bad api_key
+    const resBadSig = await requestForm(`/cloudinary/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
+      ...pngParams,
+      signature: '0000000000000000000000000000000000000000'
+    });
+    if (resBadSig.status !== 401) {
+      throw new Error(`Thất bại: Sai signature phải trả 401 (thực tế: ${resBadSig.status})`);
+    }
+
+    const resBadKey = await requestForm(`/cloudinary/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
+      ...pngParams,
+      api_key: 'wrong-api-key'
+    });
+    if (resBadKey.status !== 401) {
+      throw new Error(`Thất bại: Sai api_key phải trả 401 (thực tế: ${resBadKey.status})`);
+    }
+
+    // 6. 400 on invalid data URI or traversal public_id
+    const badUriParams = {
+      api_key: CLOUDINARY_API_KEY,
+      timestamp: '1763437802',
+      public_id: pngPublicId,
+      file: 'data:image/svg+xml;base64,PHN2Zz48L3N2Zz4='
+    };
+    badUriParams.signature = computeCloudinarySignature(badUriParams, CLOUDINARY_API_SECRET);
+    const resBadUri = await requestForm(`/cloudinary/v1_1/${CLOUDINARY_CLOUD}/image/upload`, badUriParams);
+    if (resBadUri.status !== 400) {
+      throw new Error(`Thất bại: Data URI SVG phải trả 400 (thực tế: ${resBadUri.status})`);
+    }
+
+    const traversalParams = {
+      api_key: CLOUDINARY_API_KEY,
+      timestamp: '1763437803',
+      public_id: '../escape',
+      file: pngParams.file
+    };
+    traversalParams.signature = computeCloudinarySignature(traversalParams, CLOUDINARY_API_SECRET);
+    const resTraversal = await requestForm(`/cloudinary/v1_1/${CLOUDINARY_CLOUD}/image/upload`, traversalParams);
+    if (resTraversal.status !== 400) {
+      throw new Error(`Thất bại: public_id traversal phải trả 400 (thực tế: ${resTraversal.status})`);
+    }
+
+    // 7. 404 on missing asset & unknown /cloudinary/* route (never 401 INVALID_SERVICE_KEY)
+    const resMissingAsset = await requestRaw('GET', `/cloudinary/${CLOUDINARY_CLOUD}/image/upload/v1/missing.png`);
+    if (resMissingAsset.status !== 404) {
+      throw new Error(`Thất bại: Ảnh không tồn tại phải trả 404 (thực tế: ${resMissingAsset.status})`);
+    }
+    const resUnknownCloudRoute = await requestRaw('GET', '/cloudinary/unknown-route');
+    if (resUnknownCloudRoute.status !== 404) {
+      throw new Error(`Thất bại: Route lạ trong /cloudinary/* phải trả 404 (thực tế: ${resUnknownCloudRoute.status})`);
+    }
+
+    // 8. Destroy endpoint
+    const destroyParams = {
+      api_key: CLOUDINARY_API_KEY,
+      timestamp: '1763437804',
+      public_id: jpegPublicId
+    };
+    destroyParams.signature = computeCloudinarySignature(destroyParams, CLOUDINARY_API_SECRET);
+    const resDestroyBadSig = await requestForm(`/cloudinary/v1_1/${CLOUDINARY_CLOUD}/image/destroy`, {
+      ...destroyParams,
+      signature: 'ffffffffffffffffffffffffffffffffffffffff'
+    });
+    if (resDestroyBadSig.status !== 401) {
+      throw new Error('Thất bại: Destroy sai signature phải trả 401');
+    }
+    const resDestroyOk = await requestForm(`/cloudinary/v1_1/${CLOUDINARY_CLOUD}/image/destroy`, destroyParams);
+    if (resDestroyOk.status !== 200 || resDestroyOk.data.result !== 'ok') {
+      throw new Error('Thất bại: Destroy hợp lệ phải trả 200 { result: "ok" }');
+    }
+    const resAfterDestroy = await requestRaw('GET', new URL(resJpegUpload.data.secure_url).pathname);
+    if (resAfterDestroy.status !== 404) {
+      throw new Error('Thất bại: GET sau khi destroy phải trả 404');
+    }
+    const resDestroyAgain = await requestForm(`/cloudinary/v1_1/${CLOUDINARY_CLOUD}/image/destroy`, destroyParams);
+    if (resDestroyAgain.status !== 200 || resDestroyAgain.data.result !== 'not found') {
+      throw new Error('Thất bại: Destroy lần 2 phải trả 200 { result: "not found" }');
+    }
+
+    // 9. Tool #5: POST /mock/cloudinary/fail-next (single-shot)
+    const resFailNextBad = await request('POST', '/mock/cloudinary/fail-next', {}, { status: 200 });
+    if (resFailNextBad.status !== 400) {
+      throw new Error('Thất bại: fail-next với status ngoài 400..599 phải trả 400');
+    }
+    const resFailNextSet = await request(
+      'POST',
+      '/mock/cloudinary/fail-next',
+      {},
+      { status: 503, message: 'Simulated outage' }
+    );
+    if (resFailNextSet.status !== 200 || !resFailNextSet.data.ok || resFailNextSet.data.failNext.status !== 503) {
+      throw new Error('Thất bại: POST /mock/cloudinary/fail-next không thiết lập được cờ lỗi');
+    }
+    const resUploadFailed = await requestForm(`/cloudinary/v1_1/${CLOUDINARY_CLOUD}/image/upload`, pngParams);
+    if (resUploadFailed.status !== 503 || !resUploadFailed.data.error) {
+      throw new Error(`Thất bại: Upload sau fail-next phải trả 503 (thực tế: ${resUploadFailed.status})`);
+    }
+    const resUploadRecovered = await requestForm(`/cloudinary/v1_1/${CLOUDINARY_CLOUD}/image/upload`, pngParams);
+    if (resUploadRecovered.status !== 200) {
+      throw new Error(`Thất bại: Upload tiếp theo sau single-shot fail-next phải phục hồi 200 (thực tế: ${resUploadRecovered.status})`);
+    }
+
+    // 10. Reset clears failNext, cloudinaryAssets, and requestLog excludes /cloudinary/*
+    await request('POST', '/mock/cloudinary/fail-next', {}, { status: 500 });
+    const resReset2 = await request('POST', '/mock/reset');
+    if (resReset2.status !== 200 || !resReset2.data.ok) {
+      throw new Error('Thất bại: POST /mock/reset lần 2 không trả ok');
+    }
+    const resAfterResetGet = await requestRaw('GET', new URL(resUploadRecovered.data.secure_url).pathname);
+    if (resAfterResetGet.status !== 404) {
+      throw new Error('Thất bại: /mock/reset phải xóa sạch cloudinaryAssets');
+    }
+    const resUploadAfterReset = await requestForm(`/cloudinary/v1_1/${CLOUDINARY_CLOUD}/image/upload`, pngParams);
+    if (resUploadAfterReset.status !== 200) {
+      throw new Error('Thất bại: /mock/reset phải xóa cả cờ failNext đang chờ');
+    }
+    const resLogCheck = await request('GET', '/mock/requests');
+    if (
+      resLogCheck.status !== 200 ||
+      resLogCheck.data.some(r => r.path && (r.path.startsWith('/cloudinary/') || r.path.startsWith('/mock/')))
+    ) {
+      throw new Error('Thất bại: /mock/requests không được ghi log /cloudinary/* hoặc /mock/*');
+    }
+    await request('POST', '/mock/reset');
+    console.log('[PASS] Hoàn thành kiểm tra Cloudinary Mock Router (/cloudinary/*) và Tool #5 fail-next.\n');
+
     console.log('================================================================');
     console.log('TẤT CẢ CÁC BÀI TEST ĐÃ VƯỢT QUA 100% THÀNH CÔNG RỰC RỠ!');
-    console.log('ĐẠT TOÀN DIỆN 8/8 TIÊU CHÍ TỰ KIỂM TRONG MỤC 8 TÀI LIỆU PDF');
+    console.log('ĐẠT TOÀN DIỆN 8/8 TIÊU CHÍ TỰ KIỂM + CLOUDINARY MOCK EXTENSION');
     console.log('================================================================');
   } finally {
     console.log('\nDừng tiến trình server.js...');

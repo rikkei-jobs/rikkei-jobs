@@ -96,6 +96,8 @@ temp/
 *.bak
 *.swp
 *~
+docs/nt01/pr-screenshots/
+docs/dn01/pr-screenshots/
 
 # ==============================================================================
 # AI Coding Agent Configuration (.claude & .gemini mirrors)
@@ -116,3 +118,4 @@ temp/
 .gemini/*.local.*
 .gemini/**/*.local.*
 
+.agents/*

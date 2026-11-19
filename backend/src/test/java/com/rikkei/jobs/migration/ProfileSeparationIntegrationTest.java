@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.rikkei.jobs.identity.model.User;
 import com.rikkei.jobs.identity.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -26,9 +27,16 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
+ feature/T023552-candidate-application
  * Validates strict separation between prod and dev profiles. Production applies schema migrations
  * without dev-only seed data; development applies both schema and development seed migrations. Both
  * profiles retain the expected endpoint security boundaries.
+
+ * Validates strict separation between prod and dev profiles. - Prod profile: ONLY schema migrations
+ * V1, V3, V5, V7, V9, V11 and V13 applied, exactly 0 users seeded, /api/v1/test/** blocked. - Dev
+ * profile: all of V1-V14 applied, exactly 9 users seeded. - Mutation/negative test: verifies that
+ * seed data isolation holds and fails if inverted.
+ develop
  */
 public class ProfileSeparationIntegrationTest {
 
@@ -38,7 +46,16 @@ public class ProfileSeparationIntegrationTest {
                 "CORS_ALLOWED_ORIGINS=http://localhost:3000",
                 "EXTERNAL_BASE_URL=https://mock.example.com",
                 "EXTERNAL_SERVICE_KEY=prod-secret-service-key-999",
+ feature/T023552-candidate-application
                 "JWT_SECRET=production-jwt-signing-secret-with-adequate-length"
+
+                "JWT_SECRET=super-secure-production-jwt-secret-key-32-bytes-minimum!",
+                "CLOUDINARY_CLOUD_NAME=prod-rikkei-cloud",
+                "CLOUDINARY_API_KEY=prod-cloudinary-key-123",
+                "CLOUDINARY_API_SECRET=prod-cloudinary-secret-xyz-987",
+                "CLOUDINARY_API_BASE_URL=https://api.cloudinary.com/v1_1",
+                "CLOUDINARY_DELIVERY_BASE_URL=https://res.cloudinary.com/prod-rikkei-cloud/image/upload"
+ develop
             })
     @Testcontainers
     @ActiveProfiles("prod")
@@ -73,15 +90,56 @@ public class ProfileSeparationIntegrationTest {
         }
 
         @Test
+ feature/T023552-candidate-application
         @DisplayName("Prod profile must apply production migrations without V2 dev seed")
+
+        @DisplayName("Prod profile schema must contain V3 evolved tables and columns")
+        void testProdProfileV3SchemaEvolution() {
+            Integer usedSsoTicketsCount =
+                    jdbcTemplate.queryForObject(
+                            "SELECT count(*) FROM used_sso_tickets", Integer.class);
+            assertEquals(
+                    0,
+                    usedSsoTicketsCount,
+                    "used_sso_tickets table must exist in prod and be empty");
+
+            Integer passwordResetTokensCount =
+                    jdbcTemplate.queryForObject(
+                            "SELECT count(*) FROM password_reset_tokens", Integer.class);
+            assertEquals(
+                    0,
+                    passwordResetTokensCount,
+                    "password_reset_tokens table must exist in prod and be empty");
+
+            Boolean hasCompanyId =
+                    jdbcTemplate.queryForObject(
+                            "SELECT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'company_id')",
+                            Boolean.class);
+            assertTrue(
+                    Boolean.TRUE.equals(hasCompanyId),
+                    "users table must have company_id column in prod");
+        }
+
+        @Test
+        @DisplayName(
+                "Prod profile must apply only V1, V3, V5, V7, V9, V11 and V13 migrations in flyway_schema_history")
+ develop
         void testProdProfileAppliesOnlyV1Schema() {
             Integer migrationCount =
                     jdbcTemplate.queryForObject(
                             "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                             Integer.class);
+ feature/T023552-candidate-application
             assertTrue(
                     migrationCount >= 1,
                     "Prod environment must execute production schema migrations");
+
+            assertEquals(
+                    7,
+                    migrationCount,
+                    "Prod environment must only execute schema migrations V1, V3, V5, V7, V9, V11"
+                            + " and V13, count must be 7");
+ develop
 
             Boolean hasV2 =
                     jdbcTemplate.queryForObject(
@@ -90,6 +148,7 @@ public class ProfileSeparationIntegrationTest {
             assertFalse(
                     Boolean.TRUE.equals(hasV2),
                     "V2 seed migration must NOT be applied in prod profile");
+ feature/T023552-candidate-application
             Boolean hasDevelopmentSnapshotSeed =
                     jdbcTemplate.queryForObject(
                             "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '8.1')",
@@ -97,6 +156,88 @@ public class ProfileSeparationIntegrationTest {
             assertFalse(
                     Boolean.TRUE.equals(hasDevelopmentSnapshotSeed),
                     "Development-only CV snapshot fixtures must NOT be applied in prod profile");
+
+
+            Boolean hasV3 =
+                    jdbcTemplate.queryForObject(
+                            "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '3')",
+                            Boolean.class);
+            assertTrue(
+                    Boolean.TRUE.equals(hasV3),
+                    "V3 schema migration must be applied in prod profile");
+
+            Boolean hasV4 =
+                    jdbcTemplate.queryForObject(
+                            "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '4')",
+                            Boolean.class);
+            assertFalse(
+                    Boolean.TRUE.equals(hasV4),
+                    "V4 dev seed migration must NOT be applied in prod profile");
+
+            Boolean hasV7 =
+                    jdbcTemplate.queryForObject(
+                            "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '7')",
+                            Boolean.class);
+            assertTrue(
+                    Boolean.TRUE.equals(hasV7),
+                    "V7 schema migration must be applied in prod profile");
+
+            Boolean hasV8 =
+                    jdbcTemplate.queryForObject(
+                            "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '8')",
+                            Boolean.class);
+            assertFalse(
+                    Boolean.TRUE.equals(hasV8),
+                    "V8 dev seed migration must NOT be applied in prod profile");
+
+            Boolean hasV9 =
+                    jdbcTemplate.queryForObject(
+                            "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '9')",
+                            Boolean.class);
+            assertTrue(
+                    Boolean.TRUE.equals(hasV9),
+                    "V9 schema migration must be applied in prod profile");
+
+            Boolean hasV10 =
+                    jdbcTemplate.queryForObject(
+                            "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '10')",
+                            Boolean.class);
+            assertFalse(
+                    Boolean.TRUE.equals(hasV10),
+                    "V10 dev seed migration must NOT be applied in prod profile");
+
+            Boolean hasV11 =
+                    jdbcTemplate.queryForObject(
+                            "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '11')",
+                            Boolean.class);
+            assertTrue(
+                    Boolean.TRUE.equals(hasV11),
+                    "V11 schema migration must be applied in prod profile");
+
+            Boolean hasV12 =
+                    jdbcTemplate.queryForObject(
+                            "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '12')",
+                            Boolean.class);
+            assertFalse(
+                    Boolean.TRUE.equals(hasV12),
+                    "V12 dev seed migration must NOT be applied in prod profile");
+
+            Boolean hasV13 =
+                    jdbcTemplate.queryForObject(
+                            "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '13')",
+                            Boolean.class);
+            assertTrue(
+                    Boolean.TRUE.equals(hasV13),
+                    "V13 schema migration must be applied in prod profile");
+
+            Boolean hasV14 =
+                    jdbcTemplate.queryForObject(
+                            "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '14')",
+                            Boolean.class);
+            assertFalse(
+                    Boolean.TRUE.equals(hasV14),
+                    "V14 dev seed migration must NOT be applied in prod profile");
+ develop
         }
 
         @Test
@@ -144,25 +285,54 @@ public class ProfileSeparationIntegrationTest {
         @Autowired private JdbcTemplate jdbcTemplate;
 
         @Test
+ feature/T023552-candidate-application
         @DisplayName("Dev profile must load development seeds, resulting in exactly 8 seeded users")
         void testDevProfileHasEightUsers() {
+
+        @DisplayName(
+                "Dev profile must apply V1 through V14, resulting in exactly 9 seeded users with V6, V8, V10, V12 and V14 seed adjustments")
+        void testDevProfileHasNineUsers() {
+ develop
             long userCount = userRepository.count();
             assertEquals(
-                    8L,
+                    9L,
                     userCount,
-                    "Dev environment must have exactly 8 sample users seeded from V2");
+                    "Dev environment must have exactly 9 sample users seeded from V2 and V8");
+
+            User hr1 = userRepository.findByEmail("hr1@rikkeijobs.test").orElseThrow();
+            assertTrue(
+                    hr1.isMustChangePassword(),
+                    "hr1 must have must_change_password = true from V4 dev seed");
+            assertEquals(1L, hr1.getCompanyId(), "hr1 must have company_id = 1 from V4 dev seed");
+
+            User hr2 = userRepository.findByEmail("hr2@rikkeijobs.test").orElseThrow();
+            assertFalse(
+                    hr2.isMustChangePassword(),
+                    "hr2 must have must_change_password = false by default");
+            assertEquals(2L, hr2.getCompanyId(), "hr2 must have company_id = 2 from V4 dev seed");
         }
 
         @Test
+ feature/T023552-candidate-application
         @DisplayName("Dev profile must apply schema and seed migrations in flyway_schema_history")
+
+        @DisplayName("Dev profile must apply V1 through V14 in flyway_schema_history")
+ develop
         void testDevProfileAppliesV1AndV2() {
             Integer migrationCount =
                     jdbcTemplate.queryForObject(
                             "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                             Integer.class);
+ feature/T023552-candidate-application
             assertTrue(
                     migrationCount >= 2,
                     "Dev environment must execute both schema and seed migrations");
+
+            assertEquals(
+                    14,
+                    migrationCount,
+                    "Dev environment must execute V1-V14, migration count must be 14");
+ develop
 
             Boolean hasV2 =
                     jdbcTemplate.queryForObject(
@@ -170,6 +340,7 @@ public class ProfileSeparationIntegrationTest {
                             Boolean.class);
             assertTrue(
                     Boolean.TRUE.equals(hasV2), "V2 seed migration must be applied in dev profile");
+ feature/T023552-candidate-application
             Boolean hasSnapshotFixtures =
                     jdbcTemplate.queryForObject(
                             "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '8.1')",
@@ -177,6 +348,88 @@ public class ProfileSeparationIntegrationTest {
             assertTrue(
                     Boolean.TRUE.equals(hasSnapshotFixtures),
                     "Development-only CV snapshot fixtures must be applied in dev profile");
+
+
+            Boolean hasV3 =
+                    jdbcTemplate.queryForObject(
+                            "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '3')",
+                            Boolean.class);
+            assertTrue(
+                    Boolean.TRUE.equals(hasV3),
+                    "V3 schema migration must be applied in dev profile");
+
+            Boolean hasV4 =
+                    jdbcTemplate.queryForObject(
+                            "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '4')",
+                            Boolean.class);
+            assertTrue(
+                    Boolean.TRUE.equals(hasV4),
+                    "V4 dev seed migration must be applied in dev profile");
+
+            Boolean hasV7 =
+                    jdbcTemplate.queryForObject(
+                            "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '7')",
+                            Boolean.class);
+            assertTrue(
+                    Boolean.TRUE.equals(hasV7),
+                    "V7 schema migration must be applied in dev profile");
+
+            Boolean hasV8 =
+                    jdbcTemplate.queryForObject(
+                            "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '8')",
+                            Boolean.class);
+            assertTrue(
+                    Boolean.TRUE.equals(hasV8),
+                    "V8 dev seed migration must be applied in dev profile");
+
+            Boolean hasV9 =
+                    jdbcTemplate.queryForObject(
+                            "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '9')",
+                            Boolean.class);
+            assertTrue(
+                    Boolean.TRUE.equals(hasV9),
+                    "V9 schema migration must be applied in dev profile");
+
+            Boolean hasV10 =
+                    jdbcTemplate.queryForObject(
+                            "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '10')",
+                            Boolean.class);
+            assertTrue(
+                    Boolean.TRUE.equals(hasV10),
+                    "V10 dev seed migration must be applied in dev profile");
+
+            Boolean hasV11 =
+                    jdbcTemplate.queryForObject(
+                            "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '11')",
+                            Boolean.class);
+            assertTrue(
+                    Boolean.TRUE.equals(hasV11),
+                    "V11 schema migration must be applied in dev profile");
+
+            Boolean hasV12 =
+                    jdbcTemplate.queryForObject(
+                            "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '12')",
+                            Boolean.class);
+            assertTrue(
+                    Boolean.TRUE.equals(hasV12),
+                    "V12 dev seed migration must be applied in dev profile");
+
+            Boolean hasV13 =
+                    jdbcTemplate.queryForObject(
+                            "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '13')",
+                            Boolean.class);
+            assertTrue(
+                    Boolean.TRUE.equals(hasV13),
+                    "V13 schema migration must be applied in dev profile");
+
+            Boolean hasV14 =
+                    jdbcTemplate.queryForObject(
+                            "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '14')",
+                            Boolean.class);
+            assertTrue(
+                    Boolean.TRUE.equals(hasV14),
+                    "V14 dev seed migration must be applied in dev profile");
+ develop
         }
     }
 }

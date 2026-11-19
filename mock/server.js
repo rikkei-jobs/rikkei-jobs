@@ -6,6 +6,9 @@ const crypto = require('crypto');
 const app = express();
 const PORT = process.env.PORT || 9000;
 const SERVICE_KEY = process.env.SERVICE_KEY || 'dev-key';
+const PUBLIC_BASE_URL = (process.env.PUBLIC_BASE_URL || `http://127.0.0.1:${PORT}`).replace(/\/+$/, '');
+const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || 'dev-key';
+const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET || 'dev-secret';
 const DATA_FILE = path.join(__dirname, 'data.json');
 
 // In-memory runtime state
@@ -22,6 +25,104 @@ const tickets = new Map();
 const enrollments = [];
 const batchMembers = [];
 const requestLog = [];
+const cloudinaryAssets = new Map();
+let cloudinaryFailNext = null;
+let cloudinaryVersionCounter = 0;
+
+/**
+ * Constant-time string comparison to avoid timing leaks on key/signature checks.
+ */
+function safeEqual(expected, actual) {
+  if (typeof expected !== 'string' || typeof actual !== 'string') {
+    return false;
+  }
+  const a = Buffer.from(expected, 'utf8');
+  const b = Buffer.from(actual, 'utf8');
+  if (a.length !== b.length) {
+    return false;
+  }
+  return crypto.timingSafeEqual(a, b);
+}
+
+const CLOUDINARY_SIGNATURE_EXCLUDED_KEYS = new Set([
+  'file',
+  'cloud_name',
+  'resource_type',
+  'api_key',
+  'signature'
+]);
+
+/**
+ * Compute official Cloudinary SHA-1 signature over signed form parameters.
+ */
+function computeCloudinarySignature(params, apiSecret) {
+  const keys = Object.keys(params)
+    .filter(
+      k =>
+        !CLOUDINARY_SIGNATURE_EXCLUDED_KEYS.has(k) &&
+        params[k] !== undefined &&
+        params[k] !== null &&
+        String(params[k]) !== ''
+    )
+    .sort();
+  const payload = keys.map(k => `${k}=${String(params[k])}`).join('&');
+  return crypto
+    .createHash('sha1')
+    .update(payload + apiSecret, 'utf8')
+    .digest('hex');
+}
+
+/**
+ * Validate and normalize a Cloudinary public_id without allowing path traversal.
+ */
+function normalizePublicId(rawPublicId) {
+  const trimmed = String(rawPublicId).replace(/^\/+|\/+$/g, '');
+  if (!trimmed) {
+    return null;
+  }
+  const segments = trimmed.split('/');
+  for (const seg of segments) {
+    if (!seg || seg === '.' || seg === '..' || !/^[A-Za-z0-9._-]+$/.test(seg)) {
+      return null;
+    }
+  }
+  return trimmed;
+}
+
+/**
+ * Validate :cloud path param, form parameter types, api_key, and SHA-1 signature.
+ */
+function verifyCloudinaryRequest(req, res) {
+  const { cloud } = req.params;
+  if (!cloud || !/^[A-Za-z0-9_-]+$/.test(cloud)) {
+    res.status(400).json({ error: { message: 'Invalid cloud name' } });
+    return false;
+  }
+
+  const body = req.body || {};
+  if (Object.values(body).some(v => Array.isArray(v))) {
+    res.status(400).json({ error: { message: 'Duplicate form parameters are not allowed' } });
+    return false;
+  }
+
+  if (!safeEqual(CLOUDINARY_API_KEY, body.api_key)) {
+    res.status(401).json({ error: { message: 'Invalid api_key' } });
+    return false;
+  }
+
+  if (typeof body.signature !== 'string' || !/^[0-9a-f]{40}$/i.test(body.signature)) {
+    res.status(401).json({ error: { message: 'Invalid Signature' } });
+    return false;
+  }
+
+  const expectedSig = computeCloudinarySignature(body, CLOUDINARY_API_SECRET);
+  if (!safeEqual(expectedSig, body.signature.toLowerCase())) {
+    res.status(401).json({ error: { message: 'Invalid Signature' } });
+    return false;
+  }
+
+  return true;
+}
 
 /**
  * Load or reload data from data.json into memory
@@ -31,12 +132,172 @@ function loadData() {
   db = JSON.parse(raw);
 }
 
+// ==========================================
+// Cloudinary Mock Router (/cloudinary/*)
+// Mounted before requestLog and X-Service-Key so uploads never require
+// X-Service-Key and never log base64 payloads, api_key, or signature.
+// ==========================================
+const cloudinaryRouter = express.Router();
+cloudinaryRouter.use(express.urlencoded({ extended: false, limit: '5mb' }));
+
+cloudinaryRouter.post('/v1_1/:cloud/image/upload', (req, res) => {
+  if (cloudinaryFailNext !== null) {
+    const { status, message } = cloudinaryFailNext;
+    cloudinaryFailNext = null;
+    return res.status(status).json({ error: { message } });
+  }
+
+  if (!verifyCloudinaryRequest(req, res)) {
+    return;
+  }
+
+  const { cloud } = req.params;
+  const body = req.body || {};
+
+  if (typeof body.file !== 'string') {
+    return res.status(400).json({ error: { message: 'Invalid file data URI' } });
+  }
+
+  const dataUriMatch = body.file.match(/^data:image\/(png|jpeg);base64,([A-Za-z0-9+/]+={0,2})$/);
+  if (!dataUriMatch || dataUriMatch[2].length % 4 !== 0) {
+    return res.status(400).json({ error: { message: 'Invalid file data URI' } });
+  }
+
+  const buffer = Buffer.from(dataUriMatch[2], 'base64');
+  if (buffer.length === 0) {
+    return res.status(400).json({ error: { message: 'Empty image payload' } });
+  }
+
+  const subtype = dataUriMatch[1];
+  const format = subtype === 'png' ? 'png' : 'jpg';
+  const contentType = subtype === 'png' ? 'image/png' : 'image/jpeg';
+
+  let publicId;
+  if (body.public_id === undefined || body.public_id === null || String(body.public_id).trim() === '') {
+    publicId = `mock-${crypto.randomBytes(6).toString('hex')}`;
+  } else {
+    publicId = normalizePublicId(body.public_id);
+    if (!publicId) {
+      return res.status(400).json({ error: { message: 'Invalid public_id' } });
+    }
+  }
+
+  cloudinaryVersionCounter = Math.max(Math.floor(Date.now() / 1000), cloudinaryVersionCounter + 1);
+  const version = cloudinaryVersionCounter;
+
+  cloudinaryAssets.set(`${cloud}:${publicId}`, {
+    cloud,
+    publicId,
+    version,
+    format,
+    contentType,
+    buffer,
+    bytes: buffer.length
+  });
+
+  const secureUrl = `${PUBLIC_BASE_URL}/cloudinary/${cloud}/image/upload/v${version}/${publicId}.${format}`;
+
+  return res.status(200).json({
+    public_id: publicId,
+    secure_url: secureUrl,
+    version,
+    format,
+    bytes: buffer.length
+  });
+});
+
+cloudinaryRouter.get('/:cloud/image/upload/*rest', (req, res) => {
+  const { cloud } = req.params;
+  if (!cloud || !/^[A-Za-z0-9_-]+$/.test(cloud)) {
+    return res.status(404).json({ error: { message: 'Resource not found' } });
+  }
+
+  const rawRest = req.params.rest;
+  const segments = Array.isArray(rawRest) ? rawRest : [rawRest];
+  if (
+    segments.length === 0 ||
+    segments.some(s => !s || s === '.' || s === '..' || !/^[A-Za-z0-9._-]+$/.test(s))
+  ) {
+    return res.status(404).json({ error: { message: 'Resource not found' } });
+  }
+
+  let requestedVersion = null;
+  let assetSegments = segments;
+  if (segments.length >= 2 && /^v(\d+)$/.test(segments[0])) {
+    requestedVersion = Number(segments[0].slice(1));
+    assetSegments = segments.slice(1);
+  }
+
+  const rawPath = assetSegments.join('/');
+  const extMatch = rawPath.match(/^(.*)\.(png|jpg|jpeg)$/i);
+  let publicId = rawPath;
+  let reqExt = null;
+  if (extMatch && extMatch[1].length > 0) {
+    publicId = extMatch[1];
+    reqExt = extMatch[2].toLowerCase();
+  }
+
+  const entry = cloudinaryAssets.get(`${cloud}:${publicId}`);
+  if (!entry) {
+    return res.status(404).json({ error: { message: 'Resource not found' } });
+  }
+
+  if (requestedVersion !== null && requestedVersion !== entry.version) {
+    return res.status(404).json({ error: { message: 'Resource not found' } });
+  }
+
+  if (reqExt !== null && !(reqExt === entry.format || (reqExt === 'jpeg' && entry.format === 'jpg'))) {
+    return res.status(404).json({ error: { message: 'Resource not found' } });
+  }
+
+  res.setHeader('Content-Type', entry.contentType);
+  res.setHeader('Content-Length', String(entry.buffer.length));
+  res.setHeader('Cache-Control', 'no-store');
+  return res.status(200).send(entry.buffer);
+});
+
+cloudinaryRouter.post('/v1_1/:cloud/image/destroy', (req, res) => {
+  if (!verifyCloudinaryRequest(req, res)) {
+    return;
+  }
+
+  const { cloud } = req.params;
+  const body = req.body || {};
+  if (body.public_id === undefined || body.public_id === null || String(body.public_id).trim() === '') {
+    return res.status(400).json({ error: { message: 'Missing public_id' } });
+  }
+
+  const publicId = normalizePublicId(body.public_id);
+  if (!publicId) {
+    return res.status(400).json({ error: { message: 'Invalid public_id' } });
+  }
+
+  const existed = cloudinaryAssets.delete(`${cloud}:${publicId}`);
+  return res.status(200).json({ result: existed ? 'ok' : 'not found' });
+});
+
+cloudinaryRouter.use((err, req, res, next) => {
+  if (err && err.type === 'entity.too.large') {
+    return res.status(413).json({ error: { message: 'Payload too large' } });
+  }
+  if (err) {
+    return res.status(err.status || 400).json({ error: { message: err.message || 'Bad request' } });
+  }
+  return next();
+});
+
+cloudinaryRouter.use((req, res) => {
+  return res.status(404).json({ error: { message: 'Cloudinary mock route not found' } });
+});
+
+app.use('/cloudinary', cloudinaryRouter);
+
 // Parse JSON request bodies
 app.use(express.json());
 
-// Request logging middleware (excluding /mock/* endpoints)
+// Request logging middleware (excluding /mock/* and /cloudinary/* endpoints)
 app.use((req, res, next) => {
-  if (req.path.startsWith('/mock/')) {
+  if (req.path.startsWith('/mock/') || req.path.startsWith('/cloudinary/')) {
     return next();
   }
 
@@ -55,9 +316,9 @@ app.use((req, res, next) => {
   next();
 });
 
-// Authentication middleware using X-Service-Key (excluding /mock/* endpoints)
+// Authentication middleware using X-Service-Key (excluding /mock/* and /cloudinary/* endpoints)
 app.use((req, res, next) => {
-  if (req.path.startsWith('/mock/')) {
+  if (req.path.startsWith('/mock/') || req.path.startsWith('/cloudinary/')) {
     return next();
   }
 
@@ -92,7 +353,7 @@ app.post('/lms/sso/tickets', (req, res) => {
   }
 
   const ticket = crypto.randomBytes(16).toString('hex');
-  const issuedAt = new Date().toISOString();
+  const issuedAt = (req.body && req.body.issuedAt) || new Date().toISOString();
 
   tickets.set(ticket, { lmsUserId, issuedAt });
 
@@ -323,7 +584,7 @@ app.post('/meet/rooms', (req, res) => {
 });
 
 // ==========================================
-// 4 Testing Tools (/mock/*)
+// 5 Testing Tools (/mock/*)
 // ==========================================
 
 /**
@@ -377,17 +638,48 @@ app.patch('/mock/enrollments', (req, res) => {
 
 /**
  * Tool 4: POST /mock/reset
- * Clear all runtime memory state (tickets, enrollments, batchMembers, requestLog)
+ * Clear all runtime memory state (tickets, enrollments, batchMembers, requestLog, cloudinaryAssets, cloudinaryFailNext)
  */
 app.post('/mock/reset', (req, res) => {
   tickets.clear();
   enrollments.length = 0;
   batchMembers.length = 0;
   requestLog.length = 0;
+  cloudinaryAssets.clear();
+  cloudinaryFailNext = null;
+  cloudinaryVersionCounter = 0;
 
   return res.status(200).json({
     ok: true,
     message: 'Đã đặt lại trạng thái bộ nhớ'
+  });
+});
+
+/**
+ * Tool 5: POST /mock/cloudinary/fail-next
+ * Force the next Cloudinary upload to fail once (single-shot)
+ */
+app.post('/mock/cloudinary/fail-next', (req, res) => {
+  const body = req.body || {};
+  const status = body.status !== undefined ? body.status : 503;
+
+  if (!Number.isInteger(status) || status < 400 || status > 599) {
+    return res.status(400).json({
+      code: 'VALIDATION_ERROR',
+      message: 'status phải là số nguyên trong khoảng 400..599'
+    });
+  }
+
+  const message =
+    typeof body.message === 'string' && body.message.trim().length > 0
+      ? body.message.trim()
+      : 'Simulated Cloudinary outage';
+
+  cloudinaryFailNext = { status, message };
+
+  return res.status(200).json({
+    ok: true,
+    failNext: cloudinaryFailNext
   });
 });
 

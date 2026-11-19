@@ -420,7 +420,18 @@ if ($driftCode -eq 0) {
     Record-Gate "Version Table Drift Check (docs/03)" $false "Version drift detected between docs/03 and manifests"
 }
 
-# 7.4 Quality Gate Synchronization Check
+# 7.4 Contrast Table Verification (docs/design)
+Write-Host "Running design system contrast verification (docs/design/DESIGN_SYSTEM.md)..." -ForegroundColor Yellow
+$contrastOut = & node scripts/compute-contrast.mjs 2>&1
+$contrastCode = $LASTEXITCODE
+if ($contrastCode -eq 0) {
+    Record-Gate "Contrast Table Verification (docs/design)" $true "All WCAG 2.2 contrast pairs verified with exact printed ratios"
+} else {
+    Write-Host ($contrastOut -join "`n") -ForegroundColor Red
+    Record-Gate "Contrast Table Verification (docs/design)" $false "Contrast ratio mismatch or WCAG threshold violation detected"
+}
+
+# 7.5 Quality Gate Synchronization Check
 Write-Host "Running Quality Gate synchronization check..." -ForegroundColor Yellow
 $syncOut = & node scripts/check-gate-sync.mjs 2>&1
 $syncCode = $LASTEXITCODE
@@ -431,7 +442,7 @@ if ($syncCode -eq 0) {
     Record-Gate "Quality Gate Synchronization Check" $false "Quality gates mismatch detected"
 }
 
-# 7.5 Agent Configuration Sync & Parity Check
+# 7.6 Agent Configuration Sync & Parity Check
 Write-Host "Running agent configuration sync and parity check..." -ForegroundColor Yellow
 $agentSyncOut = & node scripts/sync-agent-config.mjs --check 2>&1
 $agentSyncCode = $LASTEXITCODE
