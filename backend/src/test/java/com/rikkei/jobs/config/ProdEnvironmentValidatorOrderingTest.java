@@ -42,11 +42,15 @@ public class ProdEnvironmentValidatorOrderingTest {
                                     // to trigger validation
                                     // failure
                                     "CORS_ALLOWED_ORIGINS=https://rikkeijobs.com",
+ feature/T023552-candidate-application
+                                    "JWT_SECRET=production-jwt-signing-secret-with-adequate-length");
+
                                     "CLOUDINARY_CLOUD_NAME=prod-rikkei-cloud",
                                     "CLOUDINARY_API_KEY=prod-cloudinary-key-123",
                                     "CLOUDINARY_API_SECRET=prod-cloudinary-secret-xyz-987",
                                     "CLOUDINARY_API_BASE_URL=https://api.cloudinary.com/v1_1",
                                     "CLOUDINARY_DELIVERY_BASE_URL=https://res.cloudinary.com/prod-rikkei-cloud/image/upload");
+develop
 
             IllegalStateException ex = assertThrows(IllegalStateException.class, builder::run);
 

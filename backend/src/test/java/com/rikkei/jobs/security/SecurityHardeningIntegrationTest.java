@@ -46,12 +46,16 @@ public class SecurityHardeningIntegrationTest {
                 "CORS_ALLOWED_ORIGINS=http://localhost:3000",
                 "EXTERNAL_BASE_URL=https://mock.example.com",
                 "EXTERNAL_SERVICE_KEY=prod-secret-service-key-999",
+ feature/T023552-candidate-application
+                "JWT_SECRET=production-jwt-signing-secret-with-adequate-length"
+
                 "JWT_SECRET=super-secure-production-jwt-secret-key-32-bytes-minimum!",
                 "CLOUDINARY_CLOUD_NAME=prod-rikkei-cloud",
                 "CLOUDINARY_API_KEY=prod-cloudinary-key-123",
                 "CLOUDINARY_API_SECRET=prod-cloudinary-secret-xyz-987",
                 "CLOUDINARY_API_BASE_URL=https://api.cloudinary.com/v1_1",
                 "CLOUDINARY_DELIVERY_BASE_URL=https://res.cloudinary.com/prod-rikkei-cloud/image/upload"
+ develop
             })
     @Testcontainers
     @ActiveProfiles("prod")
@@ -197,12 +201,16 @@ public class SecurityHardeningIntegrationTest {
                                                     + prodPostgres.getPassword(),
                                             "--external.api.base-url=https://mock.example.com",
                                             "--external.api.service-key=prod-secret-service-key-999",
+ feature/T023552-candidate-application
+                                            "--JWT_SECRET=production-jwt-signing-secret-with-adequate-length",
+
                                             "--jwt.secret=super-secure-production-jwt-secret-key-32-bytes-minimum!",
                                             "--cloudinary.cloud-name=prod-rikkei-cloud",
                                             "--cloudinary.api-key=prod-cloudinary-key-123",
                                             "--cloudinary.api-secret=prod-cloudinary-secret-xyz-987",
                                             "--cloudinary.api-base-url=https://api.cloudinary.com/v1_1",
                                             "--cloudinary.delivery-base-url=https://res.cloudinary.com/prod-rikkei-cloud/image/upload",
+develop
                                             "--spring.flyway.enabled=true"));
 
             Throwable cause = exception;

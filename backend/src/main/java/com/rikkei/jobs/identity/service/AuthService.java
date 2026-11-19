@@ -1,5 +1,14 @@
 package com.rikkei.jobs.identity.service;
 
+ feature/T023552-candidate-application
+import com.rikkei.jobs.identity.dto.AuthSessionResponse;
+
+public interface AuthService {
+
+    AuthSessionResponse authenticateHr(String email, String password);
+
+    AuthSessionResponse authenticateCandidate(String ticket);
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -459,4 +468,5 @@ public class AuthService {
             throw new IllegalStateException("SHA-256 algorithm unavailable", e);
         }
     }
+ develop
 }

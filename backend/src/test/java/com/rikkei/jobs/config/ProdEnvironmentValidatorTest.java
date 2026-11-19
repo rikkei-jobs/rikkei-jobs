@@ -24,6 +24,9 @@ public class ProdEnvironmentValidatorTest {
         env.setProperty("EXTERNAL_SERVICE_KEY", "prod-external-service-key-xyz-789");
         env.setProperty(
                 "CORS_ALLOWED_ORIGINS", "https://rikkeijobs.com,https://admin.rikkeijobs.com");
+ feature/T023552-candidate-application
+        env.setProperty("JWT_SECRET", "production-jwt-signing-secret-with-adequate-length");
+
         env.setProperty("JWT_SECRET", "super-secure-production-jwt-secret-key-32-bytes-minimum!");
         env.setProperty("CLOUDINARY_CLOUD_NAME", "prod-rikkei-cloud");
         env.setProperty("CLOUDINARY_API_KEY", "prod-cloudinary-key-123");
@@ -32,6 +35,7 @@ public class ProdEnvironmentValidatorTest {
         env.setProperty(
                 "CLOUDINARY_DELIVERY_BASE_URL",
                 "https://res.cloudinary.com/prod-rikkei-cloud/image/upload");
+ develop
         return env;
     }
 
@@ -56,6 +60,10 @@ public class ProdEnvironmentValidatorTest {
         env.setProperty("external.api.base-url", "https://api.external-partner.com");
         env.setProperty("external.api.service-key", "prod-external-service-key-xyz-789");
         env.setProperty("cors.allowed-origins", "https://rikkeijobs.com");
+ feature/T023552-candidate-application
+        env.setProperty(
+                "app.security.jwt.secret", "production-jwt-signing-secret-with-adequate-length");
+
         env.setProperty("jwt.secret", "super-secure-production-jwt-secret-key-32-bytes-minimum!");
         env.setProperty("cloudinary.cloud-name", "prod-rikkei-cloud");
         env.setProperty("cloudinary.api-key", "prod-cloudinary-key-123");
@@ -124,6 +132,7 @@ public class ProdEnvironmentValidatorTest {
     void testValidationSucceedsWithStrongJwtSecret() {
         MockEnvironment env = createValidEnvironment();
         env.setProperty("JWT_SECRET", "K7v#m9$Xq2!zL5@wP8*yR1^tN4&bC6(jE3)gA0]");
+ develop
 
         ProdEnvironmentValidator validator = new ProdEnvironmentValidator(env);
         assertDoesNotThrow(validator::validateEnvironment);
@@ -138,12 +147,16 @@ public class ProdEnvironmentValidatorTest {
                 "EXTERNAL_BASE_URL",
                 "EXTERNAL_SERVICE_KEY",
                 "CORS_ALLOWED_ORIGINS",
+ feature/T023552-candidate-application
+                "JWT_SECRET"
+
                 "JWT_SECRET",
                 "CLOUDINARY_CLOUD_NAME",
                 "CLOUDINARY_API_KEY",
                 "CLOUDINARY_API_SECRET",
                 "CLOUDINARY_API_BASE_URL",
                 "CLOUDINARY_DELIVERY_BASE_URL"
+ develop
             })
     @DisplayName("Fail-fast: Startup rejected when any mandatory variable is missing")
     void testFailFastWhenVariableMissing(String missingVar) {
@@ -214,6 +227,12 @@ public class ProdEnvironmentValidatorTest {
     }
 
     @Test
+ feature/T023552-candidate-application
+    @DisplayName("Fail-fast: Startup rejected when JWT_SECRET is shorter than 32 bytes")
+    void testFailFastWhenJwtSecretIsTooShort() {
+        MockEnvironment env = createValidEnvironment();
+        env.setProperty("JWT_SECRET", "short-secret");
+
     @DisplayName("Fail-fast: Startup rejected when JWT_SECRET is shorter than 32 characters")
     void testFailFastWhenJwtSecretTooShort() {
         MockEnvironment env = createValidEnvironment();
@@ -259,10 +278,15 @@ public class ProdEnvironmentValidatorTest {
     void testFailFastWhenCloudinaryUsesDummyDefaults(String dummyValue) {
         MockEnvironment env = createValidEnvironment();
         env.setProperty("CLOUDINARY_API_SECRET", dummyValue);
+ develop
 
         ProdEnvironmentValidator validator = new ProdEnvironmentValidator(env);
         IllegalStateException ex =
                 assertThrows(IllegalStateException.class, validator::validateEnvironment);
+ feature/T023552-candidate-application
+
+        assertTrue(ex.getMessage().contains("JWT_SECRET"));
+
         assertTrue(ex.getMessage().contains("CLOUDINARY_API_SECRET"));
         assertTrue(ex.getMessage().contains("giá trị mặc định không an toàn"));
     }
@@ -293,5 +317,6 @@ public class ProdEnvironmentValidatorTest {
         IllegalStateException deliveryEx =
                 assertThrows(IllegalStateException.class, deliveryValidator::validateEnvironment);
         assertTrue(deliveryEx.getMessage().contains("CLOUDINARY_DELIVERY_BASE_URL"));
+ develop
     }
 }

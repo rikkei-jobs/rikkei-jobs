@@ -1,6 +1,9 @@
 package com.rikkei.jobs.common.config;
 
+feature/T023552-candidate-application
+
 import java.net.URI;
+develop
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -34,12 +37,16 @@ public class ProdEnvironmentValidator implements ApplicationListener<Application
                     "EXTERNAL_BASE_URL",
                     "EXTERNAL_SERVICE_KEY",
                     "CORS_ALLOWED_ORIGINS",
+ feature/T023552-candidate-application
+                    "JWT_SECRET");
+
                     "JWT_SECRET",
                     "CLOUDINARY_CLOUD_NAME",
                     "CLOUDINARY_API_KEY",
                     "CLOUDINARY_API_SECRET",
                     "CLOUDINARY_API_BASE_URL",
                     "CLOUDINARY_DELIVERY_BASE_URL");
+ develop
 
     private static final Set<String> INSECURE_DEFAULT_VALUES =
             Set.of(
@@ -61,8 +68,12 @@ public class ProdEnvironmentValidator implements ApplicationListener<Application
                     "secret_key",
                     "rikkei_secret",
                     "default-key",
+ feature/T023552-candidate-application
+                    "local-dev-jwt-secret-change-before-production",
+
                     "default_key",
                     "default",
+ develop
                     "admin",
                     "root",
                     "123456",
@@ -115,9 +126,7 @@ public class ProdEnvironmentValidator implements ApplicationListener<Application
                 throw new IllegalStateException(
                         "CẤU HÌNH PRODUCTION THẤT BẠI: Biến môi trường bắt buộc bị thiếu hoặc không an toàn: "
                                 + varName
-                                + " chứa giá trị mặc định không an toàn ("
-                                + trimmedValue
-                                + ")");
+                                + " chứa giá trị mặc định không an toàn");
             }
 
             if ("CORS_ALLOWED_ORIGINS".equals(varName) && trimmedValue.contains("*")) {
@@ -126,6 +135,12 @@ public class ProdEnvironmentValidator implements ApplicationListener<Application
                                 + varName
                                 + " không được chứa ký tự wildcard (*)");
             }
+
+feature/T023552-candidate-application
+            if ("JWT_SECRET".equals(varName)
+                    && trimmedValue.getBytes(StandardCharsets.UTF_8).length < 32) {
+                throw new IllegalStateException(
+                        "CẤU HÌNH PRODUCTION THẤT BẠI: JWT_SECRET phải dài ít nhất 32 byte");
 
             if ("CLOUDINARY_API_BASE_URL".equals(varName)
                     || "CLOUDINARY_DELIVERY_BASE_URL".equals(varName)) {
@@ -162,6 +177,7 @@ public class ProdEnvironmentValidator implements ApplicationListener<Application
                                     + distinctChars
                                     + ", yêu cầu: entropy >= 2.5 và distinctChars >= 8)");
                 }
+ develop
             }
         }
         log.info(
@@ -250,6 +266,9 @@ public class ProdEnvironmentValidator implements ApplicationListener<Application
             case "EXTERNAL_BASE_URL" -> environment.getProperty("external.api.base-url");
             case "EXTERNAL_SERVICE_KEY" -> environment.getProperty("external.api.service-key");
             case "CORS_ALLOWED_ORIGINS" -> environment.getProperty("cors.allowed-origins");
+ feature/T023552-candidate-application
+            case "JWT_SECRET" -> environment.getProperty("app.security.jwt.secret");
+
             case "JWT_SECRET" -> environment.getProperty("jwt.secret");
             case "CLOUDINARY_CLOUD_NAME" -> environment.getProperty("cloudinary.cloud-name");
             case "CLOUDINARY_API_KEY" -> environment.getProperty("cloudinary.api-key");
@@ -257,6 +276,7 @@ public class ProdEnvironmentValidator implements ApplicationListener<Application
             case "CLOUDINARY_API_BASE_URL" -> environment.getProperty("cloudinary.api-base-url");
             case "CLOUDINARY_DELIVERY_BASE_URL" ->
                     environment.getProperty("cloudinary.delivery-base-url");
+ develop
             default -> null;
         };
     }

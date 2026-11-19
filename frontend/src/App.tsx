@@ -5,7 +5,13 @@ import { Header } from './shared/components/Header';
 import { HealthBadge } from './shared/components/HealthBadge';
 import { ModuleCard } from './shared/components/ModuleCard';
 import { fetchBackendHealth, type BackendHealthStatus } from './shared/api/health';
+import { AuthenticationPanel } from './shared/auth/AuthenticationPanel';
+import { clearAuthSession, getAuthSession, setAuthSession, type AuthSession } from './shared/auth/session';
+import { loginCandidate, loginHr } from './shared/auth/authApi';
 import { BUSINESS_MODULES } from './features';
+
+import { CandidateJobsPage, HrApplicationsPage } from './features/recruitment';
+
 import { JobRecommendationsSection } from './features/candidate';
 import { SkillProfilePage } from './features/candidate';
 
@@ -31,6 +37,7 @@ import { Icon } from './shared/components/Icon';
 import { CandidateEvaluationsPage } from './features/candidate/pages/CandidateEvaluationsPage';
 import { CompanyProfilePage } from './features/company';
 
+
 export const APP_NAME = 'Rikkei Jobs - Nền tảng kết nối việc làm theo năng lực đã xác thực';
 export const APP_VERSION = 'v1.0.0-sprint1';
 export const APP_SUBTITLE =
@@ -43,7 +50,13 @@ export const HomeSkeleton: React.FC = () => {
     'Đang thiết lập kết nối tới Backend...',
   );
   const [isChecking, setIsChecking] = useState<boolean>(false);
+ 
+  const [session, setSession] = useState<AuthSession | null>(() => getAuthSession());
+  const [showRecruitment, setShowRecruitment] = useState(false);
+  const [showLogin, setShowLogin] = useState(false);
+
   const [view, setView] = useState<'home' | 'skills'>('home');
+
 
   const checkHealth = useCallback(async () => {
     setIsChecking(true);
@@ -61,6 +74,64 @@ export const HomeSkeleton: React.FC = () => {
       setIsChecking(false);
     }
   }, []);
+
+  const openRecruitment = () => {
+    setShowRecruitment(true);
+    setShowLogin(session === null);
+  };
+
+  const handleSignOut = () => {
+    clearAuthSession();
+    setSession(null);
+    setShowRecruitment(false);
+    setShowLogin(false);
+  };
+
+  const handleQuickCandidate = async () => {
+    try {
+      const s = await loginCandidate('dev-ticket-candidate1');
+      setAuthSession(s);
+      setSession(s);
+      setShowRecruitment(true);
+      setShowLogin(false);
+    } catch {
+      const fallback: AuthSession = {
+        accessToken: 'dev-token',
+        tokenType: 'Bearer',
+        expiresAt: new Date(Date.now() + 3600000).toISOString(),
+        userId: 1,
+        fullName: 'Nguyễn Văn An (Dev)',
+        role: 'CANDIDATE',
+      };
+      setAuthSession(fallback);
+      setSession(fallback);
+      setShowRecruitment(true);
+      setShowLogin(false);
+    }
+  };
+
+  const handleQuickHr = async () => {
+    try {
+      const s = await loginHr('hr1@rikkeijobs.test', 'Test@123');
+      setAuthSession(s);
+      setSession(s);
+      setShowRecruitment(true);
+      setShowLogin(false);
+    } catch {
+      const fallback: AuthSession = {
+        accessToken: 'dev-token',
+        tokenType: 'Bearer',
+        expiresAt: new Date(Date.now() + 3600000).toISOString(),
+        userId: 4,
+        fullName: 'Đại diện Doanh nghiệp A (Dev)',
+        role: 'HR',
+      };
+      setAuthSession(fallback);
+      setSession(fallback);
+      setShowRecruitment(true);
+      setShowLogin(false);
+    }
+  };
 
   useEffect(() => {
     const controller = new AbortController();
@@ -92,6 +163,138 @@ export const HomeSkeleton: React.FC = () => {
   return (
     <div className="app-container">
       <Header appName={APP_NAME} version={APP_VERSION} subtitle={APP_SUBTITLE} />
+
+ 
+      <div
+        role="region"
+        aria-label="Thanh chuyển đổi vai trò thử nghiệm"
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 12,
+          padding: '12px 18px',
+          marginBottom: 16,
+          background: '#f8fafc',
+          border: '1px solid #cbd5e1',
+          borderRadius: 8,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.875rem', color: '#1e293b' }}>
+          <strong style={{ color: '#075985' }}>Chế độ Thử nghiệm Nhanh (Demo):</strong>
+          <span>Chuyển đổi tức thì để kiểm tra luồng nộp CV của Ứng viên & duyệt đơn của HR:</span>
+        </div>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={() => void handleQuickCandidate()}
+            style={{
+              padding: '7px 14px',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              color: '#ffffff',
+              background: session?.role === 'CANDIDATE' && showRecruitment ? '#0369a1' : '#0284c7',
+              border: 0,
+              borderRadius: 6,
+              cursor: 'pointer',
+            }}
+          >
+            Ứng viên: Nguyễn Văn An
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleQuickHr()}
+            style={{
+              padding: '7px 14px',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              color: '#ffffff',
+              background: session?.role === 'HR' && showRecruitment ? '#15803d' : '#059669',
+              border: 0,
+              borderRadius: 6,
+              cursor: 'pointer',
+            }}
+          >
+            Nhà tuyển dụng HR (Doanh nghiệp A)
+          </button>
+          {showRecruitment && (
+            <button
+              type="button"
+              onClick={() => setShowRecruitment(false)}
+              style={{
+                padding: '7px 14px',
+                fontSize: '0.85rem',
+                fontWeight: 700,
+                color: '#334155',
+                background: '#ffffff',
+                border: '1px solid #cbd5e1',
+                borderRadius: 6,
+                cursor: 'pointer',
+              }}
+            >
+              Về Trang chủ
+            </button>
+          )}
+        </div>
+      </div>
+
+      <nav
+        aria-label="Điều hướng chính"
+        style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginBottom: 24 }}
+      >
+        {showRecruitment && (
+          <button type="button" className="refresh-btn" onClick={() => setShowRecruitment(false)}>
+            Trang chủ
+          </button>
+        )}
+        {session && !showRecruitment && (
+          <button
+            type="button"
+            className="refresh-btn"
+            onClick={() => {
+              setShowRecruitment(true);
+              setShowLogin(false);
+            }}
+          >
+            Cổng tuyển dụng
+          </button>
+        )}
+        {session ? (
+          <>
+            <span style={{ alignSelf: 'center', color: '#334155' }}>
+              {session.fullName} · {session.role === 'HR' ? 'Nhà tuyển dụng' : 'Ứng viên'}
+            </span>
+            <button type="button" className="refresh-btn" onClick={handleSignOut}>
+              Đăng xuất
+            </button>
+          </>
+        ) : (
+          <button type="button" className="refresh-btn" onClick={openRecruitment}>
+            Truy cập tuyển dụng
+          </button>
+        )}
+      </nav>
+
+      {showRecruitment ? (
+        showLogin || session === null ? (
+          <AuthenticationPanel
+            onAuthenticated={(authenticatedSession) => {
+              setSession(authenticatedSession);
+              setShowLogin(false);
+            }}
+            onCancel={() => {
+              setShowRecruitment(false);
+              setShowLogin(false);
+            }}
+          />
+        ) : session.role === 'HR' ? (
+          <HrApplicationsPage />
+        ) : (
+          <CandidateJobsPage />
+        )
+      ) : (
+        <main className="app-main">
 
       <nav className="app-nav" aria-label="Điều hướng chính">
         <button
@@ -144,6 +347,7 @@ export const HomeSkeleton: React.FC = () => {
             </Link>
           </section>
 
+
           <section className="section-health">
             <HealthBadge
               status={backendStatus}
@@ -153,7 +357,10 @@ export const HomeSkeleton: React.FC = () => {
             />
           </section>
 
+
+
           {user?.role === 'CANDIDATE' && <JobRecommendationsSection />}
+
 
           <section className="section-modules">
             <div className="section-header">
@@ -165,7 +372,38 @@ export const HomeSkeleton: React.FC = () => {
 
             <div className="modules-grid">
               {BUSINESS_MODULES.map((mod) => (
+ 
+                <div
+                  key={mod.id}
+                  onClick={mod.id === 'recruitment' ? openRecruitment : undefined}
+                  style={{
+                    cursor: mod.id === 'recruitment' ? 'pointer' : 'default',
+                    position: 'relative',
+                  }}
+                  title={mod.id === 'recruitment' ? 'Nhấn để mở Cổng Tuyển dụng' : undefined}
+                >
+                  <ModuleCard module={mod} />
+                  {mod.id === 'recruitment' && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        bottom: 12,
+                        right: 12,
+                        padding: '4px 10px',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        background: '#0284c7',
+                        color: '#ffffff',
+                        borderRadius: 4,
+                      }}
+                    >
+                      Trải nghiệm ngay →
+                    </div>
+                  )}
+                </div>
+
                 <ModuleCard key={mod.id} module={mod} />
+
               ))}
             </div>
           </section>

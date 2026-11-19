@@ -2,6 +2,16 @@ package com.rikkei.jobs.company.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+ feature/T023552-candidate-application
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import java.time.OffsetDateTime;
+
+
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
@@ -12,6 +22,7 @@ import jakarta.persistence.Version;
 import java.time.OffsetDateTime;
 
 /** Company Entity. Table: companies (owned exclusively by company module). */
+ develop
 @Entity
 @Table(name = "companies")
 public class Company {
@@ -19,6 +30,15 @@ public class Company {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+ feature/T023552-candidate-application
+    @Column(nullable = false, length = 150)
+    private String name;
+
+    @Column(name = "hr_owner_user_id", nullable = false, unique = true)
+    private Long hrOwnerUserId;
+
+    @Column(name = "created_at", nullable = false)
 
     @Column(name = "name", nullable = false, length = 255)
     private String name;
@@ -59,10 +79,42 @@ public class Company {
     private Long createdBy;
 
     @Column(name = "created_at", nullable = false, updatable = false)
+ develop
     private OffsetDateTime createdAt;
 
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
+
+feature/T023552-candidate-application
+    protected Company() {}
+
+    public Company(String name, Long hrOwnerUserId) {
+        this.name = name;
+        this.hrOwnerUserId = hrOwnerUserId;
+    }
+
+    @PrePersist
+    void prePersist() {
+        OffsetDateTime now = OffsetDateTime.now();
+        createdAt = now;
+        updatedAt = now;
+    }
+
+    @PreUpdate
+    void preUpdate() {
+        updatedAt = OffsetDateTime.now();
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public Long getHrOwnerUserId() {
+        return hrOwnerUserId;
 
     @Version
     @Column(name = "version", nullable = false)
@@ -196,5 +248,6 @@ public class Company {
 
     public void setVersion(Long version) {
         this.version = version;
+ develop
     }
 }

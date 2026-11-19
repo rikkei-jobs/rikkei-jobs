@@ -49,12 +49,23 @@ spring:
 jwt:
   secret: ${JWT_SECRET:}
 
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
+
 external:
   api:
     base-url: ${EXTERNAL_BASE_URL:http://localhost:9000}
     service-key: ${EXTERNAL_SERVICE_KEY:dev-key}
     timeout-seconds: ${EXTERNAL_API_TIMEOUT:5}
     max-retries: 2
+
+ feature/T023552-candidate-application
+app:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:local-dev-jwt-secret-change-before-production}
 
 cloudinary:
   cloud-name: ${CLOUDINARY_CLOUD_NAME:dev-cloud}
@@ -81,6 +92,7 @@ ai:
     api-key: ${CLAUDE_API_KEY:}
     model: ${CLAUDE_MODEL:claude-3-5-sonnet-20241022}
     base-url: ${CLAUDE_BASE_URL:https://api.anthropic.com/v1}
+ develop
 
 springdoc:
   api-docs:

@@ -1,6 +1,13 @@
 package com.rikkei.jobs.identity.repository;
 
 import com.rikkei.jobs.identity.model.UsedSsoTicket;
+ feature/T023552-candidate-application
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface UsedSsoTicketRepository extends JpaRepository<UsedSsoTicket, String> {}
+
 import java.time.OffsetDateTime;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -25,3 +32,4 @@ public interface UsedSsoTicketRepository extends JpaRepository<UsedSsoTicket, St
             nativeQuery = true)
     int insertIfUnused(@Param("ticket") String ticket, @Param("usedAt") OffsetDateTime usedAt);
 }
+ develop
