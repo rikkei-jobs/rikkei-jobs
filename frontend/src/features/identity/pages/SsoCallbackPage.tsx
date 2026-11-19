@@ -1,16 +1,19 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useSearchParams, useLocation, useNavigate, Link } from 'react-router-dom';
 import { Icon } from '../../../shared/components/Icon';
 import { getRoleLabel } from '../../../shared/i18n/enumLabels';
 import { useAuth } from '../context/useAuth';
 import { type UserDto } from '../types';
+import { extractFromPathname, resolvePostLoginPath } from '../utils/roleUtils';
 import { AuthEditorialLayout } from '../components/AuthEditorialLayout';
 
 export const SsoCallbackPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const ticket = searchParams.get('ticket');
+  const location = useLocation();
+  const fromPathname = extractFromPathname(location.state);
   const navigate = useNavigate();
-  const { ssoLogin, getRoleHomePath } = useAuth();
+  const { ssoLogin } = useAuth();
 
   const mockState = import.meta.env.DEV ? searchParams.get('mockState') : null;
 
@@ -50,6 +53,15 @@ export const SsoCallbackPage: React.FC = () => {
 
   // Prevent double invocation in React StrictMode
   const hasExecutedRef = useRef(false);
+  const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimerRef.current !== null) {
+        clearTimeout(redirectTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (mockState || !ticket || hasExecutedRef.current) {
@@ -63,9 +75,11 @@ export const SsoCallbackPage: React.FC = () => {
         setAuthedUser(response.user);
         setStatus('success');
 
-        // Automatically navigate to user's role home after 1 second
-        setTimeout(() => {
-          navigate(getRoleHomePath(response.user.role), { replace: true });
+        const targetPath = resolvePostLoginPath(fromPathname, response.user.role);
+
+        // Automatically navigate to safe post-login target or role home after 1 second
+        redirectTimerRef.current = setTimeout(() => {
+          navigate(targetPath, { replace: true });
         }, 1000);
       } catch (err: unknown) {
         setStatus('error');
@@ -75,7 +89,7 @@ export const SsoCallbackPage: React.FC = () => {
     };
 
     void verifyTicket();
-  }, [ticket, mockState, ssoLogin, getRoleHomePath, navigate]);
+  }, [ticket, mockState, ssoLogin, navigate, fromPathname]);
 
   return (
     <AuthEditorialLayout
@@ -192,7 +206,7 @@ export const SsoCallbackPage: React.FC = () => {
             </div>
 
             <div style={{ marginTop: '24px' }}>
-              <Link to="/login" className="rj-btn rj-btn-primary rj-btn-block">
+              <Link to="/login" state={location.state} className="rj-btn rj-btn-primary rj-btn-block">
                 <Icon name="arrow-left" size={18} />
                 Quay lại Trang Đăng Nhập
               </Link>

@@ -1,10 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from '../context/AuthContext';
 import { ChangePasswordPage } from '../pages/ChangePasswordPage';
 import { authApi } from '../api/authApi';
 import { type UserDto } from '../types';
+
+const LoginStateProbe = () => {
+  const location = useLocation();
+  return (
+    <div>
+      <div data-testid="login-pathname">{location.pathname}</div>
+      <div data-testid="login-state">{JSON.stringify(location.state)}</div>
+    </div>
+  );
+};
 
 vi.mock('../api/authApi', () => ({
   authApi: {
@@ -128,5 +138,30 @@ describe('ChangePasswordPage', () => {
       expect(screen.getByText(/Đổi mật khẩu thành công!/i)).toBeInTheDocument();
     });
     expect(screen.queryByText(/Mật khẩu hiện tại không chính xác/i)).not.toBeInTheDocument();
+  });
+
+  it('clears session and navigates to /login with state=null when clicking Đăng Xuất on /change-password', () => {
+    render(
+      <AuthProvider initialToken="test-token" initialUser={mustChangeUser}>
+        <MemoryRouter
+          initialEntries={[
+            {
+              pathname: '/change-password',
+              state: { from: { pathname: '/hr/company' } },
+            },
+          ]}
+        >
+          <Routes>
+            <Route path="/change-password" element={<ChangePasswordPage />} />
+            <Route path="/login" element={<LoginStateProbe />} />
+          </Routes>
+        </MemoryRouter>
+      </AuthProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Đăng Xuất/i }));
+
+    expect(screen.getByTestId('login-pathname')).toHaveTextContent('/login');
+    expect(screen.getByTestId('login-state')).toHaveTextContent('null');
   });
 });

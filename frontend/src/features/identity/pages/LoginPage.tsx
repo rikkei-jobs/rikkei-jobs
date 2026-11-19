@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { Icon } from '../../../shared/components/Icon';
 import { navigateWithTransition } from '../../../shared/utils/motion';
 import { AuthEditorialLayout } from '../components/AuthEditorialLayout';
@@ -10,13 +10,14 @@ export type LoginTab = 'lms' | 'enterprise';
 
 export const LoginPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const initialTab = searchParams.get('tab') === 'enterprise' ? 'enterprise' : 'lms';
   const [activeTab, setActiveTab] = useState<LoginTab>(initialTab);
 
   const handleTabChange = (tab: LoginTab) => {
     navigateWithTransition(() => {
       setActiveTab(tab);
-      setSearchParams({ tab });
+      setSearchParams({ tab }, { state: location.state, replace: true });
     });
   };
 

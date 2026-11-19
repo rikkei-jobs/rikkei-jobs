@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Icon } from '../../../shared/components/Icon';
 import { useAuth } from '../context/useAuth';
+import { extractFromPathname, resolvePostLoginPath } from '../utils/roleUtils';
 import { PasswordField } from '../components/PasswordField';
 import { PasswordValidationList } from '../components/PasswordValidationList';
 import { AuthEditorialLayout } from '../components/AuthEditorialLayout';
@@ -13,8 +14,18 @@ export const ChangePasswordPage: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  const { changePassword, logout, user, getRoleHomePath, isLoading } = useAuth();
+  const { changePassword, logout, user, isLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimerRef.current !== null) {
+        clearTimeout(redirectTimerRef.current);
+      }
+    };
+  }, []);
 
   const isLengthValid = newPassword.length >= 8;
   const isLetterValid = /[A-Za-z]/.test(newPassword);
@@ -35,8 +46,15 @@ export const ChangePasswordPage: React.FC = () => {
       const res = await changePassword({ oldPassword, newPassword });
       setErrorMsg(null);
       setSuccessMsg(res.message || 'Đổi mật khẩu thành công!');
-      setTimeout(() => {
-        navigate(getRoleHomePath(user?.role), { replace: true });
+      const targetPath = resolvePostLoginPath(
+        extractFromPathname(location.state),
+        user?.role,
+      );
+      if (redirectTimerRef.current !== null) {
+        clearTimeout(redirectTimerRef.current);
+      }
+      redirectTimerRef.current = setTimeout(() => {
+        navigate(targetPath, { replace: true });
       }, 1200);
     } catch (err: unknown) {
       setSuccessMsg(null);
@@ -46,8 +64,12 @@ export const ChangePasswordPage: React.FC = () => {
   };
 
   const handleLogout = () => {
+    if (redirectTimerRef.current !== null) {
+      clearTimeout(redirectTimerRef.current);
+      redirectTimerRef.current = null;
+    }
     logout();
-    navigate('/login', { replace: true });
+    navigate('/login', { replace: true, state: null });
   };
 
   return (

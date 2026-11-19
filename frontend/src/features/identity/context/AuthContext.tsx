@@ -10,7 +10,7 @@ import {
 } from '../types';
 import { authApi } from '../api/authApi';
 import { getRoleHomePath } from '../utils/roleUtils';
-import { AuthContext, type AuthContextValue } from './authContextDef';
+import { AuthContext, type AuthContextValue, type LogoutOptions } from './authContextDef';
 import { setAuthToken, setAuthSessionHandlers, getAuthSessionHandlers } from '../../../shared/api/httpClient';
 
 export interface AuthProviderProps {
@@ -71,16 +71,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   const [user, setUser] = useState<UserDto | null>(initialState.user);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [isExplicitLogout, setIsExplicitLogout] = useState<boolean>(false);
 
   const clearError = useCallback(() => {
     setError(null);
   }, []);
 
-  const logout = useCallback(() => {
+  const clearExplicitLogout = useCallback(() => {
+    setIsExplicitLogout(false);
+  }, []);
+
+  const logout = useCallback((options?: LogoutOptions) => {
+    // Only preserve post-login redirect when explicitly requested by 401 session expiry; ignore MouseEvent args.
+    const preserveRedirect = options?.preserveRedirect === true;
     setAuthToken(null);
     setAccessToken(null);
     setUser(null);
     setError(null);
+    setIsExplicitLogout(!preserveRedirect);
   }, []);
 
   useEffect(() => {
@@ -90,13 +98,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   useEffect(() => {
     const current = getAuthSessionHandlers();
     if (!current.onUnauthorized) {
-      setAuthSessionHandlers({
-        onUnauthorized: logout,
+      return setAuthSessionHandlers({
+        onUnauthorized: () => logout({ preserveRedirect: true }),
       });
-      return () => {
-        setAuthSessionHandlers({});
-      };
     }
+    return undefined;
   }, [logout]);
 
   const login = useCallback(async (credentials: LoginRequest): Promise<AuthResponse> => {
@@ -114,6 +120,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
             : Boolean(response.user.mustChangePassword),
       };
       setUser(userProfile);
+      setIsExplicitLogout(false);
       return response;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Đăng nhập không thành công';
@@ -132,6 +139,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       setAuthToken(response.accessToken);
       setAccessToken(response.accessToken);
       setUser(response.user);
+      setIsExplicitLogout(false);
       return response;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Xác thực vé SSO thất bại';
@@ -216,9 +224,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       isAuthenticated: Boolean(accessToken && user),
       isLoading,
       error,
+      isExplicitLogout,
       login,
       ssoLogin,
       logout,
+      clearExplicitLogout,
       changePassword,
       forgotPassword,
       resetPassword,
@@ -233,9 +243,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       user,
       isLoading,
       error,
+      isExplicitLogout,
       login,
       ssoLogin,
       logout,
+      clearExplicitLogout,
       changePassword,
       forgotPassword,
       resetPassword,

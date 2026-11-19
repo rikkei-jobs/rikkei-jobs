@@ -35,58 +35,41 @@ let sessionHandlers: AuthSessionHandlers = {};
 let isRedirectingToLogin = false;
 let isRedirectingToChangePassword = false;
 
-export const setAuthSessionHandlers = (handlers: Partial<AuthSessionHandlers>): void => {
+export const setAuthSessionHandlers = (
+  handlers: Partial<AuthSessionHandlers>,
+): (() => void) => {
   if (Object.keys(handlers).length === 0) {
     sessionHandlers = {};
-    return;
+    return () => {};
   }
 
-  const prev = sessionHandlers;
-  const next: AuthSessionHandlers = { ...prev };
+  const next: AuthSessionHandlers = { ...sessionHandlers };
+  const registeredUnauthorized = handlers.onUnauthorized;
+  const registeredMustChange = handlers.onMustChangePassword;
 
-  if (handlers.onUnauthorized) {
-    const newUnauthorized = handlers.onUnauthorized;
-    const prevUnauthorized = prev.onUnauthorized;
-    if (prevUnauthorized && prevUnauthorized !== newUnauthorized) {
-      next.onUnauthorized = () => {
-        try {
-          prevUnauthorized();
-        } catch {
-          // Handlers should not interrupt error propagation
-        }
-        try {
-          newUnauthorized();
-        } catch {
-          // Handlers should not interrupt error propagation
-        }
-      };
-    } else {
-      next.onUnauthorized = newUnauthorized;
-    }
+  if ('onUnauthorized' in handlers) {
+    next.onUnauthorized = registeredUnauthorized;
   }
 
-  if (handlers.onMustChangePassword) {
-    const newMustChange = handlers.onMustChangePassword;
-    const prevMustChange = prev.onMustChangePassword;
-    if (prevMustChange && prevMustChange !== newMustChange) {
-      next.onMustChangePassword = () => {
-        try {
-          prevMustChange();
-        } catch {
-          // Handlers should not interrupt error propagation
-        }
-        try {
-          newMustChange();
-        } catch {
-          // Handlers should not interrupt error propagation
-        }
-      };
-    } else {
-      next.onMustChangePassword = newMustChange;
-    }
+  if ('onMustChangePassword' in handlers) {
+    next.onMustChangePassword = registeredMustChange;
   }
 
   sessionHandlers = next;
+
+  return () => {
+    const current: AuthSessionHandlers = { ...sessionHandlers };
+    if ('onUnauthorized' in handlers && current.onUnauthorized === registeredUnauthorized) {
+      delete current.onUnauthorized;
+    }
+    if (
+      'onMustChangePassword' in handlers &&
+      current.onMustChangePassword === registeredMustChange
+    ) {
+      delete current.onMustChangePassword;
+    }
+    sessionHandlers = current;
+  };
 };
 
 export const getAuthSessionHandlers = (): AuthSessionHandlers => sessionHandlers;

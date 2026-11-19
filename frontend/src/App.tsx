@@ -1,5 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  Link,
+  useLocation,
+  useNavigate,
+} from 'react-router-dom';
 import './App.css';
 import { Header } from './shared/components/Header';
 import { HealthBadge } from './shared/components/HealthBadge';
@@ -12,15 +20,20 @@ import { SkillProfilePage } from './features/candidate';
 import { AuthProvider } from './features/identity/context/AuthContext';
 import { useAuth } from './features/identity/context/useAuth';
 import { setAuthSessionHandlers } from './shared/api/httpClient';
+import { RequireAuth } from './features/identity/guards/RequireAuth';
 import { RequireMustChangePassword } from './features/identity/guards/RequireMustChangePassword';
 import { RequireRole } from './features/identity/guards/RequireRole';
+import { PROTECTED_ROUTE_POLICIES } from './features/identity/config/routePolicies';
+import { isExcludedPostLoginPath } from './features/identity/utils/roleUtils';
 import { LoginPage } from './features/identity/pages/LoginPage';
 import { SsoCallbackPage } from './features/identity/pages/SsoCallbackPage';
 import { ChangePasswordPage } from './features/identity/pages/ChangePasswordPage';
 import { ForgotPasswordPage } from './features/identity/pages/ForgotPasswordPage';
 import { ResetPasswordPage } from './features/identity/pages/ResetPasswordPage';
+import { ForbiddenPage } from './features/identity/pages/ForbiddenPage';
 import { CandidateHomePage } from './features/identity/pages/role-homes/CandidateHomePage';
 import { CandidateSkillsPage } from './features/identity/pages/role-homes/CandidateSkillsPage';
+import { CandidateJobsPage } from './features/identity/pages/role-homes/CandidateJobsPage';
 import { CandidateGapAnalysisPage } from './features/identity/pages/role-homes/CandidateGapAnalysisPage';
 import { CandidateJobDetailPage } from './features/identity/pages/role-homes/CandidateJobDetailPage';
 import { HrHomePage } from './features/identity/pages/role-homes/HrHomePage';
@@ -115,7 +128,7 @@ export const HomeSkeleton: React.FC = () => {
       {view === 'skills' && (
         <main className="app-main">
           {isAuthenticated ? (
-            <SkillProfilePage onLogout={logout} />
+            <SkillProfilePage onLogout={() => logout()} />
           ) : (
             <section className="sp-cta-card" aria-labelledby="sp-cta-heading">
               <h2 id="sp-cta-heading" className="sp-heading">
@@ -207,16 +220,38 @@ export const HomeSkeleton: React.FC = () => {
 
 export const AppRoutes: React.FC = () => {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const location = useLocation();
+  const locationRef = useRef(location);
+  const { isAuthenticated, isExplicitLogout, clearExplicitLogout, logout } = useAuth();
 
   useEffect(() => {
-    setAuthSessionHandlers({
+    locationRef.current = location;
+  }, [location]);
+
+  useEffect(() => {
+    // Reset explicit logout once the router commits to a public landing route so later unauthenticated visits record state.from.
+    if (
+      !isAuthenticated &&
+      isExplicitLogout &&
+      (location.pathname === '/login' || location.pathname === '/')
+    ) {
+      clearExplicitLogout();
+    }
+  }, [isAuthenticated, isExplicitLogout, location.pathname, clearExplicitLogout]);
+
+  useEffect(() => {
+    return setAuthSessionHandlers({
       onUnauthorized: () => {
-        logout();
-        navigate('/login');
+        const currentLocation = locationRef.current;
+        const shouldPreserveFrom = !isExcludedPostLoginPath(currentLocation.pathname);
+        logout({ preserveRedirect: true });
+        navigate('/login', {
+          replace: true,
+          state: shouldPreserveFrom ? { from: currentLocation } : null,
+        });
       },
       onMustChangePassword: () => {
-        navigate('/change-password');
+        navigate('/change-password', { replace: true });
       },
     });
   }, [logout, navigate]);
@@ -243,38 +278,46 @@ export const AppRoutes: React.FC = () => {
         }
       />
 
-      {/* Dedicated candidate skill profile route */}
+      {/* Dedicated candidate skill profile and jobs routes */}
       <Route
-        path="/candidate/skills"
+        path={PROTECTED_ROUTE_POLICIES.candidateSkills.path}
         element={
-          <RequireRole allowedRoles={['CANDIDATE']}>
+          <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.candidateSkills.allowedRoles}>
             <CandidateSkillsPage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path={PROTECTED_ROUTE_POLICIES.candidateJobs.path}
+        element={
+          <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.candidateJobs.allowedRoles}>
+            <CandidateJobsPage />
           </RequireRole>
         }
       />
 
       {/* DT-01 gap analysis and JD detail routes */}
       <Route
-        path="/candidate/gap-analysis"
+        path={PROTECTED_ROUTE_POLICIES.candidateGapAnalysis.path}
         element={
-          <RequireRole allowedRoles={['CANDIDATE']}>
+          <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.candidateGapAnalysis.allowedRoles}>
             <CandidateGapAnalysisPage />
           </RequireRole>
         }
       />
       <Route
-        path="/candidate/jobs/:jobId"
+        path={PROTECTED_ROUTE_POLICIES.candidateJobDetail.path}
         element={
-          <RequireRole allowedRoles={['CANDIDATE']}>
+          <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.candidateJobDetail.allowedRoles}>
             <CandidateJobDetailPage />
           </RequireRole>
         }
       />
 
       <Route
-        path="/candidate/evaluations"
+        path={PROTECTED_ROUTE_POLICIES.candidateEvaluations.path}
         element={
-          <RequireRole allowedRoles={['CANDIDATE']}>
+          <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.candidateEvaluations.allowedRoles}>
             <CandidateEvaluationsPage />
           </RequireRole>
         }
@@ -282,51 +325,61 @@ export const AppRoutes: React.FC = () => {
 
       {/* Protected role homes */}
       <Route
-        path="/candidate"
+        path={PROTECTED_ROUTE_POLICIES.candidateHome.path}
         element={
-          <RequireRole allowedRoles={['CANDIDATE']}>
+          <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.candidateHome.allowedRoles}>
             <CandidateHomePage />
           </RequireRole>
         }
       />
       <Route
-        path="/hr"
+        path={PROTECTED_ROUTE_POLICIES.hrHome.path}
         element={
-          <RequireRole allowedRoles={['HR']}>
+          <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.hrHome.allowedRoles}>
             <HrHomePage />
           </RequireRole>
         }
       />
       <Route
-        path="/hr/company"
+        path={PROTECTED_ROUTE_POLICIES.hrCompany.path}
         element={
-          <RequireRole allowedRoles={['HR']}>
+          <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.hrCompany.allowedRoles}>
             <CompanyProfilePage />
           </RequireRole>
         }
       />
       <Route
-        path="/mentor"
+        path={PROTECTED_ROUTE_POLICIES.mentorHome.path}
         element={
-          <RequireRole allowedRoles={['MENTOR']}>
+          <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.mentorHome.allowedRoles}>
             <MentorHomePage />
           </RequireRole>
         }
       />
       <Route
-        path="/staff"
+        path={PROTECTED_ROUTE_POLICIES.staffHome.path}
         element={
-          <RequireRole allowedRoles={['STAFF']}>
+          <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.staffHome.allowedRoles}>
             <StaffHomePage />
           </RequireRole>
         }
       />
       <Route
-        path="/admin"
+        path={PROTECTED_ROUTE_POLICIES.adminHome.path}
         element={
-          <RequireRole allowedRoles={['ADMIN']}>
+          <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.adminHome.allowedRoles}>
             <AdminHomePage />
           </RequireRole>
+        }
+      />
+
+      {/* Explicit 403 forbidden route */}
+      <Route
+        path={PROTECTED_ROUTE_POLICIES.forbidden.path}
+        element={
+          <RequireAuth>
+            <ForbiddenPage />
+          </RequireAuth>
         }
       />
 

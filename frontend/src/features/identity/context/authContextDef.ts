@@ -9,15 +9,21 @@ import {
   type UserDto,
 } from '../types';
 
+export interface LogoutOptions {
+  readonly preserveRedirect?: boolean;
+}
+
 export interface AuthContextValue {
   accessToken: string | null;
   user: UserDto | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  isExplicitLogout: boolean;
   login: (credentials: LoginRequest) => Promise<AuthResponse>;
   ssoLogin: (ticket: string) => Promise<AuthResponse>;
-  logout: () => void;
+  logout: (options?: LogoutOptions) => void;
+  clearExplicitLogout: () => void;
   changePassword: (request: ChangePasswordRequest) => Promise<MessageResponse>;
   forgotPassword: (request: ForgotPasswordRequest) => Promise<MessageResponse>;
   resetPassword: (request: ResetPasswordRequest) => Promise<MessageResponse>;
