@@ -2,6 +2,7 @@ package com.rikkei.jobs.ai.controller;
 
 import com.rikkei.jobs.ai.dto.JobRecommendationsResponse;
 import com.rikkei.jobs.ai.service.JobRecommendationService;
+import com.rikkei.jobs.common.dto.ErrorResponse;
 import com.rikkei.jobs.common.exception.ValidationException;
 import com.rikkei.jobs.identity.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
@@ -52,16 +53,23 @@ public class JobRecommendationController {
                                                                 JobRecommendationsResponse.class))),
                 @ApiResponse(
                         responseCode = "400",
-                        description = "Tham số limit không hợp lệ (phải từ 1 đến 100)"),
+                        description =
+                                "Tham số limit không hợp lệ (phải từ 1 đến 100): VALIDATION_ERROR",
+                        content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
                 @ApiResponse(
                         responseCode = "401",
-                        description = "Chưa đăng nhập hoặc token không hợp lệ"),
+                        description = "Chưa đăng nhập hoặc token không hợp lệ: UNAUTHORIZED",
+                        content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
                 @ApiResponse(
                         responseCode = "403",
-                        description = "Tài khoản không có vai trò CANDIDATE"),
+                        description =
+                                "Tài khoản không có vai trò CANDIDATE hoặc cần đổi mật khẩu: FORBIDDEN, MUST_CHANGE_PASSWORD",
+                        content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
                 @ApiResponse(
                         responseCode = "429",
-                        description = "Làm mới quá nhanh, vui lòng chờ ít nhất 2 phút")
+                        description =
+                                "Làm mới quá nhanh, vui lòng chờ ít nhất 2 phút: RATE_LIMITED",
+                        content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             })
     @PreAuthorize("hasRole('CANDIDATE')")
     @GetMapping("/api/v1/me/job-recommendations")
