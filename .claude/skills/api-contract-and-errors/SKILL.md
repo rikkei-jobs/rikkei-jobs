@@ -105,7 +105,7 @@ The API design guarantees strict predictability across Backend (Spring Boot 4.1.
 1. Annotate controller class with `@Tag(name = "...", description = "...")`.
 2. Annotate methods with `@Operation(summary = "...", description = "...")`.
 3. Declare `@ApiResponse` annotations for successful outcomes and expected domain errors.
-4. Verify Swagger UI accessibility at `/swagger-ui.html` under `dev` profile and ensure it is disabled in `prod`.
+4. Verify Swagger UI accessibility at `/api/docs` on `:8080` and `:3000` (with legacy `/swagger-ui.html` and `/api-docs` on `:8080`) under `dev` profile and ensure it is disabled in `prod`.
 
 ### Step 6: Verify Endpoint Contracts with Tests
 

@@ -251,7 +251,16 @@
     "popstate",
     "mousedown",
     "overscroll",
-    "tiub"
+    "tiub",
+    "evals",
+    "fevil",
+    "cevil",
+    "aevil",
+    "cogin",
+    "orgot",
+    "hange",
+    "eset",
+    "flogin"
   ],
   "ignorePaths": [
     "**/node_modules/**",
