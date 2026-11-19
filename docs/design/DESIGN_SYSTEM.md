@@ -515,7 +515,7 @@ Khoảng giá trị: $CR \in [1.0, 21.0]$.
 
 ### 4.2. Ma trận Chứng minh Tương phản Toán học — Light Mode (Zero Emoji)
 
-Toàn bộ 46 cặp màu thực tế trong hệ thống Rikkei Jobs ở chế độ Sáng (Light Mode - Technical Deep Cobalt / Round E + Custom Select) được kiểm chứng qua giải thuật toán học thực nghiệm WCAG 2.2 Relative Luminance và W3C/Myndex APCA 0.98G-4g, tuyệt đối không dùng emoji, chỉ sử dụng văn bản thuần PASS:
+Toàn bộ 61 cặp màu thực tế trong hệ thống Rikkei Jobs ở chế độ Sáng (Light Mode - Technical Deep Cobalt / Round E + Custom Select) được kiểm chứng qua giải thuật toán học thực nghiệm WCAG 2.2 Relative Luminance và W3C/Myndex APCA 0.98G-4g, tuyệt đối không dùng emoji, chỉ sử dụng văn bản thuần PASS:
 
 | STT | Thành phần Giao diện (Role) | Token Màu Chữ / FG | Hex FG | Token Màu Nền / BG | Hex BG | $L_{\text{FG}}$ | $L_{\text{BG}}$ | Tỷ lệ $CR$ | Ngưỡng Chuẩn | APCA $L_c$ | Kết luận |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -565,10 +565,25 @@ Toàn bộ 46 cặp màu thực tế trong hệ thống Rikkei Jobs ở chế đ
 | 44 | Select Option Đang chọn + Active & Icon Check | `--rj-color-select-option-selected-hover-text` | `#0D55B8` | `--rj-color-select-option-active-bg` | `#E1E8F2` | 0.1004 | 0.8013 | **5.66:1** | $\ge 4.5:1$ | +69.4 | PASS (AA) |
 | 45 | Viền Panel Select trên Nền Panel | `--rj-color-select-panel-border` | `#6F8094` | `--rj-color-select-panel-bg` | `#FFFFFF` | 0.2096 | 1.0000 | **4.05:1** | $\ge 3.0:1$ | +67.7 | PASS (UI) |
 | 46 | Viền Panel Select trên Nền Canvas | `--rj-color-select-panel-border` | `#6F8094` | `--rj-primitive-neutral-100` | `#EEF2F8` | 0.2096 | 0.8846 | **3.60:1** | $\ge 3.0:1$ | +59.7 | PASS (UI) |
+| 47 | Viền phân tách Sidebar Sáng trên Nền Sidebar | `--rj-color-sidebar-border` | `#6F8094` | `--rj-color-sidebar-bg` | `#FFFFFF` | 0.2096 | 1.0000 | **4.05:1** | $\ge 3.0:1$ | +67.7 | PASS (UI) |
+| 48 | Viền phân tách Sidebar Sáng trên Nền Canvas | `--rj-color-sidebar-border` | `#6F8094` | `--rj-color-surface-page` | `#EEF2F8` | 0.2096 | 0.8846 | **3.60:1** | $\ge 3.0:1$ | +59.7 | PASS (UI) |
+| 49 | Chữ & Icon Mục Sidebar Mặc định Sáng | `--rj-color-sidebar-item-text` | `#25394E` | `--rj-color-sidebar-bg` | `#FFFFFF` | 0.0387 | 1.0000 | **11.84:1** | $\ge 4.5:1$ | +97.1 | PASS (AAA) |
+| 50 | Chữ & Icon Mục Sidebar Hover Sáng | `--rj-color-sidebar-item-hover-text` | `#0B1A2C` | `--rj-color-sidebar-item-hover-bg` | `#EEF2F8` | 0.0099 | 0.8846 | **15.60:1** | $\ge 4.5:1$ | +96.3 | PASS (AAA) |
+| 51 | Chữ & Icon Mục Sidebar Đang chọn Sáng | `--rj-color-sidebar-item-active-text` | `#0D55B8` | `--rj-color-sidebar-item-active-bg` | `#EBF2FC` | 0.1004 | 0.8819 | **6.20:1** | $\ge 4.5:1$ | +75.3 | PASS (AA) |
+| 52 | Thanh Chỉ báo & Viền Mục Đang chọn Sáng trên Nền Active | `--rj-color-sidebar-item-active-indicator` | `#0D55B8` | `--rj-color-sidebar-item-active-bg` | `#EBF2FC` | 0.1004 | 0.8819 | **6.20:1** | $\ge 3.0:1$ | +75.3 | PASS (UI) |
+| 53 | Viền Mục Đang chọn Sáng trên Nền Sidebar | `--rj-color-sidebar-item-active-border` | `#0D55B8` | `--rj-color-sidebar-bg` | `#FFFFFF` | 0.1004 | 1.0000 | **6.98:1** | $\ge 3.0:1$ | +83.5 | PASS (UI) |
+| 54 | Chữ Mục Sidebar Sắp ra mắt (Disabled) Sáng | `--rj-color-sidebar-item-disabled-text` | `#475B70` | `--rj-color-sidebar-item-disabled-bg` | `#EEF2F8` | 0.0999 | 0.8846 | **6.23:1** | $\ge 4.5:1$ | +76.3 | PASS (AA) |
+| 55 | Viền Nét đứt Mục Sidebar Sắp ra mắt Sáng | `--rj-color-sidebar-item-disabled-border` | `#6F8094` | `--rj-color-sidebar-bg` | `#FFFFFF` | 0.2096 | 1.0000 | **4.05:1** | $\ge 3.0:1$ | +67.7 | PASS (UI) |
+| 56 | Nhãn Sắp ra mắt trên Nền Pill Sáng | `--rj-color-sidebar-soon-text` | `#475B70` | `--rj-color-sidebar-soon-bg` | `#E1E8F2` | 0.0999 | 0.8013 | **5.68:1** | $\ge 4.5:1$ | +70.2 | PASS (AA) |
+| 57 | Viền Nhãn Sắp ra mắt trên Nền Pill Sáng | `--rj-color-sidebar-soon-border` | `#6F8094` | `--rj-color-sidebar-soon-bg` | `#E1E8F2` | 0.2096 | 0.8013 | **3.28:1** | $\ge 3.0:1$ | +53.7 | PASS (UI) |
+| 58 | Chữ & Icon Nút Thu gọn/Mở rộng Sidebar Sáng | `--rj-color-sidebar-toggle-text` | `#0B1A2C` | `--rj-color-sidebar-toggle-bg` | `#FFFFFF` | 0.0099 | 1.0000 | **17.52:1** | $\ge 4.5:1$ | +104.3 | PASS (AAA) |
+| 59 | Viền Nút Thu gọn/Mở rộng Sidebar Sáng | `--rj-color-sidebar-toggle-border` | `#6F8094` | `--rj-color-sidebar-toggle-bg` | `#FFFFFF` | 0.2096 | 1.0000 | **4.05:1** | $\ge 3.0:1$ | +67.7 | PASS (UI) |
+| 60 | Chữ Tooltip Rail Thu gọn Sáng | `--rj-color-sidebar-tooltip-text` | `#FFFFFF` | `--rj-color-sidebar-tooltip-bg` | `#0B1A2C` | 1.0000 | 0.0099 | **17.52:1** | $\ge 4.5:1$ | -106.5 | PASS (AAA) |
+| 61 | Viền Tooltip Rail Thu gọn Sáng trên Nền Canvas | `--rj-color-sidebar-tooltip-border` | `#475B70` | `--rj-color-surface-page` | `#EEF2F8` | 0.0999 | 0.8846 | **6.23:1** | $\ge 3.0:1$ | +76.3 | PASS (UI) |
 
 ### 4.3. Ma trận Chứng minh Tương phản Toán học — Dark Mode (Zero Emoji)
 
-Toàn bộ 42 cặp màu thực tế trong hệ thống Rikkei Jobs ở chế độ Tối (Dark Mode - Technical Iron Obsidian / Round E + Custom Select) được kiểm chứng qua giải thuật toán học thực nghiệm WCAG 2.2 Relative Luminance và W3C/Myndex APCA 0.98G-4g, tuyệt đối không dùng emoji, chỉ sử dụng văn bản thuần PASS:
+Toàn bộ 59 cặp màu thực tế trong hệ thống Rikkei Jobs ở chế độ Tối (Dark Mode - Technical Iron Obsidian / Round E + Custom Select) được kiểm chứng qua giải thuật toán học thực nghiệm WCAG 2.2 Relative Luminance và W3C/Myndex APCA 0.98G-4g, tuyệt đối không dùng emoji, chỉ sử dụng văn bản thuần PASS:
 
 | STT | Thành phần Giao diện (Role) | Token Màu Chữ / FG | Hex FG | Token Màu Nền / BG | Hex BG | $L_{\text{FG}}$ | $L_{\text{BG}}$ | Tỷ lệ $CR$ | Ngưỡng Chuẩn | APCA $L_c$ | Kết luận |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -614,6 +629,23 @@ Toàn bộ 42 cặp màu thực tế trong hệ thống Rikkei Jobs ở chế đ
 | 40 | Viền Panel Select Tối trên Panel | `--rj-color-select-panel-border` | `#94A3B8` | `--rj-color-select-panel-bg` | `#1E2C42` | 0.3595 | 0.0247 | **5.48:1** | $\ge 3.0:1$ | -47.5 | PASS (UI) |
 | 41 | Viền Panel Select Tối trên Thẻ Tối | `--rj-color-select-panel-border` | `#94A3B8` | `--rj-color-surface-card` | `#162030` | 0.3595 | 0.0142 | **6.38:1** | $\ge 3.0:1$ | -49.6 | PASS (UI) |
 | 42 | Viền Panel Select Tối trên Nền Canvas Tối | `--rj-color-select-panel-border` | `#94A3B8` | `--rj-color-surface-page` | `#0B1019` | 0.3595 | 0.0051 | **7.43:1** | $\ge 3.0:1$ | -51.3 | PASS (UI) |
+| 43 | Viền phân tách Sidebar Tối trên Nền Sidebar | `--rj-color-sidebar-border` | `#6F8094` | `--rj-color-sidebar-bg` | `#162030` | 0.2096 | 0.0142 | **4.04:1** | $\ge 3.0:1$ | -31.9 | PASS (UI) |
+| 44 | Viền phân tách Sidebar Tối trên Nền Canvas | `--rj-color-sidebar-border` | `#6F8094` | `--rj-color-surface-page` | `#0B1019` | 0.2096 | 0.0051 | **4.71:1** | $\ge 3.0:1$ | -33.5 | PASS (UI) |
+| 45 | Chữ & Icon Mục Sidebar Mặc định Tối | `--rj-color-sidebar-item-text` | `#CBD5E1` | `--rj-color-sidebar-bg` | `#162030` | 0.6572 | 0.0142 | **11.02:1** | $\ge 4.5:1$ | -78.3 | PASS (AAA) |
+| 46 | Chữ & Icon Mục Sidebar Hover Tối | `--rj-color-sidebar-item-hover-text` | `#EDF2F7` | `--rj-color-sidebar-item-hover-bg` | `#1E2C42` | 0.8822 | 0.0247 | **12.48:1** | $\ge 4.5:1$ | -94.7 | PASS (AAA) |
+| 47 | Chữ & Icon Mục Sidebar Đang chọn Tối | `--rj-color-sidebar-item-active-text` | `#6EA2F4` | `--rj-color-sidebar-item-active-bg` | `#16243A` | 0.3569 | 0.0174 | **6.04:1** | $\ge 4.5:1$ | -48.9 | PASS (AA) |
+| 48 | Thanh Chỉ báo & Viền Mục Đang chọn Tối trên Nền Active | `--rj-color-sidebar-item-active-indicator` | `#508CEE` | `--rj-color-sidebar-item-active-bg` | `#16243A` | 0.2663 | 0.0174 | **4.70:1** | $\ge 3.0:1$ | -38.7 | PASS (UI) |
+| 49 | Viền Mục Đang chọn Tối trên Nền Sidebar | `--rj-color-sidebar-item-active-border` | `#508CEE` | `--rj-color-sidebar-bg` | `#162030` | 0.2663 | 0.0142 | **4.93:1** | $\ge 3.0:1$ | -39.3 | PASS (UI) |
+| 50 | Chữ Mục Sidebar Sắp ra mắt (Disabled) Tối | `--rj-color-sidebar-item-disabled-text` | `#94A3B8` | `--rj-color-sidebar-item-disabled-bg` | `#101724` | 0.3595 | 0.0085 | **7.00:1** | $\ge 4.5:1$ | -50.7 | PASS (AAA) |
+| 51 | Viền Nét đứt Mục Sidebar Sắp ra mắt Tối | `--rj-color-sidebar-item-disabled-border` | `#6F8094` | `--rj-color-sidebar-bg` | `#162030` | 0.2096 | 0.0142 | **4.04:1** | $\ge 3.0:1$ | -31.9 | PASS (UI) |
+| 52 | Nhãn Sắp ra mắt trên Nền Pill Tối | `--rj-color-sidebar-soon-text` | `#94A3B8` | `--rj-color-sidebar-soon-bg` | `#101724` | 0.3595 | 0.0085 | **7.00:1** | $\ge 4.5:1$ | -50.7 | PASS (AAA) |
+| 53 | Viền Nhãn Sắp ra mắt trên Nền Pill Tối | `--rj-color-sidebar-soon-border` | `#6F8094` | `--rj-color-sidebar-soon-bg` | `#101724` | 0.2096 | 0.0085 | **4.44:1** | $\ge 3.0:1$ | -32.9 | PASS (UI) |
+| 54 | Chữ & Icon Nút Thu gọn/Mở rộng Sidebar Tối | `--rj-color-sidebar-toggle-text` | `#EDF2F7` | `--rj-color-sidebar-toggle-bg` | `#1E2C42` | 0.8822 | 0.0247 | **12.48:1** | $\ge 4.5:1$ | -94.7 | PASS (AAA) |
+| 55 | Chữ & Icon Nút Thu gọn/Mở rộng Sidebar Hover Tối | `--rj-color-sidebar-toggle-text` | `#EDF2F7` | `--rj-color-sidebar-toggle-hover-bg` | `#243B60` | 0.8822 | 0.0435 | **9.97:1** | $\ge 4.5:1$ | -90.6 | PASS (AAA) |
+| 56 | Viền Nút Thu gọn/Mở rộng Sidebar Tối | `--rj-color-sidebar-toggle-border` | `#94A3B8` | `--rj-color-sidebar-toggle-bg` | `#1E2C42` | 0.3595 | 0.0247 | **5.48:1** | $\ge 3.0:1$ | -47.5 | PASS (UI) |
+| 57 | Chữ Tooltip Rail Thu gọn Tối | `--rj-color-sidebar-tooltip-text` | `#EDF2F7` | `--rj-color-sidebar-tooltip-bg` | `#1E2C42` | 0.8822 | 0.0247 | **12.48:1** | $\ge 4.5:1$ | -94.7 | PASS (AAA) |
+| 58 | Viền Tooltip Rail Thu gọn Tối trên Nền Tooltip | `--rj-color-sidebar-tooltip-border` | `#94A3B8` | `--rj-color-sidebar-tooltip-bg` | `#1E2C42` | 0.3595 | 0.0247 | **5.48:1** | $\ge 3.0:1$ | -47.5 | PASS (UI) |
+| 59 | Viền Tooltip Rail Thu gọn Tối trên Nền Canvas | `--rj-color-sidebar-tooltip-border` | `#94A3B8` | `--rj-color-surface-page` | `#0B1019` | 0.3595 | 0.0051 | **7.43:1** | $\ge 3.0:1$ | -51.3 | PASS (UI) |
 
 ### 4.4. Ma trận Phân tách Bề mặt CIELAB Delta L* & Ranh giới Viền (Zero Emoji)
 
@@ -878,8 +910,8 @@ Hệ thống layout đáp ứng đầy đủ từ thiết bị di động cá nh
 |---|---|---|---|
 | **Mobile (`sm`)** | **`375px`** | iPhone SE, smartphone tiêu chuẩn | Bố cục 1 cột cuộn dọc, **Horizontal Scroll = 0 tuyệt đối** (`scrollWidth <= clientWidth`), touch target $\ge 44\text{px}$, padding lề `16px`. |
 | **Tablet (`md`)** | **`768px`** | iPad mini, máy tính bảng dọc | Lưới 2 cột linh hoạt, bảng biểu có thanh cuộn ngang độc lập trong khung card với chỉ báo thị giác (fade cue), padding lề `24px`. |
-| **Desktop (`lg`)** | **`1024px`** | Laptop văn phòng 13"-14" | Kích hoạt lưới 12 cột bất đối xứng (65/35). Thanh điều hướng bên cạnh (Sidebar Nav 240px) ghim cố định. |
-| **Wide Desktop (`xl`)** | **`1440px`** | Màn hình ngoài 24"-27" | Max container width giới hạn ở `1360px` căn giữa. Mở rộng chế độ đa bảng cho admin, hiển thị đầy đủ thông tin chi tiết. |
+| **Desktop (`lg`)** | **`1024px`** | Laptop văn phòng 13"-14" | Kích hoạt lưới 12 cột bất đối xứng (65/35). Thanh điều hướng trái mặc định thu gọn `72px` (có thể mở rộng `280px`) trong khoảng `768–1279px`. |
+| **Wide Desktop (`xl`)** | **`1440px`** | Màn hình ngoài 24"-27" | Max container width giới hạn ở `1360px` căn giữa; thanh điều hướng trái mặc định mở rộng `280px` từ `>= 1280px` (có thể thu gọn `72px`). Mở rộng chế độ đa bảng cho admin, hiển thị đầy đủ thông tin chi tiết. |
 
 ### 6.3. Kiến Trúc Mật Độ Kép Theo Vai Trò (Dual-Density Architecture)
 
@@ -1578,3 +1610,91 @@ Per the product decision recorded in `Round DN-01-polish2` (`T0231B5`), every UI
 | `LOCKED` | `"Đã khóa"` | Trạng thái khóa tài khoản & công ty (ưu tiên hiển thị nếu đồng thời bật cờ đổi mật khẩu) / Locked state |
 | `MUST_CHANGE_PASSWORD` | `"Yêu cầu đổi mật khẩu"` | Trạng thái bắt buộc đổi mật khẩu / Forced password change status |
 | Unknown / empty / null | `"Không xác định"` | Fallback tiếng Việt thống nhất, thay thế mọi `"N/A"` và enum chưa nhận diện / Unified Vietnamese fallback |
+
+---
+
+## 14. App shell and sidebar navigation (Khung Ứng dụng & Thanh Điều hướng Trái)
+
+Mục này đặc tả kiến trúc khung ứng dụng dùng chung (`SharedAppLayout`) và thanh điều hướng trái thu gọn/mở rộng thống nhất cho cả 5 vai trò sau vòng chỉnh sửa `NT-02-fix` (`F4`), thay thế thanh menu ngang trước đây.  
+This section specifies the unified `SharedAppLayout` application shell and collapsible left sidebar architecture shared across all 5 authenticated roles following `NT-02-fix` (`F4`), replacing the previous horizontal submenu bar.
+
+### 14.1. Anatomy & Scope (Cấu trúc Thành phần & Phạm vi Áp dụng)
+
+```text
+Skip Link ("Bỏ qua tới nội dung chính")
+└── Header gọn / Slim Top Header (--rj-header-height: 56px)
+    ├── [Mobile < 768px] Nút mở drawer (<button type="button">)
+    ├── Brand Lockup Link -> homePath của vai trò hiện tại
+    └── User Chip (tên + badge vai trò từ enumLabels.ts), Theme Toggle, Đăng Xuất
+└── Shell Body (.rj-dashboard-body)
+    ├── Left Sidebar (<aside> — 280px mở rộng / 72px thu gọn / off-canvas drawer < 768px)
+    │   ├── Toggle Button (<button type="button">, aria-expanded, aria-controls, >= 44px)
+    │   └── <nav aria-label="Điều hướng theo vai trò">
+    │       ├── Mục 1: "Trang chủ" (<Icon name="home" />) -> homePath
+    │       └── Các mục vai trò từ roleMenuConfig.ts (kèm trạng thái "Sắp ra mắt")
+    └── Main Content (<main id="main-content" tabIndex={-1}>, min-width: 0, flex: 1)
+```
+
+- **Thống nhất cho 5 vai trò & Trang 403**: Tất cả 5 vai trò (`CANDIDATE`, `HR`, `MENTOR`, `STAFF`, `ADMIN`) dùng duy nhất một thành phần `SharedAppLayout`. Trang `403 Forbidden` dành cho người dùng đã đăng nhập hiển thị bên trong cùng khung shell này (giữ nguyên thanh điều hướng trái của vai trò hiện tại để người dùng có thể quay về hợp lệ, không lồng hai thẻ `<main>`). Các trang công khai (`/`, `/login`, `/sso-callback`, `/forgot-password`, `/reset-password`, `/change-password`) giữ nguyên không có sidebar.  
+  **Unified Across 5 Roles & 403 Page**: All 5 authenticated roles share a single `SharedAppLayout`. Authenticated `403 Forbidden` views render inside this same shell (preserving the user's current role sidebar without nested `<main>` landmarks). Public/auth routes (`/`, `/login`, `/sso-callback`, `/forgot-password`, `/reset-password`, `/change-password`) remain sidebar-free.
+- **Bảo toàn Nội dung Menu (`roleMenuConfig.ts`)**: Mục đầu tiên luôn là `"Trang chủ"` trỏ về trang chủ của vai trò, theo sau là nguyên văn nhãn, đường dẫn, icon từ `<Icon />` (`24x24`, `strokeWidth="2"`) và các mục vô hiệu hóa `"Sắp ra mắt"` của từng vai trò.  
+  **Preserved Menu Content (`roleMenuConfig.ts`)**: The first navigation item is always `"Trang chủ"` linking to the role home path, followed verbatim by each role's labels, routes, `<Icon />` icons (`24x24`, `strokeWidth="2"`), and `"Sắp ra mắt"` disabled items.
+
+### 14.2. Tokens & Interactive States (Token & Trạng thái Tương tác)
+
+Toàn bộ kích thước, chuyển động, lớp phủ và màu sắc được định nghĩa trong `frontend/src/shared/styles/design-tokens.css` (tuân thủ Check 9, không dùng màu thô ngoài tệp token; các cặp màu tương phản được kiểm toán tại Mục 4.2 STT `47–61` và Mục 4.3 STT `43–59`).  
+All dimensions, motion budgets, backdrop overlays, and colors are defined in `frontend/src/shared/styles/design-tokens.css` (Check 9 compliant, zero raw color literals outside the token file; contrast pairs are mathematically audited in Section 4.2 `#47–61` and Section 4.3 `#43–59`).
+
+| State (Trạng thái) | Light Mode Tokens | Dark Mode Tokens | Behavior / Notes (Hành vi & Ghi chú) |
+|---|---|---|---|
+| **Shell Dimensions** | `--rj-sidebar-width-expanded` (`280px`), `--rj-sidebar-width-collapsed` (`72px`), `--rj-sidebar-drawer-width` (`280px`), `--rj-header-height` (`56px`) | Same dimension tokens | Định nghĩa bằng CSS custom properties, không hardcode số đo / Defined via tokens, zero magic numbers |
+| **Sidebar Surface & Border** | `--rj-color-sidebar-bg` (`#FFFFFF`), `--rj-color-sidebar-border` (`#6F8094`) | `--rj-color-sidebar-bg` (`#162030`), `--rj-color-sidebar-border` (`#6F8094`) | Tách biệt bề mặt `Delta L* >= 4.0` so với canvas; viền đạt `CR >= 3.60:1` trên cả sidebar lẫn canvas / Surface separation `Delta L* >= 4.0`; border `CR >= 3.60:1` against both sidebar and canvas |
+| **Drawer Backdrop Overlay** | `--rj-color-surface-overlay` (`rgba(12, 26, 48, 0.55)`) | `--rj-color-surface-overlay` (`rgba(11, 16, 25, 0.85)`) | Lớp phủ sau off-canvas drawer ở `< 768px`, khóa cuộn `body` / Backdrop behind `< 768px` off-canvas drawer with body scroll lock |
+| **Nav Item Default** | `--rj-color-sidebar-item-bg`, `--rj-color-sidebar-item-text`, `--rj-color-sidebar-item-icon` | `--rj-color-sidebar-item-bg`, `--rj-color-sidebar-item-text`, `--rj-color-sidebar-item-icon` | `CR >= 11.02:1`; trong rail `72px` giữ nguyên accessible name bằng `.rj-sr-only` / Keeps accessible name via `.rj-sr-only` in `72px` collapsed rail |
+| **Nav Item Hover** | `--rj-color-sidebar-item-hover-bg`, `--rj-color-sidebar-item-hover-text` | `--rj-color-sidebar-item-hover-bg`, `--rj-color-sidebar-item-hover-text` | Áp dụng khi `:hover` trên mục khả dụng; `CR >= 12.48:1` / Applied on enabled items; `CR >= 12.48:1` |
+| **Nav Item Focus Visible** | `outline: 2px solid var(--rj-color-focus-ring)`, `outline-offset: 2px` | `outline: 2px solid var(--rj-color-focus-ring)`, `outline-offset: 2px` | Vòng focus rõ nét trên cả mục điều hướng và nút thu gọn / High-contrast focus ring on links and toggle |
+| **Nav Item Active (`[aria-current="page"]`)** | `--rj-color-sidebar-item-active-bg`, `--rj-color-sidebar-item-active-text`, `--rj-color-sidebar-item-active-border`, `--rj-color-sidebar-item-active-indicator` | `--rj-color-sidebar-item-active-bg`, `--rj-color-sidebar-item-active-text`, `--rj-color-sidebar-item-active-border`, `--rj-color-sidebar-item-active-indicator` | Chỉ báo phi màu sắc bắt buộc: thanh viền trái `3px` (`--rj-sidebar-active-indicator-width`), viền `1px` (`CR >= 4.93:1`), `font-weight: 700` / Mandatory non-color cues: `3px` left bar, `1px` border (`CR >= 4.93:1`), `font-weight: 700` |
+| **Nav Item Disabled (`[aria-disabled="true"]`)** | `--rj-color-sidebar-item-disabled-bg`, `--rj-color-sidebar-item-disabled-text`, `--rj-color-sidebar-item-disabled-border`, `--rj-color-sidebar-soon-*` | `--rj-color-sidebar-item-disabled-bg`, `--rj-color-sidebar-item-disabled-text`, `--rj-color-sidebar-item-disabled-border`, `--rj-color-sidebar-soon-*` | Nhãn `"Sắp ra mắt"`, viền nét đứt `1px dashed`, `tabIndex={-1}` ngoài tab order, không điều hướng; chữ đạt `CR >= 6.23:1` / Out of tab order, non-navigating, `CR >= 6.23:1` |
+| **Collapse Toggle Button** | `--rj-color-sidebar-toggle-bg`, `--rj-color-sidebar-toggle-hover-bg`, `--rj-color-sidebar-toggle-text`, `--rj-color-sidebar-toggle-border` | `--rj-color-sidebar-toggle-bg`, `--rj-color-sidebar-toggle-hover-bg`, `--rj-color-sidebar-toggle-text`, `--rj-color-sidebar-toggle-border` | `<button type="button">`, vùng chạm `>= 44x44px`, `aria-expanded`, `aria-controls`, nhãn đổi `"Thu gọn thanh điều hướng"` / `"Mở rộng thanh điều hướng"` |
+| **Collapsed Rail Tooltip (`role="tooltip"`)** | `--rj-color-sidebar-tooltip-bg`, `--rj-color-sidebar-tooltip-text`, `--rj-color-sidebar-tooltip-border` | `--rj-color-sidebar-tooltip-bg`, `--rj-color-sidebar-tooltip-text`, `--rj-color-sidebar-tooltip-border` | Hiện trong `--rj-tooltip-transition` (`150ms <= 200ms`) khi hover hoặc focus bàn phím; `Escape` đóng, không bẫy focus; mục disabled kèm `"Sắp ra mắt"` / Appears on hover & focus within `150ms`; `Escape` dismisses without trapping focus |
+
+### 14.3. Breakpoints, Density & Persistence (Điểm ngắt, Mật độ & Lưu trạng thái)
+
+- **Responsive Breakpoints**:
+  - **`>= 1280px` (Wide / Standard Desktop)**: Mặc định mở rộng `280px` (`--rj-sidebar-width-expanded`), người dùng có thể thu gọn xuống `72px`.  
+    Default expanded (`280px`), and can be toggled by the user to `72px`.
+  - **`768px – 1279px` (Tablet / Compact Desktop)**: Mặc định thu gọn `72px` (`--rj-sidebar-width-collapsed`), người dùng có thể mở rộng lên `280px`.  
+    Default collapsed icon rail (`72px`), and can be toggled by the user to `280px`.
+  - **`< 768px` (Mobile Drawer)**: Sidebar chuyển thành ngăn kéo off-canvas (`280px`, `role="dialog"`, `aria-modal="true"`) mở từ nút trên header (`aria-expanded`), có backdrop phủ toàn màn hình (`--rj-color-surface-overlay`), bẫy focus bên trong khi mở, `Escape` đóng và trả focus về nút mở trên header, khóa cuộn `document.body`, tự động đóng sau khi điều hướng, và mọi vùng chạm đạt tối thiểu `44px x 44px`.  
+    Becomes an off-canvas drawer (`280px`, `role="dialog"`, `aria-modal="true"`) triggered from the header button (`aria-expanded`) with full-viewport backdrop, focus trap, `Escape` dismissal restoring focus to the trigger, body scroll lock, auto-close on navigation, and `>= 44px x 44px` touch targets.
+- **Role Density (Mật độ theo Vai trò)**:
+  - `CANDIDATE` (`[data-density="airy"]`): chiều cao mục điều hướng `min-height: 44px` trên mọi viewport.  
+    `CANDIDATE` (`airy`): `44px` item height across all viewports.
+  - `HR`, `MENTOR`, `STAFF`, `ADMIN` (`[data-density="dense"]`): chiều cao mục điều hướng `min-height: 36px` từ `>= 768px`, và tự động nâng lên `44px` khi hiển thị trong drawer `< 768px` để bảo đảm chuẩn cảm ứng di động.  
+    `HR`, `MENTOR`, `STAFF`, `ADMIN` (`dense`): `36px` item height at `>= 768px`, elevated to `44px` inside the `< 768px` mobile drawer.
+- **Persistence (`localStorage` Key: `rj_sidebar_collapsed`)**:
+  - Khóa `rj_sidebar_collapsed` lưu duy nhất tùy chọn giao diện (`"true"` hoặc `"false"`) cho chế độ thu gọn/mở rộng ở `>= 768px` (tuyệt đối không lưu dữ liệu xác thực/phiên đăng nhập).  
+    Stores UI preference only (`"true"` | `"false"`) for `>= 768px` desktop/tablet rail state (never auth/session data).
+  - Mọi thao tác đọc/ghi `localStorage` được bọc trong `try/catch` để ứng dụng vẫn vận hành bình thường khi storage bị chặn hoặc lỗi.  
+    Every `localStorage` read/write is wrapped in `try/catch` for safe fallback when storage is unavailable.
+  - Đọc đồng bộ ngay trong lazy initializer của `useState` trước lần render đầu tiên (không flash trạng thái sai lúc tải trang) và chỉ ghi khi người dùng chủ động nhấn nút thu gọn/mở rộng ở `>= 768px` (không ghi khi mount hay khi chuyển đổi theme).  
+    Read synchronously in a `useState` lazy initializer (zero wrong-state flash on load) and written only on explicit `>= 768px` toggle interaction (never on mount or theme toggle).
+
+### 14.4. Accessibility, Motion & CLS = 0 (Trợ năng, Chuyển động & Bù trừ Reflow)
+
+- **Skip Link & Tab Order**: Liên kết `"Bỏ qua tới nội dung chính"` (`href="#main-content"`) là phần tử có thể focus đầu tiên trong DOM. Thứ tự Tab cố định: **Skip link -> Header controls -> Sidebar (nút thu gọn + các mục khả dụng) -> Main content (`#main-content`)**. Mục vô hiệu hóa `"Sắp ra mắt"` giữ `aria-disabled="true"` và `tabIndex={-1}` nên không nằm trong tab order.  
+  **Skip Link & Tab Order**: `"Bỏ qua tới nội dung chính"` (`href="#main-content"`) is the first focusable DOM element. Strict Tab sequence: **Skip link -> Header controls -> Sidebar -> Main (`#main-content`)**. Disabled `"Sắp ra mắt"` items keep `aria-disabled="true"` and `tabIndex={-1}`.
+- **Motion & `prefers-reduced-motion`**:
+  - Đổi độ rộng sidebar: `--rj-sidebar-transition-width` (`150ms`) với `--rj-ease-out` (`<= 150ms`).  
+    Sidebar width transition: `150ms ease-out` (`<= 150ms`).
+  - Tooltip rail thu gọn: `--rj-tooltip-transition` (`150ms <= 200ms`) chỉ animate `opacity` và `transform`.  
+    Collapsed tooltip reveal: `150ms` (`<= 200ms`) using `opacity` and `transform` only.
+  - Mobile drawer: `--rj-drawer-transition` (`250ms <= 300ms`) sử dụng `transform` và `opacity` tăng tốc GPU.  
+    Mobile drawer slide: `250ms` (`<= 300ms`) via GPU-composited `transform` and `opacity`.
+  - Dưới `@media (prefers-reduced-motion: reduce)`: chuyển đổi tức thì `0.001ms !important` và thay thế trượt drawer bằng `100ms` opacity cross-fade (`transform: none !important`).  
+    Under `@media (prefers-reduced-motion: reduce)`: instant `0.001ms !important` transitions and `100ms` opacity-only cross-fade.
+- **CLS = 0 lúc tải trang & Giải thích Reflow khi Thu gọn/Mở rộng (Load CLS = 0 & Toggle Reflow Rationale)**:
+  - **Lúc tải trang (`CLS = 0`)**: Vì kích thước sidebar (`280px` / `72px`) được suy ra đồng bộ từ `rj_sidebar_collapsed` (trong `try/catch`) và breakpoint hiện tại ngay trong lần render đầu tiên với độ rộng cố định theo token, khung nội dung `<main>` không bị nhảy cột sau hydration — bảo đảm **Cumulative Layout Shift (`CLS`) = 0** khi tải trang.  
+    **At Page Load (`CLS = 0`)**: Because initial width (`280px` / `72px`) is resolved synchronously from `rj_sidebar_collapsed` (within `try/catch`) and viewport width on the very first render using fixed token dimensions, `<main>` never shifts post-hydration, guaranteeing **CLS = 0** on load.
+  - **Khi người dùng chủ động thu gọn/mở rộng (`280px <-> 72px`)**: Việc thu gọn sidebar giải phóng `208px` chiều ngang cho vùng làm việc; do đó phần `<main>` (`flex: 1 1 0%; min-width: 0;`) được thiết kế có chủ đích để **reflow mượt trong `150ms ease-out`** lấp đầy khoảng trống vừa mở rộng (các chuyển dịch xảy ra trong vòng `500ms` sau thao tác click của người dùng được W3C Layout Instability API loại trừ khỏi điểm CLS). Thuộc tính `min-width: 0` trên `<main>` ngăn các bảng hoặc lưới rộng bên trong đẩy vùng nội dung vượt quá khung nhìn, giữ nguyên `scrollWidth <= requestedWidth` tại `768px`, `1024px` và `1440px`.  
+    **On User-Initiated Toggle (`280px <-> 72px`)**: Collapsing reclaims `208px` of horizontal workspace; `<main>` (`flex: 1 1 0%; min-width: 0;`) intentionally reflows over `150ms ease-out` to utilize that reclaimed space (user-initiated shifts within `500ms` of input are excluded by the W3C Layout Instability API). Setting `min-width: 0` on `<main>` prevents wide inner grids/tables from forcing horizontal overflow across `768px`, `1024px`, and `1440px`.
