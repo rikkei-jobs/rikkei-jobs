@@ -46,7 +46,12 @@ public class SecurityHardeningIntegrationTest {
                 "CORS_ALLOWED_ORIGINS=http://localhost:3000",
                 "EXTERNAL_BASE_URL=https://mock.example.com",
                 "EXTERNAL_SERVICE_KEY=prod-secret-service-key-999",
-                "JWT_SECRET=super-secure-production-jwt-secret-key-32-bytes-minimum!"
+                "JWT_SECRET=super-secure-production-jwt-secret-key-32-bytes-minimum!",
+                "CLOUDINARY_CLOUD_NAME=prod-rikkei-cloud",
+                "CLOUDINARY_API_KEY=prod-cloudinary-key-123",
+                "CLOUDINARY_API_SECRET=prod-cloudinary-secret-xyz-987",
+                "CLOUDINARY_API_BASE_URL=https://api.cloudinary.com/v1_1",
+                "CLOUDINARY_DELIVERY_BASE_URL=https://res.cloudinary.com/prod-rikkei-cloud/image/upload"
             })
     @Testcontainers
     @ActiveProfiles("prod")
@@ -192,6 +197,12 @@ public class SecurityHardeningIntegrationTest {
                                                     + prodPostgres.getPassword(),
                                             "--external.api.base-url=https://mock.example.com",
                                             "--external.api.service-key=prod-secret-service-key-999",
+                                            "--jwt.secret=super-secure-production-jwt-secret-key-32-bytes-minimum!",
+                                            "--cloudinary.cloud-name=prod-rikkei-cloud",
+                                            "--cloudinary.api-key=prod-cloudinary-key-123",
+                                            "--cloudinary.api-secret=prod-cloudinary-secret-xyz-987",
+                                            "--cloudinary.api-base-url=https://api.cloudinary.com/v1_1",
+                                            "--cloudinary.delivery-base-url=https://res.cloudinary.com/prod-rikkei-cloud/image/upload",
                                             "--spring.flyway.enabled=true"));
 
             Throwable cause = exception;
@@ -336,9 +347,9 @@ public class SecurityHardeningIntegrationTest {
                             "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                             Integer.class);
             assertEquals(
-                    6,
+                    7,
                     migrationCount,
-                    "Only schema migrations V1, V3, V5, V7, V11 and V13 must be applied");
+                    "Only schema migrations V1, V3, V5, V7, V9, V11 and V13 must be applied");
 
             Boolean hasV2 =
                     jdbcTemplate.queryForObject(
@@ -388,7 +399,7 @@ public class SecurityHardeningIntegrationTest {
 
         @Test
         @DisplayName(
-                "Default profile strictly isolates seed data (0 users, only V1, V3, V5, V7, V11 and V13 migrations)")
+                "Default profile strictly isolates seed data (0 users, only V1, V3, V5, V7, V9, V11 and V13 migrations)")
         void testDefaultProfileDatabaseState() {
             assertEquals(0L, userRepository.count(), "Default profile must have 0 users");
 
@@ -397,9 +408,9 @@ public class SecurityHardeningIntegrationTest {
                             "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                             Integer.class);
             assertEquals(
-                    6,
+                    7,
                     totalMigrations,
-                    "Default profile must have exactly 6 schema migrations (V1, V3, V5, V7, V11, V13)");
+                    "Default profile must have exactly 7 schema migrations (V1, V3, V5, V7, V9, V11, V13)");
 
             Integer v2Count =
                     jdbcTemplate.queryForObject(
