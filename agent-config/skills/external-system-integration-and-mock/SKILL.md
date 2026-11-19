@@ -13,8 +13,9 @@ This skill governs the integration between the Rikkei Jobs backend and external 
 - Exam: Examination System (standardized assessment scores).
 - PM: Project Management IOC (internship batches, project assignments, task deliverables).
 - Meet: Rikkei Meet (virtual interview room creation).
+- Cloudinary Mock: Signed image upload, delivery, and destroy simulation (`/cloudinary/*`) for company logo storage.
 
-All external communications route through a centralized, resilient client (`ExternalApiClient`) with strict service key protection, fail-fast timeouts, retry policies, and hermetic integration test coverage.
+All external communications route through a centralized, resilient client (`ExternalApiClient`) with strict service key isolation (internal mock routes vs. third-party absolute URLs), fail-fast timeouts, retry policies, and hermetic integration test coverage.
 
 ## 2. When to use / When NOT to use
 
@@ -50,19 +51,25 @@ All external communications route through a centralized, resilient client (`Exte
    - `POST /pm/batches/{id}/members`: Allocate student to an IOC batch.
    - `POST /meet/rooms`: Create virtual interview room.
 3. Empty List Law: List endpoints (results, courses, enrollments, internships) return `[]` with status `200 OK` when no records exist. Never expect 404 for empty collections.
+4. Cloudinary Mock Namespace (`/cloudinary/*`, no `X-Service-Key` required):
+   - `POST /cloudinary/v1_1/:cloud/image/upload`: Verify `api_key` and SHA-1 `signature` (return `401` on mismatch), decode `data:image/*;base64,...`, store bytes in memory, return `{ public_id, secure_url, version, format, bytes }`.
+   - `GET /cloudinary/:cloud/image/upload/*`: Return stored raw bytes with exact `Content-Type`.
+   - `POST /cloudinary/v1_1/:cloud/image/destroy`: Optional destroy endpoint.
+5. Testing Tools (`POST /mock/reload`, `GET /mock/requests`, `GET /mock/enrollments`, `POST /mock/reset`, `POST /mock/cloudinary/fail-next`): Non-authenticated testing tools; `POST /mock/cloudinary/fail-next` forces the next Cloudinary upload to fail once (reset via `POST /mock/reset`).
 
 ### Step 2: Route Calls Exclusively via `ExternalApiClient`
 
 1. Inject `com.rikkei.jobs.common.client.ExternalApiClient` into the domain service.
 2. Strictly avoid instantiating ad-hoc `RestTemplate`, `WebClient`, or `HttpClient` instances.
 3. External client methods must return typed immutable Java Records or throw domain exceptions.
+4. For third-party absolute URLs (such as Cloudinary `POST` `application/x-www-form-urlencoded`), use `ExternalApiClient.postFormUrlEncoded(absoluteUrl, formParams, timeout)` with at most 1 quick network retry within timeout budget; NEVER send `X-Service-Key` and NEVER log request/response bodies, URL query values, or secrets.
 
 ### Step 3: Configure Service Key Authentication
 
-1. Inject the secret header `X-Service-Key: dev-key` automatically through `ExternalApiClient`.
-2. Configure credentials in `application.yml` via `external.api.service-key`.
-3. Never expose this key to frontend code, browser environments, or public repositories.
-4. Ensure Nginx blocks public routing to `/mock` and `/lms` paths.
+1. Inject the secret header `X-Service-Key: dev-key` automatically through `ExternalApiClient` only for internal partner mock calls (`/lms/*`, `/exam/*`, `/pm/*`, `/meet/*`); third-party absolute URL calls (`postFormUrlEncoded`, `postJson`) must NEVER attach `X-Service-Key`.
+2. Configure credentials in `application.yml` via `external.api.service-key` (and `cloudinary.*` for Cloudinary).
+3. Never expose these keys or secrets to frontend code, browser environments, or public repositories.
+4. Ensure Nginx blocks public routing to `/mock/*` and `/lms/*` paths (and never proxies `/cloudinary/*`).
 
 ### Step 4: Configure Resilience, Timeouts & Retries
 
@@ -97,9 +104,9 @@ All external communications route through a centralized, resilient client (`Exte
 ## 4. Iron Laws
 
 1. CENTRALIZED CLIENT ONLY: All external partner communication must route through `ExternalApiClient`. Ad-hoc HTTP clients are forbidden.
-2. CONFIDENTIAL SERVICE KEY: `X-Service-Key` is strictly confidential between Backend and Mock; never expose it in frontend configs (`VITE_*`).
+2. CONFIDENTIAL SERVICE KEY & THIRD-PARTY ISOLATION: `X-Service-Key` is strictly confidential between Backend and internal mock routes; never send `X-Service-Key` to third-party URLs (`postFormUrlEncoded` / `postJson`), never log secrets/bodies/queries, and never expose credentials in frontend configs (`VITE_*`).
 3. FAIL-FAST TIMEOUT: Never allow external calls without a strict timeout (<= 5000ms).
-4. MAP TO 503 ON OUTAGE: External service failures must be mapped to HTTP 503 `EXTERNAL_UNAVAILABLE` rather than unhandled 500 errors.
+4. MAP TO 503 / 502 ON OUTAGE: Internal partner failures must be mapped to HTTP 503 `EXTERNAL_UNAVAILABLE` (and Cloudinary logo storage failures to HTTP 502 `LOGO_STORAGE_UNAVAILABLE`) rather than unhandled 500 errors.
 5. EMPTY LIST IS 200 OK: Never treat empty list responses `[]` as 404 errors.
 
 ## 5. Red Flags
@@ -122,19 +129,19 @@ All external communications route through a centralized, resilient client (`Exte
 ## 7. Verification Checklist
 
 - [ ] External call is routed via `ExternalApiClient`.
-- [ ] `X-Service-Key` is attached automatically via configuration.
+- [ ] `X-Service-Key` is attached only for internal partner mocks (`/lms/*`, `/exam/*`, `/pm/*`, `/meet/*`), never for third-party calls (`postFormUrlEncoded`).
 - [ ] Timeout is configured to <= 5000ms.
-- [ ] Retry is limited to max 2 attempts for transient 5xx/network errors.
-- [ ] Network failures map to HTTP 503 `EXTERNAL_UNAVAILABLE`.
+- [ ] Retry is limited to max 2 attempts for transient 5xx/network errors (and max 1 network retry within timeout for `postFormUrlEncoded`).
+- [ ] Network failures map to HTTP 503 `EXTERNAL_UNAVAILABLE` (or HTTP 502 `LOGO_STORAGE_UNAVAILABLE` for Cloudinary logo storage).
 - [ ] Mock list endpoints return empty arrays with HTTP 200.
-- [ ] `npm test` in `mock/` passes cleanly.
+- [ ] `node mock/test-runner.js` passes cleanly (11 business endpoints + Cloudinary mock + 5 testing tools).
 - [ ] `ExternalApiClientIntegrationTest` passes against the mock server.
 
 ## 8. Rikkei Jobs Specifics
 
-- External Systems: LMS, Exam, PM (IOC), Meet.
+- External Systems: LMS, Exam, PM (IOC), Meet, and Cloudinary CDN (`CloudinaryLogoStorage`).
 - Mock Server Stack: Node.js 24 Alpine, Express 5.3.0, port 9000.
 - Central Client Class: `com.rikkei.jobs.common.client.ExternalApiClient`.
-- Configuration Namespace: `external.api` in `application.yml`.
-- Default Service Key: `dev-key`.
+- Configuration Namespace: `external.api` and `cloudinary` in `application.yml`.
+- Default Service Key: `dev-key` (never sent to Cloudinary/third-party URLs).
 - Key Test Suite: `backend/src/test/java/com/rikkei/jobs/client/ExternalApiClientIntegrationTest.java`.

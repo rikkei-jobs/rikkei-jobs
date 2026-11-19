@@ -22,11 +22,11 @@ Maintain strict folder separation and version numbering discipline for Flyway sc
 
 - Production Migrations: backend/src/main/resources/db/migration/
   - Contains production schema definitions (DDL only).
-  - Version numbering: Strictly ODD version numbers (`V1__init_schema.sql`, `V3__skill_profile.sql`, `V5__auth_identity_evolution.sql`).
+  - Version numbering: Strictly ODD version numbers (`V1__init_schema.sql`, `V3__skill_profile.sql`, `V5__auth_identity_evolution.sql`, `V7__evaluation.sql`, `V9__company_profile.sql`, `V11__jobs_and_recommendations.sql`, `V13__target_positions_gap_analysis.sql`).
   - Never place test users, mock data, or development seed accounts in this directory.
 - Development Seed Data: backend/src/main/resources/db/migration-dev/
-  - Contains test data, 5 system roles, 20 skills catalogue, and sample accounts (DML only).
-  - Version numbering: Strictly EVEN version numbers (`V2__dev_seed.sql`, `V4__dev_skill_profile_seed.sql`, `V6__dev_seed_nt01.sql`).
+  - Contains test data, 5 system roles, 20 skills catalogue, and sample accounts/companies (DML only).
+  - Version numbering: Strictly EVEN version numbers (`V2__dev_seed.sql`, `V4__dev_skill_profile_seed.sql`, `V6__dev_seed_nt01.sql`, `V8__dev_evaluation_seed.sql`, `V10__dev_company_seed.sql`, `V12__dev_job_seed.sql`, `V14__dev_gap_analysis_seed.sql`).
   - Loaded exclusively when the dev profile is active via spring.flyway.locations.
 - Unique Versioning Invariant: Version numbers must be globally UNIQUE across both directories. Because the development profile loads both locations (`classpath:db/migration,classpath:db/migration-dev`), any duplicate version number triggers a fatal Flyway duplicate version exception on startup.
 
