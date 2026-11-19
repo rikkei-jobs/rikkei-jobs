@@ -94,6 +94,13 @@ public class Milestone2AdversarialStressTest {
         env.setProperty("EXTERNAL_SERVICE_KEY", "prod-external-service-key-xyz-789");
         env.setProperty("CORS_ALLOWED_ORIGINS", "https://rikkeijobs.com");
         env.setProperty("JWT_SECRET", "super-secure-production-jwt-secret-key-32-bytes-minimum!");
+        env.setProperty("CLOUDINARY_CLOUD_NAME", "prod-rikkei-cloud");
+        env.setProperty("CLOUDINARY_API_KEY", "prod-cloudinary-key-123");
+        env.setProperty("CLOUDINARY_API_SECRET", "prod-cloudinary-secret-xyz-987");
+        env.setProperty("CLOUDINARY_API_BASE_URL", "https://api.cloudinary.com/v1_1");
+        env.setProperty(
+                "CLOUDINARY_DELIVERY_BASE_URL",
+                "https://res.cloudinary.com/prod-rikkei-cloud/image/upload");
         return env;
     }
 
@@ -273,7 +280,12 @@ public class Milestone2AdversarialStressTest {
                                         "spring.datasource.hikari.initialization-fail-timeout=1",
                                         "EXTERNAL_BASE_URL=https://partner.api.example.com",
                                         "EXTERNAL_SERVICE_KEY=prod-external-service-key-valid-32-chars-long",
-                                        "CORS_ALLOWED_ORIGINS=https://rikkeijobs.com"
+                                        "CORS_ALLOWED_ORIGINS=https://rikkeijobs.com",
+                                        "CLOUDINARY_CLOUD_NAME=prod-rikkei-cloud",
+                                        "CLOUDINARY_API_KEY=prod-cloudinary-key-123",
+                                        "CLOUDINARY_API_SECRET=prod-cloudinary-secret-xyz-987",
+                                        "CLOUDINARY_API_BASE_URL=https://api.cloudinary.com/v1_1",
+                                        "CLOUDINARY_DELIVERY_BASE_URL=https://res.cloudinary.com/prod-rikkei-cloud/image/upload"
                                         // JWT_SECRET intentionally omitted!
                                         );
 
