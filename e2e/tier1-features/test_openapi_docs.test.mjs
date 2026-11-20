@@ -407,8 +407,8 @@ describe("Tier 1: OpenAPI /api/docs & Swagger UI Verification", () => {
 
     assert.strictEqual(
       totalOperations,
-      27,
-      `Expected 27 OpenAPI operations, got ${totalOperations}`,
+      29,
+      `Expected 29 OpenAPI operations, got ${totalOperations}`,
     );
 
     const getCompanyByIdOp = paths["/api/v1/companies/{id}"]?.get;
