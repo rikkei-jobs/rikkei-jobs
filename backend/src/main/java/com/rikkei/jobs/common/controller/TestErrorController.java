@@ -6,6 +6,7 @@ import com.rikkei.jobs.common.exception.ExternalUnavailableException;
 import com.rikkei.jobs.common.exception.RateLimitException;
 import com.rikkei.jobs.common.exception.ResourceNotFoundException;
 import com.rikkei.jobs.common.exception.ValidationException;
+import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.util.Map;
@@ -20,8 +21,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Controller providing test endpoints for error handling and external client wiring verification.
- * Restricted strictly to the 'dev' profile for security.
+ * Restricted strictly to the 'dev' profile for security and hidden from public OpenAPI specs.
  */
+@Hidden
 @RestController
 @RequestMapping("/api/v1/test")
 @Profile("dev")

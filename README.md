@@ -30,7 +30,7 @@ rikkei-jobs/
 │   ├── src/shared/     # Reusable components and API client
 │   └── nginx.conf      # Production non-root reverse proxy configuration
 ├── mock/               # External systems mock service (Node.js 24 + Express)
-│   ├── server.js       # 11 business endpoints + 4 testing tools
+│   ├── server.js       # 11 business endpoints + Cloudinary mock namespace and 5 testing tools
 │   ├── data.json       # In-memory test fixtures (students, batches, courses)
 │   └── api-test.http   # Executable HTTP contract verification requests
 ├── docs/               # Technical architecture, conventions, and bilingual specifications
@@ -69,6 +69,7 @@ cd rikkei-jobs
 
 # 2. Initialize environment configuration from safe defaults
 cp .env.example .env
+# (Cloudinary mock works out of the box via .env.example defaults; for real Cloudinary uploads, set CLOUDINARY_* and CLOUDINARY_API_BASE_URL=https://api.cloudinary.com/v1_1 + CLOUDINARY_DELIVERY_BASE_URL=https://res.cloudinary.com/<your-cloud-name>/image/upload in .env — see docs/dn01/README.md Section 5.4)
 
 # 3. Spin up all 5 containers with health checking
 docker compose up -d --build --wait
@@ -80,7 +81,7 @@ docker compose up -d --build --wait
 |---|---|---|---|
 | **Frontend Web** | [http://127.0.0.1:3000](http://127.0.0.1:3000) | React Home Page showing Backend Health | None |
 | **Backend API** | [http://127.0.0.1:8080/api/v1/health](http://127.0.0.1:8080/api/v1/health) | REST API Health Endpoint (`{"status":"UP"}`) | None |
-| **API Swagger UI** | [http://127.0.0.1:8080/swagger-ui.html](http://127.0.0.1:8080/swagger-ui.html) | Springdoc OpenAPI UI (dev profile only) | None |
+| **API Swagger UI** | [http://127.0.0.1:8080/api/docs](http://127.0.0.1:8080/api/docs) & [http://127.0.0.1:3000/api/docs](http://127.0.0.1:3000/api/docs) | Springdoc OpenAPI UI (`dev` profile only; legacy `/swagger-ui.html` & `/api-docs` also remain active on `:8080` in `dev`, disabled in `prod`) | None |
 | **External Mock** | [http://127.0.0.1:9000](http://127.0.0.1:9000) | Mock external LMS/Exam/PM/Meet APIs | `X-Service-Key: dev-key` |
 | **Mailpit Web UI**| [http://127.0.0.1:8025](http://127.0.0.1:8025) | Email inspection & fake inbox | None |
 | **PostgreSQL DB** | `127.0.0.1:5433` | Database (Database: `rikkeijobs`) | User: `rikkei_app` / Pass: `rikkei_secret` |
@@ -174,7 +175,7 @@ You can run automated quality checks (linting, tests, static analysis, formattin
 
 ## 👥 Default Sample Accounts (Dev Profile)
 
-The database seed migration automatically provisions 8 sample testing accounts when running in the `dev` profile. All accounts share the password: **`Test@123`**.
+The database seed migration automatically provisions 9 sample testing accounts when running in the `dev` profile (`V2__dev_seed.sql` + `V8__dev_evaluation_seed.sql`). All accounts share the password: **`Test@123`**.
 
 | Email | Full Name | Role | LMS User ID | Description |
 |---|---|---|---|---|
@@ -184,6 +185,7 @@ The database seed migration automatically provisions 8 sample testing accounts w
 | `hr1@rikkeijobs.test` | Đại diện Doanh nghiệp A | `HR` | *(None)* | Corporate recruiter for Company A |
 | `hr2@rikkeijobs.test` | Đại diện Doanh nghiệp B | `HR` | *(None)* | Corporate recruiter for Company B |
 | `mentor1@rikkeijobs.test` | Phạm Quốc Dũng | `MENTOR` | `lms-mt-001` | Project mentor for IOC batch `IOC-JB-2026-09` |
+| `mentor2@rikkeijobs.test` | Trần Minh Tuấn | `MENTOR` | `lms-mt-002` | Second IOC project mentor (`V8` seed) |
 | `staff1@rikkeijobs.test` | Hoàng Thu Hà | `STAFF` | `lms-st-001` | University placement coordinator |
 | `admin1@rikkeijobs.test` | Đỗ Thanh Hải | `ADMIN` | `lms-ad-001` | Full system administrator |
 
@@ -237,13 +239,15 @@ Run all linting, static analysis, unit tests, and security path checks using the
 .\check.ps1
 ```
 
-Individual checks:
+Individual checks and verified baselines (`641` backend tests across `59` classes, `342` frontend tests across `32` files, `26` E2E suites / `323` cases / `1939` assertions, `120` contrast pairs, `26` active runtime quality gates):
 
-- **Agent Configuration Validation**: `node scripts/validate-agent-config.mjs` and `node scripts/sync-agent-config.mjs --check` (Quality Gate 25: validates frontmatter schema, line caps, forbidden patterns, mirror parity, and real repository citations).
-- **Backend Lint & Format**: `cd backend && ./mvnw spotless:check`
-- **Frontend Lint & Test**: `cd frontend && npm run lint && npm run test`
+- **Single Backend Permission Test Command (NT-02 RBAC & Policy Coverage, JDK 25)**: `cd backend && ./mvnw test -D "test=Rbac*IntegrationTest"` (PowerShell: `.\mvnw.cmd test -D "test=Rbac*IntegrationTest"`)
+- **Backend Full Gate (JDK 25)**: `cd backend && ./mvnw clean test spotless:check spotbugs:check`
+- **Frontend Full Gate**: `cd frontend && npm run lint && npm run typecheck && npm test -- --run && npm run build`
+- **External & Cloudinary Mock Suite**: `node mock/test-runner.js`
 - **End-to-End Integration Suite**: `node e2e/run-all.mjs` (Requires running stack via `docker compose up -d --build --wait`)
-- **Forbidden Path Verification**: Clean grep check ensuring zero machine-specific paths or local user folders are committed (Must return zero matches).
+- **Agent Configuration Validation**: `node scripts/validate-agent-config.mjs` and `node scripts/sync-agent-config.mjs --check` (Quality Gate 25: validates frontmatter schema, line caps, forbidden patterns, mirror parity, and real repository citations)
+- **Forbidden Path Verification**: Clean grep check ensuring zero machine-specific paths or local user folders are committed (Must return zero matches)
 
 ---
 
@@ -263,7 +267,7 @@ This harness:
 
 - Builds a hermetic Ubuntu 22.04 runner image (`scripts/ci-runner.Dockerfile`) equipped with Node.js 24 LTS, Temurin Java 25 LTS, and Docker CLI/Compose.
 - Mounts the repository read-only (`:ro`) and synchronizes it into an ephemeral workspace volume, strictly excluding host `node_modules`, `backend/target`, and `.m2` caches.
-- Runs all 6 quality gate jobs in sequence: `mock-test`, `frontend-check`, `backend-check` (Spotless, SpotBugs, Testcontainers), `docker-compose-check`, `clean-code-and-linters` (11 hygiene checks), and `smoke-test` (multi-container stack, Flyway assertions, seed data, health, mock security gates, and 9/9 E2E test suites).
+- Runs all 6 quality gate jobs in sequence: `mock-test`, `frontend-check`, `backend-check` (Spotless, SpotBugs, Testcontainers), `docker-compose-check`, `clean-code-and-linters` (11 hygiene checks), and `smoke-test` (multi-container stack, Flyway assertions, seed data, health, mock security gates, and 26/26 E2E test suites).
 - Automatically tears down compose services and cleans up ephemeral volumes upon completion.
 - **Docker CI Harness Isolation & Resource Boundary (F1)**:
   - **Isolated Resources (Containers, Volumes, Networks)**: The harness dynamically generates an ephemeral `docker-compose.override.yml` within the throwaway workspace volume (`/ci-workspace`) prefixing all container names (`${COMPOSE_PROJECT_NAME}-<service>`), volume name (`${COMPOSE_PROJECT_NAME}_postgres_data`), and network name (`${COMPOSE_PROJECT_NAME}_network`). The Docker CLI wrapper automatically translates container target names for E2E tests. Cleanup on host filters strictly by `label=com.docker.compose.project=${COMPOSE_PROJECT_NAME}`. This ensures that even when the developer stack is stopped, the developer's volume `rikkei_postgres_data` and network `rikkei-network` are 100% protected and never polluted with CI data.
@@ -279,11 +283,14 @@ This harness:
 For detailed architectural decisions and operational guides, consult the `docs/` directory:
 
 - [Shared Conventions](docs/conventions.md) — API standards, error codes, 20 skills catalogue, and roles.
-- [External Mock Contract](docs/mock-contract.md) — Specification of the 11 external endpoints and 4 testing tools.
+- [External Mock Contract](docs/mock-contract.md) — Specification of the 11 business endpoints, Cloudinary mock namespace, and 5 testing tools.
 - [01 — Architecture Overview](docs/01-architecture-overview.md) *(Bilingual)* — Modular monolith rationale and domain boundaries.
 - [02 — Local Development & Troubleshooting](docs/02-local-development-troubleshooting.md) *(Bilingual)* — Developer guide and issue fixes.
 - [03 — Version Table](docs/03-version-table.md) *(Bilingual)* — Verified toolchain versions and official source registries.
 - [04 — Security & Secrets Policy](docs/04-security-secrets-policy.md) *(Bilingual)* — Zero real secrets rules and RBAC matrix.
 - [05 — Open Business Questions](docs/05-open-business-questions.md) *(Bilingual)* — Critical questions with citations from project PDFs.
+- [Entity Relationship Diagram (ERD)](docs/erd/README.md) *(Bilingual)* — All 22 production tables (`V1..V13`), module ownership, and scalar cross-module relations.
+- [NT-02 RBAC Guide & Permission Matrix](docs/nt02/README.md) — Declarative `RoutePolicyRegistry`, `OwnershipGuard`, OpenAPI `/api/docs`, shared role menu, and [35-endpoint permission matrix](docs/nt02/permission-matrix.md) *(Bilingual)*.
+- [NT-02 PR Description](docs/nt02/PR_DESCRIPTION.md) *(Bilingual)* — Complete reviewer checklist, Team Lead decisions `D1`–`D8`, and gate verification summary.
 - [Contributing Guidelines](CONTRIBUTING.md) — Git workflow and pull request process.
 - [AI Agent Configuration & Skills](docs/agent-config/README.md) *(Bilingual)* — Architecture, 16 enterprise rules, 28 task-triggered skills, validation tooling, and open-source attribution.

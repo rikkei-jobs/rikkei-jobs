@@ -395,4 +395,56 @@ class GapAnalysisIntegrationTest {
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("MUST_CHANGE_PASSWORD"));
     }
+
+    @Test
+    @DisplayName(
+            "D6 Group B: All 5 roles get 200 on target-positions and open job 1, and 404 on draft/expired jobs")
+    void allFiveRolesCanReadTargetPositionsAndOpenJobs() throws Exception {
+        for (String email :
+                new String[] {
+                    "candidate1@rikkeijobs.test",
+                    "hr2@rikkeijobs.test",
+                    "mentor1@rikkeijobs.test",
+                    "staff1@rikkeijobs.test",
+                    "admin1@rikkeijobs.test"
+                }) {
+            mockMvc.perform(get("/api/v1/target-positions").with(bearer(email)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$", hasSize(4)));
+            mockMvc.perform(get("/api/v1/jobs/1").with(bearer(email)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(1));
+            for (int hiddenJobId : new int[] {11, 12, 999999}) {
+                mockMvc.perform(get("/api/v1/jobs/" + hiddenJobId).with(bearer(email)))
+                        .andExpect(status().isNotFound())
+                        .andExpect(jsonPath("$.code").value("NOT_FOUND"));
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("D6 Group A: Non-CANDIDATE roles get 403 FORBIDDEN on /me target and gap-analysis")
+    void nonCandidateRolesForbiddenOnMeGapAnalysisEndpoints() throws Exception {
+        for (String email :
+                new String[] {
+                    "hr2@rikkeijobs.test",
+                    "mentor1@rikkeijobs.test",
+                    "staff1@rikkeijobs.test",
+                    "admin1@rikkeijobs.test"
+                }) {
+            mockMvc.perform(
+                            put("/api/v1/me/target")
+                                    .with(bearer(email))
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content("{\"positionId\":1}"))
+                    .andExpect(status().isForbidden())
+                    .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+            mockMvc.perform(get("/api/v1/me/target").with(bearer(email)))
+                    .andExpect(status().isForbidden())
+                    .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+            mockMvc.perform(get("/api/v1/me/gap-analysis").with(bearer(email)))
+                    .andExpect(status().isForbidden())
+                    .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+        }
+    }
 }

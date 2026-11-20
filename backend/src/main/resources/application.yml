@@ -1,5 +1,7 @@
 server:
   port: ${SERVER_PORT:8080}
+  tomcat:
+    max-swallow-size: 5MB
 
 spring:
   application:
@@ -29,9 +31,20 @@ spring:
     locations: classpath:db/migration
     validate-on-migrate: true
 
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 3MB
+
   mail:
     host: ${SPRING_MAIL_HOST:localhost}
     port: ${SPRING_MAIL_PORT:1025}
+    properties:
+      mail:
+        smtp:
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
 
 jwt:
   secret: ${JWT_SECRET:}
@@ -42,6 +55,14 @@ external:
     service-key: ${EXTERNAL_SERVICE_KEY:dev-key}
     timeout-seconds: ${EXTERNAL_API_TIMEOUT:5}
     max-retries: 2
+
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME:dev-cloud}
+  api-key: ${CLOUDINARY_API_KEY:dev-key}
+  api-secret: ${CLOUDINARY_API_SECRET:dev-secret}
+  api-base-url: ${CLOUDINARY_API_BASE_URL:http://localhost:9000/cloudinary/v1_1}
+  delivery-base-url: ${CLOUDINARY_DELIVERY_BASE_URL:http://127.0.0.1:9000/cloudinary}
+  timeout-seconds: ${CLOUDINARY_TIMEOUT_SECONDS:5}
 
 ai:
   provider: ${AI_PROVIDER:mock}
@@ -63,9 +84,10 @@ ai:
 
 springdoc:
   api-docs:
-    path: /api-docs
+    path: /api/api-docs
   swagger-ui:
-    path: /swagger-ui.html
+    path: /api/docs
+    disable-swagger-default-url: true
 
 management:
   endpoints:

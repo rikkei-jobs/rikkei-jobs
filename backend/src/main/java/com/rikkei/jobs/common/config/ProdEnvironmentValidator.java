@@ -1,5 +1,6 @@
 package com.rikkei.jobs.common.config;
 
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -33,12 +34,24 @@ public class ProdEnvironmentValidator implements ApplicationListener<Application
                     "EXTERNAL_BASE_URL",
                     "EXTERNAL_SERVICE_KEY",
                     "CORS_ALLOWED_ORIGINS",
-                    "JWT_SECRET");
+                    "JWT_SECRET",
+                    "CLOUDINARY_CLOUD_NAME",
+                    "CLOUDINARY_API_KEY",
+                    "CLOUDINARY_API_SECRET",
+                    "CLOUDINARY_API_BASE_URL",
+                    "CLOUDINARY_DELIVERY_BASE_URL");
 
     private static final Set<String> INSECURE_DEFAULT_VALUES =
             Set.of(
                     "postgres",
                     "dev-key",
+                    "dev-cloud",
+                    "dev-secret",
+                    "dummy",
+                    "placeholder",
+                    "your-cloud-name",
+                    "your-api-key",
+                    "your-api-secret",
                     "change-me",
                     "change_me",
                     "changeme",
@@ -98,7 +111,7 @@ public class ProdEnvironmentValidator implements ApplicationListener<Application
 
             String trimmedValue = value.trim();
 
-            if (INSECURE_DEFAULT_VALUES.contains(trimmedValue.toLowerCase())) {
+            if (INSECURE_DEFAULT_VALUES.contains(trimmedValue.toLowerCase(Locale.ROOT))) {
                 throw new IllegalStateException(
                         "CẤU HÌNH PRODUCTION THẤT BẠI: Biến môi trường bắt buộc bị thiếu hoặc không an toàn: "
                                 + varName
@@ -112,6 +125,11 @@ public class ProdEnvironmentValidator implements ApplicationListener<Application
                         "CẤU HÌNH PRODUCTION THẤT BẠI: Biến môi trường bắt buộc bị thiếu hoặc không an toàn: "
                                 + varName
                                 + " không được chứa ký tự wildcard (*)");
+            }
+
+            if ("CLOUDINARY_API_BASE_URL".equals(varName)
+                    || "CLOUDINARY_DELIVERY_BASE_URL".equals(varName)) {
+                validateCloudinaryUrl(varName, trimmedValue);
             }
 
             if ("JWT_SECRET".equals(varName)) {
@@ -148,6 +166,50 @@ public class ProdEnvironmentValidator implements ApplicationListener<Application
         }
         log.info(
                 "Cấu hình môi trường Production đã được xác thực an toàn (fail-fast check PASSED).");
+    }
+
+    private static void validateCloudinaryUrl(String varName, String trimmedValue) {
+        URI uri;
+        try {
+            uri = URI.create(trimmedValue);
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalStateException(
+                    "CẤU HÌNH PRODUCTION THẤT BẠI: Biến môi trường bắt buộc bị thiếu hoặc không an toàn: "
+                            + varName
+                            + " không phải URL hợp lệ",
+                    ex);
+        }
+
+        String scheme = uri.getScheme();
+        String host = uri.getHost();
+        if (scheme == null || !"https".equalsIgnoreCase(scheme) || host == null || host.isBlank()) {
+            throw new IllegalStateException(
+                    "CẤU HÌNH PRODUCTION THẤT BẠI: Biến môi trường bắt buộc bị thiếu hoặc không an toàn: "
+                            + varName
+                            + " phải sử dụng giao thức https:// hợp lệ");
+        }
+
+        String lowerHost = host.toLowerCase(Locale.ROOT);
+        String rawPath = uri.getRawPath();
+        String lowerPath = rawPath != null ? rawPath.toLowerCase(Locale.ROOT) : "";
+        boolean isLoopbackOrMock =
+                "localhost".equals(lowerHost)
+                        || "127.0.0.1".equals(lowerHost)
+                        || "0.0.0.0".equals(lowerHost)
+                        || "::1".equals(lowerHost)
+                        || "[::1]".equals(lowerHost)
+                        || "mock".equals(lowerHost)
+                        || lowerHost.startsWith("mock.")
+                        || lowerHost.endsWith(".mock")
+                        || lowerHost.endsWith(".local")
+                        || (!lowerHost.endsWith("cloudinary.com")
+                                && lowerPath.startsWith("/cloudinary"));
+        if (isLoopbackOrMock) {
+            throw new IllegalStateException(
+                    "CẤU HÌNH PRODUCTION THẤT BẠI: Biến môi trường bắt buộc bị thiếu hoặc không an toàn: "
+                            + varName
+                            + " không được trỏ tới máy chủ mock hoặc địa chỉ nội bộ");
+        }
     }
 
     /** Calculates the Shannon Entropy (H = -sum(p_i * log2(p_i))) of an input string. */
@@ -189,6 +251,12 @@ public class ProdEnvironmentValidator implements ApplicationListener<Application
             case "EXTERNAL_SERVICE_KEY" -> environment.getProperty("external.api.service-key");
             case "CORS_ALLOWED_ORIGINS" -> environment.getProperty("cors.allowed-origins");
             case "JWT_SECRET" -> environment.getProperty("jwt.secret");
+            case "CLOUDINARY_CLOUD_NAME" -> environment.getProperty("cloudinary.cloud-name");
+            case "CLOUDINARY_API_KEY" -> environment.getProperty("cloudinary.api-key");
+            case "CLOUDINARY_API_SECRET" -> environment.getProperty("cloudinary.api-secret");
+            case "CLOUDINARY_API_BASE_URL" -> environment.getProperty("cloudinary.api-base-url");
+            case "CLOUDINARY_DELIVERY_BASE_URL" ->
+                    environment.getProperty("cloudinary.delivery-base-url");
             default -> null;
         };
     }

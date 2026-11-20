@@ -1,6 +1,9 @@
 package com.rikkei.jobs.common.health;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -33,7 +36,18 @@ public class HealthController {
         this.dataSource = dataSource;
     }
 
-    @Operation(summary = "Kiểm tra sức khỏe hệ thống và cơ sở dữ liệu")
+    @Operation(
+            summary = "Kiểm tra sức khỏe hệ thống và cơ sở dữ liệu",
+            responses = {
+                @ApiResponse(
+                        responseCode = "200",
+                        description = "Hệ thống và cơ sở dữ liệu hoạt động bình thường",
+                        content = @Content(schema = @Schema(example = "{\"status\":\"UP\"}"))),
+                @ApiResponse(
+                        responseCode = "503",
+                        description = "Cơ sở dữ liệu không khả dụng hoặc chưa migrate",
+                        content = @Content(schema = @Schema(example = "{\"status\":\"DOWN\"}")))
+            })
     @GetMapping("/health")
     public ResponseEntity<Map<String, String>> checkHealth() {
         boolean healthy = isDatabaseHealthyAndMigrated();

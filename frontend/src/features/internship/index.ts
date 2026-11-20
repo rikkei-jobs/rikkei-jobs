@@ -1,3 +1,5 @@
+import { formatRoleList } from '../../shared/i18n/enumLabels';
+
 /**
  * Module 3: Internship (Thực tập IOC & Quản lý dự án PM)
  * Ghép ứng viên vào đợt thực tập IOC, theo dõi task nghiệm thu và kết quả.
@@ -14,6 +16,6 @@ export const internshipModuleConfig = {
   name: 'Thực tập IOC (Internship)',
   description:
     'Kết nối nhu cầu thực tập theo vị trí, ghép sinh viên vào đợt thực tập IOC và ghi nhận task nghiệm thu dự án.',
-  roleTarget: 'CANDIDATE, MENTOR, STAFF',
+  roleTarget: formatRoleList(['CANDIDATE', 'MENTOR', 'STAFF']),
   badge: 'Module 3',
 };

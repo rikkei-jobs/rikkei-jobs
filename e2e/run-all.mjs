@@ -38,7 +38,9 @@ const testTiers = [
       'test_frontend_stack.test.mjs',
       'test_auth_features.test.mjs',
       'test_round_b_features.test.mjs',
-      'test_evaluation_features.test.mjs'
+      'test_evaluation_features.test.mjs',
+      'test_company_features.test.mjs',
+      'test_openapi_docs.test.mjs'
     ]
   },
   {
@@ -50,7 +52,9 @@ const testTiers = [
       'test_backend_error_boundaries.test.mjs',
       'test_auth_boundaries.test.mjs',
       'test_round_b_boundaries.test.mjs',
-      'test_evaluation_boundaries.test.mjs'
+      'test_evaluation_boundaries.test.mjs',
+      'test_company_boundaries.test.mjs',
+      'test_rbac_matrix_boundaries.test.mjs'
     ]
   },
   {
@@ -59,7 +63,8 @@ const testTiers = [
     files: [
       'test_cross_feature_combinations.test.mjs',
       'test_auth_lifecycles.test.mjs',
-      'test_round_b_combinations.test.mjs'
+      'test_round_b_combinations.test.mjs',
+      'test_company_combinations.test.mjs'
     ]
   },
   {
@@ -69,7 +74,8 @@ const testTiers = [
       'test_real_world_scenarios.test.mjs',
       'test_auth_security_audit.test.mjs',
       'test_round_b_scenarios.test.mjs',
-      'test_evaluation_scenarios.test.mjs'
+      'test_evaluation_scenarios.test.mjs',
+      'test_company_scenarios.test.mjs'
     ]
   }
 ];

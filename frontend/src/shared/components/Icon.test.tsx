@@ -30,6 +30,17 @@ describe('Icon Component', () => {
     'sparkles',
     'user-check',
     'network',
+    'upload',
+    'sun',
+    'moon',
+    'menu',
+    'home',
+    'panel-left-close',
+    'panel-left-open',
+    'chevron-down',
+    'pencil',
+    'calendar',
+    'log-out',
   ];
 
   it('renders all icons without crashing', () => {

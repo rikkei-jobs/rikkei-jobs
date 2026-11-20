@@ -12,14 +12,14 @@ Structure automated testing across three distinct pyramid tiers adhering to esta
 
 - Unit Tests (~70% of total test suite):
   - Scope: Test pure business logic, domain models, validations, state transitions, and utility functions in complete isolation.
-  - Backend: JUnit 5 with Mockito for service and domain layer tests (baseline 346 tests).
-  - Frontend: Vitest 5.1.0 with @testing-library/react for component and hook testing (baseline 108 tests).
+  - Backend: JUnit 5 with Mockito for service and domain layer tests (baseline 641 tests across 59 classes).
+  - Frontend: Vitest 5.1.0 with @testing-library/react for component and hook testing (baseline 342 tests across 32 files).
 - Integration Tests (~20% of total test suite):
   - Scope: Verify component interactions, database operations, security filters, and HTTP error boundaries.
   - Backend: Spring Boot @SpringBootTest combined with Testcontainers 2.0.5 for PostgreSQL integration tests.
-  - Mock Server: Standalone integration suite in mock/test-runner.js verifying all 11 endpoints and 4 testing tools.
+  - Mock Server: Standalone integration suite in mock/test-runner.js verifying 11 business endpoints + Cloudinary mock namespace and 5 testing tools.
 - End-to-End Tests (~10% of total test suite):
-  - Scope: Validate full-stack user journeys and contracts using opaque-box testing across 4 Tiers via e2e/run-all.mjs (17 suites, 221 test cases).
+  - Scope: Validate full-stack user journeys and contracts using opaque-box testing across 4 Tiers via e2e/run-all.mjs (26 suites, 323 test cases, 1939 assertions).
 
 ## 3. Test-Driven Development (TDD) Default
 
@@ -37,7 +37,7 @@ Enforce hermetic test environments across all test suites:
 - Dynamic Port Allocation: Never bind fixed host ports (e.g. 5432 or 8080) in integration tests. Testcontainers must allocate ephemeral random ports via postgres.getJdbcUrl().
 - No External Network Calls: Disallow external internet or third-party service communication during test runs. Direct external calls through the local mock server.
 - Database State Isolation: Maintain clean database state between tests. Never permit development seed data from V2__dev_seed.sql to pollute production integration test suites.
-- API Documentation Dev-Only: OpenAPI specs (/api-docs) and Swagger UI (/swagger-ui.html) are enabled exclusively in the dev profile and disabled in production.
+- API Documentation Dev-Only: OpenAPI specs (`/api/api-docs` and legacy `/api-docs`) and Swagger UI (`/api/docs` and legacy `/swagger-ui.html`) are enabled exclusively in the dev profile and disabled in production.
 
 ## 5. Flaky Test Zero-Tolerance Policy
 
@@ -52,15 +52,15 @@ Treat any intermittent or non-deterministic test failure as a critical severity 
 Execute the verified testing commands locally:
 
 ```bash
-# Run backend unit and Testcontainers integration tests (346 tests)
+# Run backend unit and Testcontainers integration tests (641 tests across 59 classes)
 ./mvnw test
 
-# Run frontend Vitest unit test suite (108 tests)
+# Run frontend Vitest unit test suite (342 tests across 32 files)
 npm run test --prefix frontend
 
 # Run external mock server integration test suite
 node mock/test-runner.js
 
-# Execute complete opaque-box 4-tier E2E test suite (17 suites, 221 test cases)
+# Execute complete opaque-box 4-tier E2E test suite (26 suites, 323 test cases, 1939 assertions)
 node e2e/run-all.mjs
 ```

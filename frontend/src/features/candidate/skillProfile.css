@@ -90,7 +90,6 @@
 }
 
 .sp-skill-head:focus-visible,
-.sp-btn:focus-visible,
 .sp-field input:focus-visible {
   outline: 3px solid var(--rj-color-focus);
   outline-offset: 2px;
@@ -314,20 +313,30 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 44px;
-  padding: 8px 16px;
+  min-height: var(--rj-density-button-height);
+  padding: var(--rj-primitive-space-2) var(--rj-primitive-space-4);
   border: 1px solid var(--rj-color-action);
-  border-radius: 6px;
+  border-radius: var(--rj-radius-md);
   background: var(--rj-color-action);
   color: var(--rj-color-on-action);
-  font: inherit;
+  font-family: var(--rj-font-body);
+  font-size: 0.9375rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color var(--rj-motion-micro) ease-out;
+  transition:
+    transform var(--rj-motion-micro) cubic-bezier(0.2, 0, 0, 1),
+    background-color var(--rj-motion-micro) ease-out,
+    box-shadow var(--rj-motion-micro) ease-out,
+    border-color var(--rj-motion-micro) ease-out;
 }
 
 .sp-btn:hover:not(:disabled) {
   background: var(--rj-color-action-hover);
+}
+
+.sp-btn:focus-visible {
+  outline: 2px solid var(--rj-color-focus-ring) !important;
+  outline-offset: 2px !important;
 }
 
 .sp-btn:disabled {
@@ -336,8 +345,9 @@
 }
 
 .sp-btn-quiet {
-  background: transparent;
-  color: var(--rj-color-action);
+  background: var(--rj-color-surface-card);
+  color: var(--rj-color-text-primary);
+  border-color: var(--rj-color-border-interactive);
 }
 
 .sp-btn-quiet:hover:not(:disabled) {

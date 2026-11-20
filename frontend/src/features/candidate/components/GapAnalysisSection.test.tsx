@@ -71,6 +71,7 @@ describe('GapAnalysisSection (DT-01)', () => {
       await screen.findByText(/Chọn một vị trí mục tiêu để xem khoảng thiếu hụt năng lực/i),
     ).toBeInTheDocument();
     expect(screen.getByLabelText(/Vị trí mục tiêu/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('combobox', { name: /Vị trí mục tiêu/i }));
     expect(screen.getByRole('option', { name: 'Java Backend Fresher' })).toBeInTheDocument();
     expect(gapSpy).not.toHaveBeenCalled();
   });
@@ -85,7 +86,9 @@ describe('GapAnalysisSection (DT-01)', () => {
     expect(screen.getByTestId('gap-CLEAN_CODE')).toBeInTheDocument();
     expect(screen.getByTestId('gap-DOCKER')).toBeInTheDocument();
     expect(screen.queryByTestId('gap-JAVA')).not.toBeInTheDocument();
-    expect(screen.getByLabelText(/Vị trí mục tiêu/i)).toHaveValue('1');
+    expect(screen.getByRole('combobox', { name: /Vị trí mục tiêu/i })).toHaveTextContent(
+      'Java Backend Fresher',
+    );
     expect(screen.getAllByText('Cao', { selector: '.gap-priority' })).toHaveLength(2);
     expect(screen.getByRole('table', { name: 'Kỹ năng còn thiếu' })).toBeInTheDocument();
   });
@@ -124,9 +127,8 @@ describe('GapAnalysisSection (DT-01)', () => {
 
     expect(await screen.findByTestId('gap-CLEAN_CODE')).toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText(/Vị trí mục tiêu/i), {
-      target: { value: '2' },
-    });
+    fireEvent.click(screen.getByRole('combobox', { name: /Vị trí mục tiêu/i }));
+    fireEvent.click(screen.getByRole('option', { name: 'Frontend ReactJS Fresher' }));
 
     await waitFor(() => {
       expect(setTargetSpy).toHaveBeenCalledWith({ positionId: 2 });

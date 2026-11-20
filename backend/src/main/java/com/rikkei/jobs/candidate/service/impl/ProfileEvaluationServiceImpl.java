@@ -7,6 +7,7 @@ import com.rikkei.jobs.candidate.mapper.ProfileEvaluationMapper;
 import com.rikkei.jobs.candidate.repository.CandidateProfileRepository;
 import com.rikkei.jobs.candidate.service.ProfileEvaluationService;
 import com.rikkei.jobs.common.exception.ResourceNotFoundException;
+import com.rikkei.jobs.common.security.OwnershipGuard;
 import com.rikkei.jobs.identity.dto.UserSummaryDto;
 import com.rikkei.jobs.identity.service.IdentityPublicService;
 import java.util.List;
@@ -44,25 +45,24 @@ public class ProfileEvaluationServiceImpl implements ProfileEvaluationService {
     @Transactional(readOnly = true)
     public ProfileEvaluationsResponse getProfileEvaluations(
             Long userId, Long viewerId, String viewerRole) {
-        boolean isHr =
-                viewerRole != null
-                        && (viewerRole.equalsIgnoreCase("HR")
-                                || viewerRole.equalsIgnoreCase("ROLE_HR"));
+        String notFoundMessage = "Hồ sơ ứng viên không tồn tại";
+        boolean isSelf =
+                OwnershipGuard.requireSelfOrRoles(
+                        viewerId,
+                        viewerRole,
+                        userId,
+                        Set.of(OwnershipGuard.ROLE_CANDIDATE),
+                        Set.of(OwnershipGuard.ROLE_HR),
+                        notFoundMessage);
 
-        if (isHr) {
-            // HR chỉ được xem khi hồ sơ tồn tại và ở chế độ PUBLIC (is_public == true)
-            // Nếu không tồn tại hoặc private -> trả về 404 NOT_FOUND để không làm lộ dữ liệu
-            if (!candidateProfileRepository.existsByUserIdAndPublicProfileTrue(userId)) {
-                throw new ResourceNotFoundException("Hồ sơ ứng viên không tồn tại");
+        if (isSelf) {
+            if (!identityPublicService.existsById(userId)) {
+                throw new ResourceNotFoundException(notFoundMessage);
             }
         } else {
-            // CANDIDATE chỉ được xem của chính mình (IDOR protection -> 404 NOT_FOUND)
-            if (viewerId == null || !viewerId.equals(userId)) {
-                throw new ResourceNotFoundException("Hồ sơ ứng viên không tồn tại");
-            }
-            // Xác nhận candidate tồn tại
-            if (!identityPublicService.existsById(userId)) {
-                throw new ResourceNotFoundException("Hồ sơ ứng viên không tồn tại");
+            // HR only views PUBLIC candidate profiles (is_public == true); private/missing -> 404
+            if (!candidateProfileRepository.existsByUserIdAndPublicProfileTrue(userId)) {
+                throw new ResourceNotFoundException(notFoundMessage);
             }
         }
 
@@ -90,6 +90,6 @@ public class ProfileEvaluationServiceImpl implements ProfileEvaluationService {
     @Override
     @Transactional(readOnly = true)
     public ProfileEvaluationsResponse getProfileEvaluations(Long userId, Long viewerId) {
-        return getProfileEvaluations(userId, viewerId, null);
+        return getProfileEvaluations(userId, viewerId, OwnershipGuard.ROLE_CANDIDATE);
     }
 }

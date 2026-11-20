@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -37,6 +36,7 @@ public class SecurityConfig {
     private final CustomAccessDeniedHandler accessDeniedHandler;
     private final JwtAuthFilter jwtAuthFilter;
     private final MustChangePasswordFilter mustChangePasswordFilter;
+    private final RoutePolicyRegistry routePolicyRegistry;
     private final Environment environment;
     private final String corsAllowedOrigins;
 
@@ -46,12 +46,14 @@ public class SecurityConfig {
             CustomAccessDeniedHandler accessDeniedHandler,
             JwtAuthFilter jwtAuthFilter,
             MustChangePasswordFilter mustChangePasswordFilter,
+            RoutePolicyRegistry routePolicyRegistry,
             Environment environment,
             @Value("${CORS_ALLOWED_ORIGINS:}") String corsAllowedOrigins) {
         this.authenticationEntryPoint = authenticationEntryPoint;
         this.accessDeniedHandler = accessDeniedHandler;
         this.jwtAuthFilter = jwtAuthFilter;
         this.mustChangePasswordFilter = mustChangePasswordFilter;
+        this.routePolicyRegistry = routePolicyRegistry;
         this.environment = environment;
         this.corsAllowedOrigins = corsAllowedOrigins;
     }
@@ -66,6 +68,7 @@ public class SecurityConfig {
                 accessDeniedHandler,
                 null,
                 null,
+                new RoutePolicyRegistry(),
                 environment,
                 corsAllowedOrigins);
     }
@@ -83,40 +86,25 @@ public class SecurityConfig {
                                         .accessDeniedHandler(accessDeniedHandler))
                 .authorizeHttpRequests(
                         auth -> {
-                            auth.requestMatchers(
-                                            "/api/v1/auth/login",
-                                            "/api/v1/auth/sso",
-                                            "/api/v1/auth/forgot-password",
-                                            "/api/v1/auth/reset-password")
-                                    .permitAll()
-                                    .requestMatchers(
-                                            "/api/v1/health",
-                                            "/actuator/health",
-                                            "/swagger-ui.html",
-                                            "/swagger-ui/**",
-                                            "/api-docs/**",
-                                            "/v3/api-docs/**",
-                                            "/error")
-                                    .permitAll();
-                            if (environment.matchesProfiles("dev")) {
-                                auth.requestMatchers("/api/v1/test/**").permitAll();
+                            boolean isDev = environment.matchesProfiles("dev");
+                            for (RoutePolicy policy : routePolicyRegistry.policies()) {
+                                if (policy.devOnly() && !isDev) {
+                                    continue;
+                                }
+                                var matcher =
+                                        (policy.method() != null && policy.methodScoped())
+                                                ? auth.requestMatchers(
+                                                        policy.method(), policy.pattern())
+                                                : auth.requestMatchers(policy.pattern());
+                                switch (policy.accessType()) {
+                                    case PUBLIC -> matcher.permitAll();
+                                    case AUTHENTICATED_ANY -> matcher.authenticated();
+                                    case ROLES ->
+                                            matcher.hasAnyRole(
+                                                    policy.allowedRoles().toArray(String[]::new));
+                                }
                             }
-                            auth.requestMatchers(HttpMethod.POST, "/api/v1/auth/change-password")
-                                    .authenticated()
-                                    .requestMatchers(HttpMethod.GET, "/api/v1/auth/me")
-                                    .authenticated()
-                                    .requestMatchers(
-                                            HttpMethod.GET, "/api/v1/me/job-recommendations")
-                                    .hasRole("CANDIDATE")
-                                    .requestMatchers("/api/v1/evaluations/**")
-                                    .hasRole("MENTOR")
-                                    .requestMatchers("/api/v1/evaluation-templates/**")
-                                    .hasRole("MENTOR")
-                                    .requestMatchers(
-                                            HttpMethod.GET, "/api/v1/profiles/*/evaluations")
-                                    .hasAnyRole("CANDIDATE", "HR")
-                                    .anyRequest()
-                                    .authenticated();
+                            auth.anyRequest().denyAll();
                         });
 
         if (jwtAuthFilter != null) {

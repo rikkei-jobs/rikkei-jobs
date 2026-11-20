@@ -7,18 +7,18 @@ Enforce architectural decoupling, package conventions, and data isolation within
 The backend application is structured as a Modular Monolith in `backend/src/main/java/com/rikkei/jobs/` `EXISTS`.
 The system consists of 7 core business modules, foundational identity, and common infrastructure:
 
-1. `candidate` `EXISTS`: Candidate Profile, Skill Profile, CV, portfolio. Table ownership: `skill_profiles` `EXISTS`, `profile_evidences` `EXISTS` (created in `V3__skill_profile.sql`), `candidate_cvs` `TARGET`, `portfolios` `TARGET`.
-2. `company` `EXISTS`: Company Profile, HR accounts, Job Descriptions (JD). Table ownership: `companies`, `company_hr_profiles`, `job_descriptions`, `job_skills` `TARGET`.
+1. `candidate` `EXISTS`: Candidate Profile, Skill Profile, target positions, skill gap analysis, CV, portfolio. Table ownership: `candidate_profiles` `EXISTS`, `external_records` `EXISTS`, `skill_mappings` `EXISTS`, `skill_evidences` `EXISTS`, `skill_scores` `EXISTS` (in `V3__skill_profile.sql`), `target_positions` `EXISTS`, `position_skills` `EXISTS`, `candidate_targets` `EXISTS`, `gap_results` `EXISTS` (in `V13__target_positions_gap_analysis.sql`), `candidate_cvs` `TARGET`, `portfolios` `TARGET`.
+2. `company` `EXISTS`: Company Profile, company logo metadata, HR accounts, Job Descriptions (JD). Table ownership: `companies` `EXISTS` (in `V9__company_profile.sql`), `jobs` `EXISTS`, `job_skills` `EXISTS` (in `V11__jobs_and_recommendations.sql`), `company_hr_profiles`, `job_descriptions` `TARGET`.
 3. `internship` `EXISTS`: Internship IOC batches, student allocations, task scoring. Table ownership: `internship_batches`, `internship_members`, `internship_tasks` `TARGET`.
-4. `assessment` `EXISTS`: Mentor evaluations, self-assessments, 20-skills catalogue. Table ownership: `skills` `EXISTS` (in `V1__init_schema.sql`), `assessment_templates`, `assessment_forms`, `skill_badges` `TARGET`.
+4. `assessment` `EXISTS`: Mentor evaluations, self-assessments, 20-skills catalogue. Table ownership: `skills` `EXISTS` (in `V1__init_schema.sql`), `evaluation_templates` `EXISTS`, `evaluation_criteria` `EXISTS`, `evaluations` `EXISTS`, `evaluation_scores` `EXISTS` (in `V7__evaluation.sql`), `skill_badges` `TARGET`.
 5. `learning` `EXISTS`: Skill gap analysis against JD, course recommendations, LMS enrollments. Table ownership: `skill_gaps`, `learning_recommendations`, `course_enrollments` `TARGET`.
 6. `recruitment` `EXISTS`: Job applications, screening, Rikkei Meet interview scheduling, job offers. Table ownership: `applications`, `interview_rounds`, `interview_rooms`, `job_offers` `TARGET`.
-7. `ai` `EXISTS`: AI Career Assistant, CV review, mock interview coaching. Table ownership: `ai_chat_sessions`, `ai_interactions`, `ai_usage_quotas` `TARGET` (stateless in initial sprint).
+7. `ai` `EXISTS`: AI Career Assistant, job recommendations, CV review, mock interview coaching. Table ownership: `job_recommendations` `EXISTS` (in `V11__jobs_and_recommendations.sql`), `ai_chat_sessions`, `ai_interactions`, `ai_usage_quotas` `TARGET`.
 8. `identity` `EXISTS`: User authentication, roles, SSO ticket redemption, password reset. Table ownership: `roles` `EXISTS`, `users` `EXISTS` (in `V1__init_schema.sql`), `used_sso_tickets` `EXISTS`, `password_reset_tokens` `EXISTS` (in `V5__auth_identity_evolution.sql`).
-9. `common` `EXISTS`: Centralized security filter chain, global exception handling, external API client, and environment validation `EXISTS`.
+9. `common` `EXISTS`: Centralized security filter chain (`RoutePolicyRegistry`, `SecurityConfig`), stateless horizontal `OwnershipGuard` (`com.rikkei.jobs.common.security.OwnershipGuard` depending only on `UserPrincipal`, `ResourceNotFoundException`, and canonical role constants), global exception handling, external API client, and environment validation `EXISTS`.
 
 Consult `docs/01-architecture-overview.md` and each module's `package-info.java` `EXISTS` for domain boundaries.
-Note on Database Tables: Currently, production tables exist across three Flyway DDL migrations: `V1__init_schema.sql` (`roles`, `users`, `skills`), `V3__skill_profile.sql` (`skill_profiles`, `profile_evidences`), and `V5__auth_identity_evolution.sql` (`used_sso_tickets`, `password_reset_tokens`) `EXISTS`. All other module tables are planned targets `TARGET` to be created in subsequent Flyway migrations as module features are implemented.
+Note on Database Tables: Currently, production tables exist across seven Flyway DDL migrations: `V1__init_schema.sql` (`roles`, `users`, `skills`), `V3__skill_profile.sql` (`candidate_profiles`, `external_records`, `skill_mappings`, `skill_evidences`, `skill_scores`), `V5__auth_identity_evolution.sql` (`used_sso_tickets`, `password_reset_tokens`), `V7__evaluation.sql` (`evaluation_templates`, `evaluation_criteria`, `evaluations`, `evaluation_scores`), `V9__company_profile.sql` (`companies`), `V11__jobs_and_recommendations.sql` (`jobs`, `job_skills`, `job_recommendations`), and `V13__target_positions_gap_analysis.sql` (`target_positions`, `position_skills`, `candidate_targets`, `gap_results`) `EXISTS`. All other module tables are planned targets `TARGET` to be created in subsequent Flyway migrations as module features are implemented.
 
 ## 2. Table Ownership and Data Isolation
 
@@ -34,8 +34,8 @@ Enforce absolute data ownership per module:
 
 Decouple cross-module interactions using well-defined communication channels:
 
-- Synchronous communication: A module may call another module only through its public service interface located in the target module's root or `service` package `TARGET`.
-- Public services must accept and return immutable Data Transfer Objects (Java Records). Never pass JPA entities across module boundaries `TARGET`.
+- Synchronous communication: A module may call another module only through its public service interface located in the target module's root or `service` package `EXISTS` (`IdentityPublicService`, `EvaluationPublicService`, `CandidatePublicService`).
+- Public services must accept and return immutable Data Transfer Objects (Java Records) `EXISTS` (e.g., `CreateHrUserCommand`, `CreatedHrUserResult`). Never pass JPA entities across module boundaries `EXISTS`.
 - Asynchronous communication: Use Spring `ApplicationEventPublisher` to publish domain events for state transitions (e.g., student completes course, interview scheduled) `TARGET`.
 - Subscribe to domain events using `@EventListener` or `@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)` in dependent modules `TARGET`.
 

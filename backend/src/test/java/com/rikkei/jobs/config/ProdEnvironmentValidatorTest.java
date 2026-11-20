@@ -25,6 +25,13 @@ public class ProdEnvironmentValidatorTest {
         env.setProperty(
                 "CORS_ALLOWED_ORIGINS", "https://rikkeijobs.com,https://admin.rikkeijobs.com");
         env.setProperty("JWT_SECRET", "super-secure-production-jwt-secret-key-32-bytes-minimum!");
+        env.setProperty("CLOUDINARY_CLOUD_NAME", "prod-rikkei-cloud");
+        env.setProperty("CLOUDINARY_API_KEY", "prod-cloudinary-key-123");
+        env.setProperty("CLOUDINARY_API_SECRET", "prod-cloudinary-secret-xyz-987");
+        env.setProperty("CLOUDINARY_API_BASE_URL", "https://api.cloudinary.com/v1_1");
+        env.setProperty(
+                "CLOUDINARY_DELIVERY_BASE_URL",
+                "https://res.cloudinary.com/prod-rikkei-cloud/image/upload");
         return env;
     }
 
@@ -50,6 +57,13 @@ public class ProdEnvironmentValidatorTest {
         env.setProperty("external.api.service-key", "prod-external-service-key-xyz-789");
         env.setProperty("cors.allowed-origins", "https://rikkeijobs.com");
         env.setProperty("jwt.secret", "super-secure-production-jwt-secret-key-32-bytes-minimum!");
+        env.setProperty("cloudinary.cloud-name", "prod-rikkei-cloud");
+        env.setProperty("cloudinary.api-key", "prod-cloudinary-key-123");
+        env.setProperty("cloudinary.api-secret", "prod-cloudinary-secret-xyz-987");
+        env.setProperty("cloudinary.api-base-url", "https://api.cloudinary.com/v1_1");
+        env.setProperty(
+                "cloudinary.delivery-base-url",
+                "https://res.cloudinary.com/prod-rikkei-cloud/image/upload");
 
         ProdEnvironmentValidator validator = new ProdEnvironmentValidator(env);
         assertDoesNotThrow(validator::validateEnvironment);
@@ -124,7 +138,12 @@ public class ProdEnvironmentValidatorTest {
                 "EXTERNAL_BASE_URL",
                 "EXTERNAL_SERVICE_KEY",
                 "CORS_ALLOWED_ORIGINS",
-                "JWT_SECRET"
+                "JWT_SECRET",
+                "CLOUDINARY_CLOUD_NAME",
+                "CLOUDINARY_API_KEY",
+                "CLOUDINARY_API_SECRET",
+                "CLOUDINARY_API_BASE_URL",
+                "CLOUDINARY_DELIVERY_BASE_URL"
             })
     @DisplayName("Fail-fast: Startup rejected when any mandatory variable is missing")
     void testFailFastWhenVariableMissing(String missingVar) {
@@ -231,5 +250,48 @@ public class ProdEnvironmentValidatorTest {
         assertTrue(
                 ex.getMessage().contains("chỉ chứa chữ số")
                         || ex.getMessage().contains("giá trị mặc định không an toàn"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"dev-cloud", "dev-key", "dev-secret", "dummy", "placeholder"})
+    @DisplayName(
+            "Fail-fast: Startup rejected when Cloudinary credentials or cloud name use dummy defaults")
+    void testFailFastWhenCloudinaryUsesDummyDefaults(String dummyValue) {
+        MockEnvironment env = createValidEnvironment();
+        env.setProperty("CLOUDINARY_API_SECRET", dummyValue);
+
+        ProdEnvironmentValidator validator = new ProdEnvironmentValidator(env);
+        IllegalStateException ex =
+                assertThrows(IllegalStateException.class, validator::validateEnvironment);
+        assertTrue(ex.getMessage().contains("CLOUDINARY_API_SECRET"));
+        assertTrue(ex.getMessage().contains("giá trị mặc định không an toàn"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(
+            strings = {
+                "http://api.cloudinary.com/v1_1",
+                "https://localhost:9000/cloudinary/v1_1",
+                "https://127.0.0.1:9000/cloudinary/v1_1",
+                "https://mock:9000/cloudinary/v1_1",
+                "https://mock.internal/v1_1",
+                "https://staging.example.com/cloudinary/v1_1"
+            })
+    @DisplayName(
+            "Fail-fast: Startup rejected when CLOUDINARY_API_BASE_URL or DELIVERY_BASE_URL is non-https or mock/loopback")
+    void testFailFastWhenCloudinaryUrlsAreInsecureOrMock(String badUrl) {
+        MockEnvironment apiEnv = createValidEnvironment();
+        apiEnv.setProperty("CLOUDINARY_API_BASE_URL", badUrl);
+        ProdEnvironmentValidator apiValidator = new ProdEnvironmentValidator(apiEnv);
+        IllegalStateException apiEx =
+                assertThrows(IllegalStateException.class, apiValidator::validateEnvironment);
+        assertTrue(apiEx.getMessage().contains("CLOUDINARY_API_BASE_URL"));
+
+        MockEnvironment deliveryEnv = createValidEnvironment();
+        deliveryEnv.setProperty("CLOUDINARY_DELIVERY_BASE_URL", badUrl);
+        ProdEnvironmentValidator deliveryValidator = new ProdEnvironmentValidator(deliveryEnv);
+        IllegalStateException deliveryEx =
+                assertThrows(IllegalStateException.class, deliveryValidator::validateEnvironment);
+        assertTrue(deliveryEx.getMessage().contains("CLOUDINARY_DELIVERY_BASE_URL"));
     }
 }

@@ -4,7 +4,7 @@ import { RoleHomeLayout } from './RoleHomeLayout';
 export const MentorHomePage: React.FC = () => {
   return (
     <RoleHomeLayout
-      roleTitle="Giảng Viên / Mentor"
+      roleTitle="Giảng viên / Mentor"
       roleBadgeClass="rj-role-mentor"
       roleIcon="graduation-cap"
       description="Trang chủ dành cho giảng viên hướng dẫn chuyên môn và đánh giá năng lực học viên"

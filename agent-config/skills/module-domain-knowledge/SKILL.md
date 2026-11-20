@@ -57,7 +57,7 @@ The core principle of this skill is absolute fidelity to documented specificatio
 ### Business Card 1: Identity & Access Module (`identity`)
 
 - Domain Responsibilities: User authentication, RBAC authorization, SSO ticket validation, session token lifecycle.
-- Exclusively Owned Tables: `roles`, `users`, `used_sso_tickets`.
+- Exclusively Owned Tables: `roles`, `users`, `used_sso_tickets`, `password_reset_tokens`.
 - Actor Roles: `CANDIDATE`, `HR`, `MENTOR`, `STAFF`, `ADMIN`.
 - Core Entities: `Role` (id, name, description), `User` (id, email, passwordHash, fullName, lmsUserId, roleId, mustChangePassword, status).
 - State Lifecycles:
@@ -71,7 +71,7 @@ The core principle of this skill is absolute fidelity to documented specificatio
 ### Business Card 2: Candidate Profile Module (`candidate`)
 
 - Domain Responsibilities: Comprehensive Skill Profile management, evidence uploads, CV PDF generation, privacy controls.
-- Exclusively Owned Tables: `skill_profiles`, `profile_evidences`, `candidate_cvs`, `portfolios`.
+- Exclusively Owned Tables: `candidate_profiles`, `external_records`, `skill_mappings`, `skill_evidences`, `skill_scores`, `target_positions`, `position_skills`, `candidate_targets`, `gap_results`, `candidate_cvs`, `portfolios`.
 - Actor Roles: `CANDIDATE` (owner), `STAFF` (auditor), `HR` (viewer with PII masked).
 - Core Entities: `SkillProfile`, `ProfileEvidence` (score, source, status, manuallyLocked), `CandidateCv`, `Portfolio`.
 - State Lifecycles:
@@ -82,11 +82,12 @@ The core principle of this skill is absolute fidelity to documented specificatio
   2. Candidate uploads certificates or proof of achievement.
   3. Staff audits evidence, with mandatory immutable audit logging for manual score overrides.
   4. Candidate generates standardized Rikkei CV in PDF format.
+  5. Candidate selects a target position or job and reviews computed skill gaps.
 
 ### Business Card 3: Company & Job Module (`company`, `job`)
 
 - Domain Responsibilities: Enterprise information management, HR accounts, Job Description (JD) lifecycle.
-- Exclusively Owned Tables: `companies`, `company_hr_profiles`, `job_descriptions`, `job_skills`.
+- Exclusively Owned Tables: `companies`, `jobs`, `job_skills`, `company_hr_profiles`, `job_descriptions`.
 - Actor Roles: `HR` (creator/manager), `STAFF` (approver).
 - Core Entities: `Company`, `CompanyHrProfile`, `JobDescription` (title, salaryRange, status), `JobSkill` (skillId, isMandatory, minScore).
 - State Lifecycles:
@@ -115,7 +116,7 @@ The core principle of this skill is absolute fidelity to documented specificatio
 ### Business Card 5: Assessment Module (`assessment`)
 
 - Domain Responsibilities: 20-skills catalogue management, Mentor evaluations, self-assessments, aggregate competency index calculation, skill badges.
-- Exclusively Owned Tables: `skills`, `assessment_templates`, `assessment_forms`, `skill_badges`.
+- Exclusively Owned Tables: `skills`, `evaluation_templates`, `evaluation_criteria`, `evaluations`, `evaluation_scores`, `skill_badges`.
 - Actor Roles: `ADMIN` (catalogue manager), `MENTOR` (evaluator), `CANDIDATE` (self-assessor).
 - Core Entities: `Skill` (standard 20 skills), `AssessmentTemplate`, `AssessmentForm`, `SkillBadge`.
 - Skill Level Bands:
@@ -164,7 +165,7 @@ The core principle of this skill is absolute fidelity to documented specificatio
 ### Business Card 8: AI Career Assistant Module (`ai`)
 
 - Domain Responsibilities: Gemini AI-powered CV review and optimization, career path suggestions, mock interview rehearsal.
-- Exclusively Owned Tables: Stateless (no persistent database tables; interacts via transient DTOs).
+- Exclusively Owned Tables: `job_recommendations` (24h recommendation cache; chat/coaching flows remain stateless via transient DTOs).
 - Actor Roles: `CANDIDATE`.
 - Security & Privacy Law:
   - Mandatory PII Redaction: Full name, email, phone number, and physical address must be sanitized/redacted before sending resume content to external LLM APIs.

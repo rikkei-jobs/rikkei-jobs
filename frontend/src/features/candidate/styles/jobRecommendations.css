@@ -39,17 +39,6 @@
   flex-wrap: wrap;
 }
 
-.candidate-select {
-  padding: 8px 12px;
-  font-size: 0.9rem;
-  border: 1px solid var(--rj-color-border-subtle);
-  border-radius: 8px;
-  background-color: var(--rj-color-surface-input);
-  color: var(--rj-color-text-secondary);
-  font-weight: 500;
-  cursor: pointer;
-}
-
 .refresh-button {
   display: flex;
   align-items: center;

@@ -18,8 +18,8 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
  * Verifies that the default profile (no active profiles specified) executes ONLY prod schema
- * migrations (V1, V3, V5, V7, V11 and V13) and does NOT seed any sample users (neither V2, V4, V6,
- * V8, V12 nor V14).
+ * migrations (V1, V3, V5, V7, V9, V11 and V13) and does NOT seed any sample users or dev data
+ * (neither V2, V4, V6, V8, V10, V12 nor V14).
  */
 @SpringBootTest
 @Testcontainers
@@ -52,7 +52,7 @@ public class DefaultProfileIntegrationTest {
 
     @Test
     @DisplayName(
-            "Default profile must apply only V1, V3, V5, V7, V11 and V13 schema migrations, not dev seeds")
+            "Default profile must apply only V1, V3, V5, V7, V9, V11 and V13 schema migrations, not dev seeds")
     void testDefaultProfileAppliesOnlyV1Schema() {
         Integer migrationCount =
                 jdbcTemplate.queryForObject(
@@ -103,6 +103,22 @@ public class DefaultProfileIntegrationTest {
         assertFalse(
                 Boolean.TRUE.equals(hasV8),
                 "V8 dev seed migration must NOT be applied in default profile");
+
+        Boolean hasV9 =
+                jdbcTemplate.queryForObject(
+                        "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '9')",
+                        Boolean.class);
+        assertTrue(
+                Boolean.TRUE.equals(hasV9),
+                "V9 schema migration must be applied in default profile");
+
+        Boolean hasV10 =
+                jdbcTemplate.queryForObject(
+                        "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '10')",
+                        Boolean.class);
+        assertFalse(
+                Boolean.TRUE.equals(hasV10),
+                "V10 dev seed migration must NOT be applied in default profile");
 
         Boolean hasV11 =
                 jdbcTemplate.queryForObject(
