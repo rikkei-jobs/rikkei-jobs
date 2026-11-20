@@ -404,6 +404,18 @@
 
   .sp-skill-head {
     grid-template-columns: minmax(0, 1fr) 24px;
+    row-gap: 8px;
+  }
+
+  .sp-skill-meter,
+  .sp-skill-tags {
+    grid-column: 1;
+  }
+
+  .sp-chevron {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
   }
 
   .sp-skill-tags {

@@ -95,7 +95,13 @@ describe('JobRecommendationsSection Component', () => {
     expect(screen.getByText('70% khớp')).toBeInTheDocument();
     expect(document.querySelector('.ai-label')).toHaveTextContent('Do AI tạo');
     expect(document.querySelector('.system-label')).toHaveTextContent('Gợi ý hệ thống');
-    expect(screen.getByText(/Đã lưu bộ nhớ đệm/i)).toBeInTheDocument();
+    expect(screen.getByText(/Cập nhật trong ngày/i)).toBeInTheDocument();
+    expect(screen.queryByText(/AI Provider/i)).not.toBeInTheDocument();
+    const applyButtons = screen.getAllByRole('button', { name: /Ứng tuyển \(Sắp ra mắt\)/i });
+    expect(applyButtons).toHaveLength(2);
+    applyButtons.forEach((button) => {
+      expect(button).toBeDisabled();
+    });
   });
 
   it('does not expose a candidate selector anymore', async () => {

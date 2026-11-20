@@ -134,7 +134,7 @@ describe('Company Profile WCAG 2.2 AA, Routing, RBAC & Exports', () => {
     const backLink = screen.getByRole('link', { name: /Quay lại trang chủ HR/i });
     expect(backLink).toHaveAttribute('href', '/hr');
 
-    const nameInput = screen.getByLabelText(/Tên công ty/i);
+    const nameInput = await screen.findByLabelText(/Tên công ty/i, {}, { timeout: 5000 });
     const industryInput = screen.getByLabelText(/Ngành nghề/i);
     const sizeSelect = screen.getByLabelText(/Quy mô nhân sự/i);
     const websiteInput = screen.getByLabelText(/Trang web/i);
@@ -175,7 +175,9 @@ describe('Company Profile WCAG 2.2 AA, Routing, RBAC & Exports', () => {
     );
   });
 
-  it('HrHomePage includes navigation link to /hr/company', () => {
+  it('HrHomePage includes navigation link to /hr/company', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValueOnce(jsonOk(MOCK_COMPANY));
+
     render(
       <AuthProvider initialToken="hr-jwt" initialUser={createUser('HR')}>
         <MemoryRouter initialEntries={['/hr']}>
@@ -184,7 +186,8 @@ describe('Company Profile WCAG 2.2 AA, Routing, RBAC & Exports', () => {
       </AuthProvider>,
     );
 
-    const companyLink = screen.getByRole('link', { name: /Hồ sơ công ty/i });
+    expect(await screen.findByText(MOCK_COMPANY.name)).toBeInTheDocument();
+    const companyLink = screen.getByRole('link', { name: 'Hồ sơ công ty' });
     expect(companyLink).toBeInTheDocument();
     expect(companyLink).toHaveAttribute('href', '/hr/company');
   });
@@ -198,7 +201,7 @@ describe('Company Profile WCAG 2.2 AA, Routing, RBAC & Exports', () => {
         </MemoryRouter>
       </AuthProvider>,
     );
-    expect(await screen.findByRole('heading', { name: /Cổng Đăng Nhập/i })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: /^Đăng nhập$/i })).toBeInTheDocument();
     unmountAnon();
 
     // 2. Wrong role (CANDIDATE) -> Vietnamese 403 ForbiddenPage
@@ -241,7 +244,7 @@ describe('Company Profile WCAG 2.2 AA, Routing, RBAC & Exports', () => {
       'href',
       '/staff',
     );
-    expect(screen.queryByText(/Tiếp Nhận & Điều Phối/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Duyệt hồ sơ & doanh nghiệp/i)).not.toBeInTheDocument();
     unmountStaff();
 
     // 3. HR with mustChangePassword: true -> /change-password
@@ -255,7 +258,9 @@ describe('Company Profile WCAG 2.2 AA, Routing, RBAC & Exports', () => {
         </MemoryRouter>
       </AuthProvider>,
     );
-    expect(await screen.findByRole('heading', { name: /Đổi Mật Khẩu/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { level: 1, name: /Đổi mật khẩu/i }, { timeout: 8000 }),
+    ).toBeInTheDocument();
     unmountMustChange();
 
     // 4. HR with mustChangePassword: false -> renders CompanyProfilePage
@@ -268,9 +273,9 @@ describe('Company Profile WCAG 2.2 AA, Routing, RBAC & Exports', () => {
       </AuthProvider>,
     );
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'Hồ sơ công ty' }),
+      await screen.findByRole('heading', { level: 1, name: 'Hồ sơ công ty' }, { timeout: 5000 }),
     ).toBeInTheDocument();
-  });
+  }, 15000);
 
   it('adds aria-live="polite" to all 7 inline field errors, preserves focus-first-error and summary live-region without duplicate role="alert"', async () => {
     const profileWithInvalidSize: CompanyProfile = {

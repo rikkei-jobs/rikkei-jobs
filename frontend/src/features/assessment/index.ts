@@ -15,7 +15,13 @@ export const assessmentModuleConfig = {
   code: 'MOD-04',
   name: 'Đánh giá năng lực (Assessment)',
   description:
-    'Phiếu đánh giá Mentor theo 20 kỹ năng chuẩn hóa, tự đánh giá, tính chỉ số năng lực tổng hợp (0-100) và cấp huy hiệu.',
+    'Phiếu đánh giá Mentor theo 20 kỹ năng được đánh giá, tự đánh giá, tính chỉ số năng lực tổng hợp (0-100) và cấp huy hiệu.',
   roleTarget: formatRoleList(['MENTOR', 'CANDIDATE', 'ADMIN']),
   badge: 'Module 4',
 };
+
+export {
+  fetchEvaluationTemplates,
+  type EvaluationTemplateCriterion,
+  type EvaluationTemplateItem,
+} from './api/evaluationTemplates';

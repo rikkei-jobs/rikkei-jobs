@@ -102,7 +102,7 @@ export const CompanyProfileForm: React.FC<CompanyProfileFormProps> = ({
   };
 
   return (
-    <section className="rj-auth-card cp-main-card" aria-labelledby="company-form-heading">
+    <section className="cp-card cp-main-card" aria-labelledby="company-form-heading">
       <div className="cp-card-header">
         <h2 id="company-form-heading" className="cp-section-title">
           Thông tin doanh nghiệp
@@ -341,13 +341,25 @@ export const CompanyProfileForm: React.FC<CompanyProfileFormProps> = ({
         </div>
 
         <div className="cp-form-actions">
-          <button type="submit" className="rj-btn rj-btn-primary cp-submit-btn" disabled={isSaving}>
-            {isSaving ? (
-              <Icon name="spinner" size={18} className="rj-spin" />
-            ) : (
+          <button
+            type="submit"
+            className="rj-btn rj-btn-primary cp-submit-btn rj-btn-morph"
+            disabled={isSaving}
+          >
+            <span
+              className={`rj-btn-morph-layer${isSaving ? ' is-hidden' : ' is-visible'}`}
+              aria-hidden={isSaving}
+            >
               <Icon name="check-circle" size={18} />
-            )}
-            <span>{isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}</span>
+              <span>Lưu thay đổi</span>
+            </span>
+            <span
+              className={`rj-btn-morph-layer${isSaving ? ' is-visible' : ' is-hidden'}`}
+              aria-hidden={!isSaving}
+            >
+              <Icon name="spinner" size={18} className={isSaving ? 'rj-spin' : undefined} />
+              <span>Đang lưu...</span>
+            </span>
           </button>
         </div>
       </form>
