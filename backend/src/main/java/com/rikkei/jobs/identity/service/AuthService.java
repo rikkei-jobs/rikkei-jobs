@@ -7,4 +7,6 @@ public interface AuthService {
     AuthSessionResponse authenticateHr(String email, String password);
 
     AuthSessionResponse authenticateCandidate(String ticket);
+
+    AuthSessionResponse authenticateStaff(String email, String password);
 }

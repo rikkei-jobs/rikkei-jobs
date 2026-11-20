@@ -1,4 +1,4 @@
-export type UserRole = 'CANDIDATE' | 'HR';
+export type UserRole = 'CANDIDATE' | 'HR' | 'STAFF' | 'MENTOR' | 'ADMIN';
 
 export interface AuthSession {
   accessToken: string;
@@ -20,7 +20,7 @@ const isAuthSession = (value: unknown): value is AuthSession => {
     typeof session.expiresAt === 'string' &&
     typeof session.userId === 'number' &&
     typeof session.fullName === 'string' &&
-    (session.role === 'CANDIDATE' || session.role === 'HR')
+    (session.role === 'CANDIDATE' || session.role === 'HR' || session.role === 'STAFF')
   );
 };
 

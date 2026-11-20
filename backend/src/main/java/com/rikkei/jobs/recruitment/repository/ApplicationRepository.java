@@ -36,4 +36,50 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
     Page<Application> findByJobIdOrderByCreatedAtDesc(Long jobId, Pageable pageable);
 
     Optional<Application> findByIdAndJobId(Long id, Long jobId);
+
+    /**
+     * Retrieves all applications filtered by companyId, jobId, and status for STAFF view (UT-02).
+     */
+    @org.springframework.data.jpa.repository.Query(
+            value =
+                    "SELECT a.* FROM applications a "
+                            + "JOIN job_descriptions j ON a.job_id = j.id "
+                            + "WHERE (:companyId IS NULL OR j.company_id = :companyId) "
+                            + "AND (:jobId IS NULL OR a.job_id = :jobId) "
+                            + "AND (:status IS NULL OR a.status = :status) "
+                            + "ORDER BY a.created_at DESC",
+            countQuery =
+                    "SELECT count(a.id) FROM applications a "
+                            + "JOIN job_descriptions j ON a.job_id = j.id "
+                            + "WHERE (:companyId IS NULL OR j.company_id = :companyId) "
+                            + "AND (:jobId IS NULL OR a.job_id = :jobId) "
+                            + "AND (:status IS NULL OR a.status = :status)",
+            nativeQuery = true)
+    Page<Application> findForStaff(
+            @org.springframework.data.repository.query.Param("companyId") Long companyId,
+            @org.springframework.data.repository.query.Param("jobId") Long jobId,
+            @org.springframework.data.repository.query.Param("status") String status,
+            Pageable pageable);
+
+    /** Retrieves applications for a company owned by HR, filtered by jobId and status (UT-02). */
+    @org.springframework.data.jpa.repository.Query(
+            value =
+                    "SELECT a.* FROM applications a "
+                            + "JOIN job_descriptions j ON a.job_id = j.id "
+                            + "WHERE j.company_id = :companyId "
+                            + "AND (:jobId IS NULL OR a.job_id = :jobId) "
+                            + "AND (:status IS NULL OR a.status = :status) "
+                            + "ORDER BY a.created_at DESC",
+            countQuery =
+                    "SELECT count(a.id) FROM applications a "
+                            + "JOIN job_descriptions j ON a.job_id = j.id "
+                            + "WHERE j.company_id = :companyId "
+                            + "AND (:jobId IS NULL OR a.job_id = :jobId) "
+                            + "AND (:status IS NULL OR a.status = :status)",
+            nativeQuery = true)
+    Page<Application> findForHrCompany(
+            @org.springframework.data.repository.query.Param("companyId") Long companyId,
+            @org.springframework.data.repository.query.Param("jobId") Long jobId,
+            @org.springframework.data.repository.query.Param("status") String status,
+            Pageable pageable);
 }

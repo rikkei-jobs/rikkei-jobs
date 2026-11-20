@@ -82,6 +82,20 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    public AuthSessionResponse authenticateStaff(String email, String password) {
+        User user =
+                userRepository
+                        .findByEmailIgnoreCase(email.trim())
+                        .orElseThrow(AuthenticationFailedException::new);
+        Role role = findRole(user);
+        if (!"STAFF".equals(role.getName())
+                || !passwordEncoder.matches(password, user.getPasswordHash())) {
+            throw new AuthenticationFailedException();
+        }
+        return createSession(user, role);
+    }
+
+    @Override
     @Transactional
     public AuthSessionResponse authenticateCandidate(String ticket) {
         if ("dev-ticket-candidate1".equals(ticket) || "dev-candidate-1".equals(ticket)) {

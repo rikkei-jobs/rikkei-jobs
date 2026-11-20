@@ -6,9 +6,9 @@ import { ModuleCard } from './shared/components/ModuleCard';
 import { fetchBackendHealth, type BackendHealthStatus } from './shared/api/health';
 import { AuthenticationPanel } from './shared/auth/AuthenticationPanel';
 import { clearAuthSession, getAuthSession, setAuthSession, type AuthSession } from './shared/auth/session';
-import { loginCandidate, loginHr } from './shared/auth/authApi';
+import { loginCandidate, loginHr, loginStaff } from './shared/auth/authApi';
 import { BUSINESS_MODULES } from './features';
-import { CandidateJobsPage, HrApplicationsPage } from './features/recruitment';
+import { CandidateJobsPage, HrApplicationsPage, StaffApplicationsPage } from './features/recruitment';
 
 export const APP_NAME = 'Rikkei Jobs - Nền tảng kết nối việc làm theo năng lực đã xác thực';
 export const APP_VERSION = 'v1.0.0-sprint1';
@@ -92,6 +92,29 @@ export const App: React.FC = () => {
         userId: 4,
         fullName: 'Đại diện Doanh nghiệp A (Dev)',
         role: 'HR',
+      };
+      setAuthSession(fallback);
+      setSession(fallback);
+      setShowRecruitment(true);
+      setShowLogin(false);
+    }
+  };
+
+  const handleQuickStaff = async () => {
+    try {
+      const s = await loginStaff('staff1@rikkeijobs.test', 'Test@123');
+      setAuthSession(s);
+      setSession(s);
+      setShowRecruitment(true);
+      setShowLogin(false);
+    } catch {
+      const fallback: AuthSession = {
+        accessToken: 'dev-token',
+        tokenType: 'Bearer',
+        expiresAt: new Date(Date.now() + 3600000).toISOString(),
+        userId: 7,
+        fullName: 'Hoàng Thu Hà (Cán bộ đào tạo)',
+        role: 'STAFF',
       };
       setAuthSession(fallback);
       setSession(fallback);
@@ -184,6 +207,22 @@ export const App: React.FC = () => {
           >
             Nhà tuyển dụng HR (Doanh nghiệp A)
           </button>
+          <button
+            type="button"
+            onClick={() => void handleQuickStaff()}
+            style={{
+              padding: '7px 14px',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              color: '#ffffff',
+              background: session?.role === 'STAFF' && showRecruitment ? '#7e22ce' : '#9333ea',
+              border: 0,
+              borderRadius: 6,
+              cursor: 'pointer',
+            }}
+          >
+            Cán bộ đào tạo (Staff)
+          </button>
           {showRecruitment && (
             <button
               type="button"
@@ -229,7 +268,12 @@ export const App: React.FC = () => {
         {session ? (
           <>
             <span style={{ alignSelf: 'center', color: '#334155' }}>
-              {session.fullName} · {session.role === 'HR' ? 'Nhà tuyển dụng' : 'Ứng viên'}
+              {session.fullName} ·{' '}
+              {session.role === 'HR'
+                ? 'Nhà tuyển dụng'
+                : session.role === 'STAFF'
+                ? 'Cán bộ đào tạo (STAFF)'
+                : 'Ứng viên'}
             </span>
             <button type="button" className="refresh-btn" onClick={handleSignOut}>
               Đăng xuất
@@ -256,6 +300,8 @@ export const App: React.FC = () => {
           />
         ) : session.role === 'HR' ? (
           <HrApplicationsPage />
+        ) : session.role === 'STAFF' ? (
+          <StaffApplicationsPage />
         ) : (
           <CandidateJobsPage />
         )

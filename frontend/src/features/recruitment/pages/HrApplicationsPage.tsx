@@ -9,6 +9,7 @@ import {
   updateHrApplicationStatus,
 } from '../api/applicationApi';
 import { ApplicationStatusBadge } from '../components/ApplicationStatusBadge';
+import { ApplicationDetailPage } from './ApplicationDetailPage';
 import type {
   ApplicationDetail,
   ApplicationStatus,
@@ -20,7 +21,7 @@ import type {
 const STATUS_OPTIONS: Partial<Record<ApplicationStatus, ApplicationStatus[]>> = {
   SUBMITTED: ['SCREENING', 'REJECTED'],
   SCREENING: ['INTERVIEW', 'REJECTED'],
-  INTERVIEW: ['OFFER', 'REJECTED'],
+  INTERVIEW: ['REJECTED'],
   OFFER: ['HIRED', 'REJECTED'],
 };
 
@@ -51,6 +52,7 @@ export const HrApplicationsPage: React.FC = () => {
   const [createSuccess, setCreateSuccess] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [detailedAppId, setDetailedAppId] = useState<number | null>(null);
 
   const loadJobs = useCallback(async (signal?: AbortSignal) => {
     setJobsLoading(true);
@@ -235,6 +237,19 @@ export const HrApplicationsPage: React.FC = () => {
   const availableStatuses = selectedApplication
     ? (STATUS_OPTIONS[selectedApplication.status] ?? [])
     : [];
+
+  if (detailedAppId !== null) {
+    return (
+      <ApplicationDetailPage
+        applicationId={detailedAppId}
+        userRole="HR"
+        onBack={() => {
+          setDetailedAppId(null);
+          void loadApplications();
+        }}
+      />
+    );
+  }
 
   return (
     <main style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px' }}>
@@ -561,6 +576,17 @@ export const HrApplicationsPage: React.FC = () => {
                 )}
 
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    onClick={() => setDetailedAppId(app.id)}
+                    style={{
+                      ...primaryButtonStyle,
+                      background: '#0284c7',
+                    }}
+                  >
+                    Chi tiết quy trình & phỏng vấn
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => void openApplication(app.id)}

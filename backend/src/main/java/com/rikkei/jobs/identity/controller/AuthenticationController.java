@@ -31,6 +31,14 @@ public class AuthenticationController {
         return ResponseEntity.ok(authService.authenticateHr(request.email(), request.password()));
     }
 
+    @PostMapping("/staff/sessions")
+    @Operation(summary = "Đăng nhập tài khoản Staff bằng email và mật khẩu")
+    public ResponseEntity<AuthSessionResponse> authenticateStaff(
+            @Valid @RequestBody HrLoginRequest request) {
+        return ResponseEntity.ok(
+                authService.authenticateStaff(request.email(), request.password()));
+    }
+
     @PostMapping("/candidate/sessions")
     @Operation(summary = "Đăng nhập ứng viên bằng vé SSO dùng một lần")
     public ResponseEntity<AuthSessionResponse> authenticateCandidate(

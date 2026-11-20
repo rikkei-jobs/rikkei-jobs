@@ -65,7 +65,8 @@ public class SecurityConfig {
                             auth.requestMatchers(
                                             HttpMethod.POST,
                                             "/api/v1/auth/hr/sessions",
-                                            "/api/v1/auth/candidate/sessions")
+                                            "/api/v1/auth/candidate/sessions",
+                                            "/api/v1/auth/staff/sessions")
                                     .permitAll();
                             auth.requestMatchers(
                                             "/api/v1/health",

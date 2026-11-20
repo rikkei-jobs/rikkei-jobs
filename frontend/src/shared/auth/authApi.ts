@@ -36,3 +36,17 @@ export const loginCandidate = async (
   });
   return readJsonResponse<AuthSessionResponse>(response);
 };
+
+export const loginStaff = async (
+  email: string,
+  password: string,
+  signal?: AbortSignal,
+): Promise<AuthSession> => {
+  const response = await apiFetch('/api/v1/auth/staff/sessions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ email, password }),
+    signal,
+  });
+  return readJsonResponse<AuthSessionResponse>(response);
+};

@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface CompanyRepository extends JpaRepository<Company, Long> {
 
     Optional<Company> findByHrOwnerUserId(Long hrOwnerUserId);
+
+    Optional<Company> findByName(String name);
 }

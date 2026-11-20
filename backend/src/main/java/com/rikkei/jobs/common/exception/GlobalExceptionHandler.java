@@ -109,6 +109,16 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse("CONFLICT", "Xung đột dữ liệu hoặc vi phạm ràng buộc"));
     }
 
+    @ExceptionHandler({
+        org.springframework.security.access.AccessDeniedException.class,
+        org.springframework.security.authorization.AuthorizationDeniedException.class
+    })
+    public ResponseEntity<ErrorResponse> handleAccessDenied(Exception ex) {
+        log.warn("Access denied: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(new ErrorResponse("FORBIDDEN", "Không có quyền truy cập"));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
         log.error("Unhandled internal server error: ", ex);
