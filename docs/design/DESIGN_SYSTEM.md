@@ -245,10 +245,10 @@ Thay thế hoàn toàn thang mặc định của Tailwind CSS và Material Desig
   --rj-primitive-radius-full: 9999px;
 
   --rj-primitive-elevation-0: none;
-  --rj-primitive-elevation-1: 0 1px 3px 0 rgba(12, 26, 48, 0.08), 0 1px 2px -1px rgba(12, 26, 48, 0.05);
-  --rj-primitive-elevation-2: 0 4px 6px -1px rgba(12, 26, 48, 0.10), 0 2px 4px -2px rgba(12, 26, 48, 0.06);
-  --rj-primitive-elevation-3: 0 10px 15px -3px rgba(12, 26, 48, 0.12), 0 4px 6px -4px rgba(12, 26, 48, 0.08);
-  --rj-primitive-elevation-4: 0 20px 25px -5px rgba(12, 26, 48, 0.15), 0 8px 10px -6px rgba(12, 26, 48, 0.10);
+  --rj-primitive-elevation-1: 0 1px 3px rgba(11, 26, 44, 0.08), 0 1px 2px rgba(11, 26, 44, 0.04);
+  --rj-primitive-elevation-2: 0 4px 8px -2px rgba(11, 26, 44, 0.09), 0 2px 4px -2px rgba(11, 26, 44, 0.05);
+  --rj-primitive-elevation-3: 0 12px 20px -4px rgba(11, 26, 44, 0.11), 0 4px 8px -2px rgba(11, 26, 44, 0.05);
+  --rj-primitive-elevation-4: 0 20px 28px -6px rgba(11, 26, 44, 0.14), 0 8px 12px -4px rgba(11, 26, 44, 0.06);
 
   /* Z-Index Hierarchy */
   --rj-primitive-z-hide:     -1;
@@ -300,6 +300,12 @@ Thay thế hoàn toàn thang mặc định của Tailwind CSS và Material Desig
   --rj-color-action-secondary-bg:      var(--rj-primitive-neutral-100); /* #EEF2F8 */
   --rj-color-action-secondary-fg:      var(--rj-primitive-neutral-900); /* #0B1A2C - CR 17.52:1 */
   --rj-color-action-secondary-hover-bg:var(--rj-primitive-neutral-200); /* #D8E2EE */
+
+  /* Brand & Editorial Glow Tokens */
+  --rj-color-brand-primary:       var(--rj-primitive-brand-600);
+  --rj-color-brand-primary-hover: var(--rj-primitive-brand-700);
+  --rj-color-brand-surface:       var(--rj-primitive-brand-50);
+  --rj-color-story-glow:          rgba(13, 85, 184, 0.06); /* Editorial Auth Story Panel ambient glow */
 
   /* Accent Tokens (Cyber Persimmon / Terracotta) */
   --rj-color-accent:              var(--rj-primitive-accent-600); /* #D9480F - CR 4.30:1 */
@@ -372,6 +378,12 @@ Thay thế hoàn toàn thang mặc định của Tailwind CSS và Material Desig
   --rj-color-action-secondary-fg:      #EDF2F7;                                  /* #EDF2F7 - CR 14.53:1 */
   --rj-color-action-secondary-hover-bg:#1E2C42;
 
+  /* Brand & Editorial Glow Tokens Dark Mode */
+  --rj-color-brand-primary:       var(--rj-primitive-brand-electric);
+  --rj-color-brand-primary-hover: var(--rj-primitive-brand-electric-hover);
+  --rj-color-brand-surface:       rgba(80, 140, 238, 0.15);
+  --rj-color-story-glow:          rgba(80, 140, 238, 0.08); /* Editorial Auth Story Panel ambient glow Dark Mode */
+
   /* Accent Tokens (Cyber Persimmon Dark) */
   --rj-color-accent:              var(--rj-primitive-accent-500); /* #F08C65 */
   --rj-color-accent-hover:        #FA9D78;
@@ -402,6 +414,16 @@ Thay thế hoàn toàn thang mặc định của Tailwind CSS và Material Desig
   --rj-color-focus-ring:         #38BDF8; /* #38BDF8 - CR 7.97:1 on #111C2E */
   --rj-focus-ring-width:         2px;
   --rj-focus-ring-offset:        2px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    /* Syncs OS dark preference fallback with [data-theme="dark"] semantic tokens */
+    --rj-color-brand-primary:       var(--rj-primitive-brand-electric);
+    --rj-color-brand-primary-hover: var(--rj-primitive-brand-electric-hover);
+    --rj-color-brand-surface:       rgba(80, 140, 238, 0.15);
+    --rj-color-story-glow:          rgba(80, 140, 238, 0.08);
+  }
 }
 ```
 
@@ -473,6 +495,16 @@ Thay thế hoàn toàn thang mặc định của Tailwind CSS và Material Desig
   letter-spacing: 0.05em;
 }
 ```
+
+### 3.5. Elevation Shadows & Cool Navy Rationale (Hệ thống Bóng đổ & Lý do Chọn Xanh Navy Lạnh)
+
+Trước vòng `UIUX-polish`, `frontend/src/shared/styles/design-tokens.css` khai báo `--rj-shadow-1..4` bằng tông đen ấm `rgba(26, 22, 21, ...)` (`#1A1615`), tạo vệt mờ hơi nâu ấm trên nền xám thép lạnh (`#EEF2F8`) và mặt thẻ trắng (`#FFFFFF`). Trong vòng `UIUX-polish`, toàn bộ thang `--rj-shadow-0..4` được chuẩn hóa về **xanh navy lạnh `rgba(11, 26, 44, ...)`** (đồng bộ trực tiếp với `--rj-primitive-neutral-900: #0B1A2C`):
+
+Prior to Round `UIUX-polish`, `frontend/src/shared/styles/design-tokens.css` defined `--rj-shadow-1..4` using warm-black `rgba(26, 22, 21, ...)`, producing a subtle warm-brown tint over cool steel (`#EEF2F8`) and pure card (`#FFFFFF`) surfaces. Round `UIUX-polish` aligns `--rj-shadow-0..4` to **cool cobalt-tinted navy `rgba(11, 26, 44, ...)`** (matching `--rj-primitive-neutral-900: #0B1A2C`):
+
+- **Hài hòa Bảng màu (Palette Harmony)**: Sắc navy `#0B1A2C` hòa quyện tự nhiên với **Confident Royal Cobalt (`#0D55B8` / `#508CEE`)** và thang **Iron Obsidian (`#0B1019`–`#1E2C42`)**, giữ độ sâu sạch sẽ ở Light Mode và tách khối trầm tĩnh ở Dark Mode mà không gây quầng sáng neon (tuân thủ Anti-AI P-AI-03).
+- **Phối hợp Viền mảnh `1px` (1px Hairline Pairing)**: Bóng đổ chỉ đóng vai trò phụ trợ cho lớp bề mặt phân bậc (tonal surface ladder) và viền `1px` rõ nét (`--rj-color-border-subtle` / `--rj-color-border-elevated`).
+- **Tuân thủ Check 9 (Check 9 Compliance)**: Giá trị `rgba(11, 26, 44, ...)` được định nghĩa tập trung duy nhất tại `design-tokens.css` qua `--rj-shadow-1..4`, mọi component chỉ tiêu thụ `var(--rj-shadow-*)`.
 
 ---
 
@@ -781,7 +813,7 @@ table td.numeric,
   font-family: 'Plus Jakarta Sans';
   font-style: normal;
   font-weight: 600;
-  font-display: swap;
+  font-display: optional;
   src: url('/fonts/PlusJakartaSans-SemiBold.woff2') format('woff2');
   unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, 
                  U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, 
@@ -792,7 +824,7 @@ table td.numeric,
   font-family: 'Plus Jakarta Sans';
   font-style: normal;
   font-weight: 700;
-  font-display: swap;
+  font-display: optional;
   src: url('/fonts/PlusJakartaSans-Bold.woff2') format('woff2');
   unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, 
                  U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, 
@@ -804,7 +836,7 @@ table td.numeric,
   font-family: 'Be Vietnam Pro';
   font-style: normal;
   font-weight: 400;
-  font-display: swap;
+  font-display: optional;
   src: url('/fonts/BeVietnamPro-Regular.woff2') format('woff2');
   unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, 
                  U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, 
@@ -815,7 +847,7 @@ table td.numeric,
   font-family: 'Be Vietnam Pro';
   font-style: normal;
   font-weight: 500;
-  font-display: swap;
+  font-display: optional;
   src: url('/fonts/BeVietnamPro-Medium.woff2') format('woff2');
   unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, 
                  U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, 
@@ -826,7 +858,7 @@ table td.numeric,
   font-family: 'Be Vietnam Pro';
   font-style: normal;
   font-weight: 600;
-  font-display: swap;
+  font-display: optional;
   src: url('/fonts/BeVietnamPro-SemiBold.woff2') format('woff2');
   unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, 
                  U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, 
@@ -837,7 +869,7 @@ table td.numeric,
   font-family: 'Be Vietnam Pro';
   font-style: normal;
   font-weight: 700;
-  font-display: swap;
+  font-display: optional;
   src: url('/fonts/BeVietnamPro-Bold.woff2') format('woff2');
   unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, 
                  U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, 
@@ -849,7 +881,7 @@ table td.numeric,
   font-family: 'JetBrains Mono';
   font-style: normal;
   font-weight: 400;
-  font-display: swap;
+  font-display: optional;
   src: url('/fonts/JetBrainsMono-Regular.woff2') format('woff2');
   unicode-range: U+0030-0039, U+0024, U+00A5, U+20AB, U+0025, U+002C, U+002E;
 }
@@ -858,7 +890,7 @@ table td.numeric,
   font-family: 'JetBrains Mono';
   font-style: normal;
   font-weight: 600;
-  font-display: swap;
+  font-display: optional;
   src: url('/fonts/JetBrainsMono-SemiBold.woff2') format('woff2');
   unicode-range: U+0030-0039, U+0024, U+00A5, U+20AB, U+0025, U+002C, U+002E;
 }
@@ -1146,102 +1178,159 @@ $$m \frac{d^2 x}{dt^2} + c \frac{dx}{dt} + k x = 0$$
 - $c$ (**Damping**): Hệ số cản ma sát, kiểm soát mức độ triệt tiêu dao động.
 - $\zeta$ (**Damping Ratio**): Tỉ số cản $\zeta = \dfrac{c}{2 \sqrt{k \cdot m}}$.
 
-### 8.2. Bốn Preset Vật Lý Lò Xo Với CSS `linear()` Easing Hiện Đại
+### 8.2. Ba Preset Vật Lý Lò Xo Với CSS `linear()` & Fallback An Toàn
 
-Hệ thống cung cấp 4 preset lò xo được tính toán chính xác và nhúng trực tiếp qua hàm `linear()` của CSS Easing Level 2 (zero runtime dependency):
+Để bảo đảm nâng cấp lũy tiến (Progressive Enhancement) cho trình duyệt cũ, các biến `--rj-ease-spring-*` khai báo giá trị `cubic-bezier()` trên `:root` và chỉ nâng cấp sang hàm `linear()` của CSS Easing Level 2 bên trong `@supports (animation-timing-function: linear(0, 1))`:
 
 ```css
 :root {
-  /* Preset: snappy (m:1, k:400, c:30, zeta:0.75, settling ~260ms, overshoot ~2.8%) */
-  /* Ứng dụng: Dropdown menu, toggle switch, tab indicator, button press */
-  --rj-ease-spring-snappy: linear(
-    0, 0.006, 0.025 2.8%, 0.101 6.1%, 0.539 18.9%, 0.721 24.4%, 
-    0.852 30.2%, 0.941 37%, 0.985 44.5%, 1.006 52.8%, 1.011 59.8%, 
-    1 76.5%, 1
-  );
+  /* Safe cubic-bezier fallbacks for browsers without CSS linear() */
+  --rj-ease-spring-snappy: cubic-bezier(0.16, 1, 0.3, 1);
+  --rj-ease-spring-stiff:  cubic-bezier(0.2, 0, 0, 1);
+  --rj-ease-spring-gentle: cubic-bezier(0.16, 1, 0.3, 1);
+}
 
-  /* Preset: gentle (m:1, k:170, c:26, zeta:0.997, critically damped, 0% overshoot) */
-  /* Ứng dụng: Modal dialog enter, slide-over drawer, card mở rộng */
-  --rj-ease-spring-gentle: linear(
-    0, 0.003, 0.012 2.1%, 0.05 4.6%, 0.287 14.8%, 0.548 24.4%, 
-    0.738 34.1%, 0.865 44.2%, 0.938 54.7%, 0.976 65.6%, 0.993 77.2%, 
-    1
-  );
+@supports (animation-timing-function: linear(0, 1)) {
+  :root {
+    /* Preset: snappy (m:1, k:420, c:34, zeta:0.83, ~1.0% overshoot, calibrated for 150-180ms) */
+    /* Ứng dụng: Theme switch thumb, tab indicator, button press */
+    --rj-ease-spring-snappy: linear(
+      0, 0.008, 0.035 3%, 0.14 6.5%, 0.56 17%, 0.78 24%,
+      0.915 32%, 0.98 41%, 1.006 51%, 1.01 59%, 1.002 74%, 1
+    );
 
-  /* Preset: stiff (m:1, k:380, c:32, zeta:0.821, settling ~250ms, tactile feedback) */
-  /* Ứng dụng: Tooltip pop-in, badge counter nảy nhẹ, focus ring xuất hiện */
-  --rj-ease-spring-stiff: linear(
-    0, 0.009, 0.038 2.5%, 0.156 5.8%, 0.652 16.5%, 0.835 21.8%, 
-    0.938 27.2%, 0.987 33.5%, 1.007 41.2%, 1.008 48.5%, 1 65%, 1
-  );
+    /* Preset: stiff (m:1, k:460, c:38, zeta:0.89, ~0.3% overshoot, calibrated for 150-180ms) */
+    /* Ứng dụng: Tooltip pop-in, Select listbox, badge update */
+    --rj-ease-spring-stiff: linear(
+      0, 0.01, 0.042 2.8%, 0.17 6%, 0.64 16%, 0.85 23%,
+      0.95 31%, 0.992 41%, 1.003 53%, 1 70%, 1
+    );
 
-  /* Preset: bouncy-subtle (m:1, k:220, c:18, zeta:0.607, settling ~440ms, overshoot ~8.9%) */
-  /* Ứng dụng: Icon checkmark hoàn thành đánh giá, bookmark lưu việc làm */
-  --rj-ease-spring-bouncy: linear(
-    0, 0.005, 0.021 2.3%, 0.084 5.1%, 0.462 16.2%, 0.655 21.3%, 
-    0.814 27%, 0.929 33.3%, 0.998 40.5%, 1.034 48.2%, 1.042 55.6%, 
-    1.03 63.8%, 1.009 73.1%, 0.998 83.2%, 1
-  );
+    /* Preset: gentle (m:1, k:210, c:29, zeta:1.00, critically damped 0% overshoot, 280ms) */
+    /* Ứng dụng: Modal dialog enter, mobile drawer, card expansion */
+    --rj-ease-spring-gentle: linear(
+      0, 0.004, 0.018 2.5%, 0.075 5.5%, 0.34 15%, 0.60 25%,
+      0.79 35%, 0.90 46%, 0.96 58%, 0.988 71%, 0.997 85%, 1
+    );
+  }
 }
 ```
 
-### 8.3. Thang Thời Lượng & Ngân Sách Theo Mục Đích (Purpose-Based Budgets)
+### 8.3. Thang Thời Lượng, Tầng Showcase (Phê duyệt sau M4), Stagger & Tách Bạch Không Gian/Hiệu Ứng
+
+Sau khi Chủ sản phẩm (Product Owner) kiểm thử bản mẫu M4 trên hệ thống thực và nhận xét hiệu ứng 150–180 ms còn cứng, tầng **Showcase Motion Tier** được phê duyệt bổ sung cho các khoảnh khắc nổi bật mà giữ nguyên ngân sách chặt chẽ cho vi tương tác thường nhật (không nới rộng thêm nếu chưa có sự đồng ý mới của Chủ sản phẩm / Team Lead).  
+Following the Product Owner's live M4 review finding 150–180 ms transitions too stiff, the **Showcase Motion Tier** is approved for highlight moments while keeping existing micro-interaction budgets unchanged (do not widen further without asking).
+
+- **Phạm vi tầng Showcase (5 nhóm được phép + ngoại lệ radar `/login` vòng `UIUX-radar`)**: (a) lần xuất hiện đầu tiên của nội dung chính trên trang và khối hero đăng nhập (`<= 800ms`), (b) biểu đồ dữ liệu và đếm số / thanh tiến độ (`<= 800ms`), (c) chuyển tuyến kèm phần tử dùng chung (`<= 600ms`), (d) chuyển đổi giao diện sáng/tối dạng vòng tròn (`<= 600ms`), (e) hiệu ứng xuất hiện theo cuộn trên trang dài (`animation-timeline: view()` + `IntersectionObserver`/CSS thuần), và (f) **duy nhất trên radar `CompetencyRadarVisual` tại `/login`** (`autoCycle` tắt ở mọi màn hình khác và vùng HR/STAFF/ADMIN mật độ cao): tự chuyển qua 6 nhóm kỹ năng mỗi `4s` (`--rj-radar-cycle: 4000ms`), highlight `<= 400ms` chỉ dùng `opacity`/`transform`/`stroke-dashoffset`, tạm dừng khi di chuột (vào radar hoặc hộp chi tiết), focus bàn phím bên trong, `document.hidden`, hoặc tắt hoàn toàn ở `prefers-reduced-motion: reduce`; click/`Enter`/`Space` giữ `8s` không tương tác rồi tự chạy tiếp từ nhóm kế (click lại nhóm đang chọn để bỏ chọn và chạy tiếp ngay), `Escape` chạy tiếp không cướp focus, tự dừng sau 3 vòng (18 bước ~72s) về trạng thái tổng quan; `aria-live="off"` khi tự chạy và `"polite"` chỉ khi người dùng thao tác.
+- **Ngoại lệ WCAG 2.2.2 tại hero `/login` (gỡ nút Tạm dừng nền — Owner phê duyệt)**: Theo quyết định của Chủ sản phẩm tại `UIUX-radar`, nút `"Tạm dừng nền"` / `"Phát nền"` bị gỡ khỏi hero `/login` (một ngoại lệ có chủ đích khỏi điều khoản nút tạm dừng hiển thị của Rule 09). Tuân thủ WCAG 2.2.2 được bảo đảm bằng 3 cơ chế bù đắp: (1) tạm dừng/giữ/tiếp tục trực tiếp qua tương tác hover/focus/click/`Escape` kèm chú thích tiếng Việt dưới radar, (2) vòng nền trang trí `.rj-story-ambient` chạy 1 lần duy nhất (`--rj-duration-ambient: 4500ms`, arc 2 `4800ms`, `<= 5s` rồi đứng yên, tự dừng khi `document.hidden`, tĩnh dưới `prefers-reduced-motion`), và (3) radar tự dừng sau 3 vòng (18 bước ~72s).
+- **Khu vực làm việc mật độ cao (`HR`, `STAFF`, `ADMIN`)**: Giữ nguyên ngân sách vi tương tác (`<= 150ms`), chỉ nhận hiệu ứng vào trang (`<= 400ms`), tuyệt đối không dùng auto-cycle.
+
+Toàn bộ thang thời lượng tuân thủ Rule 09 (`09-frontend-design-bar.md`), kết hợp quy tắc **Spatial vs. Effects**: đường cong lò xo `linear()` chỉ áp dụng cho `transform`, còn `opacity` và màu sắc luôn dùng `--rj-ease-entrance`, `--rj-ease-exit` hoặc `--rj-ease-hover`:
+
+| Nhóm Tương tác (Category) | Ngân sách Rule 09 | Biến Token | Giá trị Chuẩn hóa | Đường cong & Thuộc tính (Easing & Properties) |
+|---|---|---|---|---|
+| **Vi tương tác (Micro, Hover, Switch, Focus)** | `<= 150ms` | `--rj-duration-micro`, `--rj-duration-fast` | `100ms` / `150ms` | `--rj-ease-spring-snappy` (`transform`); `--rj-ease-hover` (`opacity`, color, outline) |
+| **Tooltip & Popover (`<Select />`)** | `<= 200ms` | `--rj-duration-normal` | `180ms` vào / `150ms` ra | `--rj-ease-spring-stiff` (`transform`); `--rj-ease-entrance` / `--rj-ease-exit` (`opacity`) |
+| **Dialog, Drawer & Sidebar Collapse** | `<= 300ms` | `--rj-duration-base`, `--rj-duration-moderate` | `250ms` / `280ms` | `--rj-ease-spring-gentle` (`transform`, `width`); `--rj-ease-entrance` (`opacity`) |
+| **Vào trang Mật độ cao (Dense Entrance)** | `<= 400ms` | `--rj-duration-slow` | `360ms` (hoặc `280ms`) | `--rj-ease-entrance` (`opacity`, `transform`) — chỉ chạy 1 lần khi tải |
+| **Chuyển tuyến & Đổi Theme (Showcase)** | `<= 600ms` | `--rj-duration-vt-route`, `--rj-duration-theme-reveal` | `480ms` / `500ms` | `--rj-ease-entrance` (`transform`, `opacity`, WAAPI `clip-path`) |
+| **Hero, Radar & Đếm số (Showcase)** | `<= 800ms` (highlight `<= 400ms`; cycle `4s`) | `--rj-duration-deliberate`, `--rj-duration-showcase`, `--rj-radar-cycle` | `550ms` / `720ms` / `4000ms` | `--rj-ease-entrance` (`stroke-dashoffset`, `transform`, `opacity`, `clip-path`); auto-cycle chỉ `/login` dừng sau 3 vòng |
+| **Nền trang trí Hero (1-shot)** | `<= 5000ms` | `--rj-duration-ambient` | `4500ms` (arc 2 `4800ms`) | `ease-in-out` `1 forwards` (`transform`, `opacity`), tự dừng khi `document.hidden` (bỏ nút Pause trên `/login`) |
+| **Quản trị Mật độ cao (`[data-density="dense"]`)** | `<= 150ms` micro | `--rj-duration-normal: 120ms`, `--rj-duration-moderate: 150ms` | `<= 150ms` micro | `--rj-ease-hover`, `--rj-ease-standard` (0 dịch chuyển thẻ biểu mẫu) |
 
 ```css
 :root {
-  /* Cubic-Bezier Curves */
-  --rj-ease-entrance: cubic-bezier(0.16, 1, 0.3, 1);  /* Decelerate mạnh khi xuất hiện */
-  --rj-ease-exit:     cubic-bezier(0.7, 0, 0.84, 0);   /* Accelerate nhanh khi biến mất */
-  --rj-ease-hover:    cubic-bezier(0.2, 0, 0, 1);      /* Phản hồi tức thời với con trỏ */
-  --rj-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);    /* Cân bằng chuyển vị nội bộ */
+  /* 1. Duration Scale (Rule 09 Micro + Owner-Approved Showcase Tier) */
+  --rj-duration-instant:      0ms;
+  --rj-duration-micro:        100ms;   /* Active press, micro-state feedback */
+  --rj-duration-vt-out:       140ms;   /* View Transition old-root exit */
+  --rj-duration-fast:         150ms;   /* Hover, switch thumb, focus ring, dense micro */
+  --rj-duration-normal:       180ms;   /* Tooltips (<= 200ms), popovers, Select panel */
+  --rj-duration-base:         250ms;   /* Sidebar collapse rail & drawer base */
+  --rj-duration-moderate:     280ms;   /* Modals, slide drawers, empty states (<= 300ms) */
+  --rj-duration-slow:         360ms;   /* Dense page entrance (<= 400ms), hero elements */
+  --rj-duration-vt-route:     480ms;   /* Route View Transitions & shared BrandMark (<= 600ms) */
+  --rj-duration-theme-reveal: 500ms;   /* Circular clip-path theme switch reveal (<= 600ms) */
+  --rj-duration-deliberate:   550ms;   /* SVG stroke draw, radar morph */
+  --rj-duration-showcase:     720ms;   /* Page & auth hero showcase choreography (<= 800ms) */
+  --rj-duration-ambient:      4500ms;  /* Decorative auth hero 1-shot drift (<= 5000ms) */
+  --rj-radar-cycle:           4000ms;  /* Login hero radar auto-advance interval (4s per group) */
 
-  /* Duration Scale (Purpose-Based Budgets) */
-  --rj-duration-instant:    0ms;
-  --rj-duration-micro:      100ms;  /* Micro button depression, badge count bump */
-  --rj-duration-fast:       150ms;  /* Tooltip reveal, hover lift, admin transitions (Budget: <=150ms) */
-  --rj-duration-normal:     200ms;  /* Dropdown expand, tab slider, popover (Budget: <=200ms) */
-  --rj-duration-moderate:   300ms;  /* Modal dialog enter, slide drawer (Budget: <=300ms) */
-  --rj-duration-slow:       400ms;  /* Route view transition, hero reveal (Budget: <=400ms) */
-  --rj-duration-deliberate: 600ms;  /* SVG stroke draw-in, chart reveal */
+  /* 2. Cubic-Bezier Curves */
+  --rj-ease-entrance: cubic-bezier(0.16, 1, 0.3, 1);  /* Decelerate enter */
+  --rj-ease-exit:     cubic-bezier(0.7, 0, 0.84, 0);   /* Fast accelerate exit */
+  --rj-ease-hover:    cubic-bezier(0.2, 0, 0, 1);      /* Crisp pointer response */
+  --rj-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);    /* Balanced neutral */
+  --rj-ease-out:      cubic-bezier(0, 0, 0.2, 1);      /* Preserved alias */
 
-  /* Distance Scale */
+  /* 3. Distance Scale */
   --rj-motion-dist-2xs: 2px;
   --rj-motion-dist-xs:  4px;
   --rj-motion-dist-sm:  8px;
   --rj-motion-dist-md:  16px;
   --rj-motion-dist-lg:  24px;
 
-  /* Composite Shortcuts */
-  --rj-transition-hover:    transform var(--rj-duration-fast) var(--rj-ease-hover), 
-                            opacity var(--rj-duration-fast) var(--rj-ease-hover);
-  --rj-transition-entrance: transform var(--rj-duration-moderate) var(--rj-ease-entrance), 
-                            opacity var(--rj-duration-moderate) var(--rj-ease-entrance);
-  --rj-transition-exit:     transform var(--rj-duration-fast) var(--rj-ease-exit), 
-                            opacity var(--rj-duration-fast) var(--rj-ease-exit);
+  /* 4. Stagger Steps & Caps */
+  --rj-motion-stagger-fast:         20ms;
+  --rj-motion-stagger-normal:       35ms;
+  --rj-motion-stagger-slow:         45ms;
+  --rj-motion-stagger-cap:          220ms;
+  --rj-motion-stagger-showcase:     55ms;
+  --rj-motion-stagger-showcase-cap: 380ms;
+
+  /* 5. Composite Shortcuts (Spatial vs. Effects Split) */
+  --rj-transition-hover:
+    transform var(--rj-duration-fast) var(--rj-ease-spring-snappy),
+    opacity var(--rj-duration-fast) var(--rj-ease-hover),
+    background-color var(--rj-duration-fast) var(--rj-ease-hover),
+    border-color var(--rj-duration-fast) var(--rj-ease-hover);
+  --rj-transition-entrance:
+    transform var(--rj-duration-normal) var(--rj-ease-spring-stiff),
+    opacity var(--rj-duration-normal) var(--rj-ease-entrance);
+  --rj-transition-exit:
+    transform var(--rj-duration-fast) var(--rj-ease-exit),
+    opacity var(--rj-duration-fast) var(--rj-ease-exit);
+  --rj-transition-dialog:
+    transform var(--rj-duration-moderate) var(--rj-ease-spring-gentle),
+    opacity var(--rj-duration-moderate) var(--rj-ease-entrance);
 }
 ```
 
-### 8.4. Quy Tắc Hiệu Năng GPU & Rào Cản Trợ Năng
+### 8.4. Quy Tắc Hiệu Năng GPU, Tách Biệt View Transitions & Rào Cản Trợ Năng
 
 #### Quy Tắc Hiệu Năng 60fps & 0 Layout Thrashing
 
-- **CHỈ ĐƯỢC PHÉP ANIMATE HAI THUỘC TÍNH**: `transform` và `opacity`.
-  - Hai thuộc tính này được xử lý độc quyền trên **Compositor Thread** và tăng tốc phần cứng thông qua GPU, hoàn toàn không kích hoạt lại giai đoạn Layout (Reflow) và Paint của trình duyệt.
-  - Chỉ số bắt buộc: **Cumulative Layout Shift (CLS) = 0**.
-- **CẤM TUYỆT ĐỐI**: Animate các thuộc tính hình học (`width`, `height`, `top`, `left`, `right`, `bottom`, `margin`, `padding`).
+- **Thuộc tính Compositor Mặc định**: Chỉ animate `transform`, `opacity`, và `clip-path` đo kiểm được (line-mask và theme circular reveal); thanh tiến độ dùng `transform: scaleX(...)` từ `transform-origin: left`. Chỉ số tải trang: **Cumulative Layout Shift (`CLS`) = 0**.
+- **Tách biệt View Transitions (Route vs. Theme Circular Reveal)**:
+  - **Chuyển tuyến (`navigateWithTransition`, `html:not(.rj-theme-transition)`)**: Gắn `view-transition-name` cho `rj-shell-header`, `rj-shell-sidebar`, `rj-main-content`, và `rj-brand-mark` (chỉ trên `<BrandMark sharedTransition />`). Header và sidebar giữ tĩnh (`animation: none`); chỉ `rj-main-content` chuyển cảnh (`<= 480ms` Airy / `<= 360ms` Dense) và `rj-brand-mark` di chuyển liền mạch (`<= 480ms`). Dùng `flushSync` của `react-dom` bên trong `document.startViewTransition` để React Router v7 commit DOM đồng bộ.
+  - **Đổi giao diện Sáng/Tối (`startThemeTransition`, `html.rj-theme-transition`)**: Tạm tắt `view-transition-name` trên shell và brand mark để chỉ `root` chuyển cảnh, sau đó chạy WAAPI `clip-path: circle(0px at x y) -> circle(R at x y)` trên `::view-transition-new(root)` (`<= 500ms`, phát triển từ tâm nút công tắc). Tự động bỏ qua thành đổi tức thời dưới `prefers-reduced-motion` hoặc trình duyệt không hỗ trợ.
+- **Scroll-Driven Reveals (`animation-timeline: view()`)**: Các mục dài trên trang ứng viên nâng cấp lũy tiến bằng `@supports (animation-timeline: view())` kết hợp `IntersectionObserver` / CSS thuần (`opacity: 1` mặc định nếu thiếu hỗ trợ).
+- **Ngoại lệ Có Kiểm Soát — Thanh Điều hướng Trái (`280px <-> 72px`)**: Trên desktop/tablet (`>= 768px`), khi người dùng chủ động thu gọn/mở rộng, chiều rộng sidebar chuyển mượt trong `--rj-sidebar-transition-width` (`250ms` với `--rj-ease-spring-gentle` trên Airy; `150ms` trên Dense) trong khi nhãn bên trong mờ/trượt theo chuỗi và thanh chỉ báo active (`.rj-sidebar-active-indicator`) trượt bằng WAAPI FLIP `translateY`/`scaleY` qua các lần điều hướng. Ngăn kéo mobile (`< 768px`) chỉ dùng `transform: translateX()` và `opacity`.
 
 #### Trợ Năng Chuyển Động (`prefers-reduced-motion` & WCAG 2.2.2 / 2.3.1)
 
 ```css
 @media (prefers-reduced-motion: reduce) {
-  :root {
-    --rj-duration-instant:    0.001ms;
-    --rj-duration-micro:      0.001ms;
-    --rj-duration-fast:       0.001ms;
-    --rj-duration-normal:     0.001ms;
-    --rj-duration-moderate:   0.001ms;
-    --rj-duration-slow:       0.001ms;
-    --rj-duration-deliberate: 0.001ms;
+  :root,
+  [data-density="dense"] {
+    --rj-duration-instant:      0.001ms;
+    --rj-duration-micro:        0.001ms;
+    --rj-duration-vt-out:       0.001ms;
+    --rj-duration-fast:         0.001ms;
+    --rj-duration-normal:       0.001ms;
+    --rj-duration-base:         0.001ms;
+    --rj-duration-moderate:     0.001ms;
+    --rj-duration-slow:         0.001ms;
+    --rj-duration-vt-route:     0.001ms;
+    --rj-duration-theme-reveal: 0.001ms;
+    --rj-duration-deliberate:   0.001ms;
+    --rj-duration-showcase:     0.001ms;
+    --rj-duration-ambient:      0.001ms;
+    --rj-radar-cycle:           0.001ms;
+
+    --rj-sidebar-transition-width: 0.001ms;
+    --rj-tooltip-transition:       0.001ms;
+    --rj-drawer-transition:        0.001ms;
 
     --rj-motion-dist-2xs: 0px;
     --rj-motion-dist-xs:  0px;
@@ -1249,24 +1338,29 @@ Hệ thống cung cấp 4 preset lò xo được tính toán chính xác và nh�
     --rj-motion-dist-md:  0px;
     --rj-motion-dist-lg:  0px;
 
-    /* Giải pháp thay thế có ý nghĩa: 100ms Opacity Cross-fade */
     --rj-transition-hover:    opacity 100ms ease;
     --rj-transition-entrance: opacity 100ms ease;
     --rj-transition-exit:     opacity 100ms ease;
+    --rj-transition-dialog:   opacity 100ms ease;
   }
 
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
+  }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 100ms !important;
   }
 }
 ```
 
-- **Giải pháp `0.001ms`**: Thay vì đặt `0s` (làm tê liệt sự kiện `transitionend` trên WebKit/Safari), sử dụng `0.001ms` để hoàn thành ngay tức khắc nhưng vẫn kích hoạt đầy đủ event loop của trình duyệt.
-- **Tuân thủ WCAG 2.2.2**: Cung cấp nút tạm dừng/dừng cho bất kỳ hoạt ảnh tự động lặp lại nào kéo dài quá 5 giây.
-- **Tuân thủ WCAG 2.3.1**: Tuyệt đối không có hiệu ứng chớp tắt quá 3 lần trong một giây (> 3Hz). Hiệu ứng Skeleton Loading Pulse phải có chu kỳ $\ge 1.5$ giây.
+- **Vì sao KHÔNG đặt `transition-duration: 0.001ms !important;` trên `*`**: Quy tắc `!important` trên toàn bộ `*` sẽ đè mất `--rj-transition-*: opacity 100ms ease`, làm mất hiệu ứng chuyển mờ `100ms` cho tooltip, dialog và cross-fade dữ liệu. Giữ các token `--rj-duration-*` ở `0.001ms` vừa dập tắt tức thời các transition không gian trên WebKit (bảo toàn sự kiện `transitionend`), vừa cho phép `--rj-transition-*` thực thi đúng `opacity 100ms ease`.
+- **Tuân thủ WCAG 2.2.2 & 2.3.1**: Hỗ trợ tạm dừng cho hoạt ảnh lặp > 5 giây ở các màn hình chung; riêng `/login` hero áp dụng ngoại lệ được Owner phê duyệt (bỏ nút `"Tạm dừng nền"`, `.rj-story-ambient` chạy 1 lần `<= 5s` rồi đứng yên, radar tạm dừng qua hover/focus/`document.hidden`/click giữ 8s/`Escape` và tự dừng sau 3 vòng ~72s); không nhấp nháy quá 3 lần/giây (> 3Hz); skeleton pulse có chu kỳ >= 1.5 giây.
 
 ---
 
@@ -1557,11 +1651,11 @@ This section establishes the component taxonomy following the `DN-01-polish` bro
    - Toàn bộ các lớp nút dùng chung và tính năng (`.rj-btn`, `.rj-tab-btn`, `.rj-input-toggle`, `.rj-ticket-chip`, `.ce-btn`, `.sp-btn`) đồng thời khai báo tường minh `font-family: var(--rj-font-body);` để bảo đảm cả `<a class="rj-btn">` bên trong `.app-container` (`-apple-system`) vẫn giữ đúng font thiết kế.
 2. **Standard Action Button Baseline (`.rj-btn`, `.ce-btn`, `.sp-btn`, `.refresh-btn`)**:
    - **Geometry**: `min-height: var(--rj-density-button-height)` (`44px`), `padding: var(--rj-primitive-space-2) var(--rj-primitive-space-4)` (`8px 16px`), `border-radius: var(--rj-radius-md)` (`6px`).
-   - **Typography**: `font-family: var(--rj-font-body)` (`'Be Vietnam Pro'`), `font-size: 0.9375rem` (`15px`), `font-weight: 600`. Áp dụng đồng nhất cho cả nút trong header (`.rj-theme-toggle`, `.rj-nav-logout`) và nút nội dung (`D2` resolved).
-   - **Secondary / Quiet Surface**: `.rj-btn-secondary`, `.ce-btn-quiet`, và `.sp-btn-quiet` dùng chung nền `--rj-color-surface-card`, chữ `--rj-color-text-primary`, và viền `--rj-color-border-interactive` (`#6F8094` / `rgb(111, 128, 148)` Light; `#33465C` / `rgb(51, 70, 92)` Dark).
+   - **Typography**: `font-family: var(--rj-font-body)` (`'Be Vietnam Pro'`), `font-size: 0.9375rem` (`15px`), `font-weight: 600`. Áp dụng đồng nhất cho nút hành động trong header (`.rj-nav-logout`, đặt cạnh công tắc chủ đề icon-only `.rj-theme-switch` tại Mục 14.5) và nút nội dung (`D2` resolved).
+   - **Secondary / Quiet Surface**: `.rj-btn-secondary`, `.ce-btn-quiet`, và `.sp-btn-quiet` dùng chung nền `--rj-color-surface-card`, chữ `--rj-color-text-primary`, và viền `--rj-color-border-interactive` (`#6F8094` / `rgb(111, 128, 148)` Light; `#5B7083` / `rgb(91, 112, 131)` Dark).
    - **Motion & Focus**: Transition `150ms` (`transform`, `background-color`, `box-shadow`, `border-color`); `:focus-visible` dùng `outline: 2px solid var(--rj-color-focus-ring); outline-offset: 2px;`.
 3. **Intentional Button Size & Role Variants (Biến thể có chủ đích)**:
-   - **Auth Tab Button (`.rj-tab-btn`)**: `44px` min-height, `6px` radius, `15px / 600` (`.active: 700`) trên desktop; ở `@media (max-width: 480px)` chuyển sang `0.875rem` (`14px`) + `white-space: nowrap` để giữ 2 tab nằm gọn `1` dòng `44px` tại chiều rộng `375px`.
+   - **Auth Tab Button (`.rj-tab-btn`)**: `44px` min-height, `6px` radius, `0.875rem` (`14px`) / `600` (`.active: 700`) trên desktop; ở `@media (max-width: 480px)` chuyển sang `0.8125rem` (`13px`) + `white-space: normal` để 2 tab nằm cân đối trong thẻ đăng nhập tại chiều rộng `375px` mà không tràn ngang.
    - **Icon-Only Input Toggle (`.rj-input-toggle`)**: `44px x 44px`, `padding: 0`, `border-radius: var(--rj-radius-md)` (`6px`), `0.9375rem / 600`, `150ms ease-out` transition trên `color` và `background-color`.
    - **Dev Ticket Chip (`.rj-ticket-chip`, chỉ render khi `import.meta.env.DEV`)**: `border-radius: var(--rj-radius-md)` (`6px`), `0.8125rem / 600`, `150ms ease-out` transition.
    - **Logo Drop Zone Button (`.cp-logo-drop-zone`)**: `min-height: 76px`, `border-radius: var(--rj-radius-md)` (`6px`), `1px dashed`, `0.9375rem / 600`, `150ms` transition.
@@ -1578,6 +1672,8 @@ Quy ước phân tầng có chủ đích theo ngữ cảnh mật độ vai trò:
 | **Auth / Candidate Airy Focal Card** | `12px` (`--rj-radius-xl`) | `24px`–`32px` (`--rj-primitive-space-6`..`8`) | `.rj-auth-card` (`12px / 32px 24px` desktop; chuyển `8px` / `24px 16px` dưới `1024px`), `.gap-section` (`12px` / `24px`), `.jd-card` (`12px` / `24px`). Dành cho thẻ tập trung đơn lẻ và vùng phân tích ứng viên thoáng đãng. |
 | **HR Dense Workspace Card** | `8px` (`--rj-radius-lg`) | `16px`–`20px` (`--rj-primitive-space-4`..`5`) | `.cp-main-card`, `.cp-aside-card` (`8px / 20px` tại `/hr/company`), và các thẻ danh sách mật độ cao `.ce-card` (`8px / 20px`), `.sp-card` (`8px / 16px 20px`). Tối ưu mật độ hiển thị cho biểu mẫu doanh nghiệp và danh sách thẻ nhiều mục. |
 | **Teammate Card (`PR #6`)** | `10px` | `20px` | `.job-card` trong `jobRecommendations.css` (mã nguồn sẵn có của `PR #6`, ngoài phạm vi `DN-01`). |
+
+- **Phản hồi tương tác thẻ (Card Elevation & Tactile Press)**: Các thẻ tương tác (`.rj-interactive-card`, `.rj-role-card`) nâng nhẹ khi hover (`translateY(-2px)` + `--rj-shadow-2`) và lún nhẹ khi nhấn (`scale(0.985)` + `--rj-shadow-1`) trong `<= 150ms`; thẻ biểu mẫu vùng `[data-density="dense"]` giữ tĩnh để đảm bảo độ ổn định khi nhập liệu.
 
 ### 13.3. Badge Pills vs Inline Metadata Tags (Huy hiệu Trạng thái vs Thẻ Siêu dữ liệu — D7)
 
@@ -1685,16 +1781,37 @@ All dimensions, motion budgets, backdrop overlays, and colors are defined in `fr
 - **Skip Link & Tab Order**: Liên kết `"Bỏ qua tới nội dung chính"` (`href="#main-content"`) là phần tử có thể focus đầu tiên trong DOM. Thứ tự Tab cố định: **Skip link -> Header controls -> Sidebar (nút thu gọn + các mục khả dụng) -> Main content (`#main-content`)**. Mục vô hiệu hóa `"Sắp ra mắt"` giữ `aria-disabled="true"` và `tabIndex={-1}` nên không nằm trong tab order.  
   **Skip Link & Tab Order**: `"Bỏ qua tới nội dung chính"` (`href="#main-content"`) is the first focusable DOM element. Strict Tab sequence: **Skip link -> Header controls -> Sidebar -> Main (`#main-content`)**. Disabled `"Sắp ra mắt"` items keep `aria-disabled="true"` and `tabIndex={-1}`.
 - **Motion & `prefers-reduced-motion`**:
-  - Đổi độ rộng sidebar: `--rj-sidebar-transition-width` (`150ms`) với `--rj-ease-out` (`<= 150ms`).  
-    Sidebar width transition: `150ms ease-out` (`<= 150ms`).
-  - Tooltip rail thu gọn: `--rj-tooltip-transition` (`150ms <= 200ms`) chỉ animate `opacity` và `transform`.  
-    Collapsed tooltip reveal: `150ms` (`<= 200ms`) using `opacity` and `transform` only.
-  - Mobile drawer: `--rj-drawer-transition` (`250ms <= 300ms`) sử dụng `transform` và `opacity` tăng tốc GPU.  
-    Mobile drawer slide: `250ms` (`<= 300ms`) via GPU-composited `transform` and `opacity`.
-  - Dưới `@media (prefers-reduced-motion: reduce)`: chuyển đổi tức thì `0.001ms !important` và thay thế trượt drawer bằng `100ms` opacity cross-fade (`transform: none !important`).  
-    Under `@media (prefers-reduced-motion: reduce)`: instant `0.001ms !important` transitions and `100ms` opacity-only cross-fade.
+  - Cascade mở đầu sidebar: Các mục điều hướng chỉ cascade (`35ms` mỗi bước) ở lần tải đầu tiên của phiên giao diện, không phát lại khi chuyển route. Thanh chỉ báo mục đang chọn (`.rj-sidebar-active-indicator`) trượt mượt giữa các mục bằng WAAPI FLIP `translateY` / `scaleY`.
+  - Đổi độ rộng sidebar & thu gọn/mở rộng: `--rj-sidebar-transition-width` (`250ms` với `--rj-ease-spring-gentle` trên Airy; `150ms` trên Dense); các biểu tượng giữ vị trí ổn định trong khi nhãn chữ mờ/trượt theo thứ tự.
+  - Header & sidebar cố định khi chuyển trang: chỉ vùng `#main-content` (`rj-main-content`) chạy hiệu ứng chuyển trang (`<= 600ms`).
+  - Tooltip rail thu gọn & nút thu gọn: `--rj-tooltip-transition` / `--rj-duration-normal` (`<= 200ms`) chỉ animate `opacity` và `transform`.
+  - Mobile drawer: `--rj-drawer-transition` (`250ms <= 300ms`) / `--rj-duration-moderate` (`280ms` vào, `150ms` ra) sử dụng `transform` và `opacity` tăng tốc GPU.
+  - Đổi theme hình tròn (`startThemeTransition`): Vòng tròn `clip-path` lan tỏa từ nút công tắc trong `<= 500ms` (`<= 600ms`), chuyển đổi tức thời dưới `prefers-reduced-motion` hoặc trình duyệt không hỗ trợ View Transitions.
+  - Dưới `@media (prefers-reduced-motion: reduce)`: biến `--rj-duration-*` đặt `0.001ms`, khoảng dịch chuyển về `0px`, và chuyển đổi trạng thái dùng `--rj-transition-*: opacity 100ms ease` (không đặt `transition-duration: 0.001ms !important;` đè lên cross-fade `100ms`).  
+    Under `@media (prefers-reduced-motion: reduce)`: duration tokens drop to `0.001ms`, spatial offsets to `0px`, and `--rj-transition-*` delivers a `100ms` opacity-only cross-fade without blanket `transition-duration: 0.001ms !important;` overrides.
 - **CLS = 0 lúc tải trang & Giải thích Reflow khi Thu gọn/Mở rộng (Load CLS = 0 & Toggle Reflow Rationale)**:
   - **Lúc tải trang (`CLS = 0`)**: Vì kích thước sidebar (`280px` / `72px`) được suy ra đồng bộ từ `rj_sidebar_collapsed` (trong `try/catch`) và breakpoint hiện tại ngay trong lần render đầu tiên với độ rộng cố định theo token, khung nội dung `<main>` không bị nhảy cột sau hydration — bảo đảm **Cumulative Layout Shift (`CLS`) = 0** khi tải trang.  
     **At Page Load (`CLS = 0`)**: Because initial width (`280px` / `72px`) is resolved synchronously from `rj_sidebar_collapsed` (within `try/catch`) and viewport width on the very first render using fixed token dimensions, `<main>` never shifts post-hydration, guaranteeing **CLS = 0** on load.
-  - **Khi người dùng chủ động thu gọn/mở rộng (`280px <-> 72px`)**: Việc thu gọn sidebar giải phóng `208px` chiều ngang cho vùng làm việc; do đó phần `<main>` (`flex: 1 1 0%; min-width: 0;`) được thiết kế có chủ đích để **reflow mượt trong `150ms ease-out`** lấp đầy khoảng trống vừa mở rộng (các chuyển dịch xảy ra trong vòng `500ms` sau thao tác click của người dùng được W3C Layout Instability API loại trừ khỏi điểm CLS). Thuộc tính `min-width: 0` trên `<main>` ngăn các bảng hoặc lưới rộng bên trong đẩy vùng nội dung vượt quá khung nhìn, giữ nguyên `scrollWidth <= requestedWidth` tại `768px`, `1024px` và `1440px`.  
-    **On User-Initiated Toggle (`280px <-> 72px`)**: Collapsing reclaims `208px` of horizontal workspace; `<main>` (`flex: 1 1 0%; min-width: 0;`) intentionally reflows over `150ms ease-out` to utilize that reclaimed space (user-initiated shifts within `500ms` of input are excluded by the W3C Layout Instability API). Setting `min-width: 0` on `<main>` prevents wide inner grids/tables from forcing horizontal overflow across `768px`, `1024px`, and `1440px`.
+  - **Khi người dùng chủ động thu gọn/mở rộng (`280px <-> 72px`)**: Việc thu gọn sidebar giải phóng `208px` chiều ngang cho vùng làm việc; do đó phần `<main>` (`flex: 1 1 0%; min-width: 0;`) được thiết kế có chủ đích để **reflow mượt trong `150ms`** lấp đầy khoảng trống vừa mở rộng (các chuyển dịch xảy ra trong vòng `500ms` sau thao tác click của người dùng được W3C Layout Instability API loại trừ khỏi điểm CLS). Thuộc tính `min-width: 0` trên `<main>` ngăn các bảng hoặc lưới rộng bên trong đẩy vùng nội dung vượt quá khung nhìn, giữ nguyên `scrollWidth <= requestedWidth` tại `768px`, `1024px` và `1440px`.  
+    **On User-Initiated Toggle (`280px <-> 72px`)**: Collapsing reclaims `208px` of horizontal workspace; `<main>` (`flex: 1 1 0%; min-width: 0;`) intentionally reflows over `150ms` to utilize that reclaimed space (user-initiated shifts within `500ms` of input are excluded by the W3C Layout Instability API). Setting `min-width: 0` on `<main>` prevents wide inner grids/tables from forcing horizontal overflow across `768px`, `1024px`, and `1440px`.
+
+### 14.5. M1 Controls: Icon-Only Sidebar Toggle & Accessible Theme Switch (Điều khiển M1)
+
+Sau vòng nghiên cứu `M2` (`docs/uiux/RESEARCH.md`) theo chuẩn WAI-ARIA APG Switch / Disclosure / Tooltip và WCAG 2.2 SC 1.4.13, hai điều khiển đầu trang và thanh điều hướng được chuẩn hóa như sau:  
+Following `M2` research (`docs/uiux/RESEARCH.md`) grounded in WAI-ARIA APG Switch / Disclosure / Tooltip patterns and WCAG 2.2 SC 1.4.13, the two persistent shell controls follow these exact specifications:
+
+1. **Nút Thu gọn / Mở rộng Sidebar chỉ dùng Biểu tượng (M1a — Icon-Only Sidebar Toggle)**:
+   - **Ngữ nghĩa & Vùng chạm**: Thẻ `<button type="button">` gốc với `aria-expanded={!isCollapsedRail}`, `aria-controls={sidebarId}`, vùng chạm tối thiểu `>= 44px x 44px`, không chứa chữ hiển thị trực tiếp (`icon-only`), và cập nhật `aria-label` tiếng Việt theo trạng thái (`"Thu gọn thanh điều hướng"` / `"Mở rộng thanh điều hướng"`).  
+     Native `<button type="button">` with `aria-expanded`, `aria-controls`, `>= 44px x 44px` hit target, zero visible text inside the button, and dynamic Vietnamese `aria-label` (`"Thu gọn thanh điều hướng"` / `"Mở rộng thanh điều hướng"`).
+   - **Hoạt ảnh Biểu tượng**: Dùng một biểu tượng duy nhất qua `<Icon />` và lật mượt bằng CSS `transform` (`rotate(180deg)` hoặc `scaleX(-1)`) trong `150ms` (`--rj-duration-fast`, `--rj-ease-spring-snappy`) thay vì tráo đổi hai icon khác nhau; dưới `prefers-reduced-motion: reduce` chuyển trạng thái tức thời (`0.001ms`).  
+     Single `<Icon />` animated via CSS `transform` flip (`150ms`, `--rj-ease-spring-snappy`) instead of swapping SVG icon names; instant under `prefers-reduced-motion: reduce`.
+   - **Tooltip WCAG 1.4.13**: Hiển thị cùng chuỗi tiếng Việt khi hover chuột lẫn focus bàn phím trong `<= 200ms` (`opacity` + `transform`), hỗ trợ rê chuột qua vùng tooltip, đóng ngay bằng phím `Escape` ở cả trạng thái mở rộng lẫn thu gọn mà không dời focus, và tránh đọc trùng lặp trên trình đọc màn hình.  
+     Appears on both hover and keyboard focus within `<= 200ms` (`opacity` + `transform`), remains hoverable, dismisses on `Escape` without moving focus, and avoids duplicate screen-reader announcement.
+
+2. **Công tắc Chế độ Sáng / Tối (M1b — Accessible Icon Theme Switch)**:
+   - **Ngữ nghĩa WAI-ARIA APG Switch**: Thẻ `<button type="button" role="switch" aria-checked={isDark} aria-label="Chế độ tối">` với nhãn tiếp cận **cố định** (không đổi chuỗi `aria-label` khi bật/tắt; trạng thái bật/tắt được truyền đạt qua `aria-checked`), hỗ trợ `Space` và `Enter`, vòng `:focus-visible` `2px` rõ nét, không chứa chữ trong công tắc, giữ nguyên thuộc tính `data-theme` trên `<html>` và fallback theo OS.  
+     Native `<button type="button" role="switch" aria-checked={isDark} aria-label="Chế độ tối">` with a **static** accessible name (never mutating `aria-label` on toggle), `Space`/`Enter` activation, visible `2px` `:focus-visible` ring, zero visible text inside the control, and preserved `data-theme` / OS-scheme behavior.
+   - **Cấu trúc Track / Thumb & Tương phản**: Đường rãnh (track) và nút trượt (thumb) sử dụng biểu tượng mặt trời/mặt trăng từ `<Icon />` (`aria-hidden="true"`), vùng chạm `>= 44px`, ranh giới và trạng thái đạt tối thiểu `>= 3.0:1` ở cả Light Mode và Dark Mode.  
+     Track and thumb render sun/moon `<Icon />` glyphs (`aria-hidden="true"`) inside a `>= 44px` hit box with `>= 3.0:1` UI boundary and active-state contrast in both Light and Dark modes.
+   - **Chuyển động Spatial vs. Effects**: Thumb trượt ngang qua `transform: translateX(...)` trong `150ms` (`--rj-duration-fast`) với `--rj-ease-spring-snappy`; biểu tượng mặt trời/mặt trăng chuyển mờ (`opacity`) và xoay nhẹ (`rotate`) mượt mà, tôn trọng `prefers-reduced-motion`.  
+     Thumb translates along X over `150ms` using `--rj-ease-spring-snappy` while sun/moon icons cross-fade cleanly, respecting `prefers-reduced-motion`.
