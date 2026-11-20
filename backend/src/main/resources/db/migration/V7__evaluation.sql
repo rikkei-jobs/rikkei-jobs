@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS evaluations (
     user_id BIGINT NOT NULL,
     mentor_id BIGINT NOT NULL,
     context VARCHAR(20) NOT NULL,
-    batch_id BIGINT,
+    batch_id VARCHAR(20),
     interview_round_id BIGINT,
     status VARCHAR(20) NOT NULL DEFAULT 'DRAFT',
     overall_comment TEXT,

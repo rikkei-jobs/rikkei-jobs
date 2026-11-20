@@ -111,10 +111,10 @@ public class ProfileSeparationIntegrationTest {
                             "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                             Integer.class);
             assertEquals(
-                    6,
+                    7,
                     migrationCount,
                     "Prod environment must only execute schema migrations V1, V3, V5, V7, V11 and"
-                            + " V13, count must be 6");
+                            + " V13, V15, count must be 7");
 
             Boolean hasV2 =
                     jdbcTemplate.queryForObject(
@@ -232,9 +232,9 @@ public class ProfileSeparationIntegrationTest {
                             "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                             Integer.class);
             assertEquals(
-                    12,
+                    13,
                     migrationCount,
-                    "Dev environment must execute V1-V8 and V11-V14, migration count must be 12");
+                    "Dev environment must execute V1-V8 and V11-V15, migration count must be 13");
 
             Boolean hasV2 =
                     jdbcTemplate.queryForObject(

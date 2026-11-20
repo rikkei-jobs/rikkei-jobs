@@ -285,7 +285,8 @@
     "PATHCONV",
     "hado",
     "projectlombok",
-    "jsonwebtoken"
+    "jsonwebtoken",
+    "ARCHITEW"
   ],
   "ignorePaths": [
     "**/node_modules/**",
