@@ -51,42 +51,38 @@ WHERE t.name = 'Phỏng vấn kỹ thuật chung' AND t.context = 'INTERVIEW'
 ON CONFLICT (template_id, skill_id) DO NOTHING;
 
 -- 4. Sample Evaluations
-
 -- Phiếu 1: Candidate 1 (Nguyễn Văn An) - SUBMITTED
-INSERT INTO evaluations (
-    template_id, user_id, mentor_id, context, batch_id,
-    interview_round_id, status, overall_comment, submitted_at, version
-)
+INSERT INTO evaluations (template_id, user_id, mentor_id, context, batch_id, interview_round_id, status, overall_comment, submitted_at, version)
 SELECT t.id, 1, 6, 'INTERNSHIP', 'IOC-JB-2026-09', NULL, 'SUBMITTED',
        'Ứng viên có nền tảng Java và Spring Boot tốt. Có khả năng xây dựng REST API và sử dụng SQL. Cần cải thiện thêm kỹ năng làm việc nhóm.',
        NOW() - INTERVAL '5 days', 0
 FROM evaluation_templates t
-WHERE t.name = 'Java Backend – Thực tập'
-  AND t.context = 'INTERNSHIP'
+WHERE t.name = 'Java Backend – Thực tập' AND t.context = 'INTERNSHIP'
   AND NOT EXISTS (
-    SELECT 1 FROM evaluations e
-    WHERE e.user_id = 1
-  AND e.template_id = t.id
-  AND e.context = 'INTERNSHIP'
-    );
+      SELECT 1 FROM evaluations e WHERE e.user_id = 1 AND e.template_id = t.id AND e.context = 'INTERNSHIP'
+  );
+
+-- Phiếu 2: Candidate 2 (Trần Thị Bình) - SUBMITTED
+INSERT INTO evaluations (template_id, user_id, mentor_id, context, batch_id, interview_round_id, status, overall_comment, submitted_at, version)
+SELECT t.id, 2, 6, 'INTERVIEW', NULL, 1, 'SUBMITTED',
+       'Ứng viên có kiến thức Frontend tốt, tư duy giải quyết vấn đề khá. Cần củng cố thêm kiến thức Java và cấu trúc dữ liệu.',
+       NOW() - INTERVAL '2 days', 0
+FROM evaluation_templates t
+WHERE t.name = 'Phỏng vấn kỹ thuật chung' AND t.context = 'INTERVIEW'
+  AND NOT EXISTS (
+      SELECT 1 FROM evaluations e WHERE e.user_id = 2 AND e.template_id = t.id AND e.context = 'INTERVIEW'
+  );
 
 -- Phiếu 3: Candidate 3 (Lê Minh Châu) - DRAFT
-INSERT INTO evaluations (
-    template_id, user_id, mentor_id, context, batch_id,
-    interview_round_id, status, overall_comment, submitted_at, version
-)
+INSERT INTO evaluations (template_id, user_id, mentor_id, context, batch_id, interview_round_id, status, overall_comment, submitted_at, version)
 SELECT t.id, 3, 6, 'INTERNSHIP', 'IOC-JB-2026-09', NULL, 'DRAFT',
        'Đang trong quá trình đánh giá. Cần bổ sung nhận xét và hoàn thiện điểm các tiêu chí.',
        NULL, 0
 FROM evaluation_templates t
-WHERE t.name = 'Java Backend – Thực tập'
-  AND t.context = 'INTERNSHIP'
+WHERE t.name = 'Java Backend – Thực tập' AND t.context = 'INTERNSHIP'
   AND NOT EXISTS (
-    SELECT 1 FROM evaluations e
-    WHERE e.user_id = 3
-      AND e.template_id = t.id
-      AND e.context = 'INTERNSHIP'
-);
+      SELECT 1 FROM evaluations e WHERE e.user_id = 3 AND e.template_id = t.id AND e.context = 'INTERNSHIP'
+  );
 
 -- 5. Scores cho Phiếu 1 (Candidate 1: Đủ 5 tiêu chí)
 INSERT INTO evaluation_scores (evaluation_id, criterion_id, score, comment)
