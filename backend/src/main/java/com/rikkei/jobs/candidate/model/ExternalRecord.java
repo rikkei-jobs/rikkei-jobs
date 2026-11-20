@@ -57,12 +57,12 @@ public class ExternalRecord {
     }
 
     public ExternalRecord(
-        ExternalSource externalSource,
-        String sourceCode,
-        String title,
-        BigDecimal score,
-        OffsetDateTime recordedAt,
-        Long userId) {
+            ExternalSource externalSource,
+            String sourceCode,
+            String title,
+            BigDecimal score,
+            OffsetDateTime recordedAt,
+            Long userId) {
         this.source = externalSource;
         this.sourceCode = sourceCode;
         this.title = title;

@@ -10,9 +10,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
 import java.util.List;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,78 +24,55 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/profiles")
 @RequiredArgsConstructor
 @Tag(
-    name = "Candidate Profile - Internships",
-    description = "Các API xem thông tin thực tập của ứng viên"
-)
+        name = "Candidate Profile - Internships",
+        description = "Các API xem thông tin thực tập của ứng viên")
 public class InternshipProfileController {
 
     private final InternshipService internshipProfileService;
 
     @Operation(
-        summary = "Lấy danh sách thực tập của bản thân",
-        description = "Candidate xem danh sách thực tập của chính mình",
-        security = @SecurityRequirement(name = "bearerAuth")
-    )
+            summary = "Lấy danh sách thực tập của bản thân",
+            description = "Candidate xem danh sách thực tập của chính mình",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponse(responseCode = "200", description = "Lấy danh sách thực tập thành công")
     @ApiResponse(
-        responseCode = "200",
-        description = "Lấy danh sách thực tập thành công"
-    )
-    @ApiResponse(
-        responseCode = "401",
-        description = "Chưa xác thực",
-        content = @Content(schema = @Schema(implementation = ErrorResponse.class))
-    )
+            responseCode = "401",
+            description = "Chưa xác thực",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @GetMapping("/me/internships")
     @PreAuthorize("hasRole('CANDIDATE')")
     public ResponseEntity<List<InternshipResponse>> getMyInternships(
-        @AuthenticationPrincipal UserPrincipal user
-    ) {
-        return ResponseEntity.ok(
-            internshipProfileService.getMyInternships(user.getId())
-        );
+            @AuthenticationPrincipal UserPrincipal user) {
+        return ResponseEntity.ok(internshipProfileService.getMyInternships(user.getId()));
     }
 
     @Operation(
-        summary = "Lấy danh sách thực tập theo user ID",
-        description = "HR hoặc Candidate xem danh sách thực tập của ứng viên",
-        security = @SecurityRequirement(name = "bearerAuth")
-    )
+            summary = "Lấy danh sách thực tập theo user ID",
+            description = "HR hoặc Candidate xem danh sách thực tập của ứng viên",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponse(responseCode = "200", description = "Lấy danh sách thực tập thành công")
     @ApiResponse(
-        responseCode = "200",
-        description = "Lấy danh sách thực tập thành công"
-    )
+            responseCode = "400",
+            description = "User ID không hợp lệ",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @ApiResponse(
-        responseCode = "400",
-        description = "User ID không hợp lệ",
-        content = @Content(schema = @Schema(implementation = ErrorResponse.class))
-    )
+            responseCode = "401",
+            description = "Chưa xác thực",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @ApiResponse(
-        responseCode = "401",
-        description = "Chưa xác thực",
-        content = @Content(schema = @Schema(implementation = ErrorResponse.class))
-    )
+            responseCode = "403",
+            description = "Không có quyền truy cập",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @ApiResponse(
-        responseCode = "403",
-        description = "Không có quyền truy cập",
-        content = @Content(schema = @Schema(implementation = ErrorResponse.class))
-    )
-    @ApiResponse(
-        responseCode = "404",
-        description = "Không tìm thấy người dùng",
-        content = @Content(schema = @Schema(implementation = ErrorResponse.class))
-    )
+            responseCode = "404",
+            description = "Không tìm thấy người dùng",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @GetMapping("/{userId}/internships")
     @PreAuthorize("hasAnyRole('HR', 'CANDIDATE')")
     public ResponseEntity<List<InternshipResponse>> getUserInternships(
-        @PathVariable Long userId,
-        @AuthenticationPrincipal UserPrincipal user
-    ) {
+            @PathVariable Long userId, @AuthenticationPrincipal UserPrincipal user) {
         return ResponseEntity.ok(
-            internshipProfileService.getUserInternships(
-                userId,
-                user.getId(),
-                user.getRoleName()
-            )
-        );
+                internshipProfileService.getUserInternships(
+                        userId, user.getId(), user.getRoleName()));
     }
 }

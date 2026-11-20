@@ -11,9 +11,7 @@ import com.rikkei.jobs.internship.model.InternshipTask;
 import com.rikkei.jobs.internship.repository.InternshipRepository;
 import com.rikkei.jobs.internship.service.InternshipService;
 import com.rikkei.jobs.internship.service.InternshipSyncService;
-
 import java.util.List;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -38,42 +36,34 @@ public class InternshipServiceImpl implements InternshipService {
 
     @Override
     public List<InternshipResponse> getUserInternships(
-        Long userId,
-        Long currentUserId,
-        String currentUserRole
-    ) {
+            Long userId, Long currentUserId, String currentUserRole) {
         if (userId == null || userId <= 0) {
-            throw new ResponseStatusException(
-                HttpStatus.BAD_REQUEST,
-                "User ID không hợp lệ"
-            );
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User ID không hợp lệ");
         }
 
         if ("HR".equalsIgnoreCase(currentUserRole)) {
 
             // HR chỉ được xem profile công khai.
-            CandidateProfile profile = candidateProfileRepository.findById(userId)
-                .filter(CandidateProfile::isPublicProfile)
-                .orElseThrow(() -> new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "Candidate profile not found"
-                ));
+            CandidateProfile profile =
+                    candidateProfileRepository
+                            .findById(userId)
+                            .filter(CandidateProfile::isPublicProfile)
+                            .orElseThrow(
+                                    () ->
+                                            new ResponseStatusException(
+                                                    HttpStatus.NOT_FOUND,
+                                                    "Candidate profile not found"));
 
         } else if ("CANDIDATE".equalsIgnoreCase(currentUserRole)) {
 
             // Candidate chỉ được xem dữ liệu của chính mình.
             if (!userId.equals(currentUserId)) {
                 throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "Candidate profile not found"
-                );
+                        HttpStatus.NOT_FOUND, "Candidate profile not found");
             }
 
         } else {
-            throw new ResponseStatusException(
-                HttpStatus.FORBIDDEN,
-                "Bạn không có quyền truy cập"
-            );
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bạn không có quyền truy cập");
         }
 
         User user = findUser(userId);
@@ -82,11 +72,12 @@ public class InternshipServiceImpl implements InternshipService {
     }
 
     private User findUser(Long userId) {
-        return userRepository.findById(userId)
-            .orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND,
-                "Không tìm thấy người dùng"
-            ));
+        return userRepository
+                .findById(userId)
+                .orElseThrow(
+                        () ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND, "Không tìm thấy người dùng"));
     }
 
     private List<InternshipResponse> syncAndGetInternships(User user) {
@@ -103,44 +94,34 @@ public class InternshipServiceImpl implements InternshipService {
     protected List<InternshipResponse> getInternships(Long userId) {
 
         List<Internship> internships =
-            internshipRepository.findAllByUser_IdOrderBySyncedAtDesc(userId);
+                internshipRepository.findAllByUser_IdOrderBySyncedAtDesc(userId);
 
-        return internships.stream()
-            .map(this::toResponse)
-            .toList();
+        return internships.stream().map(this::toResponse).toList();
     }
 
     private InternshipResponse toResponse(Internship internship) {
 
         List<InternshipTaskResponse> tasks =
-            internship.getTasks() == null
-                ? List.of()
-                : internship.getTasks()
-                .stream()
-                .map(this::toTaskResponse)
-                .toList();
+                internship.getTasks() == null
+                        ? List.of()
+                        : internship.getTasks().stream().map(this::toTaskResponse).toList();
 
         return new InternshipResponse(
-            internship.getId(),
-            internship.getBatchId(),
-            internship.getBatchName(),
-            internship.getGroupName(),
-            internship.getTopicName(),
-            internship.getMentorEmail(),
-            internship.getStartDate(),
-            internship.getEndDate(),
-            internship.getFinalScore(),
-            internship.getSyncedAt(),
-            tasks
-        );
+                internship.getId(),
+                internship.getBatchId(),
+                internship.getBatchName(),
+                internship.getGroupName(),
+                internship.getTopicName(),
+                internship.getMentorEmail(),
+                internship.getStartDate(),
+                internship.getEndDate(),
+                internship.getFinalScore(),
+                internship.getSyncedAt(),
+                tasks);
     }
 
     private InternshipTaskResponse toTaskResponse(InternshipTask task) {
         return new InternshipTaskResponse(
-            task.getId(),
-            task.getTitle(),
-            task.getAcceptedScore(),
-            task.getAcceptedAt()
-        );
+                task.getId(), task.getTitle(), task.getAcceptedScore(), task.getAcceptedAt());
     }
 }
