@@ -1,4 +1,3 @@
-
 -- Migration V15: Internship and internship tasks
 -- Module Internship
 -- Stores internship information synchronized from PM.
