@@ -39,6 +39,10 @@ public class InternshipProfileController {
             responseCode = "401",
             description = "Chưa xác thực",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @ApiResponse(
+        responseCode = "403",
+        description = "Không có quyền CANDIDATE: FORBIDDEN",
+        content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @GetMapping("/me/internships")
     @PreAuthorize("hasRole('CANDIDATE')")
     public ResponseEntity<List<InternshipResponse>> getMyInternships(
@@ -61,7 +65,7 @@ public class InternshipProfileController {
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @ApiResponse(
             responseCode = "403",
-            description = "Không có quyền truy cập",
+            description = "Không có quyền CANDIDATE: FORBIDDEN",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @ApiResponse(
             responseCode = "404",
