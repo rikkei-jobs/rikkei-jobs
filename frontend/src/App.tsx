@@ -43,6 +43,7 @@ import { AdminHomePage } from './features/identity/pages/role-homes/AdminHomePag
 import { Icon } from './shared/components/Icon';
 import { CandidateEvaluationsPage } from './features/candidate/pages/CandidateEvaluationsPage';
 import { CandidateInternshipsPage } from './features/internship/pages/CandidateInternshipsPage';
+import { CompanyProfilePage } from './features/company/pages/CompanyProfilePage';
 
 export const APP_NAME = 'Rikkei Jobs - Nền tảng kết nối việc làm theo năng lực đã xác thực';
 export const APP_VERSION = 'v1.0.0-sprint1';

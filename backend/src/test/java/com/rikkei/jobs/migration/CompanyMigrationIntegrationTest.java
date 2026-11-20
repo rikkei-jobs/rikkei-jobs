@@ -82,7 +82,7 @@ public class CompanyMigrationIntegrationTest {
                         jdbc.queryForObject(
                                 "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                                 Integer.class);
-                assertEquals(Integer.valueOf(7), appliedCount);
+                assertEquals(Integer.valueOf(8), appliedCount);
 
                 Boolean hasV9 =
                         jdbc.queryForObject(
@@ -162,7 +162,7 @@ public class CompanyMigrationIntegrationTest {
                         jdbc.queryForObject(
                                 "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                                 Integer.class);
-                assertEquals(Integer.valueOf(14), appliedCount);
+                assertEquals(Integer.valueOf(15), appliedCount);
                 assertEquals(
                         Integer.valueOf(2),
                         jdbc.queryForObject("SELECT count(*) FROM companies", Integer.class));
@@ -221,7 +221,7 @@ public class CompanyMigrationIntegrationTest {
                 latestFlyway.migrate();
 
                 assertEquals(
-                        Integer.valueOf(14),
+                        Integer.valueOf(15),
                         jdbc.queryForObject(
                                 "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                                 Integer.class));
