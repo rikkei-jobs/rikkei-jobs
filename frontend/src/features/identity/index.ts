@@ -7,6 +7,7 @@ export * from './utils/roleUtils';
 export * from './config/routePolicies';
 export * from './config/roleMenuConfig';
 export * from './guards/RequireAuth';
+export * from './guards/RequireChangePasswordAccess';
 export * from './guards/RequireMustChangePassword';
 export * from './guards/RequireRole';
 export * from './components/SharedAppLayout';

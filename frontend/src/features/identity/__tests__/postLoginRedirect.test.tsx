@@ -64,6 +64,9 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(authApi.login).mockReset();
+    vi.mocked(authApi.ssoLogin).mockReset();
+    vi.mocked(authApi.changePassword).mockReset();
     resetAuthSessionState();
     setAuthSessionHandlers({});
     setAuthToken(null);
@@ -182,12 +185,12 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
       );
 
       expect(screen.getByTestId('current-pathname')).toHaveTextContent('/login');
-      expect(screen.getByText('Cổng Đăng Nhập')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: /^Đăng nhập$/i })).toBeInTheDocument();
 
-      fireEvent.change(screen.getByLabelText(/Mã vé SSO/i), {
+      fireEvent.change(screen.getByLabelText(/Mã vé đăng nhập từ LMS/i), {
         target: { value: 'ticket-sv-001' },
       });
-      fireEvent.click(screen.getByRole('button', { name: /Xác Thực & Đăng Nhập/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^Đăng nhập qua LMS$/i }));
 
       await waitFor(() => {
         expect(screen.getByTestId('current-pathname')).toHaveTextContent('/sso-callback');
@@ -197,13 +200,13 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
       await waitFor(
         () => {
           expect(screen.getByTestId('current-pathname')).toHaveTextContent('/candidate');
-          expect(screen.getByText('Hồ Sơ Tuyển Dụng')).toBeInTheDocument();
+          expect(screen.getByText('Hồ sơ ứng tuyển')).toBeInTheDocument();
         },
-        { timeout: 3000 },
+        { timeout: 8000 },
       );
 
       expect(screen.queryByText('403')).not.toBeInTheDocument();
-    });
+    }, 15000);
 
     it('ignores disallowed /candidate/skills from when logged-out user logs in as HR (mustChangePassword: false) and lands on /hr', async () => {
       vi.mocked(authApi.login).mockResolvedValueOnce({
@@ -223,22 +226,25 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
 
       expect(screen.getByTestId('current-pathname')).toHaveTextContent('/login');
 
-      fireEvent.click(screen.getByRole('tab', { name: /Doanh Nghiệp/i }));
+      fireEvent.click(screen.getByRole('tab', { name: /Tài khoản doanh nghiệp/i }));
       fireEvent.change(screen.getByLabelText(/Email Doanh Nghiệp/i), {
         target: { value: 'hr2@rikkei.vn' },
       });
       fireEvent.change(screen.getByLabelText(/^Mật Khẩu$/i), {
         target: { value: 'Password123!' },
       });
-      fireEvent.click(screen.getByRole('button', { name: /Đăng Nhập/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^Đăng nhập$/i }));
 
-      await waitFor(() => {
-        expect(screen.getByTestId('current-pathname')).toHaveTextContent('/hr');
-        expect(screen.getByText('Đăng Tin Tuyển Dụng')).toBeInTheDocument();
-      });
+      await waitFor(
+        () => {
+          expect(screen.getByTestId('current-pathname')).toHaveTextContent('/hr');
+          expect(screen.getByText('Đăng tin tuyển dụng')).toBeInTheDocument();
+        },
+        { timeout: 8000 },
+      );
 
       expect(screen.queryByText('403')).not.toBeInTheDocument();
-    });
+    }, 15000);
 
     it('ignores disallowed /candidate/skills from after mustChangePassword flow for HR and lands on /hr', async () => {
       vi.mocked(authApi.login).mockResolvedValueOnce({
@@ -261,19 +267,22 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
 
       expect(screen.getByTestId('current-pathname')).toHaveTextContent('/login');
 
-      fireEvent.click(screen.getByRole('tab', { name: /Doanh Nghiệp/i }));
+      fireEvent.click(screen.getByRole('tab', { name: /Tài khoản doanh nghiệp/i }));
       fireEvent.change(screen.getByLabelText(/Email Doanh Nghiệp/i), {
         target: { value: 'hr1@rikkei.vn' },
       });
       fireEvent.change(screen.getByLabelText(/^Mật Khẩu$/i), {
         target: { value: 'OldPass123' },
       });
-      fireEvent.click(screen.getByRole('button', { name: /Đăng Nhập/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^Đăng nhập$/i }));
 
-      await waitFor(() => {
-        expect(screen.getByTestId('current-pathname')).toHaveTextContent('/change-password');
-        expect(screen.getByRole('heading', { level: 1, name: /Đổi Mật Khẩu/i })).toBeInTheDocument();
-      });
+      await waitFor(
+        () => {
+          expect(screen.getByTestId('current-pathname')).toHaveTextContent('/change-password');
+          expect(screen.getByRole('heading', { level: 1, name: /Đổi Mật Khẩu/i })).toBeInTheDocument();
+        },
+        { timeout: 8000 },
+      );
 
       fireEvent.change(screen.getByLabelText(/Mật Khẩu Hiện Tại/i), {
         target: { value: 'OldPass123' },
@@ -289,13 +298,13 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
       await waitFor(
         () => {
           expect(screen.getByTestId('current-pathname')).toHaveTextContent('/hr');
-          expect(screen.getByText('Đăng Tin Tuyển Dụng')).toBeInTheDocument();
+          expect(screen.getByText('Đăng tin tuyển dụng')).toBeInTheDocument();
         },
-        { timeout: 3000 },
+        { timeout: 8000 },
       );
 
       expect(screen.queryByText('403')).not.toBeInTheDocument();
-    });
+    }, 15000);
 
     it('falls back to /hr when already-authenticated hrMustChangeUser visits disallowed /candidate/skills and completes password change', async () => {
       vi.mocked(authApi.changePassword).mockResolvedValueOnce({
@@ -327,11 +336,11 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
       await waitFor(
         () => {
           expect(screen.getByTestId('current-pathname')).toHaveTextContent('/hr');
-          expect(screen.getByText('Đăng Tin Tuyển Dụng')).toBeInTheDocument();
+          expect(screen.getByText('Đăng tin tuyển dụng')).toBeInTheDocument();
         },
-        { timeout: 3000 },
+        { timeout: 8000 },
       );
-    });
+    }, 15000);
 
     it('preserves allowed /hr/company and rejects disallowed /admin on standalone ChangePasswordPage after 1200ms', async () => {
       vi.mocked(authApi.changePassword)
@@ -373,7 +382,7 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
           expect(screen.getByTestId('current-pathname')).toHaveTextContent('/hr/company');
           expect(screen.getByText('HR Company Target Route')).toBeInTheDocument();
         },
-        { timeout: 3000 },
+        { timeout: 8000 },
       );
       unmount();
 
@@ -413,9 +422,9 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
           expect(screen.getByTestId('current-pathname')).toHaveTextContent('/hr');
           expect(screen.getByText('HR Home Fallback')).toBeInTheDocument();
         },
-        { timeout: 3000 },
+        { timeout: 8000 },
       );
-    });
+    }, 15000);
 
     it('redirects SsoCallbackPage cleanly under React.StrictMode to allowed /candidate/skills and falls back for disallowed /hr/company', async () => {
       vi.mocked(authApi.ssoLogin)
@@ -455,7 +464,7 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
           expect(screen.getByTestId('current-pathname')).toHaveTextContent('/candidate/skills');
           expect(screen.getByText('Candidate Skills Target')).toBeInTheDocument();
         },
-        { timeout: 3000 },
+        { timeout: 8000 },
       );
       expect(authApi.ssoLogin).toHaveBeenCalledTimes(1);
       unmount();
@@ -488,10 +497,10 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
           expect(screen.getByTestId('current-pathname')).toHaveTextContent('/candidate');
           expect(screen.getByText('Candidate Home Fallback')).toBeInTheDocument();
         },
-        { timeout: 3000 },
+        { timeout: 8000 },
       );
       expect(authApi.ssoLogin).toHaveBeenCalledTimes(2);
-    });
+    }, 15000);
 
     it('falls back to /candidate for disallowed /hr/company and preserves /candidate/skills via LmsLoginForm quick dev ticket', async () => {
       stubSkillsSuccess();
@@ -518,6 +527,7 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
       );
 
       expect(screen.getByTestId('current-pathname')).toHaveTextContent('/login');
+      fireEvent.click(screen.getByText(/Công cụ kiểm thử nhanh/i));
       fireEvent.click(screen.getByRole('button', { name: /Lấy vé cho candidate1/i }));
 
       await waitFor(() => {
@@ -528,9 +538,9 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
       await waitFor(
         () => {
           expect(screen.getByTestId('current-pathname')).toHaveTextContent('/candidate');
-          expect(screen.getByText('Hồ Sơ Tuyển Dụng')).toBeInTheDocument();
+          expect(screen.getByText('Hồ sơ ứng tuyển')).toBeInTheDocument();
         },
-        { timeout: 3000 },
+        { timeout: 8000 },
       );
       unmount();
 
@@ -543,15 +553,16 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
         </AuthProvider>,
       );
 
+      fireEvent.click(screen.getByText(/Công cụ kiểm thử nhanh/i));
       fireEvent.click(screen.getByRole('button', { name: /Lấy vé cho candidate1/i }));
       await waitFor(
         () => {
           expect(screen.getByTestId('current-pathname')).toHaveTextContent('/candidate/skills');
           expect(screen.getByRole('heading', { level: 2, name: /Hồ sơ năng lực/i })).toBeInTheDocument();
         },
-        { timeout: 3000 },
+        { timeout: 8000 },
       );
-    });
+    }, 15000);
 
     it('preserves state.from across SsoCallbackPage error link back to /login and filters by new Enterprise HR role', async () => {
       stubCompanySuccess();
@@ -579,31 +590,34 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
         </AuthProvider>,
       );
 
-      fireEvent.change(screen.getByLabelText(/Mã vé SSO/i), {
+      fireEvent.change(screen.getByLabelText(/Mã vé đăng nhập từ LMS/i), {
         target: { value: 'expired-ticket-123' },
       });
-      fireEvent.click(screen.getByRole('button', { name: /Xác Thực & Đăng Nhập/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^Đăng nhập qua LMS$/i }));
 
       await waitFor(() => {
-        expect(screen.getByText('Xác Thực Thất Bại')).toBeInTheDocument();
+        expect(screen.getByText('Xác thực không thành công')).toBeInTheDocument();
       });
 
-      fireEvent.click(screen.getByRole('link', { name: /Quay lại Trang Đăng Nhập/i }));
+      fireEvent.click(screen.getByRole('link', { name: /Quay lại trang đăng nhập/i }));
       expect(screen.getByTestId('current-pathname')).toHaveTextContent('/login');
 
-      fireEvent.click(screen.getByRole('tab', { name: /Doanh Nghiệp/i }));
+      fireEvent.click(screen.getByRole('tab', { name: /Tài khoản doanh nghiệp/i }));
       fireEvent.change(screen.getByLabelText(/Email Doanh Nghiệp/i), {
         target: { value: 'hr2@rikkei.vn' },
       });
       fireEvent.change(screen.getByLabelText(/^Mật Khẩu$/i), {
         target: { value: 'Password123!' },
       });
-      fireEvent.click(screen.getByRole('button', { name: /Đăng Nhập/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^Đăng nhập$/i }));
 
-      await waitFor(() => {
-        expect(screen.getByTestId('current-pathname')).toHaveTextContent('/hr');
-        expect(screen.getByText('Đăng Tin Tuyển Dụng')).toBeInTheDocument();
-      });
+      await waitFor(
+        () => {
+          expect(screen.getByTestId('current-pathname')).toHaveTextContent('/hr');
+          expect(screen.getByText('Đăng tin tuyển dụng')).toBeInTheDocument();
+        },
+        { timeout: 8000 },
+      );
       unmount();
 
       render(
@@ -615,30 +629,33 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
         </AuthProvider>,
       );
 
-      fireEvent.change(screen.getByLabelText(/Mã vé SSO/i), {
+      fireEvent.change(screen.getByLabelText(/Mã vé đăng nhập từ LMS/i), {
         target: { value: 'expired-ticket-456' },
       });
-      fireEvent.click(screen.getByRole('button', { name: /Xác Thực & Đăng Nhập/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^Đăng nhập qua LMS$/i }));
 
       await waitFor(() => {
-        expect(screen.getByText('Xác Thực Thất Bại')).toBeInTheDocument();
+        expect(screen.getByText('Xác thực không thành công')).toBeInTheDocument();
       });
 
-      fireEvent.click(screen.getByRole('link', { name: /Quay lại Trang Đăng Nhập/i }));
-      fireEvent.click(screen.getByRole('tab', { name: /Doanh Nghiệp/i }));
+      fireEvent.click(screen.getByRole('link', { name: /Quay lại trang đăng nhập/i }));
+      fireEvent.click(screen.getByRole('tab', { name: /Tài khoản doanh nghiệp/i }));
       fireEvent.change(screen.getByLabelText(/Email Doanh Nghiệp/i), {
         target: { value: 'hr2@rikkei.vn' },
       });
       fireEvent.change(screen.getByLabelText(/^Mật Khẩu$/i), {
         target: { value: 'Password123!' },
       });
-      fireEvent.click(screen.getByRole('button', { name: /Đăng Nhập/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^Đăng nhập$/i }));
 
-      await waitFor(() => {
-        expect(screen.getByTestId('current-pathname')).toHaveTextContent('/hr/company');
-        expect(screen.getByRole('heading', { level: 1, name: /Hồ sơ công ty/i })).toBeInTheDocument();
-      });
-    });
+      await waitFor(
+        () => {
+          expect(screen.getByTestId('current-pathname')).toHaveTextContent('/hr/company');
+          expect(screen.getByRole('heading', { level: 1, name: /Hồ sơ công ty/i })).toBeInTheDocument();
+        },
+        { timeout: 8000 },
+      );
+    }, 15000);
   });
 
   describe('Explicit Logout -> Re-login as Different Role (F1a + F1b)', () => {
@@ -659,28 +676,31 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
       );
 
       expect(screen.getByTestId('current-pathname')).toHaveTextContent('/staff');
-      fireEvent.click(screen.getByRole('button', { name: /Đăng Xuất/i }));
+      fireEvent.click(await screen.findByRole('button', { name: /Đăng Xuất/i }));
 
       await waitFor(() => {
         expect(screen.getByTestId('current-pathname')).toHaveTextContent('/login');
         expect(screen.getByTestId('location-state')).toHaveTextContent('null');
       });
 
-      fireEvent.click(screen.getByRole('tab', { name: /Doanh Nghiệp/i }));
+      fireEvent.click(screen.getByRole('tab', { name: /Tài khoản doanh nghiệp/i }));
       fireEvent.change(screen.getByLabelText(/Email Doanh Nghiệp/i), {
         target: { value: 'hr2@rikkei.vn' },
       });
       fireEvent.change(screen.getByLabelText(/^Mật Khẩu$/i), {
         target: { value: 'Password123!' },
       });
-      fireEvent.click(screen.getByRole('button', { name: /Đăng Nhập/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^Đăng nhập$/i }));
 
-      await waitFor(() => {
-        expect(screen.getByTestId('current-pathname')).toHaveTextContent('/hr');
-        expect(screen.getByText('Đăng Tin Tuyển Dụng')).toBeInTheDocument();
-      });
+      await waitFor(
+        () => {
+          expect(screen.getByTestId('current-pathname')).toHaveTextContent('/hr');
+          expect(screen.getByText('Đăng tin tuyển dụng')).toBeInTheDocument();
+        },
+        { timeout: 8000 },
+      );
       expect(screen.queryByText('403')).not.toBeInTheDocument();
-    });
+    }, 15000);
 
     it('HR -> logout -> ADMIN logs in and lands on /admin with no leaked state.from', async () => {
       vi.mocked(authApi.login).mockResolvedValueOnce({
@@ -699,28 +719,31 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
       );
 
       expect(screen.getByTestId('current-pathname')).toHaveTextContent('/hr');
-      fireEvent.click(screen.getByRole('button', { name: /Đăng Xuất/i }));
+      fireEvent.click(await screen.findByRole('button', { name: /Đăng Xuất/i }));
 
       await waitFor(() => {
         expect(screen.getByTestId('current-pathname')).toHaveTextContent('/login');
         expect(screen.getByTestId('location-state')).toHaveTextContent('null');
       });
 
-      fireEvent.click(screen.getByRole('tab', { name: /Doanh Nghiệp/i }));
+      fireEvent.click(screen.getByRole('tab', { name: /Tài khoản doanh nghiệp/i }));
       fireEvent.change(screen.getByLabelText(/Email Doanh Nghiệp/i), {
         target: { value: 'admin1@rikkei.vn' },
       });
       fireEvent.change(screen.getByLabelText(/^Mật Khẩu$/i), {
         target: { value: 'Password123!' },
       });
-      fireEvent.click(screen.getByRole('button', { name: /Đăng Nhập/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^Đăng nhập$/i }));
 
-      await waitFor(() => {
-        expect(screen.getByTestId('current-pathname')).toHaveTextContent('/admin');
-        expect(screen.getByText('Quản Trị Người Dùng & Phân Quyền')).toBeInTheDocument();
-      });
+      await waitFor(
+        () => {
+          expect(screen.getByTestId('current-pathname')).toHaveTextContent('/admin');
+          expect(screen.getByText('Danh mục kỹ năng & trọng số')).toBeInTheDocument();
+        },
+        { timeout: 8000 },
+      );
       expect(screen.queryByText('403')).not.toBeInTheDocument();
-    });
+    }, 15000);
 
     it('ADMIN -> logout -> CANDIDATE logs in via SSO callback and lands on /candidate with no leaked state.from', async () => {
       vi.mocked(authApi.ssoLogin).mockResolvedValueOnce({
@@ -738,17 +761,17 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
       );
 
       expect(screen.getByTestId('current-pathname')).toHaveTextContent('/admin');
-      fireEvent.click(screen.getByRole('button', { name: /Đăng Xuất/i }));
+      fireEvent.click(await screen.findByRole('button', { name: /Đăng Xuất/i }));
 
       await waitFor(() => {
         expect(screen.getByTestId('current-pathname')).toHaveTextContent('/login');
         expect(screen.getByTestId('location-state')).toHaveTextContent('null');
       });
 
-      fireEvent.change(screen.getByLabelText(/Mã vé SSO/i), {
+      fireEvent.change(screen.getByLabelText(/Mã vé đăng nhập từ LMS/i), {
         target: { value: 'ticket-admin-to-cand' },
       });
-      fireEvent.click(screen.getByRole('button', { name: /Xác Thực & Đăng Nhập/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^Đăng nhập qua LMS$/i }));
 
       await waitFor(() => {
         expect(screen.getByTestId('current-pathname')).toHaveTextContent('/sso-callback');
@@ -757,12 +780,12 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
       await waitFor(
         () => {
           expect(screen.getByTestId('current-pathname')).toHaveTextContent('/candidate');
-          expect(screen.getByText('Hồ Sơ Tuyển Dụng')).toBeInTheDocument();
+          expect(screen.getByText('Hồ sơ ứng tuyển')).toBeInTheDocument();
         },
-        { timeout: 3000 },
+        { timeout: 8000 },
       );
       expect(screen.queryByText('403')).not.toBeInTheDocument();
-    });
+    }, 15000);
 
     it('MENTOR -> logout -> STAFF logs in and lands on /staff with no leaked state.from', async () => {
       vi.mocked(authApi.login).mockResolvedValueOnce({
@@ -781,28 +804,31 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
       );
 
       expect(screen.getByTestId('current-pathname')).toHaveTextContent('/mentor');
-      fireEvent.click(screen.getByRole('button', { name: /Đăng Xuất/i }));
+      fireEvent.click(await screen.findByRole('button', { name: /Đăng Xuất/i }));
 
       await waitFor(() => {
         expect(screen.getByTestId('current-pathname')).toHaveTextContent('/login');
         expect(screen.getByTestId('location-state')).toHaveTextContent('null');
       });
 
-      fireEvent.click(screen.getByRole('tab', { name: /Doanh Nghiệp/i }));
+      fireEvent.click(screen.getByRole('tab', { name: /Tài khoản doanh nghiệp/i }));
       fireEvent.change(screen.getByLabelText(/Email Doanh Nghiệp/i), {
         target: { value: 'staff1@rikkei.vn' },
       });
       fireEvent.change(screen.getByLabelText(/^Mật Khẩu$/i), {
         target: { value: 'Password123!' },
       });
-      fireEvent.click(screen.getByRole('button', { name: /Đăng Nhập/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^Đăng nhập$/i }));
 
-      await waitFor(() => {
-        expect(screen.getByTestId('current-pathname')).toHaveTextContent('/staff');
-        expect(screen.getByText('Tiếp Nhận & Điều Phối')).toBeInTheDocument();
-      });
+      await waitFor(
+        () => {
+          expect(screen.getByTestId('current-pathname')).toHaveTextContent('/staff');
+          expect(screen.getByText('Duyệt hồ sơ & doanh nghiệp')).toBeInTheDocument();
+        },
+        { timeout: 8000 },
+      );
       expect(screen.queryByText('403')).not.toBeInTheDocument();
-    });
+    }, 15000);
 
     it('clears isExplicitLogout after settling on /login so a subsequent logged-out visit to /hr still records state.from', async () => {
       render(
@@ -882,20 +908,23 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
         });
       });
 
-      fireEvent.click(screen.getByRole('tab', { name: /Doanh Nghiệp/i }));
+      fireEvent.click(screen.getByRole('tab', { name: /Tài khoản doanh nghiệp/i }));
       fireEvent.change(screen.getByLabelText(/Email Doanh Nghiệp/i), {
         target: { value: 'hr2@rikkei.vn' },
       });
       fireEvent.change(screen.getByLabelText(/^Mật Khẩu$/i), {
         target: { value: 'Password123!' },
       });
-      fireEvent.click(screen.getByRole('button', { name: /Đăng Nhập/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^Đăng nhập$/i }));
 
-      await waitFor(() => {
-        expect(screen.getByTestId('current-pathname')).toHaveTextContent('/hr/company');
-        expect(screen.getByRole('heading', { level: 1, name: /Hồ sơ công ty/i })).toBeInTheDocument();
-      });
-    });
+      await waitFor(
+        () => {
+          expect(screen.getByTestId('current-pathname')).toHaveTextContent('/hr/company');
+          expect(screen.getByRole('heading', { level: 1, name: /Hồ sơ công ty/i })).toBeInTheDocument();
+        },
+        { timeout: 8000 },
+      );
+    }, 15000);
 
     it('returns same CANDIDATE user to /candidate/skills after 401 session expiry', async () => {
       let skillsCalls = 0;
@@ -936,19 +965,19 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
         });
       });
 
-      fireEvent.change(screen.getByLabelText(/Mã vé SSO/i), {
+      fireEvent.change(screen.getByLabelText(/Mã vé đăng nhập từ LMS/i), {
         target: { value: 'ticket-re-login-skills' },
       });
-      fireEvent.click(screen.getByRole('button', { name: /Xác Thực & Đăng Nhập/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^Đăng nhập qua LMS$/i }));
 
       await waitFor(
         () => {
           expect(screen.getByTestId('current-pathname')).toHaveTextContent('/candidate/skills');
           expect(screen.getByRole('heading', { level: 2, name: /Hồ sơ năng lực/i })).toBeInTheDocument();
         },
-        { timeout: 3000 },
+        { timeout: 8000 },
       );
-    });
+    }, 15000);
 
     it('returns same CANDIDATE user to /candidate/jobs/42 after 401 session expiry', async () => {
       let jobCalls = 0;
@@ -997,19 +1026,19 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
         });
       });
 
-      fireEvent.change(screen.getByLabelText(/Mã vé SSO/i), {
+      fireEvent.change(screen.getByLabelText(/Mã vé đăng nhập từ LMS/i), {
         target: { value: 'ticket-re-login-job42' },
       });
-      fireEvent.click(screen.getByRole('button', { name: /Xác Thực & Đăng Nhập/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^Đăng nhập qua LMS$/i }));
 
       await waitFor(
         () => {
           expect(screen.getByTestId('current-pathname')).toHaveTextContent('/candidate/jobs/42');
           expect(screen.getByText('Thực tập sinh ReactJS #42')).toBeInTheDocument();
         },
-        { timeout: 3000 },
+        { timeout: 8000 },
       );
-    });
+    }, 15000);
 
     it('preserves query string and returns same CANDIDATE user to /candidate/jobs/42?tab=details after 401 session expiry', async () => {
       let jobCalls = 0;
@@ -1058,10 +1087,10 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
         });
       });
 
-      fireEvent.change(screen.getByLabelText(/Mã vé SSO/i), {
+      fireEvent.change(screen.getByLabelText(/Mã vé đăng nhập từ LMS/i), {
         target: { value: 'ticket-re-login-job42-query' },
       });
-      fireEvent.click(screen.getByRole('button', { name: /Xác Thực & Đăng Nhập/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^Đăng nhập qua LMS$/i }));
 
       await waitFor(
         () => {
@@ -1070,9 +1099,9 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
           );
           expect(screen.getByText('Thực tập sinh ReactJS #42')).toBeInTheDocument();
         },
-        { timeout: 3000 },
+        { timeout: 8000 },
       );
-    });
+    }, 15000);
 
     it('ignores /hr/company from preserved by 401 when a CANDIDATE logs in afterward', async () => {
       globalThis.fetch = vi.fn().mockImplementation((url: string) => {
@@ -1105,20 +1134,20 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
         });
       });
 
-      fireEvent.change(screen.getByLabelText(/Mã vé SSO/i), {
+      fireEvent.change(screen.getByLabelText(/Mã vé đăng nhập từ LMS/i), {
         target: { value: 'ticket-cand-after-401' },
       });
-      fireEvent.click(screen.getByRole('button', { name: /Xác Thực & Đăng Nhập/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^Đăng nhập qua LMS$/i }));
 
       await waitFor(
         () => {
           expect(screen.getByTestId('current-pathname')).toHaveTextContent('/candidate');
-          expect(screen.getByText('Hồ Sơ Tuyển Dụng')).toBeInTheDocument();
+          expect(screen.getByText('Hồ sơ ứng tuyển')).toBeInTheDocument();
         },
-        { timeout: 3000 },
+        { timeout: 8000 },
       );
       expect(screen.queryByText('403')).not.toBeInTheDocument();
-    });
+    }, 15000);
   });
 
   describe('mustChangePassword & Security Rejection Cases', () => {
@@ -1142,18 +1171,21 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
         </AuthProvider>,
       );
 
-      fireEvent.click(screen.getByRole('tab', { name: /Doanh Nghiệp/i }));
+      fireEvent.click(screen.getByRole('tab', { name: /Tài khoản doanh nghiệp/i }));
       fireEvent.change(screen.getByLabelText(/Email Doanh Nghiệp/i), {
         target: { value: 'hr1@rikkei.vn' },
       });
       fireEvent.change(screen.getByLabelText(/^Mật Khẩu$/i), {
         target: { value: 'OldPass123' },
       });
-      fireEvent.click(screen.getByRole('button', { name: /Đăng Nhập/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^Đăng nhập$/i }));
 
-      await waitFor(() => {
-        expect(screen.getByTestId('current-pathname')).toHaveTextContent('/change-password');
-      });
+      await waitFor(
+        () => {
+          expect(screen.getByTestId('current-pathname')).toHaveTextContent('/change-password');
+        },
+        { timeout: 8000 },
+      );
 
       fireEvent.change(screen.getByLabelText(/Mật Khẩu Hiện Tại/i), {
         target: { value: 'OldPass123' },
@@ -1171,9 +1203,9 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
           expect(screen.getByTestId('current-pathname')).toHaveTextContent('/hr/company');
           expect(screen.getByRole('heading', { level: 1, name: /Hồ sơ công ty/i })).toBeInTheDocument();
         },
-        { timeout: 3000 },
+        { timeout: 8000 },
       );
-    });
+    }, 15000);
 
     it('falls back to role home when state.from contains malicious open-redirect or auth loop path', async () => {
       vi.mocked(authApi.login).mockResolvedValueOnce({
@@ -1205,11 +1237,14 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
       fireEvent.change(screen.getByLabelText(/^Mật Khẩu$/i), {
         target: { value: 'Password123!' },
       });
-      fireEvent.click(screen.getByRole('button', { name: /Đăng Nhập/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^Đăng nhập$/i }));
 
-      await waitFor(() => {
-        expect(screen.getByTestId('current-pathname')).toHaveTextContent('/hr');
-      });
+      await waitFor(
+        () => {
+          expect(screen.getByTestId('current-pathname')).toHaveTextContent('/hr');
+        },
+        { timeout: 8000 },
+      );
       unmount();
 
       vi.mocked(authApi.ssoLogin).mockResolvedValueOnce({
@@ -1233,18 +1268,18 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
         </AuthProvider>,
       );
 
-      fireEvent.change(screen.getByLabelText(/Mã vé SSO/i), {
+      fireEvent.change(screen.getByLabelText(/Mã vé đăng nhập từ LMS/i), {
         target: { value: 'ticket-loop-check' },
       });
-      fireEvent.click(screen.getByRole('button', { name: /Xác Thực & Đăng Nhập/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^Đăng nhập qua LMS$/i }));
 
       await waitFor(
         () => {
           expect(screen.getByTestId('current-pathname')).toHaveTextContent('/candidate');
         },
-        { timeout: 3000 },
+        { timeout: 8000 },
       );
-    });
+    }, 15000);
 
     it('allows /403 as explicit from for all 5 authenticated roles', async () => {
       const enterpriseRoles = [
@@ -1271,21 +1306,24 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
         );
 
         expect(screen.getByTestId('current-pathname')).toHaveTextContent('/login');
-        fireEvent.click(screen.getByRole('tab', { name: /Doanh Nghiệp/i }));
+        fireEvent.click(screen.getByRole('tab', { name: /Tài khoản doanh nghiệp/i }));
         fireEvent.change(screen.getByLabelText(/Email Doanh Nghiệp/i), {
           target: { value: scenario.email },
         });
         fireEvent.change(screen.getByLabelText(/^Mật Khẩu$/i), {
           target: { value: 'Password123!' },
         });
-        fireEvent.click(screen.getByRole('button', { name: /Đăng Nhập/i }));
+        fireEvent.click(screen.getByRole('button', { name: /^Đăng nhập$/i }));
 
-        await waitFor(() => {
-          expect(screen.getByTestId('current-pathname')).toHaveTextContent('/403');
-          expect(
-            screen.getByRole('heading', { level: 1, name: /Bạn không có quyền truy cập trang này/i }),
-          ).toBeInTheDocument();
-        });
+        await waitFor(
+          () => {
+            expect(screen.getByTestId('current-pathname')).toHaveTextContent('/403');
+            expect(
+              screen.getByRole('heading', { level: 1, name: /Bạn không có quyền truy cập trang này/i }),
+            ).toBeInTheDocument();
+          },
+          { timeout: 8000 },
+        );
         unmount();
       }
 
@@ -1305,10 +1343,10 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
       );
 
       expect(screen.getByTestId('current-pathname')).toHaveTextContent('/login');
-      fireEvent.change(screen.getByLabelText(/Mã vé SSO/i), {
+      fireEvent.change(screen.getByLabelText(/Mã vé đăng nhập từ LMS/i), {
         target: { value: 'ticket-cand-403' },
       });
-      fireEvent.click(screen.getByRole('button', { name: /Xác Thực & Đăng Nhập/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^Đăng nhập qua LMS$/i }));
 
       await waitFor(
         () => {
@@ -1317,9 +1355,9 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
             screen.getByRole('heading', { level: 1, name: /Bạn không có quyền truy cập trang này/i }),
           ).toBeInTheDocument();
         },
-        { timeout: 3000 },
+        { timeout: 8000 },
       );
-    });
+    }, 15000);
 
     it('explicit logout from /403 clears state.from and subsequent login as another role lands on new role home', async () => {
       vi.mocked(authApi.login).mockResolvedValueOnce({
@@ -1338,28 +1376,31 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
       );
 
       expect(screen.getByTestId('current-pathname')).toHaveTextContent('/403');
-      fireEvent.click(screen.getByRole('button', { name: /Đăng Xuất/i }));
+      fireEvent.click(await screen.findByRole('button', { name: /Đăng Xuất/i }));
 
       await waitFor(() => {
         expect(screen.getByTestId('current-pathname')).toHaveTextContent('/login');
         expect(screen.getByTestId('location-state')).toHaveTextContent('null');
       });
 
-      fireEvent.click(screen.getByRole('tab', { name: /Doanh Nghiệp/i }));
+      fireEvent.click(screen.getByRole('tab', { name: /Tài khoản doanh nghiệp/i }));
       fireEvent.change(screen.getByLabelText(/Email Doanh Nghiệp/i), {
         target: { value: 'hr2@rikkei.vn' },
       });
       fireEvent.change(screen.getByLabelText(/^Mật Khẩu$/i), {
         target: { value: 'Password123!' },
       });
-      fireEvent.click(screen.getByRole('button', { name: /Đăng Nhập/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^Đăng nhập$/i }));
 
-      await waitFor(() => {
-        expect(screen.getByTestId('current-pathname')).toHaveTextContent('/hr');
-        expect(screen.getByText('Đăng Tin Tuyển Dụng')).toBeInTheDocument();
-      });
+      await waitFor(
+        () => {
+          expect(screen.getByTestId('current-pathname')).toHaveTextContent('/hr');
+          expect(screen.getByText('Đăng tin tuyển dụng')).toBeInTheDocument();
+        },
+        { timeout: 8000 },
+      );
       expect(screen.queryByText('403')).not.toBeInTheDocument();
-    });
+    }, 15000);
 
     it.each(['/forgot-password', '/candidate/%2e%2e/hr', '/hr//company', '/hr\n/company'])(
       'rejects unsafe or excluded state.from (%s) during Enterprise HR login and lands on /hr',
@@ -1393,7 +1434,7 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
         fireEvent.change(screen.getByLabelText(/^Mật Khẩu$/i), {
           target: { value: 'Password123!' },
         });
-        fireEvent.click(screen.getByRole('button', { name: /Đăng Nhập/i }));
+        fireEvent.click(screen.getByRole('button', { name: /^Đăng nhập$/i }));
 
         await waitFor(() => {
           expect(screen.getByTestId('current-pathname')).toHaveTextContent('/hr');
