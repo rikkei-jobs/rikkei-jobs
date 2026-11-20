@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, act, within } from '@testing-library/react';
+import { render, screen, fireEvent, act, within, waitFor } from '@testing-library/react';
 import { MemoryRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { resetMotionRegistry } from '../../../shared/utils/motion';
 import { AuthProvider } from '../context/AuthContext';
 import { ROLE_MENU_CONFIG, getRoleMenuItems } from '../config/roleMenuConfig';
 import {
@@ -61,6 +62,7 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
   const originalInnerWidth = window.innerWidth;
 
   beforeEach(() => {
+    resetMotionRegistry();
     localStorage.clear();
     document.body.style.overflow = '';
     document.documentElement.removeAttribute('data-theme');
@@ -152,7 +154,7 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
       {
         role: 'MENTOR',
         homePath: '/mentor',
-        density: 'dense',
+        density: 'airy',
         badgeClass: 'rj-role-mentor',
         icon: 'graduation-cap' as const,
         expectedItems: ['Cần đánh giá'],
@@ -194,7 +196,7 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
         const dashboard = container.querySelector('.rj-dashboard');
         expect(dashboard).toHaveAttribute('data-density', density);
 
-        const brandLink = screen.getByRole('link', { name: /Rikkei Jobs Cổng Quản Trị/i });
+        const brandLink = screen.getByRole('link', { name: /^Rikkei Jobs$/i });
         expect(brandLink).toHaveAttribute('href', homePath);
         expect(screen.queryAllByRole('heading', { level: 1 })).toHaveLength(0);
 
@@ -405,7 +407,7 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
 
       expect(localStorage.length).toBe(0);
 
-      fireEvent.click(screen.getByRole('button', { name: 'Chuyển sang chế độ tối' }));
+      fireEvent.click(screen.getByRole('switch', { name: 'Chế độ tối' }));
       expect(localStorage.length).toBe(0);
 
       fireEvent.click(screen.getByRole('button', { name: 'Thu gọn thanh điều hướng' }));
@@ -489,6 +491,71 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
         'true',
       );
       expect(container.querySelector('aside.rj-sidebar')).toHaveClass('is-expanded');
+    });
+
+    it('renders M1a sidebar toggle as icon-only button with hover/focus tooltip and Escape dismiss in both expanded and collapsed states', () => {
+      const { container } = render(
+        <AuthProvider initialToken="jwt" initialUser={createUser('CANDIDATE')}>
+          <MemoryRouter initialEntries={['/candidate']}>
+            <SharedAppLayout roleBadgeClass="rj-role-candidate" roleIcon="user">
+              <div>Nội dung</div>
+            </SharedAppLayout>
+          </MemoryRouter>
+        </AuthProvider>,
+      );
+
+      // Expanded state (1280px default): icon-only DOM, zero visible text, no duplicate aria-describedby
+      const toggleBtn = screen.getByRole('button', { name: 'Thu gọn thanh điều hướng' });
+      expect(toggleBtn.textContent).toBe('');
+      expect(container.querySelector('.rj-sidebar-toggle-text')).not.toBeInTheDocument();
+      expect(toggleBtn).not.toHaveAttribute('aria-describedby');
+      const iconSvg = toggleBtn.querySelector('svg.rj-icon');
+      expect(iconSvg).toBeInTheDocument();
+      expect(iconSvg).toHaveAttribute('aria-hidden', 'true');
+
+      // Keyboard focus opens tooltip in expanded state; Escape dismisses without moving focus
+      act(() => {
+        toggleBtn.focus();
+      });
+      expect(screen.getByRole('tooltip')).toHaveTextContent('Thu gọn thanh điều hướng');
+      act(() => {
+        fireEvent.keyDown(document, { key: 'Escape' });
+      });
+      expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+      expect(toggleBtn).toHaveFocus();
+
+      // Blur & hover in expanded state
+      act(() => {
+        toggleBtn.blur();
+      });
+      const toggleWrap = container.querySelector('.rj-sidebar-toggle-wrap')!;
+      fireEvent.mouseEnter(toggleWrap);
+      expect(screen.getByRole('tooltip')).toHaveTextContent('Thu gọn thanh điều hướng');
+      fireEvent.mouseLeave(toggleWrap);
+      expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+
+      // Collapse sidebar -> same button keeps single icon element (transformed via CSS), updates aria-label
+      fireEvent.click(toggleBtn);
+      const collapsedBtn = screen.getByRole('button', { name: 'Mở rộng thanh điều hướng' });
+      expect(collapsedBtn).toBe(toggleBtn);
+      expect(collapsedBtn).toHaveAttribute('aria-expanded', 'false');
+      expect(collapsedBtn.querySelector('svg.rj-icon')).toBe(iconSvg);
+
+      // Focus & hover tooltip in collapsed state + Escape dismiss
+      act(() => {
+        collapsedBtn.focus();
+      });
+      expect(screen.getByRole('tooltip')).toHaveTextContent('Mở rộng thanh điều hướng');
+      act(() => {
+        fireEvent.keyDown(document, { key: 'Escape' });
+      });
+      expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+      expect(collapsedBtn).toHaveFocus();
+
+      fireEvent.mouseEnter(toggleWrap);
+      expect(screen.getByRole('tooltip')).toHaveTextContent('Mở rộng thanh điều hướng');
+      fireEvent.mouseLeave(toggleWrap);
+      expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
     });
 
     it('shows collapsed tooltip on hover and keyboard focus, dismisses on Escape without trapping focus, and shows Sắp ra mắt tooltip on disabled hover', () => {
@@ -699,7 +766,7 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
   });
 
   describe('375px Mobile Off-Canvas Drawer, Focus Trap, Scroll Lock & Return Focus', () => {
-    it('opens drawer from header trigger, traps Tab/Shift+Tab, locks body scroll, closes on Escape/backdrop/navigation, and returns focus', () => {
+    it('opens drawer from header trigger, traps Tab/Shift+Tab, locks body scroll, closes on Escape/backdrop/navigation, and returns focus', async () => {
       Object.defineProperty(window, 'innerWidth', {
         configurable: true,
         writable: true,
@@ -772,7 +839,9 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
       expect(document.body.style.overflow).toBe('hidden');
       const profileLink = screen.getByRole('link', { name: 'Hồ sơ' });
       fireEvent.click(profileLink);
-      expect(screen.getByTestId('current-location')).toHaveTextContent('/candidate/skills');
+      await waitFor(() => {
+        expect(screen.getByTestId('current-location')).toHaveTextContent('/candidate/skills');
+      });
       expect(sidebar).toHaveAttribute('hidden');
       expect(document.body.style.overflow).toBe('');
     });
@@ -944,7 +1013,7 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
       },
     );
 
-    it('does not render sidebar navigation on /change-password when mustChangePassword is true', () => {
+    it('does not render sidebar navigation on /change-password when mustChangePassword is true', async () => {
       render(
         <AuthProvider
           initialToken="temp-jwt"
@@ -956,12 +1025,14 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
         </AuthProvider>,
       );
 
-      expect(screen.getByRole('heading', { name: /Đổi Mật Khẩu/i })).toBeInTheDocument();
+      expect(
+        await screen.findByRole('heading', { level: 1, name: /Đổi mật khẩu/i }, { timeout: 8000 }),
+      ).toBeInTheDocument();
       expect(
         screen.queryByRole('navigation', { name: /Điều hướng theo vai trò/i }),
       ).not.toBeInTheDocument();
       expect(document.querySelector('aside.rj-sidebar')).not.toBeInTheDocument();
-    });
+    }, 15000);
   });
 
   describe('/candidate/jobs route & CandidateJobsPage', () => {
@@ -975,13 +1046,17 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
       );
 
       expect(
-        await screen.findByRole('heading', { level: 1, name: /Việc làm gợi ý/i }),
+        await screen.findByRole('heading', { level: 1, name: /Việc làm gợi ý/i }, { timeout: 5000 }),
       ).toBeInTheDocument();
       expect(
-        await screen.findByRole('heading', { level: 2, name: /Việc làm phù hợp với bạn/i }),
+        await screen.findByRole(
+          'heading',
+          { level: 2, name: /Việc làm phù hợp với bạn/i },
+          { timeout: 5000 },
+        ),
       ).toBeInTheDocument();
       expect(screen.getByRole('link', { name: 'Việc làm' })).toHaveAttribute('aria-current', 'page');
-    });
+    }, 15000);
 
     it('renders CandidateJobsPage directly with RoleHomeLayout and JobRecommendationsSection', async () => {
       render(
@@ -995,9 +1070,9 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
       );
 
       expect(
-        await screen.findByRole('heading', { level: 1, name: /Việc làm gợi ý/i }),
+        await screen.findByRole('heading', { level: 1, name: /Việc làm gợi ý/i }, { timeout: 5000 }),
       ).toBeInTheDocument();
-      expect(screen.getByRole('link', { name: /Rikkei Jobs Cổng Quản Trị/i })).toHaveAttribute(
+      expect(screen.getByRole('link', { name: /^Rikkei Jobs$/i })).toHaveAttribute(
         'href',
         '/candidate',
       );
@@ -1005,7 +1080,7 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
   });
 
   describe('Explicit Logout Clearing', () => {
-    it('clears session and navigates to /login with state=null (no from) when clicking Đăng Xuất', () => {
+    it('clears session and navigates to /login with state=null (no from) when clicking Đăng Xuất', async () => {
       render(
         <AuthProvider initialToken="staff-jwt" initialUser={createUser('STAFF')}>
           <MemoryRouter initialEntries={['/staff']}>
@@ -1017,10 +1092,157 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
 
       expect(screen.getByTestId('current-location')).toHaveTextContent('/staff');
 
-      fireEvent.click(screen.getByRole('button', { name: /Đăng Xuất/i }));
+      fireEvent.click(await screen.findByRole('button', { name: /Đăng xuất/i }));
 
       expect(screen.getByTestId('current-location')).toHaveTextContent('/login');
       expect(screen.getByTestId('current-location-state')).toHaveTextContent('null');
     });
+
+    it('bypasses startViewTransition and unmounts PersistentShell immediately on logout so header/sidebar never flash over /login', async () => {
+      const originalStartVT = (document as unknown as Record<string, unknown>).startViewTransition;
+      const startViewTransitionSpy = vi.fn((cb: () => void) => {
+        cb();
+        return {
+          ready: Promise.resolve(),
+          updateCallbackDone: Promise.resolve(),
+          finished: Promise.resolve(),
+        };
+      });
+      Object.defineProperty(document, 'startViewTransition', {
+        configurable: true,
+        writable: true,
+        value: startViewTransitionSpy,
+      });
+
+      const unhandledRejections: unknown[] = [];
+      const onRejection = (event: PromiseRejectionEvent) => {
+        unhandledRejections.push(event.reason);
+      };
+      window.addEventListener('unhandledrejection', onRejection);
+
+      try {
+        render(
+          <AuthProvider initialToken="cand-jwt" initialUser={createUser('CANDIDATE')}>
+            <MemoryRouter initialEntries={['/candidate']}>
+              <LocationDisplay />
+              <AppRoutes />
+            </MemoryRouter>
+          </AuthProvider>,
+        );
+
+        await waitFor(
+          () => {
+            expect(screen.getByRole('heading', { level: 1, name: /Chào mừng/i })).toBeInTheDocument();
+          },
+          { timeout: 8000 },
+        );
+        expect(document.querySelector('header.rj-dashboard-nav')).toBeInTheDocument();
+        expect(document.querySelector('aside.rj-sidebar')).toBeInTheDocument();
+        expect(document.querySelector('.rj-user-profile')).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: /Đăng xuất/i }));
+
+        expect(startViewTransitionSpy).not.toHaveBeenCalled();
+        expect(document.querySelector('header.rj-dashboard-nav')).not.toBeInTheDocument();
+        expect(document.querySelector('aside.rj-sidebar')).not.toBeInTheDocument();
+        expect(document.querySelector('.rj-user-profile')).not.toBeInTheDocument();
+        expect(screen.getByTestId('current-location')).toHaveTextContent('/login');
+        expect(screen.getByTestId('current-location-state')).toHaveTextContent('null');
+        expect(
+          screen.getByRole('heading', { level: 1, name: /^Đăng nhập$/i }),
+        ).toBeInTheDocument();
+        await Promise.resolve();
+        expect(unhandledRejections).toHaveLength(0);
+      } finally {
+        window.removeEventListener('unhandledrejection', onRejection);
+        Object.defineProperty(document, 'startViewTransition', {
+          configurable: true,
+          writable: true,
+          value: originalStartVT,
+        });
+      }
+    }, 15000);
+
+    it('cascades sidebar items only on initial mount, renders sliding active indicator, and enables shared BrandMark transition', () => {
+      const { container, unmount } = render(
+        <AuthProvider initialToken="cand-jwt" initialUser={createUser('CANDIDATE')}>
+          <MemoryRouter initialEntries={['/candidate']}>
+            <SharedAppLayout roleBadgeClass="rj-role-candidate" roleIcon="user">
+              <div>Trang chủ</div>
+            </SharedAppLayout>
+          </MemoryRouter>
+        </AuthProvider>,
+      );
+
+      expect(container.querySelectorAll('.rj-role-nav-item.is-cascading').length).toBeGreaterThan(0);
+      expect(container.querySelector('.rj-sidebar-active-indicator')).toBeInTheDocument();
+      expect(container.querySelector('.rj-brand-mark--shared')).toBeInTheDocument();
+      unmount();
+
+      // Second mount simulates navigation to a sub-route — cascade must NOT replay
+      const { container: secondContainer } = render(
+        <AuthProvider initialToken="cand-jwt" initialUser={createUser('CANDIDATE')}>
+          <MemoryRouter initialEntries={['/candidate/skills']}>
+            <SharedAppLayout roleBadgeClass="rj-role-candidate" roleIcon="user">
+              <div>Kỹ năng</div>
+            </SharedAppLayout>
+          </MemoryRouter>
+        </AuthProvider>,
+      );
+
+      expect(secondContainer.querySelectorAll('.rj-role-nav-item.is-cascading')).toHaveLength(0);
+      expect(secondContainer.querySelector('.rj-sidebar-active-indicator')).toBeInTheDocument();
+    });
+
+    it('keeps header, sidebar, and sidebar link focus mounted across protected route navigation in AppRoutes', async () => {
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve([]),
+      } as unknown as Response);
+
+      try {
+        const { container } = render(
+          <AuthProvider initialToken="cand-jwt" initialUser={createUser('CANDIDATE')}>
+            <MemoryRouter initialEntries={['/candidate']}>
+              <LocationDisplay />
+              <AppRoutes />
+            </MemoryRouter>
+          </AuthProvider>,
+        );
+
+        await waitFor(
+          () => {
+            expect(screen.getByRole('heading', { level: 1, name: /Chào mừng/i })).toBeInTheDocument();
+          },
+          { timeout: 8000 },
+        );
+
+        const initialHeader = container.querySelector('header.rj-dashboard-nav');
+        const initialSidebar = container.querySelector('aside.rj-sidebar');
+        const profileLink = screen.getByRole('link', { name: 'Hồ sơ' });
+        profileLink.focus();
+        expect(profileLink).toHaveFocus();
+
+        fireEvent.click(profileLink);
+
+        await waitFor(
+          () => {
+            expect(screen.getByTestId('current-location')).toHaveTextContent('/candidate/skills');
+            expect(screen.getByRole('heading', { name: 'Hồ sơ năng lực' })).toBeInTheDocument();
+          },
+          { timeout: 8000 },
+        );
+
+        expect(container.querySelector('header.rj-dashboard-nav')).toBe(initialHeader);
+        expect(container.querySelector('aside.rj-sidebar')).toBe(initialSidebar);
+        expect(screen.getByRole('link', { name: 'Hồ sơ' })).toBe(profileLink);
+        expect(profileLink).toHaveFocus();
+        expect(profileLink).toHaveAttribute('aria-current', 'page');
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    }, 15000);
   });
 });

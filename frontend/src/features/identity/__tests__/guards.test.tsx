@@ -4,6 +4,7 @@ import { MemoryRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from '../context/AuthContext';
 import { useAuth } from '../context/useAuth';
 import { RequireAuth } from '../guards/RequireAuth';
+import { RequireChangePasswordAccess } from '../guards/RequireChangePasswordAccess';
 import { RequireMustChangePassword } from '../guards/RequireMustChangePassword';
 import { RequireRole } from '../guards/RequireRole';
 import { type UserDto } from '../types';
@@ -324,6 +325,120 @@ describe('Route Guards', () => {
                   <RequireMustChangePassword>
                     <div>Form Doi Mat Khau Bat Buoc</div>
                   </RequireMustChangePassword>
+                }
+              />
+            </Routes>
+          </MemoryRouter>
+        </AuthProvider>,
+      );
+
+      expect(screen.getByText('Form Doi Mat Khau Bat Buoc')).toBeInTheDocument();
+    });
+  });
+
+  describe('RequireChangePasswordAccess', () => {
+    it('redirects unauthenticated user to /login with state=null', () => {
+      render(
+        <AuthProvider initialToken={null} initialUser={null}>
+          <MemoryRouter initialEntries={['/change-password']}>
+            <Routes>
+              <Route path="/login" element={<LoginStateProbe />} />
+              <Route
+                path="/change-password"
+                element={
+                  <RequireChangePasswordAccess>
+                    <div>Form Doi Mat Khau</div>
+                  </RequireChangePasswordAccess>
+                }
+              />
+            </Routes>
+          </MemoryRouter>
+        </AuthProvider>,
+      );
+
+      expect(screen.getByText('Trang Dang Nhap')).toBeInTheDocument();
+      expect(screen.getByTestId('login-location-state')).toHaveTextContent('null');
+    });
+
+    it('redirects LMS SSO user without mustChangePassword back to role home', () => {
+      const lmsCandidate: UserDto = {
+        id: 22,
+        email: 'sv1@lms.rikkei.vn',
+        fullName: 'LMS Candidate',
+        role: 'CANDIDATE',
+        companyId: null,
+        lmsUserId: 'lms-sv-001',
+        status: 'ACTIVE',
+        mustChangePassword: false,
+      };
+
+      render(
+        <AuthProvider initialToken="valid-token" initialUser={lmsCandidate}>
+          <MemoryRouter initialEntries={['/change-password']}>
+            <Routes>
+              <Route path="/candidate" element={<div>Trang Chu Ung Vien</div>} />
+              <Route
+                path="/change-password"
+                element={
+                  <RequireChangePasswordAccess>
+                    <div>Form Doi Mat Khau</div>
+                  </RequireChangePasswordAccess>
+                }
+              />
+            </Routes>
+          </MemoryRouter>
+        </AuthProvider>,
+      );
+
+      expect(screen.getByText('Trang Chu Ung Vien')).toBeInTheDocument();
+      expect(screen.queryByText('Form Doi Mat Khau')).not.toBeInTheDocument();
+    });
+
+    it('allows enterprise user with mustChangePassword=false to access /change-password voluntarily', () => {
+      const hrVoluntary: UserDto = {
+        ...activeUser,
+        lmsUserId: null,
+        mustChangePassword: false,
+      };
+
+      render(
+        <AuthProvider initialToken="valid-token" initialUser={hrVoluntary}>
+          <MemoryRouter initialEntries={['/change-password']}>
+            <Routes>
+              <Route path="/hr" element={<div>Trang Chu HR</div>} />
+              <Route
+                path="/change-password"
+                element={
+                  <RequireChangePasswordAccess>
+                    <div>Form Doi Mat Khau Tu Nguyen</div>
+                  </RequireChangePasswordAccess>
+                }
+              />
+            </Routes>
+          </MemoryRouter>
+        </AuthProvider>,
+      );
+
+      expect(screen.getByText('Form Doi Mat Khau Tu Nguyen')).toBeInTheDocument();
+      expect(screen.queryByText('Trang Chu HR')).not.toBeInTheDocument();
+    });
+
+    it('allows user with mustChangePassword=true even when lmsUserId is present', () => {
+      const forcedUser: UserDto = {
+        ...mustChangeUser,
+        lmsUserId: 'lms-forced-001',
+      };
+
+      render(
+        <AuthProvider initialToken="valid-token" initialUser={forcedUser}>
+          <MemoryRouter initialEntries={['/change-password']}>
+            <Routes>
+              <Route
+                path="/change-password"
+                element={
+                  <RequireChangePasswordAccess>
+                    <div>Form Doi Mat Khau Bat Buoc</div>
+                  </RequireChangePasswordAccess>
                 }
               />
             </Routes>

@@ -30,9 +30,14 @@
   box-sizing: border-box;
   cursor: pointer;
   transition:
-    border-color var(--rj-duration-fast) ease-out,
-    box-shadow var(--rj-duration-fast) ease-out,
-    background-color var(--rj-duration-fast) ease-out;
+    border-color var(--rj-duration-fast) var(--rj-ease-hover),
+    box-shadow var(--rj-duration-fast) var(--rj-ease-hover),
+    background-color var(--rj-duration-fast) var(--rj-ease-hover),
+    transform var(--rj-duration-micro) var(--rj-ease-hover);
+}
+
+.rj-select:active:not(:disabled) {
+  transform: scale(0.99);
 }
 
 .rj-select-value {
@@ -92,8 +97,8 @@
   color: var(--rj-color-text-muted);
   pointer-events: none;
   transition:
-    color var(--rj-duration-fast) ease-out,
-    transform var(--rj-duration-fast) ease-out;
+    color var(--rj-duration-fast) var(--rj-ease-hover),
+    transform var(--rj-duration-fast) var(--rj-ease-spring-snappy);
 }
 
 .rj-select:focus + .rj-select-chevron,
@@ -227,8 +232,8 @@
   cursor: pointer;
   user-select: none;
   transition:
-    background-color var(--rj-duration-fast) ease-out,
-    color var(--rj-duration-fast) ease-out;
+    background-color var(--rj-duration-fast) var(--rj-ease-hover),
+    color var(--rj-duration-fast) var(--rj-ease-hover);
 }
 
 .rj-select-option.is-placeholder {
@@ -292,7 +297,7 @@
   .rj-select,
   .rj-select-chevron,
   .rj-select-option {
-    transition-duration: 0.001ms !important;
+    transition: opacity 100ms ease !important;
   }
 
   .rj-select-listbox,

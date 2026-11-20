@@ -60,7 +60,7 @@ describe('WCAG 2.2 AA & Responsive Remediations (Iteration 2)', () => {
         </AuthProvider>,
       );
 
-      const ssoInput = screen.getByLabelText(/Mã vé SSO/i);
+      const ssoInput = screen.getByLabelText(/Mã vé đăng nhập từ LMS/i);
       expect(ssoInput).toBeInTheDocument();
       expect(ssoInput).toHaveAttribute(
         'aria-describedby',
@@ -69,7 +69,7 @@ describe('WCAG 2.2 AA & Responsive Remediations (Iteration 2)', () => {
 
       const hintEl = document.getElementById('sso-ticket-hint');
       expect(hintEl).toBeInTheDocument();
-      expect(hintEl).toHaveTextContent(/Vé SSO có thời hạn sử dụng 60 giây/i);
+      expect(hintEl).toHaveTextContent(/Vé đăng nhập chỉ dùng một lần và hết hạn sau 60 giây/i);
     });
 
     it('associates aria-describedby for helper hint on forgot-email input', () => {
@@ -90,7 +90,7 @@ describe('WCAG 2.2 AA & Responsive Remediations (Iteration 2)', () => {
 
       const hintEl = document.getElementById('forgot-email-hint');
       expect(hintEl).toBeInTheDocument();
-      expect(hintEl).toHaveTextContent(/Hệ thống sẽ gửi mã xác thực an toàn/i);
+      expect(hintEl).toHaveTextContent(/Hệ thống sẽ gửi liên kết đặt lại mật khẩu/i);
     });
 
     it('associates aria-describedby for password checklist on ChangePasswordPage', () => {
@@ -162,7 +162,7 @@ describe('WCAG 2.2 AA & Responsive Remediations (Iteration 2)', () => {
       const alert = screen.getByRole('alert');
       expect(alert).toBeInTheDocument();
       expect(alert).toHaveAttribute('aria-live', 'assertive');
-      expect(alert).toHaveTextContent(/Mã token xác thực không tìm thấy/i);
+      expect(alert).toHaveTextContent(/Không tìm thấy mã đặt lại mật khẩu/i);
     });
 
     it('ensures error alert in SsoCallbackPage has role="alert" and aria-live="assertive"', () => {
@@ -312,22 +312,24 @@ describe('WCAG 2.2 AA & Responsive Remediations (Iteration 2)', () => {
       installMatchMediaMock(false);
       renderRoleHome();
 
-      const toggleButton = screen.getByRole('button', { name: 'Chuyển sang chế độ tối' });
-      expect(toggleButton).toHaveAttribute('type', 'button');
-      expect(toggleButton).toHaveAttribute('aria-pressed', 'false');
-      expect(toggleButton).toHaveTextContent('Chế độ tối');
-      expect(toggleButton.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
+      const switchControl = screen.getByRole('switch', { name: 'Chế độ tối' });
+      expect(switchControl).toHaveAttribute('type', 'button');
+      expect(switchControl).toHaveAttribute('aria-checked', 'false');
+      expect(switchControl.textContent).toBe('');
+      const svgs = switchControl.querySelectorAll('svg');
+      expect(svgs).toHaveLength(2);
+      svgs.forEach((svg) => expect(svg).toHaveAttribute('aria-hidden', 'true'));
       expect(document.documentElement.getAttribute('data-theme')).toBeNull();
-      expect(screen.getByRole('button', { name: /Đăng Xuất/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Đăng xuất/i })).toBeInTheDocument();
     });
 
     it('falls back to dark mode when data-theme is unset and prefers-color-scheme: dark matches', () => {
       installMatchMediaMock(true);
       renderRoleHome();
 
-      const toggleButton = screen.getByRole('button', { name: 'Chuyển sang chế độ sáng' });
-      expect(toggleButton).toHaveAttribute('aria-pressed', 'true');
-      expect(toggleButton).toHaveTextContent('Chế độ sáng');
+      const switchControl = screen.getByRole('switch', { name: 'Chế độ tối' });
+      expect(switchControl).toHaveAttribute('aria-checked', 'true');
+      expect(switchControl.textContent).toBe('');
     });
 
     it('prioritizes explicit data-theme attribute over prefers-color-scheme', () => {
@@ -335,8 +337,8 @@ describe('WCAG 2.2 AA & Responsive Remediations (Iteration 2)', () => {
       document.documentElement.setAttribute('data-theme', 'light');
       const { unmount } = renderRoleHome();
 
-      expect(screen.getByRole('button', { name: 'Chuyển sang chế độ tối' })).toHaveAttribute(
-        'aria-pressed',
+      expect(screen.getByRole('switch', { name: 'Chế độ tối' })).toHaveAttribute(
+        'aria-checked',
         'false',
       );
       unmount();
@@ -345,30 +347,56 @@ describe('WCAG 2.2 AA & Responsive Remediations (Iteration 2)', () => {
       document.documentElement.setAttribute('data-theme', 'dark');
       renderRoleHome();
 
-      expect(screen.getByRole('button', { name: 'Chuyển sang chế độ sáng' })).toHaveAttribute(
-        'aria-pressed',
+      expect(screen.getByRole('switch', { name: 'Chế độ tối' })).toHaveAttribute(
+        'aria-checked',
         'true',
       );
     });
 
-    it('toggles data-theme on documentElement and updates aria-pressed and aria-label on click', () => {
+    it('toggles data-theme on documentElement and updates aria-checked while keeping static aria-label="Chế độ tối"', () => {
       installMatchMediaMock(false);
       renderRoleHome();
 
-      const toDarkButton = screen.getByRole('button', { name: 'Chuyển sang chế độ tối' });
-      fireEvent.click(toDarkButton);
+      const switchControl = screen.getByRole('switch', { name: 'Chế độ tối' });
+      fireEvent.click(switchControl);
 
       expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
-      const toLightButton = screen.getByRole('button', { name: 'Chuyển sang chế độ sáng' });
-      expect(toLightButton).toHaveAttribute('aria-pressed', 'true');
-      expect(toLightButton).toHaveTextContent('Chế độ sáng');
+      expect(switchControl).toHaveAttribute('aria-checked', 'true');
+      expect(switchControl).toHaveAttribute('aria-label', 'Chế độ tối');
 
-      fireEvent.click(toLightButton);
+      fireEvent.click(switchControl);
 
       expect(document.documentElement.getAttribute('data-theme')).toBe('light');
-      const backToDarkButton = screen.getByRole('button', { name: 'Chuyển sang chế độ tối' });
-      expect(backToDarkButton).toHaveAttribute('aria-pressed', 'false');
-      expect(backToDarkButton).toHaveTextContent('Chế độ tối');
+      expect(switchControl).toHaveAttribute('aria-checked', 'false');
+      expect(switchControl).toHaveAttribute('aria-label', 'Chế độ tối');
+    });
+
+    it('supports Space and Enter keyboard activation and Escape-dismissible tooltip on the theme switch', () => {
+      installMatchMediaMock(false);
+      renderRoleHome();
+
+      const switchControl = screen.getByRole('switch', { name: 'Chế độ tối' });
+      act(() => {
+        switchControl.focus();
+      });
+      expect(screen.getByRole('tooltip')).toHaveTextContent('Chế độ tối');
+
+      act(() => {
+        fireEvent.keyDown(document, { key: 'Escape' });
+      });
+      expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+      expect(switchControl).toHaveFocus();
+
+      // Native <button type="button" role="switch"> toggles via click dispatched by Space/Enter in browsers; verify keyDown+click behavior
+      fireEvent.keyDown(switchControl, { key: ' ', code: 'Space' });
+      fireEvent.click(switchControl);
+      expect(switchControl).toHaveAttribute('aria-checked', 'true');
+      expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+
+      fireEvent.keyDown(switchControl, { key: 'Enter', code: 'Enter' });
+      fireEvent.click(switchControl);
+      expect(switchControl).toHaveAttribute('aria-checked', 'false');
+      expect(document.documentElement.getAttribute('data-theme')).toBe('light');
     });
 
     it('follows prefers-color-scheme changes only while data-theme is unset and cleans up listener', () => {
@@ -378,19 +406,19 @@ describe('WCAG 2.2 AA & Responsive Remediations (Iteration 2)', () => {
       act(() => {
         mediaMock.triggerChange(true);
       });
-      expect(screen.getByRole('button', { name: 'Chuyển sang chế độ sáng' })).toHaveAttribute(
-        'aria-pressed',
+      expect(screen.getByRole('switch', { name: 'Chế độ tối' })).toHaveAttribute(
+        'aria-checked',
         'true',
       );
 
-      fireEvent.click(screen.getByRole('button', { name: 'Chuyển sang chế độ sáng' }));
+      fireEvent.click(screen.getByRole('switch', { name: 'Chế độ tối' }));
       expect(document.documentElement.getAttribute('data-theme')).toBe('light');
 
       act(() => {
         mediaMock.triggerChange(true);
       });
-      expect(screen.getByRole('button', { name: 'Chuyển sang chế độ tối' })).toHaveAttribute(
-        'aria-pressed',
+      expect(screen.getByRole('switch', { name: 'Chế độ tối' })).toHaveAttribute(
+        'aria-checked',
         'false',
       );
 
@@ -406,46 +434,114 @@ describe('WCAG 2.2 AA & Responsive Remediations (Iteration 2)', () => {
       expect(sessionStorage.length).toBe(0);
       expect(document.cookie).toBe('');
 
-      const toDarkButton = screen.getByRole('button', { name: 'Chuyển sang chế độ tối' });
-      expect(toDarkButton).toHaveAttribute('aria-pressed', 'false');
+      const switchControl = screen.getByRole('switch', { name: 'Chế độ tối' });
+      expect(switchControl).toHaveAttribute('aria-checked', 'false');
 
-      fireEvent.click(toDarkButton);
+      fireEvent.click(switchControl);
       expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
-      const toLightButton = screen.getByRole('button', { name: 'Chuyển sang chế độ sáng' });
-      expect(toLightButton).toHaveAttribute('aria-pressed', 'true');
+      expect(switchControl).toHaveAttribute('aria-checked', 'true');
       expect(localStorage.length).toBe(0);
       expect(sessionStorage.length).toBe(0);
       expect(document.cookie).toBe('');
 
-      fireEvent.click(toLightButton);
+      fireEvent.click(switchControl);
       expect(document.documentElement.getAttribute('data-theme')).toBe('light');
-      expect(screen.getByRole('button', { name: 'Chuyển sang chế độ tối' })).toHaveAttribute(
-        'aria-pressed',
-        'false',
-      );
+      expect(switchControl).toHaveAttribute('aria-checked', 'false');
       expect(localStorage.length).toBe(0);
       expect(sessionStorage.length).toBe(0);
       expect(document.cookie).toBe('');
 
       // Toggle back to dark, then simulate fresh page reload (unmount + DOM attribute reset)
-      fireEvent.click(screen.getByRole('button', { name: 'Chuyển sang chế độ tối' }));
+      fireEvent.click(switchControl);
       expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
-      expect(screen.getByRole('button', { name: 'Chuyển sang chế độ sáng' })).toHaveAttribute(
-        'aria-pressed',
-        'true',
-      );
+      expect(switchControl).toHaveAttribute('aria-checked', 'true');
 
       unmount();
       document.documentElement.removeAttribute('data-theme');
       renderRoleHome();
 
-      expect(screen.getByRole('button', { name: 'Chuyển sang chế độ tối' })).toHaveAttribute(
-        'aria-pressed',
+      expect(screen.getByRole('switch', { name: 'Chế độ tối' })).toHaveAttribute(
+        'aria-checked',
         'false',
       );
       expect(localStorage.length).toBe(0);
       expect(sessionStorage.length).toBe(0);
       expect(document.cookie).toBe('');
+    });
+
+    it('handles two rapid clicks before deferred startViewTransition callbacks execute cleanly (light -> dark -> light)', async () => {
+      installMatchMediaMock(false);
+      const originalStartVT = (document as unknown as Record<string, unknown>).startViewTransition;
+      const unhandled: unknown[] = [];
+      const onWindowRejection = (event: PromiseRejectionEvent) => {
+        unhandled.push(event.reason);
+      };
+      window.addEventListener('unhandledrejection', onWindowRejection);
+
+      const pendingCallbacks: Array<{
+        cb: () => void;
+        resolveReady: () => void;
+        resolveFinished: () => void;
+      }> = [];
+
+      Object.defineProperty(document, 'startViewTransition', {
+        configurable: true,
+        writable: true,
+        value: vi.fn((cb: () => void) => {
+          let resolveReady!: () => void;
+          let resolveFinished!: () => void;
+          const ready = new Promise<void>((res) => {
+            resolveReady = res;
+          });
+          const finished = new Promise<void>((res) => {
+            resolveFinished = res;
+          });
+          pendingCallbacks.push({ cb, resolveReady, resolveFinished });
+          return {
+            ready,
+            updateCallbackDone: Promise.resolve(),
+            finished,
+          };
+        }),
+      });
+
+      try {
+        renderRoleHome();
+        const switchControl = screen.getByRole('switch', { name: 'Chế độ tối' });
+        expect(switchControl).toHaveAttribute('aria-checked', 'false');
+        expect(document.documentElement.getAttribute('data-theme')).toBeNull();
+
+        fireEvent.click(switchControl);
+        fireEvent.click(switchControl);
+        expect(pendingCallbacks).toHaveLength(2);
+
+        await act(async () => {
+          pendingCallbacks[0].cb();
+        });
+        expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+        expect(switchControl).toHaveAttribute('aria-checked', 'true');
+
+        await act(async () => {
+          pendingCallbacks[1].cb();
+          pendingCallbacks.forEach((entry) => {
+            entry.resolveReady();
+            entry.resolveFinished();
+          });
+          await Promise.resolve();
+        });
+
+        expect(document.documentElement.getAttribute('data-theme')).toBe('light');
+        expect(switchControl).toHaveAttribute('aria-checked', 'false');
+        expect(document.documentElement.classList.contains('rj-theme-transition')).toBe(false);
+        expect(unhandled).toHaveLength(0);
+      } finally {
+        window.removeEventListener('unhandledrejection', onWindowRejection);
+        Object.defineProperty(document, 'startViewTransition', {
+          configurable: true,
+          writable: true,
+          value: originalStartVT,
+        });
+      }
     });
   });
 });

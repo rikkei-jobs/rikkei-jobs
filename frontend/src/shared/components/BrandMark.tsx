@@ -6,6 +6,7 @@ export interface BrandMarkProps extends React.SVGAttributes<SVGSVGElement> {
   alt?: string;
   'aria-label'?: string;
   decorative?: boolean;
+  sharedTransition?: boolean;
 }
 
 export const BrandMark: React.FC<BrandMarkProps> = ({
@@ -14,6 +15,7 @@ export const BrandMark: React.FC<BrandMarkProps> = ({
   alt,
   'aria-label': ariaLabel,
   decorative = true,
+  sharedTransition = false,
   style,
   ...props
 }) => {
@@ -25,7 +27,7 @@ export const BrandMark: React.FC<BrandMarkProps> = ({
       viewBox="0 0 32 32"
       width={size}
       height={size}
-      className={`rj-brand-mark ${className}`.trim()}
+      className={`rj-brand-mark${sharedTransition ? ' rj-brand-mark--shared' : ''} ${className}`.trim()}
       role={isAccessible ? 'img' : undefined}
       aria-label={isAccessible ? accessibleName : undefined}
       aria-hidden={!isAccessible ? 'true' : undefined}
