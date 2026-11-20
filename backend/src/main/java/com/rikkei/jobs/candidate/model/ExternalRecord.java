@@ -56,6 +56,21 @@ public class ExternalRecord {
         this.recordedAt = recordedAt;
     }
 
+    public ExternalRecord(
+        ExternalSource externalSource,
+        String sourceCode,
+        String title,
+        BigDecimal score,
+        OffsetDateTime recordedAt,
+        Long userId) {
+        this.source = externalSource;
+        this.sourceCode = sourceCode;
+        this.title = title;
+        this.score = score;
+        this.recordedAt = recordedAt;
+        this.userId = userId;
+    }
+
     public void updateResult(String title, BigDecimal score, OffsetDateTime recordedAt) {
         this.title = title;
         this.score = score;
