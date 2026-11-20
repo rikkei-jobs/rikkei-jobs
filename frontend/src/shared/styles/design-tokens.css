@@ -258,6 +258,7 @@
   --rj-color-surface-elevated: #FFFFFF;
   --rj-color-surface-subtle:   var(--rj-primitive-neutral-150);
   --rj-color-surface-disabled: var(--rj-primitive-neutral-100);
+  --rj-color-surface-overlay:  rgba(12, 26, 48, 0.55);
 
   --rj-color-text-primary:   var(--rj-primitive-neutral-900);
   --rj-color-text-secondary: var(--rj-primitive-neutral-700);
@@ -315,6 +316,32 @@
   --rj-color-select-option-selected-hover-text: var(--rj-color-badge-brand-text);
   --rj-color-select-option-disabled-text:       var(--rj-color-text-disabled);
 
+  /* App Shell & Left Sidebar Tokens - Light Mode */
+  --rj-color-sidebar-bg:                    var(--rj-color-surface-card);       /* #FFFFFF */
+  --rj-color-sidebar-border:                var(--rj-primitive-neutral-500);    /* #6F8094 - CR 4.05:1 on Card, 3.60:1 on Canvas */
+  --rj-color-sidebar-item-bg:               transparent;
+  --rj-color-sidebar-item-text:             var(--rj-color-text-secondary);     /* #25394E - CR 11.84:1 on Card */
+  --rj-color-sidebar-item-icon:             var(--rj-color-text-secondary);     /* #25394E - CR 11.84:1 on Card */
+  --rj-color-sidebar-item-hover-bg:         var(--rj-primitive-neutral-100);    /* #EEF2F8 */
+  --rj-color-sidebar-item-hover-text:       var(--rj-color-text-primary);       /* #0B1A2C - CR 15.60:1 on #EEF2F8 */
+  --rj-color-sidebar-item-active-bg:        var(--rj-color-badge-brand-bg);     /* #EBF2FC */
+  --rj-color-sidebar-item-active-text:      var(--rj-color-badge-brand-text);   /* #0D55B8 - CR 6.20:1 on #EBF2FC */
+  --rj-color-sidebar-item-active-indicator: var(--rj-color-brand-primary);      /* #0D55B8 - CR 6.20:1 on #EBF2FC */
+  --rj-color-sidebar-item-active-border:    var(--rj-color-brand-primary);      /* #0D55B8 - CR 6.98:1 on #FFFFFF */
+  --rj-color-sidebar-item-disabled-bg:      var(--rj-color-surface-disabled);   /* #EEF2F8 */
+  --rj-color-sidebar-item-disabled-text:    var(--rj-color-text-muted);         /* #475B70 - CR 6.23:1 on #EEF2F8 */
+  --rj-color-sidebar-item-disabled-border:  var(--rj-primitive-neutral-500);    /* #6F8094 - CR 4.05:1 on #FFFFFF */
+  --rj-color-sidebar-soon-bg:               var(--rj-color-surface-subtle);     /* #E1E8F2 */
+  --rj-color-sidebar-soon-text:             var(--rj-color-text-muted);         /* #475B70 - CR 5.68:1 on #E1E8F2 */
+  --rj-color-sidebar-soon-border:           var(--rj-primitive-neutral-500);    /* #6F8094 - CR 3.28:1 on #E1E8F2 */
+  --rj-color-sidebar-toggle-bg:             var(--rj-color-surface-card);       /* #FFFFFF */
+  --rj-color-sidebar-toggle-hover-bg:       var(--rj-primitive-neutral-100);    /* #EEF2F8 */
+  --rj-color-sidebar-toggle-text:           var(--rj-color-text-primary);       /* #0B1A2C - CR 17.52:1 on #FFFFFF */
+  --rj-color-sidebar-toggle-border:         var(--rj-primitive-neutral-500);    /* #6F8094 - CR 4.05:1 on #FFFFFF */
+  --rj-color-sidebar-tooltip-bg:            var(--rj-primitive-neutral-900);    /* #0B1A2C */
+  --rj-color-sidebar-tooltip-text:          var(--rj-primitive-white);          /* #FFFFFF - CR 17.52:1 on #0B1A2C */
+  --rj-color-sidebar-tooltip-border:        var(--rj-primitive-neutral-600);    /* #475B70 - CR 6.23:1 on Canvas */
+
   /* Radar Visual Invariant Tokens */
   --rj-color-radar-grid: var(--rj-primitive-neutral-400);
 
@@ -346,6 +373,17 @@
   --rj-density-button-height: 44px;
   --rj-density-card-padding: var(--rj-primitive-space-6);
   --rj-line-height-base: 1.5;
+
+  /* App Shell & Sidebar Dimensions & Motion Budgets */
+  --rj-header-height:                  56px;
+  --rj-sidebar-width-expanded:         280px;
+  --rj-sidebar-width-collapsed:        72px;
+  --rj-sidebar-drawer-width:           280px;
+  --rj-sidebar-active-indicator-width: 3px;
+  --rj-ease-out:                       cubic-bezier(0, 0, 0.2, 1);
+  --rj-sidebar-transition-width:       var(--rj-duration-fast); /* 150ms */
+  --rj-tooltip-transition:             var(--rj-duration-fast); /* 150ms <= 200ms */
+  --rj-drawer-transition:              var(--rj-duration-base); /* 250ms <= 300ms */
 }
 
 /* Explicit light mode override (beats prefers-color-scheme: dark) */
@@ -366,6 +404,7 @@
   --rj-color-surface-elevated: #1E2C42;
   --rj-color-surface-subtle:   #101724;
   --rj-color-surface-disabled: #101724;
+  --rj-color-surface-overlay:  rgba(11, 16, 25, 0.85);
 
   --rj-color-text-primary:   #EDF2F7;
   --rj-color-text-secondary: #CBD5E1;
@@ -423,6 +462,32 @@
   --rj-color-select-option-selected-hover-text: var(--rj-primitive-brand-200);
   --rj-color-select-option-disabled-text:       var(--rj-color-text-disabled);
 
+  /* App Shell & Left Sidebar Tokens - Dark Mode */
+  --rj-color-sidebar-bg:                    var(--rj-color-surface-card);       /* #162030 */
+  --rj-color-sidebar-border:                var(--rj-primitive-neutral-500);    /* #6F8094 - CR 4.04:1 on Card, 4.71:1 on Canvas */
+  --rj-color-sidebar-item-bg:               transparent;
+  --rj-color-sidebar-item-text:             var(--rj-color-text-secondary);     /* #CBD5E1 - CR 11.02:1 on Card */
+  --rj-color-sidebar-item-icon:             var(--rj-color-text-secondary);     /* #CBD5E1 - CR 11.02:1 on Card */
+  --rj-color-sidebar-item-hover-bg:         var(--rj-color-surface-elevated);   /* #1E2C42 */
+  --rj-color-sidebar-item-hover-text:       var(--rj-color-text-primary);       /* #EDF2F7 - CR 12.48:1 on #1E2C42 */
+  --rj-color-sidebar-item-active-bg:        var(--rj-color-badge-brand-bg);     /* #16243A */
+  --rj-color-sidebar-item-active-text:      var(--rj-color-badge-brand-text);   /* #6EA2F4 - CR 6.04:1 on #16243A */
+  --rj-color-sidebar-item-active-indicator: var(--rj-color-brand-primary);      /* #508CEE - CR 4.70:1 on #16243A */
+  --rj-color-sidebar-item-active-border:    var(--rj-color-brand-primary);      /* #508CEE - CR 4.93:1 on #162030 */
+  --rj-color-sidebar-item-disabled-bg:      var(--rj-color-surface-disabled);   /* #101724 */
+  --rj-color-sidebar-item-disabled-text:    var(--rj-color-text-muted);         /* #94A3B8 - CR 7.00:1 on #101724 */
+  --rj-color-sidebar-item-disabled-border:  var(--rj-primitive-neutral-500);    /* #6F8094 - CR 4.04:1 on #162030 */
+  --rj-color-sidebar-soon-bg:               var(--rj-color-surface-subtle);     /* #101724 */
+  --rj-color-sidebar-soon-text:             var(--rj-color-text-muted);         /* #94A3B8 - CR 7.00:1 on #101724 */
+  --rj-color-sidebar-soon-border:           var(--rj-primitive-neutral-500);    /* #6F8094 - CR 4.44:1 on #101724 */
+  --rj-color-sidebar-toggle-bg:             var(--rj-color-surface-elevated);   /* #1E2C42 */
+  --rj-color-sidebar-toggle-hover-bg:       var(--rj-color-badge-brand-border); /* #243B60 */
+  --rj-color-sidebar-toggle-text:           var(--rj-color-text-primary);       /* #EDF2F7 - CR 12.48:1 on #1E2C42, 9.97:1 on #243B60 */
+  --rj-color-sidebar-toggle-border:         var(--rj-color-border-elevated);    /* #94A3B8 - CR 5.48:1 on #1E2C42 */
+  --rj-color-sidebar-tooltip-bg:            var(--rj-color-surface-elevated);   /* #1E2C42 */
+  --rj-color-sidebar-tooltip-text:          var(--rj-color-text-primary);       /* #EDF2F7 - CR 12.48:1 on #1E2C42 */
+  --rj-color-sidebar-tooltip-border:        var(--rj-color-border-elevated);    /* #94A3B8 - CR 5.48:1 on #1E2C42, 7.43:1 on Canvas */
+
   /* Radar Visual Invariant Tokens - Dark Mode */
   --rj-color-radar-grid: #2E3E54;
 
@@ -459,6 +524,7 @@
     --rj-color-surface-elevated: #1E2C42;
     --rj-color-surface-subtle:   #101724;
     --rj-color-surface-disabled: #101724;
+    --rj-color-surface-overlay:  rgba(11, 16, 25, 0.85);
 
     --rj-color-text-primary:   #EDF2F7;
     --rj-color-text-secondary: #CBD5E1;
@@ -515,6 +581,32 @@
     --rj-color-select-option-selected-text:       var(--rj-color-badge-brand-text);
     --rj-color-select-option-selected-hover-text: var(--rj-primitive-brand-200);
     --rj-color-select-option-disabled-text:       var(--rj-color-text-disabled);
+
+    /* App Shell & Left Sidebar Tokens - Dark Mode */
+    --rj-color-sidebar-bg:                    var(--rj-color-surface-card);       /* #162030 */
+    --rj-color-sidebar-border:                var(--rj-primitive-neutral-500);    /* #6F8094 - CR 4.04:1 on Card, 4.71:1 on Canvas */
+    --rj-color-sidebar-item-bg:               transparent;
+    --rj-color-sidebar-item-text:             var(--rj-color-text-secondary);     /* #CBD5E1 - CR 11.02:1 on Card */
+    --rj-color-sidebar-item-icon:             var(--rj-color-text-secondary);     /* #CBD5E1 - CR 11.02:1 on Card */
+    --rj-color-sidebar-item-hover-bg:         var(--rj-color-surface-elevated);   /* #1E2C42 */
+    --rj-color-sidebar-item-hover-text:       var(--rj-color-text-primary);       /* #EDF2F7 - CR 12.48:1 on #1E2C42 */
+    --rj-color-sidebar-item-active-bg:        var(--rj-color-badge-brand-bg);     /* #16243A */
+    --rj-color-sidebar-item-active-text:      var(--rj-color-badge-brand-text);   /* #6EA2F4 - CR 6.04:1 on #16243A */
+    --rj-color-sidebar-item-active-indicator: var(--rj-color-brand-primary);      /* #508CEE - CR 4.70:1 on #16243A */
+    --rj-color-sidebar-item-active-border:    var(--rj-color-brand-primary);      /* #508CEE - CR 4.93:1 on #162030 */
+    --rj-color-sidebar-item-disabled-bg:      var(--rj-color-surface-disabled);   /* #101724 */
+    --rj-color-sidebar-item-disabled-text:    var(--rj-color-text-muted);         /* #94A3B8 - CR 7.00:1 on #101724 */
+    --rj-color-sidebar-item-disabled-border:  var(--rj-primitive-neutral-500);    /* #6F8094 - CR 4.04:1 on #162030 */
+    --rj-color-sidebar-soon-bg:               var(--rj-color-surface-subtle);     /* #101724 */
+    --rj-color-sidebar-soon-text:             var(--rj-color-text-muted);         /* #94A3B8 - CR 7.00:1 on #101724 */
+    --rj-color-sidebar-soon-border:           var(--rj-primitive-neutral-500);    /* #6F8094 - CR 4.44:1 on #101724 */
+    --rj-color-sidebar-toggle-bg:             var(--rj-color-surface-elevated);   /* #1E2C42 */
+    --rj-color-sidebar-toggle-hover-bg:       var(--rj-color-badge-brand-border); /* #243B60 */
+    --rj-color-sidebar-toggle-text:           var(--rj-color-text-primary);       /* #EDF2F7 - CR 12.48:1 on #1E2C42, 9.97:1 on #243B60 */
+    --rj-color-sidebar-toggle-border:         var(--rj-color-border-elevated);    /* #94A3B8 - CR 5.48:1 on #1E2C42 */
+    --rj-color-sidebar-tooltip-bg:            var(--rj-color-surface-elevated);   /* #1E2C42 */
+    --rj-color-sidebar-tooltip-text:          var(--rj-color-text-primary);       /* #EDF2F7 - CR 12.48:1 on #1E2C42 */
+    --rj-color-sidebar-tooltip-border:        var(--rj-color-border-elevated);    /* #94A3B8 - CR 5.48:1 on #1E2C42, 7.43:1 on Canvas */
 
     /* Radar Visual Invariant Tokens - Dark Mode */
     --rj-color-radar-grid: #2E3E54;

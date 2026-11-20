@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -69,6 +70,7 @@ public class EvaluationTemplateController {
             responseCode = "403",
             description = "Không có quyền truy cập: FORBIDDEN",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @PreAuthorize("hasRole('MENTOR')")
     @GetMapping
     public ResponseEntity<List<EvaluationTemplateResponse>> getTemplates(
             @RequestParam(required = false) String position,

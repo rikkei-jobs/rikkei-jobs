@@ -24,13 +24,13 @@ Configure Spring Security in `backend/src/main/java/com/rikkei/jobs/common/secur
 
 - Stateless Session `EXISTS`: Enforce `SessionCreationPolicy.STATELESS` for all requests.
 - Disable CSRF `EXISTS`: Disable CSRF protection exclusively because the application relies on stateless authorization tokens.
-- Public Whitelist `EXISTS`: Restrict public access strictly to `/api/v1/health`, `/actuator/health`, `/swagger-ui.html`, `/swagger-ui/**`, `/api-docs/**`, and `/v3/api-docs/**`.
-- Dev Endpoint Guard `EXISTS`: Allow `/api/v1/test/**` endpoints exclusively when the dev profile is active. Block them with 401 in all other profiles.
-- Explicit Deny `EXISTS`: Require authentication for all other requests via `auth.anyRequest().authenticated()`.
-- Role-Scoped Routes `EXISTS`: Enforce `GET /api/v1/me/job-recommendations` (`CANDIDATE`), `/api/v1/evaluations/**` and `/api/v1/evaluation-templates/**` (`MENTOR`), `GET /api/v1/profiles/*/evaluations` (`CANDIDATE`, `HR`), `/api/v1/staff/**` (`STAFF`), and `/api/v1/companies/me` & `/api/v1/companies/me/**` (`HR`), plus `MustChangePasswordFilter` (`403 MUST_CHANGE_PASSWORD`).
+- Public Whitelist `EXISTS`: Restrict public access strictly to `/api/v1/health`, `/actuator/health`, `/error`, `/api/v1/auth/{sso,login,forgot-password,reset-password}`, and dev-active OpenAPI routes (`/api/docs`, `/api/swagger-ui/**`, `/api/api-docs/**`, plus legacy `/swagger-ui.html`, `/swagger-ui/**`, `/api-docs/**`, `/v3/api-docs/**`).
+- Dev Endpoint Guard `EXISTS`: Allow `/api/v1/test/**` endpoints exclusively when the dev profile is active. Block them with 401/403 in all other profiles.
+- Explicit Deny `EXISTS`: Centralize declarative route policies in `backend/src/main/java/com/rikkei/jobs/common/security/RoutePolicyRegistry.java` consumed by `SecurityConfig` ending with `auth.anyRequest().denyAll()`, paired with stateless `backend/src/main/java/com/rikkei/jobs/common/security/OwnershipGuard.java` (`404` on cross-tenant/cross-user IDOR access).
+- Role-Scoped Routes `EXISTS`: Enforce `CANDIDATE` (`GET /api/v1/me/job-recommendations`, `GET/POST /api/v1/profiles/me/skills*`, `GET/PUT /api/v1/me/target`, `GET /api/v1/me/gap-analysis`), `MENTOR` (`/api/v1/evaluations/**`, `/api/v1/evaluation-templates/**`), `CANDIDATE` or `HR` (`GET /api/v1/profiles/{userId}/evaluations`, `GET /api/v1/profiles/{userId}/skills`), `STAFF` (`/api/v1/staff/**`), `HR` (`/api/v1/companies/me*`), `HR` or `STAFF` (`GET /api/v1/companies/{id}` — `PUT` returns `405`), and `AUTHENTICATED_ANY` (`GET /api/v1/target-positions`, `GET /api/v1/jobs/{jobId}`, `/api/v1/auth/me`, `/api/v1/auth/change-password`), plus `MustChangePasswordFilter` (`403 MUST_CHANGE_PASSWORD`).
 - Standard Error Responses `EXISTS`: Handled via `CustomAuthenticationEntryPoint` and `CustomAccessDeniedHandler`:
   - Unauthenticated requests: Return HTTP 401 with body `{"code":"UNAUTHORIZED","message":"Yêu cầu xác thực tài khoản"}`.
-  - Unauthorized requests: Return HTTP 403 with body `{"code":"FORBIDDEN","message":"Bạn không có quyền thực hiện thao tác này"}`.
+  - Unauthorized requests: Return HTTP 403 with body `{"code":"FORBIDDEN","message":"Không có quyền truy cập"}`.
 
 ## 4. Fail-Fast Production Environment Validation
 

@@ -1,7 +1,15 @@
+import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import App, { APP_NAME } from './App';
-import { request, setAuthToken } from './shared/api/httpClient';
+import {
+  getAuthSessionHandlers,
+  getAuthToken,
+  request,
+  resetAuthSessionState,
+  setAuthSessionHandlers,
+  setAuthToken,
+} from './shared/api/httpClient';
 
 vi.mock('./features/candidate/api/jobRecommendations', () => ({
   fetchJobRecommendations: vi.fn().mockResolvedValue({
@@ -19,10 +27,18 @@ describe('App Component', () => {
 
   beforeEach(() => {
     vi.restoreAllMocks();
+    resetAuthSessionState();
+    setAuthSessionHandlers({});
+    setAuthToken(null);
+    window.history.pushState({}, '', '/');
   });
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
+    resetAuthSessionState();
+    setAuthSessionHandlers({});
+    setAuthToken(null);
+    window.history.pushState({}, '', '/');
   });
 
   it('renders application title and header branding', async () => {
@@ -338,5 +354,180 @@ describe('App Component', () => {
     await waitFor(() => {
       expect(screen.getByRole('heading', { level: 1, name: /Đổi Mật Khẩu/i })).toBeInTheDocument();
     });
+  });
+
+  it('attaches Bearer token from AuthProvider session on mounted <App /> requests', async () => {
+    window.history.pushState({}, '', '/candidate?mockRole=CANDIDATE');
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: () => Promise.resolve({ skills: [] }),
+    } as unknown as Response);
+    globalThis.fetch = fetchMock;
+
+    render(<App />);
+
+    await act(async () => {
+      await request('/api/v1/profiles/me/skills');
+    });
+
+    const skillsCall = fetchMock.mock.calls.find(([url]) =>
+      String(url).includes('/api/v1/profiles/me/skills'),
+    );
+    expect(skillsCall).toBeDefined();
+    const [, init] = skillsCall as [string, RequestInit];
+    expect(new Headers(init.headers).get('Authorization')).toBe('Bearer dev-preview-token');
+  });
+
+  it('clears session and navigates to /login with replace: true on 401 when mounted on protected route', async () => {
+    window.history.pushState({}, '', '/candidate?mockRole=CANDIDATE');
+    const replaceStateSpy = vi.spyOn(window.history, 'replaceState');
+
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: () => Promise.resolve({ code: 'UNAUTHORIZED', message: 'Phiên hết hạn' }),
+    } as unknown as Response);
+
+    render(<App />);
+    expect(getAuthToken()).toBe('dev-preview-token');
+
+    await act(async () => {
+      await expect(request('/api/v1/profiles/me/skills')).rejects.toThrow();
+    });
+
+    expect(getAuthToken()).toBeNull();
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: /Cổng Đăng Nhập/i })).toBeInTheDocument();
+    });
+    expect(window.location.pathname).toBe('/login');
+    expect(replaceStateSpy).toHaveBeenCalled();
+  });
+
+  it('preserves session and stays on current protected route when mounted <App /> encounters 403 FORBIDDEN', async () => {
+    window.history.pushState({}, '', '/candidate?mockRole=CANDIDATE');
+
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 403,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: () => Promise.resolve({ code: 'FORBIDDEN', message: 'Không có quyền truy cập' }),
+    } as unknown as Response);
+
+    render(<App />);
+    expect(getAuthToken()).toBe('dev-preview-token');
+
+    await act(async () => {
+      await expect(request('/api/v1/admin/users')).rejects.toThrow();
+    });
+
+    expect(getAuthToken()).toBe('dev-preview-token');
+    expect(window.location.pathname).toBe('/candidate');
+    expect(screen.getByText(/Chào mừng, Nguyen Van Sinh Vien!/i)).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 1, name: /Cổng Đăng Nhập/i })).not.toBeInTheDocument();
+  });
+
+  it('invokes session handler once under React.StrictMode and cleans up handlers on unmount', async () => {
+    window.history.pushState({}, '', '/?mockRole=CANDIDATE');
+    const replaceStateSpy = vi.spyOn(window.history, 'replaceState');
+    const pushStateSpy = vi.spyOn(window.history, 'pushState');
+
+    globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+      if (String(url).includes('/api/v1/health')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ status: 'UP' }),
+        } as unknown as Response);
+      }
+      return Promise.resolve({
+        ok: false,
+        status: 401,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: () => Promise.resolve({ code: 'UNAUTHORIZED', message: 'Phiên hết hạn' }),
+      } as unknown as Response);
+    });
+
+    const { unmount } = render(
+      <React.StrictMode>
+        <App />
+      </React.StrictMode>,
+    );
+
+    const replaceCallsBefore = replaceStateSpy.mock.calls.length;
+    const pushCallsBefore = pushStateSpy.mock.calls.length;
+
+    await act(async () => {
+      await expect(request('/api/v1/profiles/me/skills')).rejects.toThrow();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: /Cổng Đăng Nhập/i })).toBeInTheDocument();
+    });
+
+    const loginReplaceCalls = replaceStateSpy.mock.calls
+      .slice(replaceCallsBefore)
+      .filter((args) => String(args[2] ?? '').includes('/login'));
+    const loginPushCalls = pushStateSpy.mock.calls
+      .slice(pushCallsBefore)
+      .filter((args) => String(args[2] ?? '').includes('/login'));
+    expect(loginReplaceCalls).toHaveLength(1);
+    expect(loginPushCalls).toHaveLength(0);
+
+    unmount();
+    expect(getAuthSessionHandlers()).toEqual({});
+  });
+
+  it('preserves from: /403 on 401 under React.StrictMode and uses null state on excluded routes', async () => {
+    window.history.pushState({}, '', '/403?mockRole=HR');
+
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: () => Promise.resolve({ code: 'UNAUTHORIZED', message: 'Phiên hết hạn' }),
+    } as unknown as Response);
+
+    const { unmount } = render(
+      <React.StrictMode>
+        <App />
+      </React.StrictMode>,
+    );
+
+    await act(async () => {
+      await expect(request('/api/v1/companies/me')).rejects.toThrow();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: /Cổng Đăng Nhập/i })).toBeInTheDocument();
+    });
+
+    expect(window.location.pathname).toBe('/login');
+    expect((window.history.state as { usr?: unknown } | null)?.usr).toMatchObject({
+      from: { pathname: '/403', search: '?mockRole=HR' },
+    });
+    unmount();
+
+    window.history.pushState({}, '', '/forgot-password');
+    setAuthToken('stale-token');
+
+    render(
+      <React.StrictMode>
+        <App />
+      </React.StrictMode>,
+    );
+
+    await act(async () => {
+      await expect(request('/api/v1/companies/me')).rejects.toThrow();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: /Cổng Đăng Nhập/i })).toBeInTheDocument();
+    });
+
+    expect(window.location.pathname).toBe('/login');
+    expect((window.history.state as { usr?: unknown } | null)?.usr ?? null).toBeNull();
   });
 });

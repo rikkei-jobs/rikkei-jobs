@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { AppRoutes } from '../../../App';
 import { Icon } from '../../../shared/components/Icon';
@@ -201,7 +201,7 @@ describe('Company Profile WCAG 2.2 AA, Routing, RBAC & Exports', () => {
     expect(await screen.findByRole('heading', { name: /Cổng Đăng Nhập/i })).toBeInTheDocument();
     unmountAnon();
 
-    // 2. Wrong role (CANDIDATE) -> /candidate
+    // 2. Wrong role (CANDIDATE) -> Vietnamese 403 ForbiddenPage
     const { unmount: unmountCandidate } = render(
       <AuthProvider initialToken="cand-jwt" initialUser={createUser('CANDIDATE')}>
         <MemoryRouter initialEntries={['/hr/company']}>
@@ -209,11 +209,22 @@ describe('Company Profile WCAG 2.2 AA, Routing, RBAC & Exports', () => {
         </MemoryRouter>
       </AuthProvider>,
     );
-    expect(await screen.findAllByText('Ứng viên')).not.toHaveLength(0);
+    expect(
+      await screen.findByRole('heading', { level: 1, name: /Bạn không có quyền truy cập trang này/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('403')).toBeInTheDocument();
+    expect(screen.getAllByText('Ứng viên')).not.toHaveLength(0);
     expect(screen.queryByText(/\(Candidate\)/i)).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Quay lại trang chủ/i })).toHaveAttribute(
+      'href',
+      '/candidate',
+    );
+    expect(
+      screen.queryByRole('heading', { level: 1, name: 'Hồ sơ công ty' }),
+    ).not.toBeInTheDocument();
     unmountCandidate();
 
-    // 2b. Wrong role (STAFF) -> /staff
+    // 2b. Wrong role (STAFF) -> Vietnamese 403 ForbiddenPage
     const { unmount: unmountStaff } = render(
       <AuthProvider initialToken="staff-jwt" initialUser={createUser('STAFF')}>
         <MemoryRouter initialEntries={['/hr/company']}>
@@ -221,7 +232,16 @@ describe('Company Profile WCAG 2.2 AA, Routing, RBAC & Exports', () => {
         </MemoryRouter>
       </AuthProvider>,
     );
-    expect(await screen.findByText(/Tiếp Nhận & Điều Phối/i)).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { level: 1, name: /Bạn không có quyền truy cập trang này/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('403')).toBeInTheDocument();
+    expect(within(screen.getByRole('main')).getByText('Nhân viên')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Quay lại trang chủ/i })).toHaveAttribute(
+      'href',
+      '/staff',
+    );
+    expect(screen.queryByText(/Tiếp Nhận & Điều Phối/i)).not.toBeInTheDocument();
     unmountStaff();
 
     // 3. HR with mustChangePassword: true -> /change-password

@@ -28,9 +28,10 @@ The security of Rikkei Jobs is built on the strict enforcement of the **Zero Rea
 
 ### 3. API Security & Role-Based Access Control (RBAC)
 
-- **Default Deny Strategy**: The Spring Security layer enforces a default-deny posture. All API routes under `/api/v1/**` require a valid JWT Bearer token, except for explicitly whitelisted public endpoints:
-  - `GET /api/v1/health` (Health verification)
-  - `GET /api-docs/**` and `GET /swagger-ui/**` (Enabled only in `dev` profile)
+- **Default Deny Strategy**: The Spring Security layer enforces a declarative deny-by-default posture via `RoutePolicyRegistry` and `SecurityConfig` (`.anyRequest().denyAll()`), combined with `OwnershipGuard` for horizontal IDOR protection (`404 NOT_FOUND` on cross-tenant/cross-user access). All API routes under `/api/v1/**` require a valid JWT Bearer token, except for explicitly whitelisted public endpoints:
+  - `GET /api/v1/health` and `GET /actuator/health` (Health verification)
+  - `POST /api/v1/auth/{sso,login,forgot-password,reset-password}` (Public authentication flows)
+  - `GET /api/docs`, `GET /api/api-docs/**`, and `GET /api/swagger-ui/**` alongside legacy dev routes `GET /api-docs/**`, `GET /swagger-ui/**`, and `GET /swagger-ui.html` (Enabled only in `dev` profile; completely disabled in `prod`)
 - **Unauthenticated Handling**: Any request attempting to access protected resources without an Authorization header or with an invalid token returns HTTP `401 Unauthorized` with the standard error body:
 
   ```json
@@ -88,9 +89,10 @@ An ninh của nền tảng Rikkei Jobs được xây dựng dựa trên nguyên 
 
 ### 3. Kiểm soát Truy cập Dựa trên Vai trò (RBAC) & Bảo mật API
 
-- **Chiến lược Từ chối Mặc định (Default Deny)**: Tầng Spring Security áp dụng quy tắc đóng toàn bộ các API `/api/v1/**`, ngoại trừ các endpoint công khai được chỉ định rõ:
-  - `GET /api/v1/health` (Kiểm tra sức khỏe hệ thống)
-  - `GET /api-docs/**` và `GET /swagger-ui/**` (Chỉ kích hoạt trên profile `dev`)
+- **Chiến lược Từ chối Mặc định (Default Deny)**: Tầng Spring Security áp dụng nguyên tắc từ chối mặc định khai báo tập trung qua `RoutePolicyRegistry` và `SecurityConfig` (`.anyRequest().denyAll()`), kết hợp `OwnershipGuard` chống dò ID ngang IDOR (trả `404 NOT_FOUND` khi truy cập trái chủ sở hữu). Mọi API dưới `/api/v1/**` đều yêu cầu JWT Bearer token hợp lệ, ngoại trừ các endpoint công khai được chỉ định rõ:
+  - `GET /api/v1/health` và `GET /actuator/health` (Kiểm tra sức khỏe hệ thống)
+  - `POST /api/v1/auth/{sso,login,forgot-password,reset-password}` (Các luồng xác thực công khai)
+  - `GET /api/docs`, `GET /api/api-docs/**` và `GET /api/swagger-ui/**` cùng các đường dẫn dev tương thích ngược `GET /api-docs/**`, `GET /swagger-ui/**`, `GET /swagger-ui.html` (Chỉ kích hoạt trên profile `dev`; tắt hoàn toàn ở `prod`)
 - **Xử lý Khi Chưa Xác thực**: Bất kỳ yêu cầu nào không có header Authorization hợp lệ đều bị chặn và trả về HTTP `401 Unauthorized` kèm cấu trúc JSON chuẩn:
 
   ```json

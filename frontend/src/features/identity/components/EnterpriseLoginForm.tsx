@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Icon } from '../../../shared/components/Icon';
 import { useAuth } from '../context/useAuth';
 import { AuthApiError } from '../types';
+import { extractFromPathname, resolvePostLoginPath } from '../utils/roleUtils';
 import { PasswordField } from './PasswordField';
 import { LockoutCountdown } from './LockoutCountdown';
 
@@ -33,8 +34,10 @@ export const EnterpriseLoginForm: React.FC = () => {
     return false;
   });
 
-  const { login, isLoading, getRoleHomePath } = useAuth();
+  const { login, isLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromPathname = extractFromPathname(location.state);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,9 +50,10 @@ export const EnterpriseLoginForm: React.FC = () => {
       const response = await login({ email: email.trim(), password });
 
       if (response.mustChangePassword || response.user.mustChangePassword) {
-        navigate('/change-password');
+        navigate('/change-password', { state: location.state, replace: true });
       } else {
-        navigate(getRoleHomePath(response.user.role));
+        const targetPath = resolvePostLoginPath(fromPathname, response.user.role);
+        navigate(targetPath, { replace: true });
       }
     } catch (err: unknown) {
       if (err instanceof AuthApiError) {

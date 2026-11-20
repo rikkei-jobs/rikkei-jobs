@@ -38,7 +38,7 @@ Navigate to `http://127.0.0.1:3000` and select the "Hồ sơ năng lực" tab. U
 - Email: `candidate1@rikkeijobs.test`
 - Password: Refer to development seed file `V2__dev_seed.sql`
 
-Swagger UI specification (dev profile only): `http://127.0.0.1:8080/swagger-ui.html`.
+Swagger UI specification (dev profile only): `http://127.0.0.1:8080/api/docs` and `http://127.0.0.1:3000/api/docs` (legacy `/swagger-ui.html` also redirects on `:8080`).
 
 #### 2.2 Automated Verification & Quality Gates
 
@@ -96,9 +96,9 @@ Triggering Recalculation: Dispatch `POST /api/v1/profiles/me/skills/recompute` (
 
 | HTTP Method & Path | Access Control | Description & Response Body |
 |---|---|---|
-| `GET /api/v1/profiles/me/skills` | Valid JWT required | Retrieves skills and evidence list for the authenticated caller: `List<SkillProfileItemDto>` |
-| `GET /api/v1/profiles/{userId}/skills` | Valid JWT required | Retrieves skills for `{userId}`. The profile owner can always view it; other users can view it only if `is_public = true`, otherwise returns `404 NOT_FOUND` |
-| `POST /api/v1/profiles/me/skills/recompute` | Valid JWT required | Recalculates all skill scores for the authenticated caller from `external_records` via `skill_mappings`, updates persistence, and returns updated scores |
+| `GET /api/v1/profiles/me/skills` | `CANDIDATE` | Retrieves skills and evidence list for the authenticated candidate: `List<SkillProfileItemDto>` |
+| `GET /api/v1/profiles/{userId}/skills` | `CANDIDATE` (own) or `HR` (public) | Retrieves skills for `{userId}`. `CANDIDATE` can only view their own profile (`userId == callerId`, otherwise `404 NOT_FOUND` even when `is_public = true`); `HR` can view profiles with `is_public = true` (otherwise `404 NOT_FOUND`); `MENTOR`, `STAFF`, and `ADMIN` receive `403 FORBIDDEN` |
+| `POST /api/v1/profiles/me/skills/recompute` | `CANDIDATE` | Recalculates all skill scores for the authenticated candidate from `external_records` via `skill_mappings`, updates persistence, and returns updated scores |
 
 The skills list is bounded by the 20 standardized catalog items, and is intentionally unpaginated.
 
@@ -132,8 +132,8 @@ All error responses strictly comply with the project error format specified in `
 |---|---|---|---|
 | **200 OK** | Success | Request valid, token verified, user authorized to access resource. | Array of `SkillProfileItemDto` objects. |
 | **401 UNAUTHORIZED** | Unauthorized | Missing Authorization header, malformed header, expired token, signature tampering, or attempt to authenticate with HTTP Basic. | `{"code": "UNAUTHORIZED", "message": "Yêu cầu xác thực tài khoản hoặc token đã hết hạn"}` |
-| **403 FORBIDDEN** | Password Change Required | Authenticated user account has `must_change_password = true` (e.g. newly provisioned HR account). Intercepted by `MustChangePasswordFilter`. | `{"code": "MUST_CHANGE_PASSWORD", "message": "Tài khoản bắt buộc phải đổi mật khẩu trước khi tiếp tục"}` |
-| **404 NOT_FOUND** | Not Found | Requested `{userId}` does not exist, or caller attempts to access another user's profile where `is_public = false` (or profile row absent). | `{"code": "NOT_FOUND", "message": "Không tìm thấy hồ sơ hoặc hồ sơ ở chế độ riêng tư"}` |
+| **403 FORBIDDEN** | Forbidden or Password Change Required | Caller lacks the required role (`FORBIDDEN`, e.g., non-`CANDIDATE` on `/me/skills*`, or `MENTOR`/`STAFF`/`ADMIN` on `/{userId}/skills`), or account has `must_change_password = true` (`MUST_CHANGE_PASSWORD`, intercepted by `MustChangePasswordFilter`). | `{"code": "FORBIDDEN", "message": "Không có quyền truy cập"}` / `{"code": "MUST_CHANGE_PASSWORD", "message": "Tài khoản yêu cầu đổi mật khẩu trước khi tiếp tục"}` |
+| **404 NOT_FOUND** | Not Found | Requested `{userId}` does not exist, a `CANDIDATE` requests another user's `{userId}` (even if `is_public = true`), or an `HR` requests a profile where `is_public = false` (or profile row absent). | `{"code": "NOT_FOUND", "message": "Không tìm thấy hồ sơ năng lực"}` |
 
 ### 6. Acceptance Criteria Checklist
 
@@ -166,8 +166,8 @@ All error responses strictly comply with the project error format specified in `
    - Eliminated standalone `LoginForm.tsx` and helper `buildBasicAuthHeader`.
    - Utilizes `httpClient.ts` managing tokens in memory and attaching `Authorization: Bearer <token>`.
    - Guests are greeted with a clear CTA button navigating to `/login`. Once authenticated, candidates seamlessly navigate to `/candidate/skills`.
-4. **Privacy-Preserving 404 Response**:
-   - Profiles with `is_public = false` (or without an entry in `candidate_profiles`) return HTTP 404 `NOT_FOUND` to third-party callers. This prevents account existence enumeration and guarantees privacy.
+4. **Privacy-Preserving 404 & D6 RBAC Alignment (NT-02)**:
+   - Under Round NT-02 decision D6, `/api/v1/profiles/me/skills*` is restricted to `CANDIDATE`, and `GET /api/v1/profiles/{userId}/skills` aligns with `/api/v1/profiles/{userId}/evaluations`: `CANDIDATE` can only view their own `{userId}` (any other `{userId}` returns `404 NOT_FOUND` even when `is_public = true`); `HR` can view profiles with `is_public = true` (private/missing returns `404 NOT_FOUND`); `MENTOR`, `STAFF`, and `ADMIN` receive `403 FORBIDDEN`. This prevents cross-candidate enumeration while keeping public profiles accessible to recruiters.
 5. **Self-Declared Score Definition**:
    - `self_score` reflects the score of the most recent `SELF` source evidence.
 6. **Future Extensibility**:
@@ -208,7 +208,7 @@ Truy cập `http://127.0.0.1:3000`, chọn tab "Hồ sơ năng lực". Khách tr
 - Email: `candidate1@rikkeijobs.test`
 - Mật khẩu: Tham khảo trong tệp seed `V2__dev_seed.sql`
 
-Giao diện tài liệu Swagger UI (chỉ bật ở môi trường dev): `http://127.0.0.1:8080/swagger-ui.html`.
+Giao diện tài liệu Swagger UI (chỉ bật ở môi trường dev): `http://127.0.0.1:8080/api/docs` và `http://127.0.0.1:3000/api/docs` (`/swagger-ui.html` cũ cũng tự chuyển hướng trên `:8080`).
 
 #### 2.2 Kiểm thử tự động & Cổng chất lượng
 
@@ -266,9 +266,9 @@ Thực thi tính lại: Gửi `POST /api/v1/profiles/me/skills/recompute` (hoặ
 
 | Phương Thức & Đường Dẫn | Quyền Truy Cập | Mô Tả & Dữ Liệu Phản Hồi |
 |---|---|---|
-| `GET /api/v1/profiles/me/skills` | Yêu cầu JWT hợp lệ | Trả về danh sách kỹ năng của chính người dùng hiện tại: `List<SkillProfileItemDto>` |
-| `GET /api/v1/profiles/{userId}/skills` | Yêu cầu JWT hợp lệ | Trả về kỹ năng của người dùng `{userId}`. Chủ sở hữu luôn xem được; người dùng khác chỉ xem được nếu hồ sơ ở chế độ công khai (`is_public = true`), ngược lại trả về `404 NOT_FOUND` |
-| `POST /api/v1/profiles/me/skills/recompute` | Yêu cầu JWT hợp lệ | Tính toán lại toàn bộ điểm kỹ năng của chính người gọi từ `external_records` thông qua `skill_mappings`, cập nhật cơ sở dữ liệu và trả về danh sách điểm mới |
+| `GET /api/v1/profiles/me/skills` | `CANDIDATE` | Trả về danh sách kỹ năng của chính ứng viên đang đăng nhập: `List<SkillProfileItemDto>` |
+| `GET /api/v1/profiles/{userId}/skills` | `CANDIDATE` (chính chủ) hoặc `HR` (công khai) | Trả về kỹ năng của `{userId}`. `CANDIDATE` chỉ xem được của chính mình (`userId == callerId`, ngược lại trả `404 NOT_FOUND` kể cả khi `is_public = true`); `HR` xem được hồ sơ `is_public = true` (ngược lại trả `404 NOT_FOUND`); `MENTOR`, `STAFF`, `ADMIN` nhận `403 FORBIDDEN` |
+| `POST /api/v1/profiles/me/skills/recompute` | `CANDIDATE` | Tính toán lại toàn bộ điểm kỹ năng của chính ứng viên từ `external_records` thông qua `skill_mappings`, cập nhật cơ sở dữ liệu và trả về danh sách điểm mới |
 
 Danh mục kỹ năng bị chặn trên bởi 20 mã kỹ năng tiêu chuẩn nên API được thiết kế không phân trang có chủ đích.
 
@@ -302,8 +302,8 @@ Tất cả các phản hồi lỗi đều tuân thủ cấu trúc đồng nhất
 |---|---|---|---|
 | **200 OK** | Thành công | Yêu cầu hợp lệ, token xác thực đúng, có quyền truy cập dữ liệu. | Danh sách đối tượng kỹ năng `List<SkillProfileItemDto>`. |
 | **401 UNAUTHORIZED** | Chưa xác thực | Không truyền header `Authorization`, header mang định dạng không hợp lệ, token JWT bị hết hạn, giả mạo chữ ký, hoặc gửi header HTTP Basic. | `{"code": "UNAUTHORIZED", "message": "Yêu cầu xác thực tài khoản hoặc token đã hết hạn"}` |
-| **403 FORBIDDEN** | Đổi mật khẩu bắt buộc | Tài khoản người dùng có cờ `must_change_password = true` (ví dụ tài khoản HR được cấp phát mặc định chưa đổi mật khẩu lần đầu). Bộ lọc `MustChangePasswordFilter` chặn trước khi vào controller. | `{"code": "MUST_CHANGE_PASSWORD", "message": "Tài khoản bắt buộc phải đổi mật khẩu trước khi tiếp tục"}` |
-| **404 NOT_FOUND** | Không tìm thấy | Gọi `GET /api/v1/profiles/{userId}/skills` với `{userId}` không tồn tại trong hệ thống, hoặc người khác xem hồ sơ riêng tư (`is_public = false` hoặc chưa có bản ghi `candidate_profiles`). | `{"code": "NOT_FOUND", "message": "Không tìm thấy hồ sơ hoặc hồ sơ ở chế độ riêng tư"}` |
+| **403 FORBIDDEN** | Không đủ quyền hoặc đổi mật khẩu bắt buộc | Vai trò không hợp lệ (`FORBIDDEN`, ví dụ khác `CANDIDATE` trên `/me/skills*`, hoặc `MENTOR`/`STAFF`/`ADMIN` trên `/{userId}/skills`), hoặc tài khoản có cờ `must_change_password = true` (`MUST_CHANGE_PASSWORD`, bị chặn tại `MustChangePasswordFilter`). | `{"code": "FORBIDDEN", "message": "Không có quyền truy cập"}` / `{"code": "MUST_CHANGE_PASSWORD", "message": "Tài khoản yêu cầu đổi mật khẩu trước khi tiếp tục"}` |
+| **404 NOT_FOUND** | Không tìm thấy | Gọi `GET /api/v1/profiles/{userId}/skills` với `{userId}` không tồn tại, `CANDIDATE` truy cập `{userId}` khác (kể cả khi `is_public = true`), hoặc `HR` xem hồ sơ riêng tư (`is_public = false` hoặc chưa có bản ghi `candidate_profiles`). | `{"code": "NOT_FOUND", "message": "Không tìm thấy hồ sơ năng lực"}` |
 
 ### 6. Danh Mục Tiêu Chí Nghiệm Thu (Acceptance Criteria Checklist)
 
@@ -336,8 +336,8 @@ Tất cả các phản hồi lỗi đều tuân thủ cấu trúc đồng nhất
    - Xóa bỏ hoàn toàn form đăng nhập Basic độc lập (`LoginForm.tsx`) và hàm tạo header Basic (`buildBasicAuthHeader`).
    - Sử dụng `httpClient.ts` quản lý token trong bộ nhớ RAM, tự động chèn header `Authorization: Bearer <token>`.
    - Khi chưa đăng nhập, giao diện Hồ sơ năng lực hiển thị khối Call to Action trang nhã dẫn thẳng tới `/login`. Sau khi đăng nhập, ứng viên có thể truy cập hồ sơ năng lực qua liên kết nhanh từ trang chủ `/candidate` tới tuyến đường `/candidate/skills`.
-4. **Quy Tắc Hồ Sơ Riêng Tư**:
-   - Ứng viên chưa có bản ghi trong `candidate_profiles` được xử lý mặc định là riêng tư (`is_public = false`). Khi người khác tra cứu hồ sơ này, API trả về 404 `NOT_FOUND` nhằm bảo vệ quyền riêng tư tuyệt đối, tránh rò rỉ sự tồn tại của tài khoản.
+4. **Quy Tắc Hồ Sơ Riêng Tư & Đồng Bộ Phân Quyền D6 (NT-02)**:
+   - Theo quyết định D6 của NT-02, `/api/v1/profiles/me/skills*` chỉ dành cho `CANDIDATE`, và `GET /api/v1/profiles/{userId}/skills` đồng bộ hoàn toàn với `/api/v1/profiles/{userId}/evaluations`: `CANDIDATE` chỉ xem được `{userId}` của chính mình (truy cập `{userId}` khác trả `404 NOT_FOUND` kể cả khi `is_public = true`); `HR` xem được hồ sơ `is_public = true` (riêng tư hoặc thiếu trả `404 NOT_FOUND`); `MENTOR`, `STAFF`, `ADMIN` nhận `403 FORBIDDEN`. Quy tắc này ngăn chặn dò quét giữa các ứng viên trong khi vẫn cho phép nhà tuyển dụng xem hồ sơ công khai.
 5. **Đặc Tả Điểm Tự Khai**:
    - `self_score` lấy giá trị điểm của bằng chứng tự khai (nguồn `SELF`) gần nhất.
 6. **Kế Hoạch Nâng Cấp Tương Lai**:

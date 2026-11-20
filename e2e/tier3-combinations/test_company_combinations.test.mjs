@@ -10,6 +10,8 @@ import {
   DEV_SEED_PASSWORD,
   HR_NEW_PASSWORD,
   HR_ALT_PASSWORD,
+  VIETNAMESE_DIACRITIC_REGEX,
+  EMOJI_REGEX,
   buildExactPngBuffer,
   buildExactJpegBuffer,
   buildLogoFormData,
@@ -315,14 +317,65 @@ describe('Tier 3: DN-01 Company Profile & HR Account Combinations', () => {
     await fetchAndVerifyMockLogo(getMeA.body.logoUrl, pngA, 'image/png');
     await fetchAndVerifyMockLogo(getMeB.body.logoUrl, jpgB, 'image/jpeg');
 
-    // Cross-tenant PUT on Company B or Company 2 returns 404
+    // Anonymous PUT returns 401 UNAUTHORIZED
+    const anonPutTo2 = await http.put(
+      `${BACKEND_BASE_URL}/api/v1/companies/${hr2Company.body.id}`,
+      { name: 'Anon Attempt Seeded Co2' }
+    );
+    assert.strictEqual(anonPutTo2.status, 401);
+    assertUnifiedErrorResponse(anonPutTo2);
+    assert.strictEqual(anonPutTo2.body.code, 'UNAUTHORIZED');
+
+    // PUT /api/v1/companies/{id} returns uniform 405 METHOD_NOT_ALLOWED across own, other (Company 2), and missing id
+    const ownPutA = await http.put(
+      `${BACKEND_BASE_URL}/api/v1/companies/${bundleA.company.id}`,
+      { name: 'Attempt Own CoA' },
+      { headers: authHeaders(bundleA.hrToken) }
+    );
     const crossTo2 = await http.put(
       `${BACKEND_BASE_URL}/api/v1/companies/${hr2Company.body.id}`,
       { name: 'Attempt Seeded Co2' },
       { headers: authHeaders(bundleA.hrToken) }
     );
-    assert.strictEqual(crossTo2.status, 404);
-    assertUnifiedErrorResponse(crossTo2);
+    const missingPut = await http.put(
+      `${BACKEND_BASE_URL}/api/v1/companies/999999`,
+      { name: 'Attempt Missing Co' },
+      { headers: authHeaders(bundleA.hrToken) }
+    );
+    for (const res of [ownPutA, crossTo2, missingPut]) {
+      assert.strictEqual(res.status, 405);
+      assertUnifiedErrorResponse(res);
+      assert.strictEqual(res.body.code, 'METHOD_NOT_ALLOWED');
+      assert.ok(VIETNAMESE_DIACRITIC_REGEX.test(res.body.message));
+      assert.strictEqual(EMOJI_REGEX.test(res.body.message), false);
+    }
+    assert.strictEqual(ownPutA.rawText, crossTo2.rawText);
+    assert.strictEqual(missingPut.rawText, crossTo2.rawText);
+    assert.deepStrictEqual(ownPutA.body, crossTo2.body);
+    assert.deepStrictEqual(missingPut.body, crossTo2.body);
+
+    // Cross-tenant GET on Company 2 still returns 404 NOT_FOUND
+    const crossGetTo2 = await http.get(`${BACKEND_BASE_URL}/api/v1/companies/${hr2Company.body.id}`, {
+      headers: authHeaders(bundleA.hrToken)
+    });
+    assert.strictEqual(crossGetTo2.status, 404);
+    assertUnifiedErrorResponse(crossGetTo2);
+    assert.strictEqual(crossGetTo2.body.code, 'NOT_FOUND');
+
+    // Confirm Company 2 and Company A remain unchanged in DB
+    const hr2CompanyAfter = await http.get(`${BACKEND_BASE_URL}/api/v1/companies/me`, {
+      headers: authHeaders(hr2Auth.token)
+    });
+    assert.strictEqual(hr2CompanyAfter.status, 200);
+    assert.strictEqual(hr2CompanyAfter.body.name, hr2Company.body.name);
+    assert.strictEqual(hr2CompanyAfter.body.version, hr2Company.body.version);
+
+    const getMeAAfter = await http.get(`${BACKEND_BASE_URL}/api/v1/companies/me`, {
+      headers: authHeaders(bundleA.hrToken)
+    });
+    assert.strictEqual(getMeAAfter.status, 200);
+    assert.strictEqual(getMeAAfter.body.name, getMeA.body.name);
+    assert.strictEqual(getMeAAfter.body.version, getMeA.body.version);
   });
 
   // --------------------------------------------------------------------------

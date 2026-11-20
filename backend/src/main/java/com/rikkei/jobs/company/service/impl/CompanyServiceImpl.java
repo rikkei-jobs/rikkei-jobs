@@ -3,6 +3,7 @@ package com.rikkei.jobs.company.service.impl;
 import com.rikkei.jobs.common.exception.ConflictException;
 import com.rikkei.jobs.common.exception.ResourceNotFoundException;
 import com.rikkei.jobs.common.exception.ValidationException;
+import com.rikkei.jobs.common.security.OwnershipGuard;
 import com.rikkei.jobs.company.dto.request.CreateCompanyRequest;
 import com.rikkei.jobs.company.dto.request.CreateHrAccountRequest;
 import com.rikkei.jobs.company.dto.request.UpdateCompanyRequest;
@@ -17,6 +18,7 @@ import com.rikkei.jobs.company.service.CompanyLogoValidator.ValidatedLogo;
 import com.rikkei.jobs.company.service.CompanyService;
 import com.rikkei.jobs.company.service.LogoStorage;
 import com.rikkei.jobs.company.service.LogoStorage.StoredLogo;
+import com.rikkei.jobs.identity.UserPrincipal;
 import com.rikkei.jobs.identity.dto.CreateHrUserCommand;
 import com.rikkei.jobs.identity.dto.CreatedHrUserResult;
 import com.rikkei.jobs.identity.dto.SendHrOnboardingEmailCommand;
@@ -154,6 +156,18 @@ public class CompanyServiceImpl implements CompanyService {
     @Transactional(readOnly = true)
     public CompanyResponse getMyCompany(Long companyId) {
         return companyMapper.toResponse(loadCompanyById(companyId));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CompanyResponse getCompanyById(Long companyId, UserPrincipal principal) {
+        String notFoundMessage = "Không tìm thấy doanh nghiệp";
+        OwnershipGuard.requireCompanyAccess(principal, companyId, notFoundMessage);
+        Company company =
+                companyRepository
+                        .findById(companyId)
+                        .orElseThrow(() -> new ResourceNotFoundException(notFoundMessage));
+        return companyMapper.toResponse(company);
     }
 
     @Override

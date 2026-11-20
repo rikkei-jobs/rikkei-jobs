@@ -110,7 +110,7 @@ export const SkillProfilePage: React.FC<SkillProfilePageProps> = ({
           </p>
         </div>
         {showLogout && (
-          <button type="button" className="sp-btn sp-btn-quiet" onClick={handleLogout}>
+          <button type="button" className="sp-btn sp-btn-quiet" onClick={() => handleLogout()}>
             <Icon name="log-out" size={18} />
             Đăng xuất
           </button>

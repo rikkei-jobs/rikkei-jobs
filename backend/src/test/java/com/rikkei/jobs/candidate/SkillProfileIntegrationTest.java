@@ -68,13 +68,14 @@ class SkillProfileIntegrationTest {
     private MockMvc mockMvc;
 
     private RequestPostProcessor candidate(int n) {
+        return asEmail("candidate" + n + "@rikkeijobs.test");
+    }
+
+    private RequestPostProcessor asEmail(String email) {
         User user =
                 userRepository
-                        .findByEmail("candidate" + n + "@rikkeijobs.test")
-                        .orElseThrow(
-                                () ->
-                                        new IllegalStateException(
-                                                "Candidate not found: candidate" + n));
+                        .findByEmail(email)
+                        .orElseThrow(() -> new IllegalStateException("User not found: " + email));
         String token = jwtService.generateToken(user);
         return request -> {
             request.addHeader("Authorization", "Bearer " + token);
@@ -148,14 +149,52 @@ class SkillProfileIntegrationTest {
     }
 
     @Test
-    @DisplayName("Owner can read own profile by id and others can read a public profile")
+    @DisplayName(
+            "D6 Group C: CANDIDATE sees own profile only (other candidate -> 404 even if public); HR sees public only; MENTOR/STAFF/ADMIN get 403")
     void ownerAndPublicAccess() throws Exception {
         mockMvc.perform(get("/api/v1/profiles/1/skills").with(candidate(1)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", not(hasSize(0))));
         mockMvc.perform(get("/api/v1/profiles/2/skills").with(candidate(1)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("NOT_FOUND"));
+
+        mockMvc.perform(get("/api/v1/profiles/2/skills").with(asEmail("hr2@rikkeijobs.test")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.skill.code == 'REACTJS')]").isNotEmpty());
+        mockMvc.perform(get("/api/v1/profiles/1/skills").with(asEmail("hr2@rikkeijobs.test")))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("NOT_FOUND"));
+
+        for (String blockedEmail :
+                new String[] {
+                    "mentor1@rikkeijobs.test", "staff1@rikkeijobs.test", "admin1@rikkeijobs.test"
+                }) {
+            mockMvc.perform(get("/api/v1/profiles/2/skills").with(asEmail(blockedEmail)))
+                    .andExpect(status().isForbidden())
+                    .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+        }
+    }
+
+    @Test
+    @DisplayName("D6 Group A: Non-CANDIDATE roles receive 403 FORBIDDEN on /me/skills endpoints")
+    void nonCandidateRolesAreForbiddenOnMeSkills() throws Exception {
+        for (String blockedEmail :
+                new String[] {
+                    "hr2@rikkeijobs.test",
+                    "mentor1@rikkeijobs.test",
+                    "staff1@rikkeijobs.test",
+                    "admin1@rikkeijobs.test"
+                }) {
+            mockMvc.perform(get("/api/v1/profiles/me/skills").with(asEmail(blockedEmail)))
+                    .andExpect(status().isForbidden())
+                    .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+            mockMvc.perform(
+                            post("/api/v1/profiles/me/skills/recompute")
+                                    .with(asEmail(blockedEmail)))
+                    .andExpect(status().isForbidden())
+                    .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+        }
     }
 
     @Test

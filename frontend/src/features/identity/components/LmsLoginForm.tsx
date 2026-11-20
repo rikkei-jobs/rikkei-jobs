@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Icon } from '../../../shared/components/Icon';
 import { requestDevLmsTicket } from '../api/mockLmsApi';
 
@@ -22,6 +22,7 @@ export const LmsLoginForm: React.FC = () => {
   const [loadingUser, setLoadingUser] = useState<string | null>(null);
   const [devError, setDevError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleManualSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +30,9 @@ export const LmsLoginForm: React.FC = () => {
     if (!cleanTicket) {
       return;
     }
-    navigate(`/sso-callback?ticket=${encodeURIComponent(cleanTicket)}`);
+    navigate(`/sso-callback?ticket=${encodeURIComponent(cleanTicket)}`, {
+      state: location.state,
+    });
   };
 
   const handleQuickDevTicket = async (userId: string) => {
@@ -37,7 +40,9 @@ export const LmsLoginForm: React.FC = () => {
     setDevError(null);
     try {
       const ticket = await requestDevLmsTicket(userId);
-      navigate(`/sso-callback?ticket=${encodeURIComponent(ticket)}`);
+      navigate(`/sso-callback?ticket=${encodeURIComponent(ticket)}`, {
+        state: location.state,
+      });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Không thể lấy vé từ Mock LMS';
       setDevError(msg);

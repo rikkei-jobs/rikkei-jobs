@@ -37,7 +37,7 @@ Execute asynchronous and recurring operations using managed thread pools:
 Manage API documentation contracts through SpringDoc OpenAPI 3:
 
 - Version is pinned to `3.2.0` via `<springdoc.version>3.2.0</springdoc.version>` in `backend/pom.xml` `EXISTS`.
-- In development (`application-dev.yml`), enable Swagger UI at `/swagger-ui.html` and OpenAPI spec at `/api-docs` `EXISTS`.
+- In development (`backend/src/main/resources/application.yml` with `dev` profile), enable Swagger UI at `/api/docs` and OpenAPI spec at `/api/api-docs` (`OpenApiConfig` `@Server(url = "/")`), preserving legacy `/api-docs` (`LegacyOpenApiController`) and `/swagger-ui.html` (`LegacySwaggerUiRedirectController`) on `:8080` and serving `/api/docs` through Nginx `:3000` `EXISTS`.
 - In production (`application-prod.yml`), strictly disable Swagger UI and API docs `EXISTS`:
 
 ```yaml
@@ -49,7 +49,7 @@ springdoc:
 ```
 
 - Annotate all REST controllers with `@Tag` and endpoints with `@Operation` describing HTTP response codes `EXISTS` (see `HealthController.java`).
-- Do not expose administrative or test endpoints in public OpenAPI schemas `TARGET`.
+- Hide administrative or test endpoints in public OpenAPI schemas via `@Hidden` (`TestErrorController.java`) `EXISTS`.
 
 ## 4. External System Integration via ExternalApiClient
 

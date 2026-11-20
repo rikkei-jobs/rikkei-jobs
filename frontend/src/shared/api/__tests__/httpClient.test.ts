@@ -176,8 +176,9 @@ describe('Centralized HTTP Auth Client (httpClient)', () => {
 
   it('does NOT trigger onMustChangePassword for standard 403 forbidden responses', async () => {
     setAuthToken('valid-token');
+    const onUnauthorized = vi.fn();
     const onMustChangePassword = vi.fn();
-    setAuthSessionHandlers({ onMustChangePassword });
+    setAuthSessionHandlers({ onUnauthorized, onMustChangePassword });
 
     globalThis.fetch = vi.fn().mockResolvedValue(
       errorResponse(403, {
@@ -187,7 +188,80 @@ describe('Centralized HTTP Auth Client (httpClient)', () => {
     );
 
     await expect(request('/api/v1/admin/users')).rejects.toThrow(ApiError);
+    expect(getAuthToken()).toBe('valid-token');
+    expect(onUnauthorized).not.toHaveBeenCalled();
     expect(onMustChangePassword).not.toHaveBeenCalled();
+  });
+
+  it('preserves in-memory token and does NOT call onUnauthorized on 403 MUST_CHANGE_PASSWORD', async () => {
+    setAuthToken('needs-pw-change-token');
+    const onUnauthorized = vi.fn();
+    const onMustChangePassword = vi.fn();
+    setAuthSessionHandlers({ onUnauthorized, onMustChangePassword });
+
+    globalThis.fetch = vi.fn().mockResolvedValue(
+      errorResponse(403, {
+        code: 'MUST_CHANGE_PASSWORD',
+        message: 'Người dùng bắt buộc phải đổi mật khẩu',
+      }),
+    );
+
+    await expect(request('/api/v1/profiles/me/skills')).rejects.toThrow(ApiError);
+    expect(getAuthToken()).toBe('needs-pw-change-token');
+    expect(onUnauthorized).not.toHaveBeenCalled();
+    expect(onMustChangePassword).toHaveBeenCalledTimes(1);
+  });
+
+  it('resets 401 redirect deduplication flag after re-login sets a fresh token', async () => {
+    const onUnauthorized = vi.fn();
+    setAuthSessionHandlers({ onUnauthorized });
+
+    setAuthToken('expired-token-1');
+    globalThis.fetch = vi.fn().mockResolvedValue(
+      errorResponse(401, {
+        code: 'UNAUTHORIZED',
+        message: 'Token 1 expired',
+      }),
+    );
+
+    await expect(request('/api/v1/protected')).rejects.toThrow(ApiError);
+    expect(getAuthToken()).toBeNull();
+    expect(onUnauthorized).toHaveBeenCalledTimes(1);
+
+    setAuthToken('fresh-jwt-token-2');
+    await expect(request('/api/v1/protected')).rejects.toThrow(ApiError);
+    expect(getAuthToken()).toBeNull();
+    expect(onUnauthorized).toHaveBeenCalledTimes(2);
+  });
+
+  it('replaces handlers cleanly without chaining and cleans up only its own registration', async () => {
+    const firstUnauthorized = vi.fn();
+    const secondUnauthorized = vi.fn();
+
+    const cleanupFirst = setAuthSessionHandlers({ onUnauthorized: firstUnauthorized });
+    const cleanupSecond = setAuthSessionHandlers({ onUnauthorized: secondUnauthorized });
+
+    // Calling stale cleanupFirst must NOT erase secondUnauthorized
+    cleanupFirst();
+
+    setAuthToken('token-xyz');
+    globalThis.fetch = vi.fn().mockResolvedValue(
+      errorResponse(401, {
+        code: 'UNAUTHORIZED',
+        message: 'Phiên hết hạn',
+      }),
+    );
+
+    await expect(request('/api/v1/protected')).rejects.toThrow(ApiError);
+    expect(firstUnauthorized).not.toHaveBeenCalled();
+    expect(secondUnauthorized).toHaveBeenCalledTimes(1);
+
+    // Calling cleanupSecond removes secondUnauthorized cleanly
+    cleanupSecond();
+    resetAuthSessionState();
+    setAuthToken('token-xyz-2');
+    await expect(request('/api/v1/protected')).rejects.toThrow(ApiError);
+    expect(secondUnauthorized).toHaveBeenCalledTimes(1);
   });
 
   it('does NOT trigger onMustChangePassword when skipAuth is true on 403 MUST_CHANGE_PASSWORD', async () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from '../context/AuthContext';
 import { RequireRole } from '../guards/RequireRole';
@@ -256,7 +256,7 @@ describe('Empirical Adversarial Challenge - Route Security & Token Storage', () 
   });
 
   describe('Focus 2.4: Cross-Role Isolation', () => {
-    it('prevents CANDIDATE from viewing HR portal', () => {
+    it('prevents CANDIDATE from viewing HR portal and renders 403 ForbiddenPage in-place', () => {
       render(
         <AuthProvider initialToken="token" initialUser={candidateUser}>
           <MemoryRouter initialEntries={['/hr']}>
@@ -275,11 +275,21 @@ describe('Empirical Adversarial Challenge - Route Security & Token Storage', () 
         </AuthProvider>,
       );
 
-      expect(screen.getByText('Cổng Sinh Viên')).toBeInTheDocument();
+      expect(screen.getByText('403')).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 1, name: /Bạn không có quyền truy cập trang này/i }),
+      ).toBeInTheDocument();
+      expect(within(screen.getByRole('main')).getByText('Ứng viên')).toBeInTheDocument();
+      expect(screen.queryByText('CANDIDATE')).not.toBeInTheDocument();
+      expect(screen.getByRole('link', { name: /Quay lại trang chủ/i })).toHaveAttribute(
+        'href',
+        '/candidate',
+      );
       expect(screen.queryByText('Cổng Quản Trị Tuyển Dụng')).not.toBeInTheDocument();
+      expect(screen.queryByText('Cổng Sinh Viên')).not.toBeInTheDocument();
     });
 
-    it('prevents HR from viewing CANDIDATE portal', () => {
+    it('prevents HR from viewing CANDIDATE portal and renders 403 ForbiddenPage in-place', () => {
       render(
         <AuthProvider initialToken="token" initialUser={hrUser}>
           <MemoryRouter initialEntries={['/candidate']}>
@@ -298,8 +308,17 @@ describe('Empirical Adversarial Challenge - Route Security & Token Storage', () 
         </AuthProvider>,
       );
 
-      expect(screen.getByText('Cổng Doanh Nghiệp')).toBeInTheDocument();
+      expect(screen.getByText('403')).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 1, name: /Bạn không có quyền truy cập trang này/i }),
+      ).toBeInTheDocument();
+      expect(within(screen.getByRole('main')).getByText('HR')).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: /Quay lại trang chủ/i })).toHaveAttribute(
+        'href',
+        '/hr',
+      );
       expect(screen.queryByText('Cổng Ứng Viên')).not.toBeInTheDocument();
+      expect(screen.queryByText('Cổng Doanh Nghiệp')).not.toBeInTheDocument();
     });
   });
 });

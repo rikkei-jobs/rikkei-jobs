@@ -1,6 +1,6 @@
 // Tier 2: Boundaries, Corner Cases, Concurrency & Security — DN-01 Company Profile & HR Accounts
 // Verifies negative inputs, duplicate constraints, CR/LF rejection, @Version conflicts,
-// cross-tenant PUT 404, exact 2,097,152 vs 2,097,153 logo boundary (:8080 & :3000/api/), and invalid/traversal files
+// cross-tenant GET 404 & PUT /{id} 405, exact 2,097,152 vs 2,097,153 logo boundary (:8080 & :3000/api/), and invalid/traversal files
 
 import { describe, it, before } from 'node:test';
 import assert from 'node:assert/strict';
@@ -368,24 +368,67 @@ describe('Tier 2: DN-01 Company Profile & HR Account Boundaries', () => {
     }
   });
 
-  it('TC-T2-DN01-14: Should return 404 unified ErrorResponse on cross-tenant PUT/GET /api/v1/companies/{idOfCompanyB}', async () => {
+  it('TC-T2-DN01-14: Should return uniform 405 METHOD_NOT_ALLOWED on PUT /api/v1/companies/{id} (own/other/missing), 401 anonymous, and 404 on cross-tenant GET', async () => {
     assert.ok(backendOnline, 'Backend service must be reachable');
+
+    const beforeA = await http.get(`${BACKEND_BASE_URL}/api/v1/companies/me`, {
+      headers: authHeaders(bundleA.hrToken)
+    });
+    assert.strictEqual(beforeA.status, 200);
 
     const beforeB = await http.get(`${BACKEND_BASE_URL}/api/v1/companies/me`, {
       headers: authHeaders(bundleB.hrToken)
     });
     assert.strictEqual(beforeB.status, 200);
 
+    // Anonymous PUT /api/v1/companies/{id} must still return 401 UNAUTHORIZED
+    for (const targetId of [bundleA.company.id, bundleB.company.id, 999999]) {
+      const anonPut = await http.put(
+        `${BACKEND_BASE_URL}/api/v1/companies/${targetId}`,
+        { name: 'Anon Put Attempt', size: '1000+' }
+      );
+      assert.strictEqual(anonPut.status, 401, `Anonymous PUT /companies/${targetId} must return 401, got ${anonPut.status}`);
+      assertUnifiedErrorResponse(anonPut);
+      assert.strictEqual(anonPut.body.code, 'UNAUTHORIZED');
+    }
+
+    // Authenticated HR PUT /api/v1/companies/{id} on own id, other id, and nonexistent id must return identical 405 METHOD_NOT_ALLOWED
+    const ownPut = await http.put(
+      `${BACKEND_BASE_URL}/api/v1/companies/${bundleA.company.id}`,
+      { name: 'Direct Put Own Company', size: '1000+' },
+      { headers: authHeaders(bundleA.hrToken) }
+    );
     const crossPut = await http.put(
       `${BACKEND_BASE_URL}/api/v1/companies/${bundleB.company.id}`,
       { name: 'Hijacked Company B', size: '1000+' },
       { headers: authHeaders(bundleA.hrToken) }
     );
-    assert.strictEqual(crossPut.status, 404, `Cross-tenant PUT must return 404, got ${crossPut.status}`);
-    assert.notStrictEqual(crossPut.status, 403);
-    assert.notStrictEqual(crossPut.status, 200);
-    assertUnifiedErrorResponse(crossPut);
-    assert.strictEqual(crossPut.body.code, 'NOT_FOUND');
+    const missingPut = await http.put(
+      `${BACKEND_BASE_URL}/api/v1/companies/999999`,
+      { name: 'Missing Company Put', size: '1000+' },
+      { headers: authHeaders(bundleA.hrToken) }
+    );
+
+    for (const [label, res] of [['own', ownPut], ['other', crossPut], ['missing', missingPut]]) {
+      assert.strictEqual(res.status, 405, `PUT /companies/{id} (${label}) must return 405, got ${res.status}`);
+      assert.notStrictEqual(res.status, 403);
+      assert.notStrictEqual(res.status, 200);
+      assertUnifiedErrorResponse(res);
+      assert.strictEqual(res.body.code, 'METHOD_NOT_ALLOWED');
+      assert.ok(VIETNAMESE_DIACRITIC_REGEX.test(res.body.message), `Expected Vietnamese message for 405 (${label})`);
+      assert.strictEqual(EMOJI_REGEX.test(res.body.message), false, `405 message (${label}) must contain zero emoji`);
+    }
+
+    assert.strictEqual(ownPut.rawText, crossPut.rawText, 'Own and cross-tenant 405 rawText must match identically');
+    assert.strictEqual(missingPut.rawText, crossPut.rawText, 'Missing and cross-tenant 405 rawText must match identically');
+    assert.deepStrictEqual(ownPut.body, crossPut.body);
+    assert.deepStrictEqual(missingPut.body, crossPut.body);
+
+    const ownGet = await http.get(`${BACKEND_BASE_URL}/api/v1/companies/${bundleA.company.id}`, {
+      headers: authHeaders(bundleA.hrToken)
+    });
+    assert.strictEqual(ownGet.status, 200);
+    assert.strictEqual(ownGet.body.id, bundleA.company.id);
 
     const crossGet = await http.get(`${BACKEND_BASE_URL}/api/v1/companies/${bundleB.company.id}`, {
       headers: authHeaders(bundleA.hrToken)
@@ -394,11 +437,21 @@ describe('Tier 2: DN-01 Company Profile & HR Account Boundaries', () => {
     assertUnifiedErrorResponse(crossGet);
     assert.strictEqual(crossGet.body.code, 'NOT_FOUND');
 
+    const afterA = await http.get(`${BACKEND_BASE_URL}/api/v1/companies/me`, {
+      headers: authHeaders(bundleA.hrToken)
+    });
+    assert.strictEqual(afterA.status, 200);
+    assert.strictEqual(afterA.body.name, beforeA.body.name, 'Company A name must remain unmodified');
+    assert.strictEqual(afterA.body.size, beforeA.body.size, 'Company A size must remain unmodified');
+    assert.strictEqual(afterA.body.version, beforeA.body.version, 'Company A version must remain unmodified');
+
     const afterB = await http.get(`${BACKEND_BASE_URL}/api/v1/companies/me`, {
       headers: authHeaders(bundleB.hrToken)
     });
     assert.strictEqual(afterB.status, 200);
     assert.strictEqual(afterB.body.name, beforeB.body.name, 'Company B must remain completely unmodified');
+    assert.strictEqual(afterB.body.size, beforeB.body.size, 'Company B size must remain unmodified');
+    assert.strictEqual(afterB.body.version, beforeB.body.version, 'Company B version must remain unmodified');
   });
 
   it('TC-T2-DN01-15: Should return 409 CONFLICT when PUT /api/v1/companies/me sends stale @Version', async () => {

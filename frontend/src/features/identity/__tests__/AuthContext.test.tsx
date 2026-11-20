@@ -50,6 +50,7 @@ describe('AuthContext & useAuth', () => {
     expect(result.current.isAuthenticated).toBe(false);
     expect(result.current.accessToken).toBeNull();
     expect(result.current.user).toBeNull();
+    expect(result.current.isExplicitLogout).toBe(false);
   });
 
   it('logs in successfully and stores token and profile in memory', async () => {
@@ -97,7 +98,7 @@ describe('AuthContext & useAuth', () => {
     expect(result.current.user?.lmsUserId).toBe('lms-sv-001');
   });
 
-  it('clears credentials on logout', async () => {
+  it('clears credentials and marks isExplicitLogout on default logout, and clears it on clearExplicitLogout', async () => {
     vi.mocked(authApi.login).mockResolvedValueOnce(mockAuthResponse);
 
     const { result } = renderHook(() => useAuth(), { wrapper });
@@ -106,6 +107,7 @@ describe('AuthContext & useAuth', () => {
       await result.current.login({ email: 'hr1@rikkeisoft.com', password: 'Password123' });
     });
     expect(result.current.isAuthenticated).toBe(true);
+    expect(result.current.isExplicitLogout).toBe(false);
 
     act(() => {
       result.current.logout();
@@ -114,6 +116,73 @@ describe('AuthContext & useAuth', () => {
     expect(result.current.isAuthenticated).toBe(false);
     expect(result.current.accessToken).toBeNull();
     expect(result.current.user).toBeNull();
+    expect(result.current.isExplicitLogout).toBe(true);
+
+    act(() => {
+      result.current.clearExplicitLogout();
+    });
+
+    expect(result.current.isExplicitLogout).toBe(false);
+  });
+
+  it('keeps isExplicitLogout false when logout({ preserveRedirect: true }) is called', async () => {
+    vi.mocked(authApi.login).mockResolvedValueOnce(mockAuthResponse);
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await act(async () => {
+      await result.current.login({ email: 'hr1@rikkeisoft.com', password: 'Password123' });
+    });
+
+    act(() => {
+      result.current.logout({ preserveRedirect: true });
+    });
+
+    expect(result.current.isAuthenticated).toBe(false);
+    expect(result.current.accessToken).toBeNull();
+    expect(result.current.user).toBeNull();
+    expect(result.current.isExplicitLogout).toBe(false);
+  });
+
+  it('resets isExplicitLogout to false after subsequent login or ssoLogin', async () => {
+    vi.mocked(authApi.login)
+      .mockResolvedValueOnce(mockAuthResponse)
+      .mockResolvedValueOnce(mockAuthResponse);
+    vi.mocked(authApi.ssoLogin).mockResolvedValueOnce({
+      accessToken: 'sso-jwt-token',
+      user: {
+        ...mockUser,
+        id: 2,
+        role: 'CANDIDATE',
+        companyId: null,
+      },
+    });
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await act(async () => {
+      await result.current.login({ email: 'hr1@rikkeisoft.com', password: 'Password123' });
+    });
+
+    act(() => {
+      result.current.logout();
+    });
+    expect(result.current.isExplicitLogout).toBe(true);
+
+    await act(async () => {
+      await result.current.login({ email: 'hr1@rikkeisoft.com', password: 'Password123' });
+    });
+    expect(result.current.isExplicitLogout).toBe(false);
+
+    act(() => {
+      result.current.logout();
+    });
+    expect(result.current.isExplicitLogout).toBe(true);
+
+    await act(async () => {
+      await result.current.ssoLogin('ticket-reset-flag');
+    });
+    expect(result.current.isExplicitLogout).toBe(false);
   });
 
   it('clears mustChangePassword in memory after successful password change', async () => {
@@ -179,5 +248,6 @@ describe('AuthContext & useAuth', () => {
     expect(result.current.isAuthenticated).toBe(false);
     expect(result.current.accessToken).toBeNull();
     expect(result.current.user).toBeNull();
+    expect(result.current.isExplicitLogout).toBe(false);
   });
 });

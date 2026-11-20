@@ -55,11 +55,11 @@ Identify the required role permissions for the target endpoint:
 
 ### Step 3: Maintain the Deny-by-Default Filter Chain
 
-1. Review `com.rikkei.jobs.common.security.SecurityConfig`.
-2. All endpoints under `/api/v1/**` must require authentication (`anyRequest().authenticated()`).
-3. Only explicit whitelisted routes may be declared with `permitAll()`:
-   - `GET /api/v1/health` (Service health check)
-   - `/api-docs/**`, `/swagger-ui.html`, and `/swagger-ui/**` (Enabled only in `dev` profile; `/v3/api-docs/**` also remains permitted in `SecurityConfig`)
+1. Review `com.rikkei.jobs.common.security.RoutePolicyRegistry` and `com.rikkei.jobs.common.security.SecurityConfig` (plus `com.rikkei.jobs.common.security.OwnershipGuard` for horizontal `404` checks).
+2. All routes are governed declaratively in `RoutePolicyRegistry` and terminate with `.anyRequest().denyAll()`.
+3. Only explicit whitelisted routes may be declared `PUBLIC`:
+   - `GET /api/v1/health`, `/actuator/health`, `/error`, and `POST /api/v1/auth/{sso,login,forgot-password,reset-password}`
+   - `/api/docs`, `/api/swagger-ui/**`, `/api/api-docs/**` alongside legacy `/api-docs/**`, `/swagger-ui.html`, `/swagger-ui/**`, and `/v3/api-docs/**` (Enabled only in `dev` profile; disabled in `prod`)
 4. Handle authentication failures via `CustomAuthenticationEntryPoint`:
    - Return HTTP 401 with body:
 
@@ -76,7 +76,7 @@ Identify the required role permissions for the target endpoint:
      ```json
      {
        "code": "FORBIDDEN",
-       "message": "Bạn không có quyền thực hiện thao tác này"
+       "message": "Không có quyền truy cập"
      }
      ```
 

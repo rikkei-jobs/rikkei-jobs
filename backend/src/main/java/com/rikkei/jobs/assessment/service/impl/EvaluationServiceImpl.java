@@ -24,6 +24,7 @@ import com.rikkei.jobs.common.exception.InvalidCandidateException;
 import com.rikkei.jobs.common.exception.ResourceNotFoundException;
 import com.rikkei.jobs.common.exception.TemplateInactiveException;
 import com.rikkei.jobs.common.exception.ValidationException;
+import com.rikkei.jobs.common.security.OwnershipGuard;
 import com.rikkei.jobs.identity.service.IdentityPublicService;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -196,10 +197,9 @@ public class EvaluationServiceImpl implements EvaluationService {
                         .findById(evaluationId)
                         .orElseThrow(EvaluationNotFoundException::new);
 
-        // 2. IDOR check: Chỉ mentor sở hữu mới được cập nhật (404 NOT_FOUND bảo vệ thông tin)
-        if (!evaluation.getMentorId().equals(mentorId)) {
-            throw new EvaluationNotFoundException();
-        }
+        // 2. IDOR check: Only the owning mentor may update (404 NOT_FOUND avoids disclosure)
+        OwnershipGuard.requireSelf(
+                mentorId, evaluation.getMentorId(), EvaluationNotFoundException::new);
 
         // 3. Chỉ cho phép chỉnh sửa phiếu ở trạng thái DRAFT
         if (evaluation.getStatus() != EvaluationStatus.DRAFT) {
@@ -267,10 +267,9 @@ public class EvaluationServiceImpl implements EvaluationService {
                         .findById(evaluationId)
                         .orElseThrow(EvaluationNotFoundException::new);
 
-        // 2. IDOR check: Chỉ mentor tạo phiếu mới được submit (404 NOT_FOUND)
-        if (!evaluation.getMentorId().equals(mentorId)) {
-            throw new EvaluationNotFoundException();
-        }
+        // 2. IDOR check: Only the owning mentor may submit (404 NOT_FOUND avoids disclosure)
+        OwnershipGuard.requireSelf(
+                mentorId, evaluation.getMentorId(), EvaluationNotFoundException::new);
 
         // 3. Trạng thái khác DRAFT -> ném 409 CONFLICT
         if (evaluation.getStatus() != EvaluationStatus.DRAFT) {

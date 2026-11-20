@@ -29,6 +29,7 @@ import com.rikkei.jobs.company.repository.CompanyRepository;
 import com.rikkei.jobs.company.service.CompanyLogoValidator.ValidatedLogo;
 import com.rikkei.jobs.company.service.LogoStorage.StoredLogo;
 import com.rikkei.jobs.company.service.impl.CompanyServiceImpl;
+import com.rikkei.jobs.identity.UserPrincipal;
 import com.rikkei.jobs.identity.dto.CreateHrUserCommand;
 import com.rikkei.jobs.identity.dto.CreatedHrUserResult;
 import com.rikkei.jobs.identity.dto.SendHrOnboardingEmailCommand;
@@ -352,6 +353,44 @@ class CompanyServiceImplTest {
 
         assertEquals(0, fakeLogoStorage.storeCalls.get());
         verify(companyRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    @DisplayName(
+            "getCompanyById allows HR own company and STAFF any company, throwing identical 404 on cross-company or missing")
+    void shouldEnforceCompanyAccessOnGetCompanyById() {
+        Company company1 = new Company();
+        company1.setId(1L);
+        company1.setName("Rikkeisoft");
+        company1.setTaxCode("0109283746");
+        company1.setStatus(CompanyStatus.ACTIVE);
+        company1.setVersion(0L);
+
+        when(companyRepository.findById(1L)).thenReturn(Optional.of(company1));
+        when(companyRepository.findById(999L)).thenReturn(Optional.empty());
+
+        UserPrincipal hr1 = new UserPrincipal(4L, "hr1@rikkeijobs.test", "HR", 1L, false);
+        UserPrincipal hr2 = new UserPrincipal(5L, "hr2@rikkeijobs.test", "HR", 2L, false);
+        UserPrincipal hrNull = new UserPrincipal(10L, "hr0@rikkeijobs.test", "HR", null, false);
+        UserPrincipal staff = new UserPrincipal(7L, "staff1@rikkeijobs.test", "STAFF", null, false);
+
+        assertEquals(1L, service.getCompanyById(1L, hr1).id());
+        assertEquals(1L, service.getCompanyById(1L, staff).id());
+
+        ResourceNotFoundException crossCompanyEx =
+                assertThrows(
+                        ResourceNotFoundException.class, () -> service.getCompanyById(1L, hr2));
+        ResourceNotFoundException nullCompanyEx =
+                assertThrows(
+                        ResourceNotFoundException.class, () -> service.getCompanyById(1L, hrNull));
+        ResourceNotFoundException missingCompanyEx =
+                assertThrows(
+                        ResourceNotFoundException.class, () -> service.getCompanyById(999L, staff));
+
+        assertEquals("Không tìm thấy doanh nghiệp", crossCompanyEx.getMessage());
+        assertEquals(crossCompanyEx.getMessage(), nullCompanyEx.getMessage());
+        assertEquals(crossCompanyEx.getMessage(), missingCompanyEx.getMessage());
+        verify(companyRepository, never()).findById(2L);
     }
 
     private static final class FakeLogoStorage implements LogoStorage {

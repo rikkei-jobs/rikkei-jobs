@@ -893,10 +893,10 @@ describe('Tier 2: NT-01 Auth Boundaries & Negative Invalidation (39 Tests)', asy
       }
     });
 
-    it('TC-T2-SKILL-02: Should enforce 404 NOT_FOUND rule for private profiles and non-existent users', async () => {
+    it('TC-T2-SKILL-02: Should enforce D6 ownership (404 cross-candidate/private, 200 HR public, 403 non-CANDIDATE/HR)', async () => {
       assert.ok(backendOnline, `Backend service at ${BACKEND_BASE_URL} is offline`);
 
-      // 1. Login candidate2
+      // 1. Login candidate2, candidate1, hr2, mentor1
       const login2 = await http.post(`${BACKEND_BASE_URL}/api/v1/auth/login`, {
         email: 'candidate2@rikkeijobs.test',
         password: 'Test@123'
@@ -904,13 +904,26 @@ describe('Tier 2: NT-01 Auth Boundaries & Negative Invalidation (39 Tests)', asy
       assert.strictEqual(login2.status, 200, `Login candidate2 failed: ${login2.rawText}`);
       const token2 = login2.body.accessToken;
 
-      // 2. Login candidate1
       const login1 = await http.post(`${BACKEND_BASE_URL}/api/v1/auth/login`, {
         email: 'candidate1@rikkeijobs.test',
         password: 'Test@123'
       });
       assert.strictEqual(login1.status, 200, `Login candidate1 failed: ${login1.rawText}`);
       const token1 = login1.body.accessToken;
+
+      const loginHr2 = await http.post(`${BACKEND_BASE_URL}/api/v1/auth/login`, {
+        email: 'hr2@rikkeijobs.test',
+        password: 'Test@123'
+      });
+      assert.strictEqual(loginHr2.status, 200, `Login hr2 failed: ${loginHr2.rawText}`);
+      const tokenHr2 = loginHr2.body.accessToken;
+
+      const loginMentor1 = await http.post(`${BACKEND_BASE_URL}/api/v1/auth/login`, {
+        email: 'mentor1@rikkeijobs.test',
+        password: 'Test@123'
+      });
+      assert.strictEqual(loginMentor1.status, 200, `Login mentor1 failed: ${loginMentor1.rawText}`);
+      const tokenMentor1 = loginMentor1.body.accessToken;
 
       // Case 4a: candidate2 views candidate1 profile (is_public = false) -> 404 NOT_FOUND
       const privateRes = await http.get(`${BACKEND_BASE_URL}/api/v1/profiles/1/skills`, {
@@ -927,16 +940,20 @@ describe('Tier 2: NT-01 Auth Boundaries & Negative Invalidation (39 Tests)', asy
         `Expected error code NOT_FOUND for private profile, got ${privateRes.body?.code}`
       );
 
-      // Case 4b: candidate1 views candidate2 profile (is_public = true) -> 200 OK
-      const publicRes = await http.get(`${BACKEND_BASE_URL}/api/v1/profiles/2/skills`, {
+      // Case 4b: candidate1 views candidate2 profile (even with is_public = true) -> 404 NOT_FOUND (D6 Group C)
+      const crossCandidateRes = await http.get(`${BACKEND_BASE_URL}/api/v1/profiles/2/skills`, {
         headers: { Authorization: `Bearer ${token1}` }
       });
       assert.strictEqual(
-        publicRes.status,
-        200,
-        `Public profile 2 viewed by candidate 1 must return 200 OK, got ${publicRes.status}`
+        crossCandidateRes.status,
+        404,
+        `Public profile 2 viewed by candidate 1 must return 404 NOT_FOUND under D6, got ${crossCandidateRes.status}`
       );
-      assert.ok(Array.isArray(publicRes.body), 'Public profile must return array of skills');
+      assert.strictEqual(
+        crossCandidateRes.body && crossCandidateRes.body.code,
+        'NOT_FOUND',
+        `Expected error code NOT_FOUND for cross-candidate access, got ${crossCandidateRes.body?.code}`
+      );
 
       // Case 4c: candidate1 views non-existent profile 99999 -> 404 NOT_FOUND
       const nonExistentRes = await http.get(`${BACKEND_BASE_URL}/api/v1/profiles/99999/skills`, {
@@ -952,6 +969,38 @@ describe('Tier 2: NT-01 Auth Boundaries & Negative Invalidation (39 Tests)', asy
         'NOT_FOUND',
         `Expected error code NOT_FOUND for non-existent profile, got ${nonExistentRes.body?.code}`
       );
+
+      // Case 4d: hr2 views public profile 2 -> 200 OK; hr2 views private profile 1 -> 404 NOT_FOUND
+      const hrPublicRes = await http.get(`${BACKEND_BASE_URL}/api/v1/profiles/2/skills`, {
+        headers: { Authorization: `Bearer ${tokenHr2}` }
+      });
+      assert.strictEqual(
+        hrPublicRes.status,
+        200,
+        `Public profile 2 viewed by hr2 must return 200 OK, got ${hrPublicRes.status}`
+      );
+      assert.ok(Array.isArray(hrPublicRes.body), 'Public profile must return array of skills');
+
+      const hrPrivateRes = await http.get(`${BACKEND_BASE_URL}/api/v1/profiles/1/skills`, {
+        headers: { Authorization: `Bearer ${tokenHr2}` }
+      });
+      assert.strictEqual(
+        hrPrivateRes.status,
+        404,
+        `Private profile 1 viewed by hr2 must return 404, got ${hrPrivateRes.status}`
+      );
+      assert.strictEqual(hrPrivateRes.body && hrPrivateRes.body.code, 'NOT_FOUND');
+
+      // Case 4e: mentor1 views profile 2 -> 403 FORBIDDEN
+      const mentorForbiddenRes = await http.get(`${BACKEND_BASE_URL}/api/v1/profiles/2/skills`, {
+        headers: { Authorization: `Bearer ${tokenMentor1}` }
+      });
+      assert.strictEqual(
+        mentorForbiddenRes.status,
+        403,
+        `Profile 2 viewed by mentor1 must return 403 FORBIDDEN, got ${mentorForbiddenRes.status}`
+      );
+      assert.strictEqual(mentorForbiddenRes.body && mentorForbiddenRes.body.code, 'FORBIDDEN');
     });
 
     it('TC-T2-SKILL-03: Should reject users with must_change_password=true with 403 MUST_CHANGE_PASSWORD', async () => {

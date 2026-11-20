@@ -42,9 +42,9 @@ All HTTP error responses (HTTP status codes 4xx and 5xx) must return a consisten
 |---|---|---|---|
 | **400 Bad Request** | Invalid payload syntax, missing required fields, boundary validation failures. | `VALIDATION_ERROR`, `BAD_REQUEST` | `"Trường email không đúng định dạng"` |
 | **401 Unauthorized** | Missing, malformed, expired, or invalid JWT token; missing or invalid service key. | `UNAUTHORIZED`, `INVALID_SERVICE_KEY` | `"Yêu cầu xác thực tài khoản"` |
-| **403 Forbidden** | Authenticated user lacks permission or required role for the resource. | `FORBIDDEN` | `"Bạn không có quyền thực hiện thao tác này"` |
+| **403 Forbidden** | Authenticated user lacks permission or required role for the resource. | `FORBIDDEN` | `"Không có quyền truy cập"` |
 | **404 Not Found** | Target resource ID, student ID, course ID, or batch ID does not exist. | `NOT_FOUND` | `"Không tìm thấy tài nguyên yêu cầu"` |
-| **405 Method Not Allowed** | HTTP method is not supported on the target URI path (e.g., POST to a GET-only route). | `METHOD_NOT_ALLOWED` | `"Phương thức HTTP không được hỗ trợ"` |
+| **405 Method Not Allowed** | HTTP method is not supported on the target URI path (e.g., `POST` to a `GET`-only route, or `PUT /api/v1/companies/{id}` now that `GET /api/v1/companies/{id}` is mapped). | `METHOD_NOT_ALLOWED` | `"Phương thức HTTP không được hỗ trợ"` |
 | **409 Conflict** | Business rule conflict, e.g., duplicate enrollment, user already exists in batch. | `CONFLICT`, `ALREADY_ENROLLED`, `ALREADY_MEMBER` | `"Sinh viên đã ghi danh khoá học này"` |
 | **429 Too Many Requests** | Rate limit exceeded (e.g., AI queries or password reset requests). | `RATE_LIMITED` | `"Bạn đã vượt quá giới hạn yêu cầu trong ngày"` |
 | **503 Service Unavailable** | Downstream dependency (LMS, Exam, PM, Meet mock) is down, unreachable, or times out (>5s). | `EXTERNAL_UNAVAILABLE` | `"Hệ thống bên ngoài tạm thời không khả dụng"` |
@@ -163,6 +163,12 @@ List endpoints returning multiple records must support 1-based pagination via qu
 - **Database Storage**: In PostgreSQL, all datetime columns MUST be stored as `TIMESTAMPTZ` (Timestamp with Time Zone in UTC).
 - **Serialization**: The Spring Boot backend uses `java.time.Instant` or `java.time.OffsetDateTime` serialized via Jackson `JavaTimeModule` without timestamps as raw numeric epoch milliseconds.
 
+### 1.5 OpenAPI & Swagger UI Contract (NT-02)
+
+- **Dev Profile (`dev`)**: Swagger UI is exposed at `/api/docs` on both the direct backend (`http://127.0.0.1:8080/api/docs`) and the Nginx gateway (`http://127.0.0.1:3000/api/docs`, routed via `location ^~ /api/` in `frontend/nginx.conf`). Springdoc serves OpenAPI JSON at `/api/api-docs` (and legacy `/api-docs`), YAML at `/api/api-docs.yaml` (and `/api-docs.yaml`), and preserves legacy redirects at `/swagger-ui.html`.
+- **Contract Standard**: All merged business controllers declare `@Tag`, `@Operation`, `bearerAuth` HTTP Bearer JWT security where required, and unified `ErrorResponse` (`401`/`403`/`404`) schemas; dev-only `TestErrorController` is marked `@Hidden` and excluded from OpenAPI output.
+- **Production Profile (`prod`)**: Springdoc (`swagger-ui` and `api-docs`) is completely disabled (`404 NOT_FOUND` on all OpenAPI/Swagger paths).
+
 ---
 
 ## 2. System Roles (RBAC)
@@ -176,6 +182,18 @@ The Rikkei Jobs access control system comprises five distinct user roles:
 | **`MENTOR`** | Giảng viên / Hướng dẫn | Giảng viên hoặc chuyên gia hướng dẫn thực tập dự án IOC; thực hiện đánh giá năng lực ứng viên và ghi nhận kết quả chuyên môn. |
 | **`STAFF`** | Cán bộ tuyển dụng | Cán bộ điều phối Rikkei Education phụ trách duyệt hồ sơ năng lực, duyệt JD doanh nghiệp, mở thông tin liên hệ và ghép đợt thực tập IOC. |
 | **`ADMIN`** | Quản trị viên hệ thống | Quản trị viên hệ thống toàn quyền cấu hình danh mục 20 kỹ năng, quản trị người dùng, thiết lập trọng số đánh giá và kiểm tra nhật ký kiểm toán (audit log). |
+
+### 2.1 Declarative Route Guard, Horizontal Ownership & Frontend RBAC (NT-02)
+
+- **Declarative Route Policy (`RoutePolicyRegistry`)**: `com.rikkei.jobs.common.security.RoutePolicyRegistry` is the single declarative source of truth for `route -> allowed roles`, consumed in order by `SecurityConfig` with `.anyRequest().denyAll()` (deny-by-default). Literal `/me` routes MUST appear before parameterized `/{id}` or `/{userId}` routes, and every `ROLES` policy maintains `@PreAuthorize` parity verified automatically by `RbacEndpointPolicyCoverageIntegrationTest`.
+- **Horizontal Ownership Helper (`OwnershipGuard`)**: `com.rikkei.jobs.common.security.OwnershipGuard` is a stateless utility in `common.security` compliant with Rule 14 module boundaries (depends only on `UserPrincipal`, `ResourceNotFoundException`, and canonical role constants). Horizontal ownership violations (cross-tenant company reads, cross-candidate profile reads, cross-mentor evaluation edits) return `404 NOT_FOUND` with unified `{"code","message"}` identical to missing IDs so IDs cannot be probed:
+  - `GET /api/v1/companies/{id}`: `HR` reads only `principal.getCompanyId()` (`404` otherwise); `STAFF` reads any company; other roles receive `403 FORBIDDEN`. Now that `/{id}` is mapped, `PUT /api/v1/companies/{id}` returns `405 METHOD_NOT_ALLOWED` uniformly for own, cross-tenant, and missing IDs (`401` for anonymous).
+  - `GET /api/v1/jobs/{jobId}` and `GET /api/v1/target-positions`: `authenticated-any` for approved, non-expired JDs and target positions; any future endpoint exposing draft or company-scoped JDs MUST enforce `OwnershipGuard`.
+  - Complete endpoint-by-endpoint rules are maintained in [`docs/nt02/permission-matrix.md`](nt02/permission-matrix.md).
+- **Frontend Shared Role Layout, Route Guard & API Wrapper**:
+  - `SharedAppLayout` + `roleMenuConfig` render role-isolated Vietnamese navigation menus (unimplemented items use `aria-disabled="true"`, `tabIndex={-1}`, and `"Sắp ra mắt"` with zero navigation) while keeping role homes reachable via the Brand link.
+  - `RequireAuth`, `RequireMustChangePassword`, and `RequireRole` enforce unauthenticated redirect to `/login`, forced password change at `/change-password`, and an in-place Vietnamese `ForbiddenPage` (`403`) displaying the localized role via `frontend/src/shared/i18n/enumLabels.ts` and a link back to the user's role home.
+  - `frontend/src/shared/api/httpClient.ts` attaches the in-memory Bearer token automatically, clears the session and redirects to `/login` on `401`, and preserves the session on `403`.
 
 ---
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { AuthProvider } from '../context/AuthContext';
 import { CandidateHomePage } from '../pages/role-homes/CandidateHomePage';
@@ -117,9 +117,14 @@ describe('Role Home Pages', () => {
         </AuthProvider>,
       );
 
-      // Verify outer layout shell and navigation matching other role pages
+      // Verify outer layout shell and left sidebar navigation matching other role pages
       expect(container.querySelector('.rj-dashboard')).toBeInTheDocument();
       expect(container.querySelector('.rj-dashboard-nav')).toBeInTheDocument();
+      expect(container.querySelector('aside.rj-sidebar')).toBeInTheDocument();
+      const nav = screen.getByRole('navigation', { name: /Điều hướng theo vai trò/i });
+      const navLinks = within(nav).getAllByRole('link');
+      expect(navLinks[0]).toHaveTextContent('Trang chủ');
+      expect(navLinks[0]).toHaveAttribute('href', '/candidate');
       expect(screen.getByText('Rikkei Jobs Cổng Quản Trị')).toBeInTheDocument();
       expect(screen.getAllByText('Ứng viên').length).toBeGreaterThanOrEqual(1);
       expect(screen.queryByText('CANDIDATE')).not.toBeInTheDocument();
