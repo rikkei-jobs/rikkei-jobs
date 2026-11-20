@@ -88,6 +88,8 @@ CREATE INDEX IF NOT EXISTS idx_evaluations_user_id
     ON evaluations (user_id);
 CREATE INDEX IF NOT EXISTS idx_evaluations_mentor_id
     ON evaluations (mentor_id);
+CREATE INDEX IF NOT EXISTS idx_evaluations_mentor_status
+    ON evaluations (mentor_id, status);
 CREATE INDEX IF NOT EXISTS idx_evaluations_template_id
     ON evaluations (template_id);
 CREATE INDEX IF NOT EXISTS idx_evaluations_status
