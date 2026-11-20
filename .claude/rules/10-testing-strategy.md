@@ -13,7 +13,7 @@ Structure automated testing across three distinct pyramid tiers adhering to esta
 - Unit Tests (~70% of total test suite):
   - Scope: Test pure business logic, domain models, validations, state transitions, and utility functions in complete isolation.
   - Backend: JUnit 5 with Mockito for service and domain layer tests (baseline 641 tests across 59 classes).
-  - Frontend: Vitest 5.1.0 with @testing-library/react for component and hook testing (baseline 342 tests across 32 files).
+  - Frontend: Vitest 5.1.0 with @testing-library/react for component and hook testing (baseline 410 tests across 35 files).
 - Integration Tests (~20% of total test suite):
   - Scope: Verify component interactions, database operations, security filters, and HTTP error boundaries.
   - Backend: Spring Boot @SpringBootTest combined with Testcontainers 2.0.5 for PostgreSQL integration tests.
@@ -55,7 +55,7 @@ Execute the verified testing commands locally:
 # Run backend unit and Testcontainers integration tests (641 tests across 59 classes)
 ./mvnw test
 
-# Run frontend Vitest unit test suite (342 tests across 32 files)
+# Run frontend Vitest unit test suite (410 tests across 35 files)
 npm run test --prefix frontend
 
 # Run external mock server integration test suite

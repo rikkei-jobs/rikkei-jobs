@@ -37,60 +37,34 @@ $$x(t) = 1 - e^{-\zeta \omega_0 t} \left( \cos(\omega_d t) + \frac{\zeta \omega_
 
 ## 2. Standard Spring Presets Table
 
-| Preset Name | Mass ($m$) | Stiffness ($k$) | Damping ($c$) | Damping Ratio ($\zeta$) | Regime | Settling Time ($t_s \pm 2\%$) | Overshoot ($M_p$) | Primary UI Roles |
-|---|---|---|---|---|---|---|---|---|
-| **`snappy`** | 1.0 | 400 | 30 | 0.750 | Lightly Underdamped | ~260ms | ~2.8% | Button clicks, toggle switches, tab indicators, dropdown lists |
-| **`gentle`** | 1.0 | 170 | 26 | 0.997 | Critically Damped | ~400ms | 0.0% | Modal dialogs, slide-over drawers, expanding panels |
-| **`stiff`** | 1.0 | 380 | 32 | 0.821 | Sub-critical Underdamped | ~250ms | ~1.2% | Tooltips, badge counters, focus rings |
-| **`bouncy-subtle`** | 1.0 | 220 | 18 | 0.607 | Underdamped Resonant | ~440ms | ~8.9% | Verified skill checkmark, bookmark saved confirmation |
+| Preset Name | Regime | Settling Feel | Primary UI Roles |
+|---|---|---|---|
+| **`snappy`** | Lightly Underdamped (~1% overshoot) | Crisp, immediate | Toggle switches, active buttons, tab indicators, Select chevron |
+| **`gentle`** | Critically Damped (0% overshoot) | Smooth settle | Modal dialogs, slide-over drawers, sidebar expanders |
+| **`stiff`** | Sub-critical (<0.5% overshoot) | Fast, firm | Tooltips, badge counters, focus indicators |
 
 ---
 
-## 3. CSS linear() Function Approximations
+## 3. CSS linear() Function Approximations (Aligned with `design-tokens.css`)
 
-CSS Easing Level 2 defines `linear()` as a piecewise linear interpolation function that approximates complex spring curves at zero runtime cost and zero JavaScript overhead.
+CSS Easing Level 2 defines `linear()` as a piecewise linear interpolation function that approximates physical spring curves at zero runtime cost and zero JavaScript overhead. Always provide `cubic-bezier(...)` fallbacks on `:root` before `@supports (animation-timing-function: linear(0, 1))`.
 
 ### 3.1. Preset `snappy`
 
 ```css
-/* Stiffness: 400, Damping: 30, Mass: 1.0, Duration: 260ms */
---rj-ease-spring-snappy: linear(
-  0, 0.006, 0.025 2.8%, 0.101 6.1%, 0.539 18.9%, 0.721 24.4%, 
-  0.852 30.2%, 0.941 37%, 0.985 44.5%, 1.006 52.8%, 1.011 59.8%, 
-  1 76.5%, 1
-);
+--rj-ease-spring-snappy: linear(0, 0.04 3%, 0.56 17%, 0.92 32%, 1.01 55%, 1);
 ```
 
 ### 3.2. Preset `gentle`
 
 ```css
-/* Stiffness: 170, Damping: 26, Mass: 1.0, Duration: 400ms */
---rj-ease-spring-gentle: linear(
-  0, 0.003, 0.012 2.1%, 0.05 4.6%, 0.287 14.8%, 0.548 24.4%, 
-  0.738 34.1%, 0.865 44.2%, 0.938 54.7%, 0.976 65.6%, 0.993 77.2%, 
-  1
-);
+--rj-ease-spring-gentle: linear(0, 0.02 3%, 0.34 15%, 0.79 35%, 0.96 58%, 0.995 80%, 1);
 ```
 
 ### 3.3. Preset `stiff`
 
 ```css
-/* Stiffness: 380, Damping: 32, Mass: 1.0, Duration: 250ms */
---rj-ease-spring-stiff: linear(
-  0, 0.009, 0.038 2.5%, 0.156 5.8%, 0.652 16.5%, 0.835 21.8%, 
-  0.938 27.2%, 0.987 33.5%, 1.007 41.2%, 1.008 48.5%, 1 65%, 1
-);
-```
-
-### 3.4. Preset `bouncy-subtle`
-
-```css
-/* Stiffness: 220, Damping: 18, Mass: 1.0, Duration: 440ms */
---rj-ease-spring-bouncy: linear(
-  0, 0.005, 0.021 2.3%, 0.084 5.1%, 0.462 16.2%, 0.655 21.3%, 
-  0.814 27%, 0.929 33.3%, 0.998 40.5%, 1.034 48.2%, 1.042 55.6%, 
-  1.03 63.8%, 1.009 73.1%, 0.998 83.2%, 1
-);
+--rj-ease-spring-stiff: linear(0, 0.04 3%, 0.64 16%, 0.95 31%, 1.003 53%, 1);
 ```
 
 ---

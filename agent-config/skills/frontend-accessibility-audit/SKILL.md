@@ -118,13 +118,17 @@ Key auditing pillars:
 - [ ] Modals correctly trap keyboard focus and restore focus to the trigger upon closing.
 - [ ] Form controls are bound to `<label>` elements and utilize `aria-describedby` for error states.
 - [ ] Touch targets measure at least 44x44px on mobile devices.
+- [ ] WAI-ARIA `role="switch"` controls maintain a static `aria-label`, toggle `aria-checked`, and respond to `Space` and `Enter` without storing credentials or extra visible text.
+- [ ] Hover/focus tooltips (WCAG 1.4.13) appear within `<= 200ms`, remain hoverable, and dismiss cleanly on `Escape` without moving focus.
+- [ ] Any non-exempt ambient animation `>= 6s` provides a visible Pause/Play toggle (`aria-pressed`, WCAG 2.2.2) and pauses automatically when `document.hidden` (on `/login` hero, Owner-approved WCAG 2.2.2 exception uses 1-shot `<= 5s` ambient arcs, interaction pause/hold/resume, 3-round auto-stop, and dynamic `aria-live="off"`/`"polite"`).
+- [ ] Route transitions and async data hydration maintain exact `CLS === 0` (`PerformanceObserver` `layout-shift`).
 - [ ] Full compliance with [a11y-checklist.md](references/a11y-checklist.md) verified.
 
 ## 8. Rikkei Jobs Specifics
 
 - Verification checklist: [references/a11y-checklist.md](references/a11y-checklist.md).
 - Test setup: `frontend/src/setupTests.ts` (configures `@testing-library/jest-dom/vitest`).
-- Layout primitives: `frontend/src/shared/components/Header.tsx`, `HealthBadge.tsx`.
+- Layout & interactive primitives: `frontend/src/features/identity/components/SharedAppLayout.tsx`, `CompetencyRadarVisual.tsx`, `frontend/src/shared/components/ThemeSwitch.tsx`, `Select.tsx`, `Header.tsx`.
 - Verification commands:
 
 ```bash

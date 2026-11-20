@@ -50,5 +50,5 @@ Compliant with WCAG 2.2 Level AA Standards.
 ## 8. Motion & Flashing Safety (WCAG 2.2.2 & 2.3.1)
 
 - [ ] All non-essential animations respect `@media (prefers-reduced-motion: reduce)` with a 100ms cross-fade and 0.001ms duration.
-- [ ] Animations lasting longer than 5 seconds provide an accessible Pause or Stop control.
+- [ ] Animations lasting longer than 5 seconds provide an accessible Pause or Stop control (or an Owner-approved bounded auto-stop + interaction pause/hold/resume mechanism, as on `/login` hero `CompetencyRadarVisual`).
 - [ ] Zero animations flash more than 3 times per second (> 3Hz).
