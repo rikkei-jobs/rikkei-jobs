@@ -1,125 +1,78 @@
-/* =========================
-   Candidate Internships Stylesheet
-   Design Tokens & Accessibility
-========================= */
+/* Candidate Internships — TT-01 layout & card definitions (tokens only) */
 
 .ci-page {
-  box-sizing: border-box;
   width: 100%;
-  max-width: 100%;
-  min-width: 0;
+}
+
+.ci-page > .rj-page-header,
+.ci-alert {
+  margin-bottom: 0;
+}
+
+.ci-metrics-strip,
+.ci-stats {
   margin: 0;
-  padding: 0;
-  font-family: var(--rj-font-body);
-  color: var(--rj-color-text);
-  line-height: 1.6;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-/* =========================
-   Page Heading
-========================= */
-
-.ci-page-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 24px;
-  padding: 8px 0 20px;
-}
-
-.ci-heading {
-  font-family: var(--rj-font-display);
-  font-size: 1.5rem;
-  line-height: 1.5;
-  margin: 0;
-  color: var(--rj-color-text);
-}
-
-.ci-lead {
-  margin: 6px 0 0;
-  max-width: 65ch;
-  color: var(--rj-color-text-secondary);
-  font-size: 0.9375rem;
-  line-height: 1.6;
-}
-
-/* =========================
-   Overview / Statistics
-========================= */
-
-.ci-overview {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
-}
-
-.ci-overview-item {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-width: 100px;
-  padding: 8px 16px;
-  background: var(--rj-color-surface);
-  border: 1px solid var(--rj-color-border);
-  border-radius: 6px;
-}
-
-.ci-overview-label {
-  margin: 0;
-  color: var(--rj-color-text-secondary);
-  font-size: 0.8125rem;
-  font-weight: 500;
-  text-align: center;
-}
-
-.ci-overview-value {
-  margin: 4px 0 0;
-  font-family: var(--rj-font-mono);
-  font-size: 1.25rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  color: var(--rj-color-action);
-}
-
-/* =========================
-   Internship Cards List
-========================= */
-
-.ci-list {
   display: grid;
-  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--rj-primitive-space-3);
 }
 
-.ci-card {
-  box-sizing: border-box;
-  overflow: hidden;
-  background: var(--rj-color-surface);
-  border: 1px solid var(--rj-color-border);
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  transition: border-color var(--rj-motion-micro) ease-out;
+.ci-metric-val {
+  font-family: var(--rj-font-mono);
 }
 
-.ci-card:hover {
-  border-color: var(--rj-color-border-hover, var(--rj-color-action));
+.ci-skeleton-kicker {
+  display: block;
+  width: 96px;
+  height: 1.125rem;
 }
 
-/* =========================
-   Batch Header
-========================= */
+.ci-skeleton-card {
+  min-height: 356px;
+}
+
+.ci-alert-body {
+  align-items: flex-start;
+}
+
+.ci-alert-title,
+.ci-alert-desc,
+.ci-batch-name,
+.ci-dl-value,
+.ci-stat-value {
+  margin: 0;
+}
+
+.ci-alert-title {
+  font-family: var(--rj-font-display);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.ci-retry-btn {
+  margin-top: var(--rj-primitive-space-1);
+}
+
+.ci-list > .rj-stagger-item:nth-child(2) {
+  animation-delay: var(--rj-motion-stagger-normal);
+}
+.ci-list > .rj-stagger-item:nth-child(3) {
+  animation-delay: calc(var(--rj-motion-stagger-normal) * 2);
+}
+.ci-list > .rj-stagger-item:nth-child(4) {
+  animation-delay: calc(var(--rj-motion-stagger-normal) * 3);
+}
+.ci-list > .rj-stagger-item:nth-child(5) {
+  animation-delay: calc(var(--rj-motion-stagger-normal) * 4);
+}
+.ci-list > .rj-stagger-item:nth-child(n + 6) {
+  animation-delay: var(--rj-motion-stagger-cap);
+}
 
 .ci-card-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 20px 20px 0;
+  gap: var(--rj-primitive-space-3);
 }
 
 .ci-batch-icon {
@@ -129,383 +82,114 @@
   width: 44px;
   height: 44px;
   flex-shrink: 0;
-  border-radius: 8px;
-  background: var(--rj-color-surface-subtle);
-  color: var(--rj-color-action);
-  border: 1px solid var(--rj-color-border);
+  border-radius: var(--rj-radius-lg);
+  background: var(--rj-color-badge-brand-bg);
+  color: var(--rj-color-badge-brand-text);
+  border: 1px solid var(--rj-color-badge-brand-border);
 }
 
-.ci-batch-info {
+.ci-batch-info,
+.ci-dl-row {
   min-width: 0;
-  flex: 1 1 auto;
 }
 
 .ci-batch-name {
-  margin: 0;
   font-family: var(--rj-font-display);
   font-size: 1.125rem;
-  line-height: 1.5;
-  font-weight: 600;
-  color: var(--rj-color-text);
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--rj-color-text-primary);
 }
 
 .ci-batch-code {
   display: inline-block;
-  margin-top: 4px;
+  margin-top: var(--rj-primitive-space-1);
   font-family: var(--rj-font-mono);
   font-size: 0.75rem;
-  font-variant-numeric: tabular-nums;
   color: var(--rj-color-text-secondary);
   overflow-wrap: anywhere;
 }
 
-/* =========================
-   Internship Topic
-========================= */
-
-.ci-topic {
-  margin: 0 20px;
-  padding: 14px 16px;
-  border-radius: 6px;
-  background: var(--rj-color-surface-subtle);
-  border: 1px solid var(--rj-color-border);
-}
-
-.ci-label {
-  display: block;
-  margin-bottom: 5px;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--rj-color-text-secondary);
-}
-
-.ci-topic-name {
+.ci-dl {
   margin: 0;
-  font-family: var(--rj-font-display);
-  font-size: 1rem;
-  font-weight: 600;
-  line-height: 1.5;
-  color: var(--rj-color-text);
-  overflow-wrap: anywhere;
-}
-
-/* =========================
-   Internship Details
-========================= */
-
-.ci-details {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-  padding: 0 20px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--rj-primitive-space-4);
 }
 
-.ci-detail-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  min-width: 0;
+.ci-dl-topic {
+  grid-column: 1 / -1;
 }
 
-.ci-detail-item > svg {
-  margin-top: 3px;
-  flex-shrink: 0;
-  color: var(--rj-color-text-secondary);
-}
-
-.ci-detail-item > div {
-  min-width: 0;
-}
-
-.ci-detail-item strong {
-  display: block;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--rj-color-text);
-  overflow-wrap: anywhere;
-}
-
-.ci-detail-item .ci-mentor {
-  font-size: 0.8125rem;
-  font-weight: 500;
-  overflow-wrap: anywhere;
-}
-
-/* =========================
-   Internship Date Range
-========================= */
-
-.ci-date-range {
-  display: flex;
+.ci-dl-label {
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 0 20px;
-  color: var(--rj-color-text-secondary);
-  font-size: 0.8125rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.ci-date-range svg {
-  flex-shrink: 0;
-  color: var(--rj-color-text-secondary);
-}
-
-/* =========================
-   Internship Statistics
-========================= */
-
-.ci-stats {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  padding: 0 20px 20px;
-}
-
-.ci-stat-box {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 16px;
-  border-radius: 6px;
-  background: var(--rj-color-surface-subtle);
-  border: 1px solid var(--rj-color-border);
-}
-
-.ci-stat-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  gap: var(--rj-primitive-space-2);
+  margin-bottom: var(--rj-primitive-space-1);
   font-size: 0.8125rem;
   font-weight: 500;
   color: var(--rj-color-text-secondary);
 }
 
-.ci-stat-label svg {
+.ci-dl-label > svg {
   flex-shrink: 0;
+}
+
+.ci-dl-value {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--rj-color-text-primary);
+  overflow-wrap: anywhere;
 }
 
 .ci-stat-value {
   font-family: var(--rj-font-mono);
-  font-size: 1.625rem;
-  line-height: 1.2;
+  font-size: 1.5rem;
   font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  color: var(--rj-color-text);
+  line-height: 1.25;
+  color: var(--rj-color-text-primary);
+}
+
+.ci-stat-value--score {
+  color: var(--rj-color-brand-primary);
 }
 
 .ci-stat-value--empty {
   font-family: var(--rj-font-body);
-  font-size: 1.125rem;
-  line-height: 1.5;
+  font-size: 1rem;
   font-weight: 600;
+  line-height: var(--rj-line-height-base);
   color: var(--rj-color-text-secondary);
 }
 
-.ci-stat-value small {
+.ci-score-scale {
   font-family: var(--rj-font-body);
   font-size: 0.8125rem;
-  font-weight: 500;
+  font-weight: 400;
   color: var(--rj-color-text-secondary);
 }
 
-.ci-score .ci-stat-value:not(.ci-stat-value--empty) {
-  color: var(--rj-color-action);
-}
-
-/* =========================
-   Status: Loading / Error / Empty
-========================= */
-
-.ci-status {
-  box-sizing: border-box;
-  width: 100%;
-  max-width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 32px 24px;
-  border: 1px solid var(--rj-color-border);
-  border-radius: 8px;
-  background: var(--rj-color-surface);
-  color: var(--rj-color-text-secondary);
-  text-align: center;
-}
-
-.ci-status-error {
-  background: var(--rj-color-error-bg);
-  color: var(--rj-color-error-text);
-  border-color: var(--rj-color-status-danger-border);
-}
-
-.ci-status-title {
-  margin: 0;
-  color: var(--rj-color-text);
-  font-family: var(--rj-font-display);
-  font-size: 1.125rem;
-  line-height: 1.5;
-  font-weight: 600;
-}
-
-.ci-status-error .ci-status-title {
-  color: var(--rj-color-error-text);
-}
-
-.ci-status-description {
-  margin: 0;
-  font-size: 0.875rem;
-  line-height: 1.6;
-  max-width: 48ch;
-}
-
-/* =========================
-   Retry Button
-========================= */
-
-.ci-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 44px;
-  min-width: 44px;
-  margin-top: 8px;
-  padding: 8px 16px;
-  border: 1px solid var(--rj-color-action);
-  border-radius: 6px;
-  background: var(--rj-color-action);
-  color: var(--rj-color-on-action);
-  font: inherit;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition:
-    background-color var(--rj-motion-micro) ease-out,
-    border-color var(--rj-motion-micro) ease-out;
-}
-
-.ci-btn:hover {
-  background: var(--rj-color-action-hover);
-  border-color: var(--rj-color-action-hover);
-}
-
-.ci-btn:focus-visible {
-  outline: 2px solid var(--rj-color-focus-ring);
-  outline-offset: 2px;
-}
-
-/* =========================
-   Spinner Animation
-========================= */
-
-.ci-spinner {
-  animation: ci-spin 1s linear infinite;
-}
-
-@keyframes ci-spin {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
+@media (max-width: 767px) {
+  .ci-dl {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--rj-primitive-space-3);
   }
 }
 
-/* =========================
-   Responsive Breakpoints
-========================= */
-
-/* Mobile: <= 480px */
-
-@media (max-width: 480px) {
-  .ci-page-head {
-    flex-direction: column;
-    gap: 12px;
-    padding-bottom: 16px;
-  }
-
-  .ci-heading {
-    font-size: 1.25rem;
-  }
-
-  .ci-overview {
-    width: 100%;
-    box-sizing: border-box;
-  }
-
-  .ci-overview-item {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .ci-card-header {
-    padding: 16px 16px 0;
-  }
-
-  .ci-batch-name {
-    font-size: 1rem;
-  }
-
-  .ci-topic {
-    margin: 0 16px;
-  }
-
-  .ci-details {
-    grid-template-columns: 1fr;
-    gap: 12px;
-    padding: 0 16px;
-  }
-
-  .ci-date-range {
-    padding: 0 16px;
-  }
-
+@media (max-width: 479px) {
+  .ci-metrics-strip,
   .ci-stats {
-    grid-template-columns: 1fr;
-    gap: 8px;
-    padding: 0 16px 16px;
-  }
-
-  .ci-stat-box {
-    padding: 12px;
-  }
-
-  .ci-stat-value {
-    font-size: 1.375rem;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
-
-/* Tablet: 481px - 768px */
-
-@media (min-width: 481px) and (max-width: 768px) {
-  .ci-page-head {
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .ci-card-header {
-    gap: 16px;
-  }
-
-  .ci-details {
-    gap: 12px;
-  }
-}
-
-/* =========================
-   Reduced Motion Accessibility
-========================= */
 
 @media (prefers-reduced-motion: reduce) {
-  .ci-btn,
-  .ci-card {
-    transition-duration: 0.001ms;
+  .ci-card:hover,
+  .ci-card:active {
+    transform: none;
   }
 
-  .ci-spinner {
-    animation-duration: 0.001ms;
-    animation-iteration-count: 1;
+  .ci-list > .rj-stagger-item {
+    animation-delay: 0ms;
   }
 }

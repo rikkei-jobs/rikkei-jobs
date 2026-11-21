@@ -8,7 +8,7 @@ export const CandidateInternshipsPage: React.FC = () => {
       roleTitle="Ứng viên"
       roleBadgeClass="rj-role-candidate"
       roleIcon="user"
-      description="Theo dõi đợt thực tập IOC, nhóm, đề tài, mentor, điểm cuối kỳ và kết quả nghiệm thu."
+      description="Tổng quan các đợt thực tập IOC, nhóm, đề tài, mentor, điểm cuối kỳ và hạng mục nghiệm thu."
       hideAccountCard
     >
       <CandidateInternships />
