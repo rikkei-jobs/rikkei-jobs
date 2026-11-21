@@ -194,3 +194,20 @@ The supplemental local PostgreSQL 18.4 integration command exited 0:
 
 The pinned PostgreSQL 18.6 suites remain authoritative on GitHub Actions. Production application
 code and migration SQL were not changed by this regression fix.
+
+## OpenAPI E2E inventory
+
+The migration fix passed [Backend Quality Gates](https://github.com/rikkei-jobs/rikkei-jobs/actions/runs/44951214916/job/136989322552)
+with the pinned PostgreSQL 18.6 image:
+
+```text
+[INFO] Tests run: 751, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+```
+
+The subsequent E2E run exposed one stale exact OpenAPI inventory. It expected 27 paths and
+29 operations, omitting the three AI administration paths and four operations. The inventory
+now explicitly includes GET/PUT configuration, GET logs and GET usage: 30 paths / 33 operations.
+Exact path/method matching, Bearer security and 401 assertions remain; ADMIN AI operations also
+require a documented 403. The real-database OpenAPI integration test additionally checks the
+30-path total. No application routes or migration SQL were changed to accommodate these tests.

@@ -64,6 +64,9 @@ exclusion, zero production users, upgrade data and idempotency assertions remain
 An additional real-database test checks the exact latest/dev/V15 version lists and V17 table
 presence without populating production users.
 
+The exact OpenAPI E2E inventory includes all 30 paths / 33 operations, including the three AI
+ADMIN paths (four operations), with Bearer/401 and ADMIN/403 documentation checks.
+
 ## Review status
 
 - [ ] Re-run Docker-dependent gates against the pinned images.
