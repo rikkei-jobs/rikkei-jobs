@@ -2,6 +2,7 @@ package com.rikkei.jobs.assessment.controller;
 
 import com.rikkei.jobs.assessment.dto.response.MentorEvaluationTasksResponse;
 import com.rikkei.jobs.assessment.model.EvaluationContext;
+import com.rikkei.jobs.assessment.service.MentorEvaluationService;
 import com.rikkei.jobs.common.dto.ErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -12,6 +13,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -25,7 +27,9 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/mentor/")
 @Tag(name = "Assessment", description = "Các API quản lý và đánh giá năng lực ứng viên từ Mentor")
+@RequiredArgsConstructor
 public class MentorEvaluationController {
+    private final MentorEvaluationService mentorEvaluationService;
 
     @Operation(
             summary = "Lấy danh sách đối tượng cần đánh giá",
@@ -57,5 +61,7 @@ public class MentorEvaluationController {
             @Parameter(description = "Context đánh giá") @RequestParam EvaluationContext context,
             @Parameter(description = "ID đợt thực tập, chỉ áp dụng cho INTERNSHIP")
                     @RequestParam(required = false)
-                    String batchId) {}
+                    String batchId) {
+        return ResponseEntity.ok(mentorEvaluationService.getEvaluationTasks(context, batchId));
+    }
 }

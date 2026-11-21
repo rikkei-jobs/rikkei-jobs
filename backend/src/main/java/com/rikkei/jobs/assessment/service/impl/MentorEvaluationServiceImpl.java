@@ -11,9 +11,12 @@ import com.rikkei.jobs.identity.model.User;
 import com.rikkei.jobs.identity.repository.UserRepository;
 import com.rikkei.jobs.internship.model.Internship;
 import com.rikkei.jobs.internship.repository.InternshipRepository;
+
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -30,35 +33,35 @@ public class MentorEvaluationServiceImpl implements MentorEvaluationService {
 
     @Override
     public MentorEvaluationTasksResponse getEvaluationTasks(
-            EvaluationContext context, String batchId) {
+        EvaluationContext context, String batchId) {
 
         String mentorEmail = SecurityContextHolder.getContext().getAuthentication().getName();
 
         User mentor =
-                userRepository
-                        .findByEmail(mentorEmail)
-                        .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
+            userRepository
+                .findByEmail(mentorEmail)
+                .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
 
         return switch (context) {
             case INTERNSHIP -> getInternshipTasks(mentor, mentorEmail, batchId);
-            case INTERVIEW -> getInterviewTasks(mentor, batchId);
+            case INTERVIEW -> getInterviewTasks(mentor);
         };
     }
 
     private MentorEvaluationTasksResponse getInternshipTasks(
-            User mentor, String mentorEmail, String batchId) {
+        User mentor, String mentorEmail, String batchId) {
 
         // 1. Lấy danh sách Internship Mentor phụ trách
         List<Internship> internships =
-                (batchId == null || batchId.isBlank())
-                        ? internshipRepository.findAllByMentorEmailIgnoreCase(mentorEmail)
-                        : internshipRepository.findAllByMentorEmailIgnoreCaseAndBatchId(
-                                mentorEmail, batchId);
+            (batchId == null || batchId.isBlank())
+                ? internshipRepository.findAllByMentorEmailIgnoreCase(mentorEmail)
+                : internshipRepository.findAllByMentorEmailIgnoreCaseAndBatchId(
+                mentorEmail, batchId);
 
         // 2. Lấy Evaluation của Mentor trong context INTERNSHIP
         List<Evaluation> evaluations =
-                evaluationRepository.findAllByMentorIdAndContext(
-                        mentor.getId(), EvaluationContext.INTERNSHIP);
+            evaluationRepository.findAllByMentorIdAndContext(
+                mentor.getId(), EvaluationContext.INTERNSHIP);
 
         // 3. Map Evaluation theo userId + batchId
         Map<String, Evaluation> evaluationMap = new LinkedHashMap<>();
@@ -73,7 +76,8 @@ public class MentorEvaluationServiceImpl implements MentorEvaluationService {
         Map<String, MentorEvaluationTaskResponse> taskMap = new LinkedHashMap<>();
 
         for (Internship internship : internships) {
-            User user = internship.getUser();
+            User user = userRepository.findById(internship.getUserId())
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
             if (user == null) {
                 continue;
@@ -83,15 +87,15 @@ public class MentorEvaluationServiceImpl implements MentorEvaluationService {
             Evaluation evaluation = evaluationMap.get(key);
 
             MentorEvaluationTaskResponse task =
-                    new MentorEvaluationTaskResponse(
-                            user.getId(),
-                            user.getFullName(),
-                            user.getEmail(),
-                            evaluation != null ? evaluation.getId() : null,
-                            mapStatus(evaluation),
-                            internship.getBatchId(),
-                            internship.getBatchName(),
-                            null);
+                new MentorEvaluationTaskResponse(
+                    user.getId(),
+                    user.getFullName(),
+                    user.getEmail(),
+                    evaluation != null ? evaluation.getId() : null,
+                    mapStatus(evaluation),
+                    internship.getBatchId(),
+                    internship.getBatchName(),
+                    null);
 
             taskMap.putIfAbsent(key, task);
         }
@@ -99,10 +103,10 @@ public class MentorEvaluationServiceImpl implements MentorEvaluationService {
         List<MentorEvaluationTaskResponse> items = List.copyOf(taskMap.values());
 
         return new MentorEvaluationTasksResponse(
-                EvaluationContext.INTERNSHIP, batchId, items.size(), items);
+            EvaluationContext.INTERNSHIP, batchId, items.size(), items);
     }
 
-    private MentorEvaluationTasksResponse getInterviewTasks(User mentor, String batchId) {
+    private MentorEvaluationTasksResponse getInterviewTasks(User mentor) {
 
         // TODO UT-02:
         // 1. Lấy interview_rounds theo interviewer_email của Mentor.
@@ -112,7 +116,7 @@ public class MentorEvaluationServiceImpl implements MentorEvaluationService {
         // 5. Trả MentorEvaluationTasksResponse.
 
         throw new UnsupportedOperationException(
-                "Interview evaluation tasks are not implemented yet");
+            "Interview evaluation tasks are not implemented yet");
     }
 
     private String mapStatus(Evaluation evaluation) {
