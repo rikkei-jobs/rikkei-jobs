@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useLocation, useNavigate, Link } from 'react-router-dom';
 import { Icon } from '../../../shared/components/Icon';
+import { navigateWithTransition } from '../../../shared/utils/motion';
+import { preloadRouteForPath } from '../../../shared/utils/routeLazy';
 import { getRoleLabel } from '../../../shared/i18n/enumLabels';
 import { useAuth } from '../context/useAuth';
 import { type UserDto } from '../types';
@@ -30,10 +32,10 @@ export const SsoCallbackPage: React.FC = () => {
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(
     mockState === 'error'
-      ? 'Vé SSO đã hết hạn (quá 60 giây). Vui lòng đăng nhập lại từ LMS.'
+      ? 'Vé đăng nhập đã hết hạn (quá 60 giây). Vui lòng đăng nhập lại từ LMS.'
       : ticket
         ? null
-        : 'Không tìm thấy tham số vé SSO (?ticket=) trong đường dẫn.',
+        : 'Không tìm thấy mã vé đăng nhập từ LMS trong đường dẫn.',
   );
   const [authedUser, setAuthedUser] = useState<UserDto | null>(() => {
     if (mockState === 'success') {
@@ -76,14 +78,18 @@ export const SsoCallbackPage: React.FC = () => {
         setStatus('success');
 
         const targetPath = resolvePostLoginPath(fromPathname, response.user.role);
+        void preloadRouteForPath(targetPath);
 
         // Automatically navigate to safe post-login target or role home after 1 second
         redirectTimerRef.current = setTimeout(() => {
-          navigate(targetPath, { replace: true });
+          void navigateWithTransition(
+            () => navigate(targetPath, { replace: true }),
+            () => preloadRouteForPath(targetPath),
+          );
         }, 1000);
       } catch (err: unknown) {
         setStatus('error');
-        const msg = err instanceof Error ? err.message : 'Xác thực vé SSO thất bại';
+        const msg = err instanceof Error ? err.message : 'Xác thực vé đăng nhập thất bại';
         setErrorMessage(msg);
       }
     };
@@ -93,54 +99,68 @@ export const SsoCallbackPage: React.FC = () => {
 
   return (
     <AuthEditorialLayout
-      badgeLabel="Tiến Trình Xác Thực Vé Định Danh SSO"
+      badgeLabel="Đăng nhập qua LMS"
       badgeIcon="shield-check"
-      storyHeading="Xác Thực Định Danh Đơn Lần — Liên Thông Toàn Diện LMS"
-      storyLead="Cơ chế định danh một lần (Single Sign-On) bảo mật cao theo chuẩn ASVS V2/V4, liên kết trực tiếp kết quả học tập từ hệ thống LMS Rikkei Academy tới hồ sơ tuyển dụng doanh nghiệp."
+      storyHeading="Đang kết nối tài khoản LMS của bạn"
+      storyLead="Hệ thống đang kiểm tra vé đăng nhập từ LMS để mở đúng không gian làm việc theo vai trò."
     >
-      <div className="rj-auth-card" style={{ textAlign: 'center' }}>
+      <div className="rj-auth-card rj-sso-card">
         {status === 'loading' && (
-          <div role="status" aria-live="polite">
+          <div role="status" aria-live="polite" className="rj-stagger-item">
             <Icon
               name="spinner"
               size={48}
               className="rj-spin"
               style={{ color: 'var(--rj-color-brand-primary)', margin: '0 auto 16px' }}
             />
-            <h2 className="rj-auth-title">Đang xác thực vé SSO từ LMS...</h2>
+            <h1 className="rj-auth-title">Đang xác thực đăng nhập từ LMS...</h1>
             <p className="rj-auth-subtitle">
-              Hệ thống đang kiểm tra tính hợp lệ và thời hạn vé (60 giây). Vui lòng đợi trong giây lát.
+              Hệ thống đang kiểm tra tính hợp lệ và thời hạn vé (60 giây). Vui lòng đợi trong giây
+              lát.
             </p>
 
             {/* 3-Step Visual Progress Timeline */}
-            <div className="rj-sso-timeline" aria-label="Tiến trình xác thực định danh">
-              <div className="rj-sso-step-item is-done">
+            <div className="rj-sso-timeline" aria-label="Tiến trình xác thực tài khoản">
+              <div
+                className="rj-sso-step-item is-done rj-form-seq"
+                style={{ '--stagger-index': 0 } as React.CSSProperties}
+              >
                 <div className="rj-sso-marker">
                   <Icon name="check" size={16} />
                 </div>
                 <div className="rj-sso-step-content">
-                  <span className="rj-sso-step-title">1. Đọc vé xác thực SSO</span>
-                  <span className="rj-sso-step-desc">Đã tiếp nhận vé định danh từ URL LMS</span>
+                  <span className="rj-sso-step-title">1. Tiếp nhận vé từ LMS</span>
+                  <span className="rj-sso-step-desc">Đã nhận mã vé đăng nhập</span>
                 </div>
               </div>
 
-              <div className="rj-sso-step-item is-active">
+              <div
+                className="rj-sso-step-item is-active rj-form-seq"
+                style={{ '--stagger-index': 1 } as React.CSSProperties}
+              >
                 <div className="rj-sso-marker">
                   <Icon name="spinner" size={16} className="rj-spin" />
                 </div>
                 <div className="rj-sso-step-content">
-                  <span className="rj-sso-step-title">2. Kiểm tra chữ ký số LMS</span>
-                  <span className="rj-sso-step-desc">Thẩm định chữ ký số & thời hạn vé (60 giây)</span>
+                  <span className="rj-sso-step-title">2. Kiểm tra thông tin tài khoản</span>
+                  <span className="rj-sso-step-desc">
+                    Xác nhận tài khoản và thời hạn vé 60 giây
+                  </span>
                 </div>
               </div>
 
-              <div className="rj-sso-step-item">
+              <div
+                className="rj-sso-step-item rj-form-seq"
+                style={{ '--stagger-index': 2 } as React.CSSProperties}
+              >
                 <div className="rj-sso-marker">
                   <span>3</span>
                 </div>
                 <div className="rj-sso-step-content">
-                  <span className="rj-sso-step-title">3. Cấp phiên làm việc an toàn</span>
-                  <span className="rj-sso-step-desc">Xác lập phiên JWT và cấp quyền truy cập</span>
+                  <span className="rj-sso-step-title">3. Mở phiên làm việc</span>
+                  <span className="rj-sso-step-desc">
+                    Chuẩn bị trang chủ theo vai trò của bạn
+                  </span>
                 </div>
               </div>
             </div>
@@ -148,7 +168,7 @@ export const SsoCallbackPage: React.FC = () => {
         )}
 
         {status === 'error' && (
-          <div role="alert" aria-live="assertive">
+          <div role="alert" aria-live="assertive" className="rj-stagger-item">
             <div
               style={{
                 width: '64px',
@@ -164,12 +184,19 @@ export const SsoCallbackPage: React.FC = () => {
             >
               <Icon name="alert-circle" size={32} />
             </div>
-            <h2 className="rj-auth-title" style={{ color: 'var(--rj-primitive-danger-text)' }}>
-              Xác Thực Thất Bại
-            </h2>
-            <div id="sso-callback-error" className="rj-alert rj-alert-danger" style={{ textAlign: 'left', marginTop: '16px' }}>
+            <h1 className="rj-auth-title" style={{ color: 'var(--rj-color-status-danger-text)' }}>
+              Xác thực không thành công
+            </h1>
+            <div
+              id="sso-callback-error"
+              className="rj-alert rj-alert-danger"
+              style={{ textAlign: 'left', marginTop: '16px' }}
+            >
               <Icon name="alert-circle" size={20} />
-              <span>{errorMessage || 'Vé SSO không hợp lệ, đã hết hạn hoặc đã được sử dụng.'}</span>
+              <span>
+                {errorMessage ||
+                  'Vé đăng nhập không hợp lệ, đã hết hạn sau 60 giây hoặc đã được sử dụng.'}
+              </span>
             </div>
 
             {/* Timeline for Error State */}
@@ -179,8 +206,10 @@ export const SsoCallbackPage: React.FC = () => {
                   {ticket ? <Icon name="check" size={16} /> : <Icon name="x" size={16} />}
                 </div>
                 <div className="rj-sso-step-content">
-                  <span className="rj-sso-step-title">1. Đọc vé xác thực SSO</span>
-                  <span className="rj-sso-step-desc">{ticket ? 'Đã nhận tham số vé' : 'Không tìm thấy vé trong URL'}</span>
+                  <span className="rj-sso-step-title">1. Tiếp nhận vé từ LMS</span>
+                  <span className="rj-sso-step-desc">
+                    {ticket ? 'Đã nhận mã vé đăng nhập' : 'Không tìm thấy mã vé trong đường dẫn'}
+                  </span>
                 </div>
               </div>
 
@@ -189,8 +218,10 @@ export const SsoCallbackPage: React.FC = () => {
                   <Icon name="x" size={16} />
                 </div>
                 <div className="rj-sso-step-content">
-                  <span className="rj-sso-step-title">2. Kiểm tra chữ ký số LMS</span>
-                  <span className="rj-sso-step-desc">Chữ ký không hợp lệ, hết hạn hoặc đã qua sử dụng</span>
+                  <span className="rj-sso-step-title">2. Kiểm tra thông tin tài khoản</span>
+                  <span className="rj-sso-step-desc">
+                    Vé không hợp lệ, đã hết hạn 60 giây hoặc đã được sử dụng
+                  </span>
                 </div>
               </div>
 
@@ -199,8 +230,10 @@ export const SsoCallbackPage: React.FC = () => {
                   <span>3</span>
                 </div>
                 <div className="rj-sso-step-content">
-                  <span className="rj-sso-step-title">3. Cấp phiên làm việc an toàn</span>
-                  <span className="rj-sso-step-desc">Hủy bỏ cấp phiên do xác thực thất bại</span>
+                  <span className="rj-sso-step-title">3. Mở phiên làm việc</span>
+                  <span className="rj-sso-step-desc">
+                    Chưa thể mở phiên làm việc do xác thực thất bại
+                  </span>
                 </div>
               </div>
             </div>
@@ -208,14 +241,14 @@ export const SsoCallbackPage: React.FC = () => {
             <div style={{ marginTop: '24px' }}>
               <Link to="/login" state={location.state} className="rj-btn rj-btn-primary rj-btn-block">
                 <Icon name="arrow-left" size={18} />
-                Quay lại Trang Đăng Nhập
+                <span>Quay lại trang đăng nhập</span>
               </Link>
             </div>
           </div>
         )}
 
         {status === 'success' && authedUser && (
-          <div role="status" aria-live="polite">
+          <div role="status" aria-live="polite" className="rj-stagger-item">
             <div
               style={{
                 width: '64px',
@@ -231,11 +264,12 @@ export const SsoCallbackPage: React.FC = () => {
             >
               <Icon name="check-circle" size={32} />
             </div>
-            <h2 className="rj-auth-title" style={{ color: 'var(--rj-primitive-success-text)' }}>
-              Đăng Nhập Thành Công!
-            </h2>
+            <h1 className="rj-auth-title" style={{ color: 'var(--rj-color-status-success-text)' }}>
+              Đăng nhập thành công
+            </h1>
             <p className="rj-auth-subtitle">
-              Chào mừng <strong>{authedUser.fullName}</strong> ({getRoleLabel(authedUser.role)}). Đang chuyển hướng về trang chủ...
+              Chào mừng <strong>{authedUser.fullName}</strong> ({getRoleLabel(authedUser.role)}).
+              Đang chuyển hướng về trang chủ...
             </p>
 
             {/* Timeline for Success State */}
@@ -245,8 +279,8 @@ export const SsoCallbackPage: React.FC = () => {
                   <Icon name="check" size={16} />
                 </div>
                 <div className="rj-sso-step-content">
-                  <span className="rj-sso-step-title">1. Đọc vé xác thực SSO</span>
-                  <span className="rj-sso-step-desc">Đã kiểm định định dạng vé hợp chuẩn</span>
+                  <span className="rj-sso-step-title">1. Tiếp nhận vé từ LMS</span>
+                  <span className="rj-sso-step-desc">Đã nhận mã vé đăng nhập</span>
                 </div>
               </div>
 
@@ -255,8 +289,8 @@ export const SsoCallbackPage: React.FC = () => {
                   <Icon name="check" size={16} />
                 </div>
                 <div className="rj-sso-step-content">
-                  <span className="rj-sso-step-title">2. Kiểm tra chữ ký số LMS</span>
-                  <span className="rj-sso-step-desc">Chữ ký số hợp lệ và còn thời hạn an toàn</span>
+                  <span className="rj-sso-step-title">2. Kiểm tra thông tin tài khoản</span>
+                  <span className="rj-sso-step-desc">Thông tin tài khoản hợp lệ</span>
                 </div>
               </div>
 
@@ -265,8 +299,10 @@ export const SsoCallbackPage: React.FC = () => {
                   <Icon name="check" size={16} />
                 </div>
                 <div className="rj-sso-step-content">
-                  <span className="rj-sso-step-title">3. Cấp phiên làm việc an toàn</span>
-                  <span className="rj-sso-step-desc">Phiên định danh đã sẵn sàng</span>
+                  <span className="rj-sso-step-title">3. Mở phiên làm việc</span>
+                  <span className="rj-sso-step-desc">
+                    Chuẩn bị trang chủ theo vai trò của bạn
+                  </span>
                 </div>
               </div>
             </div>

@@ -1,13 +1,39 @@
-import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { BrandMark } from '../../../shared/components/BrandMark';
 import { Icon, type IconName } from '../../../shared/components/Icon';
+import { ThemeSwitch } from '../../../shared/components/ThemeSwitch';
 import { getRoleLabel } from '../../../shared/i18n/enumLabels';
+import {
+  cancelRouteTransition,
+  hasPlayedMotionOnce,
+  isRouteViewTransitionActive,
+  markMotionPlayed,
+  navigateWithTransition,
+  prefersReducedMotion,
+} from '../../../shared/utils/motion';
+import { preloadRouteForPath } from '../../../shared/utils/routeLazy';
 import { getRoleMenuItems, type RoleMenuItem } from '../config/roleMenuConfig';
 import { useAuth } from '../context/useAuth';
 import { getRoleHomePath } from '../utils/roleUtils';
 
-type ThemeMode = 'light' | 'dark';
+interface ActiveIndicatorMetric {
+  top: number;
+  height: number;
+  pathname: string;
+}
+
+function shouldInterceptLinkClick(event: React.MouseEvent<HTMLAnchorElement>): boolean {
+  return (
+    !event.defaultPrevented &&
+    event.button === 0 &&
+    !event.metaKey &&
+    !event.ctrlKey &&
+    !event.shiftKey &&
+    !event.altKey
+  );
+}
+
 type ViewportMode = 'mobile' | 'tablet' | 'desktop';
 
 interface TooltipState {
@@ -20,23 +46,6 @@ export const SIDEBAR_COLLAPSED_STORAGE_KEY = 'rj_sidebar_collapsed';
 
 const MOBILE_BREAKPOINT_PX = 767;
 const DESKTOP_EXPANDED_MIN_PX = 1280;
-
-function getInitialTheme(): ThemeMode {
-  if (typeof document !== 'undefined') {
-    const explicitTheme = document.documentElement.getAttribute('data-theme');
-    if (explicitTheme === 'dark' || explicitTheme === 'light') {
-      return explicitTheme;
-    }
-  }
-  if (
-    typeof window !== 'undefined' &&
-    typeof window.matchMedia === 'function' &&
-    window.matchMedia('(prefers-color-scheme: dark)').matches
-  ) {
-    return 'dark';
-  }
-  return 'light';
-}
 
 function getViewportMode(): ViewportMode {
   if (typeof window === 'undefined') {
@@ -114,10 +123,25 @@ export const SharedAppLayout: React.FC<SharedAppLayoutProps> = ({
   const mobileToggleRef = useRef<HTMLButtonElement | null>(null);
   const sidebarRef = useRef<HTMLElement | null>(null);
   const drawerCloseRef = useRef<HTMLButtonElement | null>(null);
+  const navListRef = useRef<HTMLUListElement | null>(null);
+  const indicatorRef = useRef<HTMLSpanElement | null>(null);
+  const lastActiveIndicatorMetricRef = useRef<ActiveIndicatorMetric | null>(null);
+  const prevIndicatorUserKeyRef = useRef<string | null>(null);
   const hasUserToggledDesktopRef = useRef<boolean>(false);
   const wasDrawerOpenRef = useRef<boolean>(false);
 
-  const [theme, setTheme] = useState<ThemeMode>(getInitialTheme);
+  // Cascade sidebar items only on initial shell load, never replaying across route transitions
+  const [playSidebarCascade] = useState<boolean>(
+    () => !hasPlayedMotionOnce('shell-sidebar-cascade'),
+  );
+
+  useEffect(() => {
+    markMotionPlayed('shell-sidebar-cascade');
+    return () => {
+      lastActiveIndicatorMetricRef.current = null;
+      prevIndicatorUserKeyRef.current = null;
+    };
+  }, []);
   const [viewportMode, setViewportMode] = useState<ViewportMode>(getViewportMode);
   const [desktopCollapsed, setDesktopCollapsed] = useState<boolean>(() => {
     const stored = readStoredSidebarCollapsed();
@@ -158,24 +182,6 @@ export const SharedAppLayout: React.FC<SharedAppLayoutProps> = ({
   const isMobileMenuOpen =
     isMobileViewport && hasSidebarNav && openMenuLocationKey === locationRouteKey;
   const isCollapsedRail = !isMobileViewport && desktopCollapsed;
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-      return;
-    }
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleSchemeChange = (event: MediaQueryListEvent) => {
-      // Follow OS color-scheme changes only while the user has not explicitly pinned data-theme.
-      if (!document.documentElement.hasAttribute('data-theme')) {
-        setTheme(event.matches ? 'dark' : 'light');
-      }
-    };
-    if (typeof mediaQuery.addEventListener === 'function') {
-      mediaQuery.addEventListener('change', handleSchemeChange);
-      return () => mediaQuery.removeEventListener('change', handleSchemeChange);
-    }
-    return undefined;
-  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -258,7 +264,7 @@ export const SharedAppLayout: React.FC<SharedAppLayoutProps> = ({
   }, [isMobileMenuOpen]);
 
   useEffect(() => {
-    if (!isCollapsedRail || tooltipState === null || typeof document === 'undefined') {
+    if (tooltipState === null || typeof document === 'undefined') {
       return undefined;
     }
     const handleTooltipEscape = (event: KeyboardEvent) => {
@@ -268,15 +274,33 @@ export const SharedAppLayout: React.FC<SharedAppLayoutProps> = ({
     };
     document.addEventListener('keydown', handleTooltipEscape);
     return () => document.removeEventListener('keydown', handleTooltipEscape);
-  }, [isCollapsedRail, tooltipState]);
+  }, [tooltipState]);
 
-  const handleToggleTheme = () => {
-    const nextTheme: ThemeMode = theme === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', nextTheme);
-    setTheme(nextTheme);
+  const handleShellNavigate = (
+    event: React.MouseEvent<HTMLAnchorElement>,
+    targetPath: string,
+    afterNavigate?: () => void,
+  ) => {
+    if (!shouldInterceptLinkClick(event)) {
+      afterNavigate?.();
+      return;
+    }
+    event.preventDefault();
+    afterNavigate?.();
+    if (location.pathname === targetPath) {
+      return;
+    }
+    void navigateWithTransition(
+      () => {
+        navigate(targetPath);
+      },
+      () => preloadRouteForPath(targetPath),
+    );
   };
 
+  // Bypass startViewTransition on logout so the persistent shell unmounts synchronously without flashing over /login.
   const handleLogout = () => {
+    cancelRouteTransition();
     logout();
     navigate('/login', { replace: true, state: null });
   };
@@ -285,7 +309,7 @@ export const SharedAppLayout: React.FC<SharedAppLayoutProps> = ({
     hasUserToggledDesktopRef.current = true;
     const nextCollapsed = !desktopCollapsed;
     setDesktopCollapsed(nextCollapsed);
-    setTooltipState(null);
+    setTooltipState((prev) => (prev?.itemId === 'sidebar-toggle' ? prev : null));
     writeStoredSidebarCollapsed(nextCollapsed);
   };
 
@@ -294,9 +318,95 @@ export const SharedAppLayout: React.FC<SharedAppLayoutProps> = ({
     mobileToggleRef.current?.focus();
   };
 
-  const isDark = theme === 'dark';
-  const effectiveDensity = density || (roleBadgeClass.includes('candidate') ? 'airy' : 'dense');
+  const effectiveDensity =
+    density ||
+    (roleBadgeClass.includes('candidate') || roleBadgeClass.includes('mentor') ? 'airy' : 'dense');
+
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return undefined;
+    }
+    document.documentElement.setAttribute('data-vt-density', effectiveDensity);
+    return () => {
+      document.documentElement.removeAttribute('data-vt-density');
+    };
+  }, [effectiveDensity]);
+
+  // Slide active sidebar indicator between routes using WAAPI FLIP
+  useLayoutEffect(() => {
+    const navList = navListRef.current;
+    const indicator = indicatorRef.current;
+    if (!navList || !indicator) {
+      return;
+    }
+
+    const activeLink = navList.querySelector<HTMLElement>(
+      '.rj-role-nav-link.is-active, .rj-role-nav-link[aria-current="page"]',
+    );
+    const activeItem = activeLink?.closest<HTMLElement>('.rj-role-nav-item');
+
+    if (!activeItem) {
+      indicator.style.opacity = '0';
+      return;
+    }
+
+    const userIndicatorKey = `${user?.id ?? 'anon'}|${user?.role ?? 'none'}`;
+    if (prevIndicatorUserKeyRef.current !== userIndicatorKey) {
+      lastActiveIndicatorMetricRef.current = null;
+      prevIndicatorUserKeyRef.current = userIndicatorKey;
+    }
+
+    const nextTop = activeItem.offsetTop + 4;
+    const nextHeight = Math.max(16, activeItem.offsetHeight - 8);
+    indicator.style.opacity = '1';
+    indicator.style.height = `${nextHeight}px`;
+    indicator.style.transform = `translate3d(0, ${nextTop}px, 0)`;
+
+    const previous = lastActiveIndicatorMetricRef.current;
+    if (
+      previous &&
+      previous.pathname !== location.pathname &&
+      !prefersReducedMotion() &&
+      !isRouteViewTransitionActive() &&
+      typeof indicator.animate === 'function' &&
+      activeItem.offsetHeight > 0
+    ) {
+      const sy = previous.height > 0 ? previous.height / nextHeight : 1;
+      indicator.animate(
+        [
+          { transform: `translate3d(0, ${previous.top}px, 0) scaleY(${sy})` },
+          { transform: `translate3d(0, ${nextTop}px, 0) scaleY(1)` },
+        ],
+        {
+          duration: effectiveDensity === 'dense' ? 150 : 260,
+          easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
+          fill: 'both',
+        },
+      );
+    }
+
+    lastActiveIndicatorMetricRef.current = {
+      top: nextTop,
+      height: nextHeight,
+      pathname: location.pathname,
+    };
+  }, [
+    location.pathname,
+    effectiveDensity,
+    isCollapsedRail,
+    isMobileMenuOpen,
+    sidebarItems.length,
+    user?.id,
+    user?.role,
+  ]);
   const isSidebarHidden = isMobileViewport && !isMobileMenuOpen;
+  const sidebarToggleLabel = isCollapsedRail
+    ? 'Mở rộng thanh điều hướng'
+    : 'Thu gọn thanh điều hướng';
+  const isSidebarToggleTooltipVisible =
+    !isMobileViewport &&
+    tooltipState?.itemId === 'sidebar-toggle' &&
+    tooltipState.locationKey === locationRouteKey;
 
   const sidebarClasses = ['rj-sidebar'];
   if (isCollapsedRail) {
@@ -335,9 +445,19 @@ export const SharedAppLayout: React.FC<SharedAppLayoutProps> = ({
               </button>
             )}
 
-            <Link to={homePath} className="rj-nav-brand rj-nav-brand-link">
-              <BrandMark size={24} />
-              <span>Rikkei Jobs Cổng Quản Trị</span>
+            <Link
+              to={homePath}
+              className="rj-nav-brand rj-nav-brand-link"
+              onMouseEnter={() => {
+                void preloadRouteForPath(homePath);
+              }}
+              onFocus={() => {
+                void preloadRouteForPath(homePath);
+              }}
+              onClick={(event) => handleShellNavigate(event, homePath)}
+            >
+              <BrandMark size={24} sharedTransition />
+              <span>Rikkei Jobs</span>
             </Link>
           </div>
 
@@ -352,23 +472,19 @@ export const SharedAppLayout: React.FC<SharedAppLayoutProps> = ({
               </div>
             )}
             <div className="rj-nav-actions">
-              <button
-                type="button"
-                className="rj-btn rj-btn-secondary rj-theme-toggle"
-                onClick={handleToggleTheme}
-                aria-pressed={isDark}
-                aria-label={isDark ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối'}
-              >
-                <Icon name={isDark ? 'sun' : 'moon'} size={16} />
-                <span>{isDark ? 'Chế độ sáng' : 'Chế độ tối'}</span>
-              </button>
+              <ThemeSwitch
+                dismissKey={locationRouteKey}
+                onTooltipOpen={() => {
+                  setTooltipState(null);
+                }}
+              />
               <button
                 type="button"
                 className="rj-btn rj-btn-secondary rj-nav-logout"
                 onClick={handleLogout}
               >
                 <Icon name="logout" size={16} />
-                <span>Đăng Xuất</span>
+                <span>Đăng xuất</span>
               </button>
             </div>
           </div>
@@ -396,21 +512,57 @@ export const SharedAppLayout: React.FC<SharedAppLayoutProps> = ({
           >
             <div className="rj-sidebar-header">
               {!isMobileViewport && (
-                <button
-                  type="button"
-                  className="rj-sidebar-toggle"
-                  aria-expanded={!isCollapsedRail}
-                  aria-controls={sidebarId}
-                  aria-label={
-                    isCollapsedRail ? 'Mở rộng thanh điều hướng' : 'Thu gọn thanh điều hướng'
-                  }
-                  onClick={handleToggleDesktopSidebar}
+                <div
+                  className="rj-sidebar-toggle-wrap"
+                  onMouseEnter={() => {
+                    setTooltipState({
+                      itemId: 'sidebar-toggle',
+                      mode: 'hover',
+                      locationKey: locationRouteKey,
+                    });
+                  }}
+                  onMouseLeave={() => {
+                    setTooltipState((prev) =>
+                      prev?.itemId === 'sidebar-toggle' && prev.mode === 'hover' ? null : prev,
+                    );
+                  }}
                 >
-                  <Icon name={isCollapsedRail ? 'panel-left-open' : 'panel-left-close'} size={20} />
-                  <span className="rj-sidebar-toggle-text">
-                    {isCollapsedRail ? 'Mở rộng thanh điều hướng' : 'Thu gọn thanh điều hướng'}
-                  </span>
-                </button>
+                  <button
+                    type="button"
+                    className="rj-sidebar-toggle"
+                    aria-expanded={!isCollapsedRail}
+                    aria-controls={sidebarId}
+                    aria-label={sidebarToggleLabel}
+                    onClick={handleToggleDesktopSidebar}
+                    onFocus={() => {
+                      setTooltipState({
+                        itemId: 'sidebar-toggle',
+                        mode: 'focus',
+                        locationKey: locationRouteKey,
+                      });
+                    }}
+                    onBlur={() => {
+                      setTooltipState((prev) =>
+                        prev?.itemId === 'sidebar-toggle' ? null : prev,
+                      );
+                    }}
+                  >
+                    <Icon
+                      name="panel-left-close"
+                      size={20}
+                      className="rj-sidebar-toggle-icon"
+                    />
+                  </button>
+                  {isSidebarToggleTooltipVisible && (
+                    <span
+                      id={`${tooltipIdPrefix}-sidebar-toggle`}
+                      role="tooltip"
+                      className="rj-sidebar-tooltip rj-sidebar-toggle-tooltip"
+                    >
+                      {sidebarToggleLabel}
+                    </span>
+                  )}
+                </div>
               )}
 
               {isMobileMenuOpen && (
@@ -427,9 +579,12 @@ export const SharedAppLayout: React.FC<SharedAppLayoutProps> = ({
             </div>
 
             <nav aria-label="Điều hướng theo vai trò" className="rj-role-nav">
-              <ul className="rj-role-nav-list">
-                {sidebarItems.map((item) => {
+              <span ref={indicatorRef} className="rj-sidebar-active-indicator" aria-hidden="true" />
+              <ul ref={navListRef} className="rj-role-nav-list">
+                {sidebarItems.map((item, itemIndex) => {
                   const tooltipId = `${tooltipIdPrefix}-${item.id}`;
+                  const itemStyle = { '--stagger-index': itemIndex } as React.CSSProperties;
+                  const itemClass = `rj-role-nav-item${playSidebarCascade ? ' is-cascading' : ''}`;
                   const isTooltipVisible =
                     isCollapsedRail &&
                     tooltipState?.itemId === item.id &&
@@ -438,7 +593,7 @@ export const SharedAppLayout: React.FC<SharedAppLayoutProps> = ({
                   if (item.disabled || !item.path) {
                     const disabledTooltipLabel = `${item.label} — ${item.comingSoonLabel ?? 'Sắp ra mắt'}`;
                     return (
-                      <li key={item.id} className="rj-role-nav-item">
+                      <li key={item.id} className={itemClass} style={itemStyle}>
                         <span
                           role="link"
                           aria-disabled="true"
@@ -483,17 +638,20 @@ export const SharedAppLayout: React.FC<SharedAppLayoutProps> = ({
                           location.pathname.startsWith('/candidate/jobs/'));
 
                   return (
-                    <li key={item.id} className="rj-role-nav-item">
+                    <li key={item.id} className={itemClass} style={itemStyle}>
                       <Link
                         to={item.path}
                         className={`rj-role-nav-link${isActive ? ' is-active' : ''}`}
                         aria-current={isActive ? 'page' : undefined}
                         aria-describedby={isTooltipVisible ? tooltipId : undefined}
-                        onClick={() => {
-                          setOpenMenuLocationKey(null);
-                          setTooltipState(null);
-                        }}
+                        onClick={(event) =>
+                          handleShellNavigate(event, item.path!, () => {
+                            setOpenMenuLocationKey(null);
+                            setTooltipState(null);
+                          })
+                        }
                         onMouseEnter={() => {
+                          void preloadRouteForPath(item.path!);
                           if (isCollapsedRail) {
                             setTooltipState({
                               itemId: item.id,
@@ -508,6 +666,7 @@ export const SharedAppLayout: React.FC<SharedAppLayoutProps> = ({
                           );
                         }}
                         onFocus={() => {
+                          void preloadRouteForPath(item.path!);
                           if (isCollapsedRail) {
                             setTooltipState({
                               itemId: item.id,

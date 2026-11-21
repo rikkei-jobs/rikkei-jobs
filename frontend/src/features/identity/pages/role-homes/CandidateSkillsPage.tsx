@@ -8,7 +8,7 @@ export const CandidateSkillsPage: React.FC = () => {
       roleTitle="Ứng viên"
       roleBadgeClass="rj-role-candidate"
       roleIcon="user"
-      description="Hồ sơ năng lực chuẩn hóa và chỉ số kỹ năng đã xác thực"
+      description="Hồ sơ năng lực và chỉ số kỹ năng đã xác thực"
       hideAccountCard
     >
       <SkillProfilePage showLogout={false} />

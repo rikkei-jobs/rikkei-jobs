@@ -58,7 +58,7 @@ export const SkillProfilePage: React.FC<SkillProfilePageProps> = ({
     }
     return err instanceof ApiError || err instanceof Error
       ? `Không tải được hồ sơ kỹ năng (${err.message})`
-      : 'Không thể kết nối đến máy chủ Backend';
+      : 'Không thể kết nối đến máy chủ. Vui lòng thử lại.';
   }, []);
 
   useEffect(() => {

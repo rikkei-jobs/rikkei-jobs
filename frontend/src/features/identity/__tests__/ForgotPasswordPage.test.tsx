@@ -29,13 +29,13 @@ describe('ForgotPasswordPage', () => {
       </AuthProvider>,
     );
 
-    expect(screen.getByText('Quên Mật Khẩu')).toBeInTheDocument();
+    expect(screen.getByText('Quên mật khẩu')).toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText(/Email Doanh Nghiệp/i), {
+    fireEvent.change(screen.getByLabelText(/Email doanh nghiệp/i), {
       target: { value: 'hr1@rikkei.vn' },
     });
 
-    fireEvent.click(screen.getByRole('button', { name: /Gửi Liên Kết Khôi Phục/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Gửi liên kết đặt lại/i }));
 
     await waitFor(() => {
       expect(authApi.forgotPassword).toHaveBeenCalledWith({ email: 'hr1@rikkei.vn' });

@@ -1,13 +1,11 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../../identity/context/authContextDef';
 import { ApiError } from '../../../shared/api/auth';
-import {
-  fetchCandidateInternships,
-  fetchMyInternships,
-} from '../api/candidateInternships';
+import { fetchCandidateInternships, fetchMyInternships } from '../api/candidateInternships';
 import type { CandidateInternshipsData } from '../types';
 import { InternshipCard } from './InternshipCard';
 import { Icon } from '../../../shared/components/Icon';
+import { hasPlayedMotionOnce, markMotionPlayed, useCountUp } from '../../../shared/utils/motion';
 import '../styles/candidateInternships.css';
 
 export interface CandidateInternshipsProps {
@@ -23,6 +21,28 @@ interface InternshipErrorState {
   readonly retryable: boolean;
 }
 
+interface AnimatedMetricProps {
+  readonly value: number;
+  readonly active: boolean;
+  readonly animate: boolean;
+}
+
+const INTERNSHIPS_MOTION_KEY = 'candidate-internships-entrance';
+
+const AnimatedMetric: React.FC<AnimatedMetricProps> = ({ value, active, animate }) => {
+  const counted = useCountUp(value, active && animate);
+  const display = animate ? counted : value;
+
+  return (
+    <span className="rj-metric-slot rj-tabular-nums">
+      <span className="rj-metric-slot-reserve" aria-hidden="true">
+        {value}
+      </span>
+      <span className="rj-metric-slot-live">{display}</span>
+    </span>
+  );
+};
+
 function mapInternshipError(err: unknown): InternshipErrorState {
   if (err instanceof ApiError) {
     if (err.status === 403) {
@@ -35,8 +55,7 @@ function mapInternshipError(err: unknown): InternshipErrorState {
     if (err.status === 404) {
       return {
         title: 'Không tìm thấy thông tin thực tập',
-        message:
-          'Không tìm thấy hồ sơ thực tập IOC phù hợp hoặc hồ sơ chưa được công khai.',
+        message: 'Không tìm thấy hồ sơ thực tập IOC phù hợp hoặc hồ sơ chưa được công khai.',
         retryable: false,
       };
     }
@@ -77,10 +96,15 @@ export const CandidateInternships: React.FC<CandidateInternshipsProps> = ({
   const authUserId = authContext?.user?.id;
   const effectiveUserId = propUserId ?? authUserId;
 
+  const [playEntrance] = useState<boolean>(() => !hasPlayedMotionOnce(INTERNSHIPS_MOTION_KEY));
   const [data, setData] = useState<CandidateInternshipsData | null>(null);
   const [loading, setLoading] = useState<boolean>(() => Boolean(effectiveUserId));
   const [error, setError] = useState<InternshipErrorState | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+
+  useEffect(() => {
+    markMotionPlayed(INTERNSHIPS_MOTION_KEY);
+  }, []);
 
   useEffect(() => {
     if (propUserId === undefined && !authUserId) {
@@ -103,10 +127,7 @@ export const CandidateInternships: React.FC<CandidateInternshipsProps> = ({
           setData(result);
         }
       } catch (err) {
-        if (
-          controller.signal.aborted ||
-          (err instanceof Error && err.name === 'AbortError')
-        ) {
+        if (controller.signal.aborted || (err instanceof Error && err.name === 'AbortError')) {
           return;
         }
 
@@ -128,99 +149,128 @@ export const CandidateInternships: React.FC<CandidateInternshipsProps> = ({
     (total, internship) => total + (internship.tasks?.length ?? 0),
     0,
   );
+  const isReady = Boolean(effectiveUserId) && !loading && !error && internships.length > 0;
 
   let body: React.ReactNode;
 
   if (!effectiveUserId) {
     body = (
-      <div className="ci-status ci-status-error" role="status">
-        <Icon name="alert-circle" size={24} />
-        <h2 className="ci-status-title">Không tìm thấy tài khoản</h2>
-        <p className="ci-status-description">
-          Không tìm thấy thông tin tài khoản ứng viên. Vui lòng đăng nhập lại.
-        </p>
+      <div className="rj-alert rj-alert-danger ci-alert" role="alert">
+        <Icon name="alert-circle" size={20} />
+        <div className="rj-stack-xs ci-alert-body">
+          <h2 className="ci-alert-title">Không tìm thấy tài khoản</h2>
+          <p className="ci-alert-desc">
+            Không tìm thấy thông tin tài khoản ứng viên. Vui lòng đăng nhập lại.
+          </p>
+        </div>
       </div>
     );
   } else if (loading) {
     body = (
-      <div className="ci-status" role="status" aria-live="polite">
-        <Icon name="spinner" size={24} className="ci-spinner" />
-        <h2 className="ci-status-title">Đang tải thông tin thực tập</h2>
-        <p className="ci-status-description">Vui lòng chờ trong giây lát...</p>
+      <div
+        className="rj-stack-lg"
+        role="status"
+        aria-live="polite"
+        aria-label="Đang tải thông tin thực tập"
+      >
+        <span className="rj-sr-only">Đang tải thông tin thực tập...</span>
+        <div className="ci-metrics-strip" aria-hidden="true">
+          <div className="rj-cand-tile rj-stack-xs">
+            <span className="rj-skeleton ci-skeleton-kicker" />
+            <strong className="rj-cand-metric-val ci-metric-val">
+              <span className="rj-skeleton rj-skeleton-inline" />
+            </strong>
+          </div>
+          <div className="rj-cand-tile rj-stack-xs">
+            <span className="rj-skeleton ci-skeleton-kicker" />
+            <strong className="rj-cand-metric-val ci-metric-val">
+              <span className="rj-skeleton rj-skeleton-inline" />
+            </strong>
+          </div>
+        </div>
+        <div className="rj-surface-card rj-stack-md ci-skeleton-card" aria-hidden="true">
+          <div className="rj-skeleton rj-skeleton-title" />
+          <div className="rj-skeleton rj-skeleton-text" />
+          <div className="rj-skeleton rj-skeleton-card" />
+        </div>
       </div>
     );
   } else if (error) {
     body = (
-      <div className="ci-status ci-status-error" role="alert">
-        <Icon name="alert-circle" size={24} />
-        <h2 className="ci-status-title">{error.title}</h2>
-        <p className="ci-status-description">{error.message}</p>
+      <div className="rj-alert rj-alert-danger ci-alert" role="alert">
+        <Icon name="alert-circle" size={20} />
+        <div className="rj-stack-xs ci-alert-body">
+          <h2 className="ci-alert-title">{error.title}</h2>
+          <p className="ci-alert-desc">{error.message}</p>
 
-        {error.retryable && (
-          <button
-            type="button"
-            className="ci-btn"
-            onClick={() => setRetryCount((count) => count + 1)}
-          >
-            <Icon name="refresh" size={16} />
-            Thử lại
-          </button>
-        )}
+          {error.retryable && (
+            <button
+              type="button"
+              className="rj-btn rj-btn-primary ci-retry-btn"
+              onClick={() => setRetryCount((count) => count + 1)}
+            >
+              <Icon name="refresh" size={16} />
+              <span>Thử lại</span>
+            </button>
+          )}
+        </div>
       </div>
     );
   } else if (internships.length === 0) {
     body = (
-      <div className="ci-status" role="status">
+      <div className="rj-empty-state">
         <Icon name="briefcase" size={24} />
-        <h2 className="ci-status-title">Chưa có thông tin thực tập IOC</h2>
-        <p className="ci-status-description">
-          Thông tin đợt thực tập, đề tài và kết quả nghiệm thu sẽ xuất hiện tại đây
-          khi được đồng bộ.
+        <h2 className="rj-role-card-title">Chưa có thông tin thực tập IOC</h2>
+        <p>
+          Thông tin đợt thực tập, đề tài, mentor và kết quả nghiệm thu sẽ hiển thị tại đây ngay khi
+          hệ thống đào tạo đồng bộ dữ liệu của bạn.
         </p>
       </div>
     );
   } else {
     body = (
-      <div className="ci-list">
+      <div className="rj-stack-md ci-list">
         {internships.map((internship) => (
-          <InternshipCard key={internship.id} internship={internship} />
+          <InternshipCard
+            key={internship.id}
+            internship={internship}
+            animateEntrance={playEntrance}
+          />
         ))}
       </div>
     );
   }
 
   return (
-    <section className="ci-page" aria-labelledby="ci-heading">
-      <header className="ci-page-head">
-        <div>
-          <h1 id="ci-heading" className="ci-heading">
-            Thực tập IOC
-          </h1>
-          <p className="ci-lead">
-            {candidateName
-              ? `Theo dõi quá trình thực tập và kết quả nghiệm thu của ${candidateName}.`
-              : 'Theo dõi thông tin đợt thực tập, đề tài, mentor và kết quả nghiệm thu.'}
-          </p>
-        </div>
-
-        {!loading && !error && effectiveUserId && internships.length > 0 && (
-          <div className="ci-overview" aria-label="Thống kê thực tập">
-            <div className="ci-overview-item">
-              <span className="ci-overview-label">Đợt thực tập</span>
-              <strong className="ci-overview-value rj-tabular-nums">
-                {internships.length}
-              </strong>
-            </div>
-
-            <div className="ci-overview-item">
-              <span className="ci-overview-label">Hạng mục nghiệm thu</span>
-              <strong className="ci-overview-value rj-tabular-nums">
-                {totalTasks}
-              </strong>
-            </div>
-          </div>
-        )}
+    <section className="rj-stack-lg ci-page" aria-labelledby="ci-heading">
+      <header className="rj-page-header">
+        <h1 id="ci-heading" className="rj-page-title">
+          Thực tập IOC
+        </h1>
+        <p className="rj-page-subtitle">
+          {candidateName
+            ? `Theo dõi đợt thực tập IOC, đề tài, nhóm, mentor, điểm cuối kỳ và hạng mục nghiệm thu của ${candidateName}.`
+            : 'Theo dõi đợt thực tập IOC, đề tài, nhóm, mentor, điểm cuối kỳ và số hạng mục nghiệm thu.'}
+        </p>
       </header>
+
+      {isReady && (
+        <div className="ci-metrics-strip" aria-label="Thống kê thực tập">
+          <div className="rj-cand-tile rj-stack-xs">
+            <span className="rj-cand-kicker">Đợt thực tập</span>
+            <strong className="rj-cand-metric-val ci-metric-val rj-tabular-nums">
+              <AnimatedMetric value={internships.length} active={isReady} animate={playEntrance} />
+            </strong>
+          </div>
+
+          <div className="rj-cand-tile rj-stack-xs">
+            <span className="rj-cand-kicker">Hạng mục nghiệm thu</span>
+            <strong className="rj-cand-metric-val ci-metric-val rj-tabular-nums">
+              <AnimatedMetric value={totalTasks} active={isReady} animate={playEntrance} />
+            </strong>
+          </div>
+        </div>
+      )}
 
       {body}
     </section>

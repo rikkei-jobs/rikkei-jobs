@@ -28,8 +28,8 @@ describe('SsoCallbackPage', () => {
       </AuthProvider>,
     );
 
-    expect(screen.getByText(/Không tìm thấy tham số vé SSO/i)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Quay lại Trang Đăng Nhập/i })).toBeInTheDocument();
+    expect(screen.getByText(/Không tìm thấy mã vé đăng nhập từ LMS/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Quay lại trang đăng nhập/i })).toBeInTheDocument();
   });
 
   it('calls ssoLogin and displays success when ticket is valid', async () => {
@@ -59,7 +59,7 @@ describe('SsoCallbackPage', () => {
 
     await waitFor(() => {
       expect(authApi.ssoLogin).toHaveBeenCalledWith({ ticket: 'valid-ticket-123' });
-      expect(screen.getByText('Đăng Nhập Thành Công!')).toBeInTheDocument();
+      expect(screen.getByText('Đăng nhập thành công')).toBeInTheDocument();
       expect(screen.getByText(/Nguyen Thi Sinh Vien/i)).toBeInTheDocument();
       expect(screen.getByText(/\(Ứng viên\)/)).toBeInTheDocument();
       expect(screen.queryByText(/CANDIDATE/)).not.toBeInTheDocument();
@@ -92,7 +92,7 @@ describe('SsoCallbackPage', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Đăng Nhập Thành Công!')).toBeInTheDocument();
+      expect(screen.getByText('Đăng nhập thành công')).toBeInTheDocument();
       expect(screen.getByText(/Trần Thị Minh/i)).toBeInTheDocument();
       expect(screen.getByText(/\(Nhân viên\)/)).toBeInTheDocument();
       expect(screen.queryByText(/STAFF/)).not.toBeInTheDocument();
@@ -115,8 +115,80 @@ describe('SsoCallbackPage', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Xác Thực Thất Bại')).toBeInTheDocument();
+      expect(screen.getByText('Xác thực không thành công')).toBeInTheDocument();
       expect(screen.getByText(/Vé SSO đã hết hạn/i)).toBeInTheDocument();
     });
+  });
+
+  it('preserves .rj-sso-card DOM identity across loading -> success and loading -> error transitions', async () => {
+    let resolveLogin!: (value: Awaited<ReturnType<typeof authApi.ssoLogin>>) => void;
+    vi.mocked(authApi.ssoLogin).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveLogin = resolve;
+        }),
+    );
+
+    const { container, unmount } = render(
+      <AuthProvider>
+        <MemoryRouter initialEntries={['/sso-callback?ticket=deferred-success']}>
+          <Routes>
+            <Route path="/sso-callback" element={<SsoCallbackPage />} />
+          </Routes>
+        </MemoryRouter>
+      </AuthProvider>,
+    );
+
+    const cardLoading = container.querySelector('.rj-auth-card.rj-sso-card');
+    expect(cardLoading).not.toBeNull();
+    expect(screen.getByText(/Đang xác thực đăng nhập từ LMS/i)).toBeInTheDocument();
+
+    resolveLogin({
+      accessToken: 'valid-sso-jwt',
+      user: {
+        id: 5,
+        email: 'mentor@lms.rikkei.edu.vn',
+        fullName: 'Le Mentor',
+        role: 'MENTOR',
+        companyId: null,
+        lmsUserId: 'lms-mt-001',
+        status: 'ACTIVE',
+        mustChangePassword: false,
+      },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Đăng nhập thành công')).toBeInTheDocument();
+    });
+    expect(container.querySelector('.rj-auth-card.rj-sso-card')).toBe(cardLoading);
+    unmount();
+
+    let rejectLogin!: (reason?: unknown) => void;
+    vi.mocked(authApi.ssoLogin).mockImplementationOnce(
+      () =>
+        new Promise((_resolve, reject) => {
+          rejectLogin = reject;
+        }),
+    );
+
+    const { container: errorContainer } = render(
+      <AuthProvider>
+        <MemoryRouter initialEntries={['/sso-callback?ticket=deferred-error']}>
+          <Routes>
+            <Route path="/sso-callback" element={<SsoCallbackPage />} />
+          </Routes>
+        </MemoryRouter>
+      </AuthProvider>,
+    );
+
+    const errorCardLoading = errorContainer.querySelector('.rj-auth-card.rj-sso-card');
+    expect(errorCardLoading).not.toBeNull();
+
+    rejectLogin(new AuthApiError('TICKET_EXPIRED', 'Vé đã hết hạn', 401));
+
+    await waitFor(() => {
+      expect(screen.getByText('Xác thực không thành công')).toBeInTheDocument();
+    });
+    expect(errorContainer.querySelector('.rj-auth-card.rj-sso-card')).toBe(errorCardLoading);
   });
 });

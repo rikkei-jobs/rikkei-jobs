@@ -31,16 +31,20 @@ describe('ResetPasswordPage', () => {
       </AuthProvider>,
     );
 
-    expect(screen.getByLabelText(/Mã Token Xác Thực/i)).toHaveValue('raw-token-12345');
+    expect(screen.getByLabelText(/Mã đặt lại mật khẩu/i)).toHaveValue('raw-token-12345');
+    expect(screen.getByLabelText(/^Mật khẩu mới$/i)).toHaveAttribute(
+      'placeholder',
+      'Nhập mật khẩu mới',
+    );
 
-    fireEvent.change(screen.getByLabelText(/^Mật Khẩu Mới$/i), {
+    fireEvent.change(screen.getByLabelText(/^Mật khẩu mới$/i), {
       target: { value: 'BrandNewPass123' },
     });
-    fireEvent.change(screen.getByLabelText(/Xác Nhận Mật Khẩu Mới/i), {
+    fireEvent.change(screen.getByLabelText(/Xác nhận mật khẩu mới/i), {
       target: { value: 'BrandNewPass123' },
     });
 
-    const submitBtn = screen.getByRole('button', { name: /Đặt Lại Mật Khẩu/i });
+    const submitBtn = screen.getByRole('button', { name: /Lưu mật khẩu mới/i });
     expect(submitBtn).not.toBeDisabled();
 
     fireEvent.click(submitBtn);
@@ -50,8 +54,8 @@ describe('ResetPasswordPage', () => {
         token: 'raw-token-12345',
         newPassword: 'BrandNewPass123',
       });
-      expect(screen.getByText('Thành Công!')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /Đi đến Đăng Nhập/i })).toBeInTheDocument();
+      expect(screen.getByText('Đã cập nhật mật khẩu')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Đi đến trang đăng nhập/i })).toBeInTheDocument();
     });
   });
 });

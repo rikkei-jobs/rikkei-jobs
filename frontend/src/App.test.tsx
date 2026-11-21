@@ -10,6 +10,26 @@ import {
   setAuthSessionHandlers,
   setAuthToken,
 } from './shared/api/httpClient';
+import { navigateWithTransition } from './shared/utils/motion';
+import { preloadRouteForPath } from './shared/utils/routeLazy';
+
+vi.mock('./shared/utils/routeLazy', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./shared/utils/routeLazy')>();
+  return {
+    ...actual,
+    preloadRouteForPath: vi.fn((rawPath: string) => actual.preloadRouteForPath(rawPath)),
+  };
+});
+
+function createDeferred<T = void>() {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
 
 vi.mock('./features/candidate/api/jobRecommendations', () => ({
   fetchJobRecommendations: vi.fn().mockResolvedValue({
@@ -52,7 +72,12 @@ describe('App Component', () => {
     render(<App />);
 
     expect(screen.getByTestId('app-title')).toHaveTextContent(APP_NAME);
-    expect(screen.getByTestId('app-version')).toHaveTextContent('v1.0.0-sprint1');
+    expect(screen.queryByTestId('app-version')).not.toBeInTheDocument();
+    expect(screen.getByRole('switch', { name: 'Chế độ tối' })).toBeInTheDocument();
+
+    const devDetails = document.querySelector('details.rj-dev-tools');
+    expect(devDetails).toBeInTheDocument();
+    expect(devDetails).not.toHaveAttribute('open');
 
     await waitFor(() => {
       expect(screen.getByTestId('backend-status-badge')).toHaveTextContent('UP');
@@ -179,7 +204,7 @@ describe('App Component', () => {
     });
   });
 
-  it('renders all 7 business modules cards with expected codes and metadata', async () => {
+  it('renders role-centered landing content without technical showcase or MOD codes', async () => {
     globalThis.fetch = vi.fn().mockImplementation(() =>
       Promise.resolve({
         ok: true,
@@ -187,41 +212,12 @@ describe('App Component', () => {
       } as unknown as Response),
     );
 
-    render(<App />);
+    const { container } = render(<App />);
 
-    const moduleKeys = [
-      'candidate',
-      'company',
-      'internship',
-      'assessment',
-      'learning',
-      'recruitment',
-      'ai',
-    ];
-
-    for (const key of moduleKeys) {
-      const card = screen.getByTestId(`module-${key}`);
-      expect(card).toBeInTheDocument();
-      const targetEl = card.querySelector('.module-target');
-      expect(targetEl).not.toBeNull();
-      expect(targetEl?.textContent).not.toMatch(/\b(CANDIDATE|MENTOR|STAFF|ADMIN)\b/);
-    }
-
-    expect(screen.getByTestId('module-candidate').querySelector('.module-target')).toHaveTextContent(
-      /Ứng viên/,
-    );
-    expect(screen.getByTestId('module-company').querySelector('.module-target')).toHaveTextContent(
-      /HR/,
-    );
-    expect(screen.getByTestId('module-assessment').querySelector('.module-target')).toHaveTextContent(
-      /Mentor, Ứng viên, Quản trị viên/,
-    );
-    expect(screen.getByTestId('module-internship').querySelector('.module-target')).toHaveTextContent(
-      /Ứng viên, Mentor, Nhân viên/,
-    );
-
-    expect(screen.getByText('MOD-01')).toBeInTheDocument();
-    expect(screen.getByText('MOD-07')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: /Rikkei Jobs giúp bạn làm gì/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Đăng nhập vào Rikkei Jobs/i })).toHaveAttribute('href', '/login');
+    expect(screen.getAllByText('Sắp ra mắt').length).toBeGreaterThanOrEqual(2);
+    expect(container.textContent).not.toMatch(/MOD-01|MOD-07|Modular Monolith|Thông tin kỹ thuật Skeleton|T022DB0/i);
 
     await waitFor(() => {
       expect(screen.getByTestId('backend-status-badge')).toHaveTextContent('UP');
@@ -265,7 +261,7 @@ describe('App Component', () => {
     fireEvent.click(skillsTab);
 
     expect(
-      screen.getByText(/Vui lòng đăng nhập bằng tài khoản học viên \(LMS SSO\) hoặc tài khoản doanh nghiệp/i),
+      screen.getByText(/Vui lòng đăng nhập bằng tài khoản học viên \(LMS\) hoặc tài khoản doanh nghiệp/i),
     ).toBeInTheDocument();
 
     const ctaLink = screen.getByRole('link', { name: /Đăng nhập để xem hồ sơ năng lực/i });
@@ -321,7 +317,7 @@ describe('App Component', () => {
 
     // Assert router successfully navigated to /login and rendered LoginPage
     await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 1, name: /Cổng Đăng Nhập/i })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: /^Đăng nhập$/i })).toBeInTheDocument();
     });
   });
 
@@ -351,10 +347,10 @@ describe('App Component', () => {
     });
 
     // Assert router successfully navigated to /change-password and rendered ChangePasswordPage
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 1, name: /Đổi Mật Khẩu/i })).toBeInTheDocument();
-    });
-  });
+    expect(
+      await screen.findByRole('heading', { level: 1, name: /Đổi mật khẩu/i }, { timeout: 8000 }),
+    ).toBeInTheDocument();
+  }, 15000);
 
   it('attaches Bearer token from AuthProvider session on mounted <App /> requests', async () => {
     window.history.pushState({}, '', '/candidate?mockRole=CANDIDATE');
@@ -401,7 +397,7 @@ describe('App Component', () => {
 
     expect(getAuthToken()).toBeNull();
     await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 1, name: /Cổng Đăng Nhập/i })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: /^Đăng nhập$/i })).toBeInTheDocument();
     });
     expect(window.location.pathname).toBe('/login');
     expect(replaceStateSpy).toHaveBeenCalled();
@@ -426,9 +422,11 @@ describe('App Component', () => {
 
     expect(getAuthToken()).toBe('dev-preview-token');
     expect(window.location.pathname).toBe('/candidate');
-    expect(screen.getByText(/Chào mừng, Nguyen Van Sinh Vien!/i)).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { level: 1, name: /Cổng Đăng Nhập/i })).not.toBeInTheDocument();
-  });
+    expect(
+      await screen.findByText(/Chào mừng, Nguyen Van Sinh Vien!/i, {}, { timeout: 8000 }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 1, name: /^Đăng nhập$/i })).not.toBeInTheDocument();
+  }, 15000);
 
   it('invokes session handler once under React.StrictMode and cleans up handlers on unmount', async () => {
     window.history.pushState({}, '', '/?mockRole=CANDIDATE');
@@ -464,7 +462,7 @@ describe('App Component', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 1, name: /Cổng Đăng Nhập/i })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: /^Đăng nhập$/i })).toBeInTheDocument();
     });
 
     const loginReplaceCalls = replaceStateSpy.mock.calls
@@ -501,7 +499,7 @@ describe('App Component', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 1, name: /Cổng Đăng Nhập/i })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: /^Đăng nhập$/i })).toBeInTheDocument();
     });
 
     expect(window.location.pathname).toBe('/login');
@@ -524,10 +522,121 @@ describe('App Component', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 1, name: /Cổng Đăng Nhập/i })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: /^Đăng nhập$/i })).toBeInTheDocument();
     });
 
     expect(window.location.pathname).toBe('/login');
     expect((window.history.state as { usr?: unknown } | null)?.usr ?? null).toBeNull();
   });
+
+  it('cancels a pending navigateWithTransition when onUnauthorized fires on 401 and preserves /login state.from', async () => {
+    window.history.pushState({}, '', '/hr?mockRole=HR');
+
+    globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+      if (String(url).includes('/api/v1/profiles/me/skills')) {
+        return Promise.resolve({
+          ok: false,
+          status: 401,
+          headers: new Headers({ 'content-type': 'application/json' }),
+          json: () => Promise.resolve({ code: 'UNAUTHORIZED', message: 'Phiên hết hạn' }),
+        } as unknown as Response);
+      }
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: () => Promise.resolve({}),
+      } as unknown as Response);
+    });
+
+    render(<App />);
+    expect(await screen.findByText('Đăng tin tuyển dụng', {}, { timeout: 8000 })).toBeInTheDocument();
+
+    const deferredPreload = createDeferred<void>();
+    const staleUpdateDOM = vi.fn();
+    const navPromise = navigateWithTransition(staleUpdateDOM, () => deferredPreload.promise);
+
+    await act(async () => {
+      await expect(request('/api/v1/profiles/me/skills')).rejects.toThrow();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: /^Đăng nhập$/i })).toBeInTheDocument();
+    });
+
+    await act(async () => {
+      deferredPreload.resolve();
+      await navPromise;
+    });
+
+    expect(staleUpdateDOM).not.toHaveBeenCalled();
+    expect(window.location.pathname).toBe('/login');
+    expect((window.history.state as { usr?: unknown } | null)?.usr).toMatchObject({
+      from: { pathname: '/hr', search: '?mockRole=HR' },
+    });
+  }, 15000);
+
+  it('supersedes a pending onMustChangePassword preload when 401 onUnauthorized fires before preload resolves', async () => {
+    window.history.pushState({}, '', '/hr?mockRole=HR');
+
+    const deferredPreload = createDeferred<void>();
+    vi.mocked(preloadRouteForPath).mockImplementationOnce((rawPath: string) =>
+      rawPath === '/change-password' ? deferredPreload.promise : undefined,
+    );
+
+    globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+      if (String(url).includes('/api/v1/profiles/me/skills')) {
+        return Promise.resolve({
+          ok: false,
+          status: 403,
+          headers: new Headers({ 'content-type': 'application/json' }),
+          json: () => Promise.resolve({ code: 'MUST_CHANGE_PASSWORD', message: 'Cần đổi mật khẩu' }),
+        } as unknown as Response);
+      }
+      if (String(url).includes('/api/v1/companies/me')) {
+        return Promise.resolve({
+          ok: false,
+          status: 401,
+          headers: new Headers({ 'content-type': 'application/json' }),
+          json: () => Promise.resolve({ code: 'UNAUTHORIZED', message: 'Phiên hết hạn' }),
+        } as unknown as Response);
+      }
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: () => Promise.resolve({}),
+      } as unknown as Response);
+    });
+
+    render(<App />);
+    expect(await screen.findByText('Đăng tin tuyển dụng', {}, { timeout: 8000 })).toBeInTheDocument();
+
+    await act(async () => {
+      await expect(request('/api/v1/profiles/me/skills')).rejects.toThrow();
+    });
+
+    expect(window.location.pathname).toBe('/hr');
+
+    await act(async () => {
+      await expect(request('/api/v1/companies/me')).rejects.toThrow();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: /^Đăng nhập$/i })).toBeInTheDocument();
+    });
+    expect(getAuthToken()).toBeNull();
+
+    await act(async () => {
+      deferredPreload.resolve();
+      await Promise.resolve();
+    });
+
+    expect(window.location.pathname).toBe('/login');
+    expect(getAuthToken()).toBeNull();
+    expect(screen.queryByRole('heading', { level: 1, name: /^Đổi mật khẩu$/i })).not.toBeInTheDocument();
+    expect((window.history.state as { usr?: unknown } | null)?.usr).toMatchObject({
+      from: { pathname: '/hr', search: '?mockRole=HR' },
+    });
+  }, 15000);
 });

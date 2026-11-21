@@ -94,7 +94,7 @@ export const CompanyLogoPanel: React.FC<CompanyLogoPanelProps> = ({
   const showFrameStatusRole = !logoSuccess && !isUploadingLogo;
 
   return (
-    <section className="rj-auth-card cp-aside-card" aria-labelledby="company-logo-heading">
+    <section className="cp-card cp-aside-card" aria-labelledby="company-logo-heading">
       <div className="cp-card-header">
         <h2 id="company-logo-heading" className="cp-section-title">
           Logo doanh nghiệp

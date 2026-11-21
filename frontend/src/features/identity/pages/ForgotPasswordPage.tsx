@@ -30,20 +30,20 @@ export const ForgotPasswordPage: React.FC = () => {
 
   return (
     <AuthEditorialLayout
-      badgeLabel="Kênh Khôi Phục Truy Cập Doanh Nghiệp"
+      badgeLabel="Tài khoản doanh nghiệp"
       badgeIcon="key"
-      storyHeading="Khôi Phục Quyền Truy Cập An Toàn — Bảo Mật Đa Tầng"
-      storyLead="Liên kết xác thực khôi phục mật khẩu một lần (TTL 30 phút) được gửi riêng tới email doanh nghiệp đã xác minh, bảo đảm tính toàn vẹn và chống tấn công dò quét tài khoản."
+      storyHeading="Đặt lại mật khẩu tài khoản doanh nghiệp"
+      storyLead="Nhập email công ty đã được cấp tài khoản. Nếu email hợp lệ, hệ thống sẽ gửi liên kết đặt lại mật khẩu có hiệu lực trong 30 phút."
     >
       <div className="rj-auth-card">
         <header className="rj-auth-header">
           <div className="rj-brand-badge">
             <Icon name="key" size={16} />
-            <span>Khôi Phục Mật Khẩu</span>
+            <span>Tài khoản doanh nghiệp</span>
           </div>
-          <h1 className="rj-auth-title">Quên Mật Khẩu</h1>
+          <h1 className="rj-auth-title">Quên mật khẩu</h1>
           <p className="rj-auth-subtitle">
-            Nhập email tài khoản doanh nghiệp để nhận liên kết khôi phục mật khẩu
+            Nhập email tài khoản doanh nghiệp để nhận liên kết đặt lại mật khẩu
           </p>
         </header>
 
@@ -55,50 +55,52 @@ export const ForgotPasswordPage: React.FC = () => {
         )}
 
         {submitted ? (
-          <div role="status" aria-live="polite">
+          <div role="status" aria-live="polite" className="rj-stagger-item">
             <div className="rj-alert rj-alert-success">
               <Icon name="check-circle" size={20} />
               <div>
                 <strong>Yêu cầu đã được ghi nhận!</strong>
                 <p style={{ margin: '4px 0 0 0' }}>
-                  Nếu email tồn tại trong hệ thống, liên kết khôi phục (hiệu lực 30 phút) đã được gửi đến hòm thư của bạn.
+                  Nếu email tồn tại trong hệ thống, liên kết đặt lại mật khẩu (hiệu lực 30 phút) đã
+                  được gửi đến hòm thư của bạn.
                 </p>
               </div>
             </div>
 
-            {/* Dev Hint */}
             {import.meta.env.DEV && (
-              <div className="rj-dev-ticket-box" style={{ marginTop: '16px' }}>
-                <div className="rj-dev-ticket-title">
+              <details className="rj-dev-tools">
+                <summary className="rj-dev-tools-summary">
                   <Icon name="mail" size={16} />
-                  Môi trường phát triển (Dev)
+                  <span>Hỗ trợ kiểm thử email (chỉ môi trường phát triển)</span>
+                </summary>
+                <div className="rj-dev-tools-body">
+                  <p style={{ fontSize: '0.8125rem', color: 'var(--rj-color-text-secondary)', margin: 0 }}>
+                    Kiểm tra email đặt lại mật khẩu tại Mailpit UI:{' '}
+                    <a
+                      href="http://127.0.0.1:8025"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rj-link"
+                    >
+                      http://127.0.0.1:8025
+                    </a>
+                  </p>
                 </div>
-                <p style={{ fontSize: '0.8125rem', color: 'var(--rj-color-text-secondary)', margin: '4px 0' }}>
-                  Kiểm tra email reset mật khẩu tại Mailpit UI:{' '}
-                  <a
-                    href="http://127.0.0.1:8025"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rj-link"
-                  >
-                    http://127.0.0.1:8025
-                  </a>
-                </p>
-              </div>
+              </details>
             )}
 
             <div style={{ marginTop: '24px' }}>
               <Link to="/login" className="rj-btn rj-btn-secondary rj-btn-block">
                 <Icon name="arrow-left" size={18} />
-                Quay lại Trang Đăng Nhập
+                <span>Quay lại trang đăng nhập</span>
               </Link>
             </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="rj-form">
-            <div className="rj-form-group">
+            <div className="rj-form-group rj-form-seq" style={{ '--stagger-index': 0 } as React.CSSProperties}>
               <label htmlFor="forgot-email" className="rj-label">
-                Email Doanh Nghiệp
+                Email doanh nghiệp
               </label>
               <div className="rj-input-wrapper">
                 <span className="rj-input-icon">
@@ -111,39 +113,45 @@ export const ForgotPasswordPage: React.FC = () => {
                   placeholder="hr@company.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  aria-describedby={['forgot-email-hint', errorMsg ? 'forgot-email-error' : null].filter(Boolean).join(' ')}
+                  aria-describedby={['forgot-email-hint', errorMsg ? 'forgot-email-error' : null]
+                    .filter(Boolean)
+                    .join(' ')}
                   aria-invalid={Boolean(errorMsg)}
                   required
                   autoComplete="email"
                 />
               </div>
               <span id="forgot-email-hint" className="rj-form-hint">
-                Hệ thống sẽ gửi mã xác thực an toàn tới địa chỉ email này.
+                Hệ thống sẽ gửi liên kết đặt lại mật khẩu tới địa chỉ email này.
               </span>
             </div>
 
             <button
               type="submit"
-              className="rj-btn rj-btn-primary rj-btn-block"
+              className="rj-btn rj-btn-primary rj-btn-block rj-btn-morph rj-form-seq"
+              style={{ '--stagger-index': 1 } as React.CSSProperties}
               disabled={isLoading || !email.trim()}
             >
-              {isLoading ? (
-                <>
+              <span className={`rj-btn-morph-layer ${isLoading ? 'is-hidden' : 'is-visible'}`}>
+                <Icon name="mail" size={20} />
+                <span>Gửi liên kết đặt lại</span>
+              </span>
+              {isLoading && (
+                <span className="rj-btn-morph-layer is-visible">
                   <Icon name="spinner" size={20} className="rj-spin" />
                   <span>Đang gửi...</span>
-                </>
-              ) : (
-                <>
-                  <Icon name="mail" size={20} />
-                  <span>Gửi Liên Kết Khôi Phục</span>
-                </>
+                </span>
               )}
             </button>
 
             <div style={{ textAlign: 'center', marginTop: '8px' }}>
-              <Link to="/login" className="rj-link" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              <Link
+                to="/login"
+                className="rj-link"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+              >
                 <Icon name="arrow-left" size={16} />
-                <span>Quay lại Đăng nhập</span>
+                <span>Quay lại trang đăng nhập</span>
               </Link>
             </div>
           </form>

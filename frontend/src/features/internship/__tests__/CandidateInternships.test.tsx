@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { AuthProvider } from '../../identity/context/AuthContext';
 import type { UserDto } from '../../identity/types';
@@ -8,6 +8,7 @@ import {
   setAuthSessionHandlers,
   setAuthToken,
 } from '../../../shared/api/httpClient';
+import { resetMotionRegistry } from '../../../shared/utils/motion';
 import { AppRoutes } from '../../../App';
 import * as internshipApi from '../api/candidateInternships';
 import { fetchCandidateInternships, fetchMyInternships } from '../api/candidateInternships';
@@ -109,10 +110,12 @@ const jsonError = (status: number, code: string, message: string): Response =>
 
 describe('CandidateInternships (API, UI States, Semantics & Route Guard)', () => {
   const originalFetch = globalThis.fetch;
+  const originalMatchMedia = window.matchMedia;
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     vi.restoreAllMocks();
+    resetMotionRegistry();
     resetAuthSessionState();
     setAuthSessionHandlers({});
     setAuthToken('cand-jwt');
@@ -125,7 +128,13 @@ describe('CandidateInternships (API, UI States, Semantics & Route Guard)', () =>
       .filter((msg: string) => /act\(/i.test(msg) || /not wrapped in act/i.test(msg));
     expect(actWarnings).toEqual([]);
     consoleErrorSpy.mockRestore();
+    vi.restoreAllMocks();
 
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      writable: true,
+      value: originalMatchMedia,
+    });
     globalThis.fetch = originalFetch;
     resetAuthSessionState();
     setAuthSessionHandlers({});
@@ -173,7 +182,7 @@ describe('CandidateInternships (API, UI States, Semantics & Route Guard)', () =>
   });
 
   describe('B. CandidateInternships component states & formatting', () => {
-    it('renders loading state with 1 h1 and aborts in-flight fetch on unmount', async () => {
+    it('renders loading skeleton with 1 h1 and aborts in-flight fetch on unmount', async () => {
       let capturedSignal: AbortSignal | undefined;
       let resolveFetch: (res: Response) => void = () => {};
 
@@ -191,8 +200,14 @@ describe('CandidateInternships (API, UI States, Semantics & Route Guard)', () =>
       );
 
       expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
-      expect(screen.getByRole('heading', { level: 1, name: 'Thực tập IOC' })).toBeInTheDocument();
-      expect(screen.getByRole('status')).toHaveTextContent(/Đang tải thông tin thực tập/i);
+      const heading = screen.getByRole('heading', { level: 1, name: 'Thực tập IOC' });
+      expect(heading).toHaveClass('rj-page-title');
+
+      const status = screen.getByRole('status');
+      expect(status).toHaveAttribute('aria-live', 'polite');
+      expect(status).toHaveTextContent(/Đang tải thông tin thực tập/i);
+      expect(status.querySelectorAll('.rj-skeleton').length).toBeGreaterThan(0);
+      expect(status.querySelector('.rj-skeleton-card')).not.toBeNull();
       expect(capturedSignal?.aborted).toBe(false);
 
       unmount();
@@ -203,25 +218,35 @@ describe('CandidateInternships (API, UI States, Semantics & Route Guard)', () =>
       });
     });
 
-    it('renders no-user state with 1 h1 and h2.ci-status-title when userId and auth user are absent', () => {
+    it('renders no-user alert with 1 h1 and rj-alert-danger when userId and auth user are absent', () => {
       render(<CandidateInternships />);
 
       expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
-      expect(screen.getByRole('heading', { level: 1, name: 'Thực tập IOC' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: 'Thực tập IOC' })).toHaveClass(
+        'rj-page-title',
+      );
 
-      const statusHeading = screen.getByRole('heading', {
-        level: 2,
-        name: /Không tìm thấy tài khoản/i,
-      });
-      expect(statusHeading).toHaveClass('ci-status-title');
-      expect(screen.getByRole('status')).toBeInTheDocument();
+      const alert = screen.getByRole('alert');
+      expect(alert).toHaveClass('rj-alert', 'rj-alert-danger');
+      expect(
+        screen.getByRole('heading', { level: 2, name: /Không tìm thấy tài khoản/i }),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole('status')).not.toBeInTheDocument();
     });
 
-    it('calls /api/v1/profiles/me/internships by default and renders formatted internship data', async () => {
+    it('calls /api/v1/profiles/me/internships by default and renders shared surface, semantic dl, and vi-VN format', async () => {
+      // Fast-forward 640ms useCountUp animation in 1 tick to keep waitFor deterministic.
+      vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) =>
+        window.setTimeout(() => cb(performance.now() + 800), 0),
+      );
+      vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((id) => {
+        window.clearTimeout(id);
+      });
+
       const fetchMock = vi.fn().mockResolvedValueOnce(jsonOk([SAMPLE_INTERNSHIP]));
       globalThis.fetch = fetchMock;
 
-      render(
+      const { container } = render(
         <AuthProvider initialToken="cand-jwt" initialUser={CANDIDATE_USER}>
           <CandidateInternships />
         </AuthProvider>,
@@ -232,7 +257,18 @@ describe('CandidateInternships (API, UI States, Semantics & Route Guard)', () =>
       expect(calledUrl).toBe('/api/v1/profiles/me/internships');
 
       expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
-      expect(screen.getByRole('heading', { level: 1, name: 'Thực tập IOC' })).toBeInTheDocument();
+      const heading = screen.getByRole('heading', { level: 1, name: 'Thực tập IOC' });
+      expect(heading).toHaveClass('rj-page-title');
+
+      const card = container.querySelector('article.rj-surface-card');
+      expect(card).not.toBeNull();
+      expect(card).toHaveClass('rj-interactive-card');
+
+      const dlList = card!.querySelectorAll('dl');
+      expect(dlList.length).toBeGreaterThanOrEqual(1);
+      expect(card!.querySelectorAll('dt').length).toBeGreaterThanOrEqual(4);
+      expect(card!.querySelectorAll('dd').length).toBeGreaterThanOrEqual(4);
+
       expect(screen.getByText('IOC-JB-2026-09')).toBeInTheDocument();
       expect(screen.getByText('Nhóm Java Backend 01')).toBeInTheDocument();
       expect(screen.getByText('Hệ thống đặt lịch phòng họp')).toBeInTheDocument();
@@ -249,9 +285,47 @@ describe('CandidateInternships (API, UI States, Semantics & Route Guard)', () =>
       expect(tasksBox).toHaveTextContent('3 hạng mục');
 
       const overview = screen.getByLabelText('Thống kê thực tập');
-      expect(overview).toHaveTextContent('1');
-      expect(overview).toHaveTextContent('3');
+      expect(overview).toHaveTextContent('Đợt thực tập');
       expect(overview).toHaveTextContent('Hạng mục nghiệm thu');
+
+      await waitFor(() => {
+        const liveValues = Array.from(overview.querySelectorAll('.rj-metric-slot-live')).map(
+          (el) => el.textContent,
+        );
+        expect(liveValues).toEqual(['1', '3']);
+      });
+    });
+
+    it('renders final summary metric values immediately under prefers-reduced-motion: reduce', async () => {
+      Object.defineProperty(window, 'matchMedia', {
+        configurable: true,
+        writable: true,
+        value: vi.fn().mockImplementation((query: string) => ({
+          matches: query === '(prefers-reduced-motion: reduce)',
+          media: query,
+          onchange: null,
+          addListener: vi.fn(),
+          removeListener: vi.fn(),
+          addEventListener: vi.fn(),
+          removeEventListener: vi.fn(),
+          dispatchEvent: vi.fn(),
+        })),
+      });
+
+      globalThis.fetch = vi.fn().mockResolvedValueOnce(jsonOk([SAMPLE_INTERNSHIP]));
+
+      render(
+        <AuthProvider initialToken="cand-jwt" initialUser={CANDIDATE_USER}>
+          <CandidateInternships />
+        </AuthProvider>,
+      );
+
+      expect(await screen.findByText(SAMPLE_INTERNSHIP.batchName!)).toBeInTheDocument();
+      const overview = screen.getByLabelText('Thống kê thực tập');
+      const liveValues = Array.from(overview.querySelectorAll('.rj-metric-slot-live')).map(
+        (el) => el.textContent,
+      );
+      expect(liveValues).toEqual(['1', '3']);
     });
 
     it('calls /api/v1/profiles/77/internships when explicit userId={77} is passed', async () => {
@@ -285,7 +359,7 @@ describe('CandidateInternships (API, UI States, Semantics & Route Guard)', () =>
       expect(screen.getByText('Chưa có mentor')).toBeInTheDocument();
     });
 
-    it('renders empty state with 1 h1 and authentic Vietnamese copy without PM/batchId/task jargon', async () => {
+    it('renders rj-empty-state with 1 h1 and authentic Vietnamese copy without status/alert role', async () => {
       globalThis.fetch = vi.fn().mockResolvedValueOnce(jsonOk([]));
 
       const { container } = render(
@@ -298,6 +372,9 @@ describe('CandidateInternships (API, UI States, Semantics & Route Guard)', () =>
         await screen.findByRole('heading', { level: 2, name: 'Chưa có thông tin thực tập IOC' }),
       ).toBeInTheDocument();
       expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+      expect(container.querySelector('.rj-empty-state')).not.toBeNull();
+      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 
       const textContent = container.textContent ?? '';
       expect(textContent).not.toMatch(/\bPM\b/);
@@ -305,11 +382,15 @@ describe('CandidateInternships (API, UI States, Semantics & Route Guard)', () =>
       expect(textContent).not.toMatch(/\btask\b/i);
     });
 
-    it('renders retryable error on 503 EXTERNAL_UNAVAILABLE and recovers on retry click', async () => {
+    it('renders retryable rj-alert-danger on 503 EXTERNAL_UNAVAILABLE and recovers on retry click', async () => {
       const fetchMock = vi
         .fn()
         .mockResolvedValueOnce(
-          jsonError(503, 'EXTERNAL_UNAVAILABLE', 'Hệ thống quản lý thực tập IOC tạm thời không phản hồi.'),
+          jsonError(
+            503,
+            'EXTERNAL_UNAVAILABLE',
+            'Hệ thống quản lý thực tập IOC tạm thời không phản hồi.',
+          ),
         )
         .mockResolvedValueOnce(jsonOk([SAMPLE_INTERNSHIP]));
       globalThis.fetch = fetchMock;
@@ -321,10 +402,12 @@ describe('CandidateInternships (API, UI States, Semantics & Route Guard)', () =>
       );
 
       const alert = await screen.findByRole('alert');
+      expect(alert).toHaveClass('rj-alert', 'rj-alert-danger');
       expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
       expect(alert).not.toHaveTextContent(/\bPM\b/);
 
       const retryBtn = screen.getByRole('button', { name: /Thử lại/i });
+      expect(retryBtn).toHaveClass('rj-btn', 'rj-btn-primary');
       fireEvent.click(retryBtn);
 
       expect(await screen.findByText(SAMPLE_INTERNSHIP.batchName!)).toBeInTheDocument();
@@ -345,6 +428,7 @@ describe('CandidateInternships (API, UI States, Semantics & Route Guard)', () =>
       );
 
       const alert = await screen.findByRole('alert');
+      expect(alert).toHaveClass('rj-alert-danger');
       expect(alert).toHaveTextContent(/Không thể kết nối đến máy chủ/i);
       fireEvent.click(screen.getByRole('button', { name: /Thử lại/i }));
 
@@ -361,6 +445,7 @@ describe('CandidateInternships (API, UI States, Semantics & Route Guard)', () =>
 
       const alert403 = await screen.findByRole('alert');
       expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+      expect(alert403).toHaveClass('rj-alert-danger');
       expect(alert403).toHaveTextContent(/Không có quyền truy cập/i);
       expect(screen.queryByRole('button', { name: /Thử lại/i })).not.toBeInTheDocument();
       unmount();
@@ -373,6 +458,7 @@ describe('CandidateInternships (API, UI States, Semantics & Route Guard)', () =>
 
       const alert404 = await screen.findByRole('alert');
       expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+      expect(alert404).toHaveClass('rj-alert-danger');
       expect(alert404).toHaveTextContent(/Không tìm thấy thông tin thực tập/i);
       expect(screen.queryByRole('button', { name: /Thử lại/i })).not.toBeInTheDocument();
     });
@@ -461,7 +547,9 @@ describe('CandidateInternships (API, UI States, Semantics & Route Guard)', () =>
         </AuthProvider>,
       );
 
-      expect(await screen.findByRole('heading', { name: /Cổng Đăng Nhập/i })).toBeInTheDocument();
+      expect(
+        await screen.findByRole('heading', { level: 1, name: /Đăng nhập/i }),
+      ).toBeInTheDocument();
       expect(fetchMock).not.toHaveBeenCalled();
     });
   });

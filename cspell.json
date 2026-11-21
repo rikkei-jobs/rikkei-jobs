@@ -260,7 +260,18 @@
     "orgot",
     "hange",
     "eset",
-    "flogin"
+    "flogin",
+    "uiux",
+    "kowalski",
+    "comeau",
+    "rauno",
+    "freiberg",
+    "hoverable",
+    "khaothi",
+    "domcontentloaded",
+    "unhandledrejection",
+    "clippath",
+    "autostop"
   ],
   "ignorePaths": [
     "**/node_modules/**",

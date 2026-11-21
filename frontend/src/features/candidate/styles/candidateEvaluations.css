@@ -12,7 +12,11 @@
   line-height: 1.6;
 }
 
-/* Page Heading */
+.ce-page:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
 
 .ce-page-head {
   display: flex;
@@ -280,6 +284,7 @@
   font-size: 0.9375rem;
   font-weight: 600;
   color: var(--rj-color-text);
+  overflow-wrap: anywhere;
 }
 
 .ce-skill-code {

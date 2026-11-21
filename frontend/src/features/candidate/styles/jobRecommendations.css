@@ -51,7 +51,9 @@
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    background-color var(--rj-duration-fast) var(--rj-ease-hover),
+    transform var(--rj-duration-micro) var(--rj-ease-hover);
 }
 
 .refresh-button:hover:not(:disabled) {
@@ -66,7 +68,7 @@
 
 .refresh-icon {
   display: inline-block;
-  transition: transform 0.3s ease;
+  transition: transform var(--rj-duration-moderate) var(--rj-ease-entrance);
 }
 
 .refresh-icon.spinning {
@@ -98,6 +100,7 @@
 
 .meta-badges {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
 }
@@ -123,7 +126,7 @@
 
 .jobs-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(360px, 100%), 1fr));
   gap: 20px;
 }
 
@@ -136,8 +139,8 @@
   flex-direction: column;
   justify-content: space-between;
   transition:
-    transform 0.2s,
-    box-shadow 0.2s;
+    transform var(--rj-duration-fast) var(--rj-ease-hover),
+    box-shadow var(--rj-duration-fast) var(--rj-ease-hover);
   position: relative;
 }
 
@@ -239,8 +242,9 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: linear-gradient(135deg, var(--rj-color-brand-primary), var(--rj-brand-electric));
-  color: var(--rj-color-text-inverse);
+  background: var(--rj-color-badge-brand-bg);
+  color: var(--rj-color-badge-brand-text);
+  border: 1px solid var(--rj-color-badge-brand-border);
   padding: 2px 8px;
   border-radius: 4px;
   font-size: 0.725rem;
@@ -252,8 +256,9 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: var(--rj-primitive-neutral-400);
-  color: var(--rj-color-text-inverse);
+  background: var(--rj-color-surface-subtle);
+  color: var(--rj-color-text-secondary);
+  border: 1px solid var(--rj-color-border-subtle);
   padding: 2px 8px;
   border-radius: 4px;
   font-size: 0.725rem;
@@ -312,6 +317,7 @@
 
 .apply-button {
   flex: 1;
+  min-height: var(--rj-density-button-height);
   background: var(--rj-color-text-primary);
   color: var(--rj-color-text-inverse);
   border: none;
@@ -320,17 +326,25 @@
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background-color var(--rj-duration-fast) var(--rj-ease-hover);
 }
 
-.apply-button:hover {
+.apply-button:hover:not(:disabled) {
   background: var(--rj-color-text-secondary);
+}
+
+.apply-button:disabled {
+  background: var(--rj-color-surface-subtle);
+  color: var(--rj-color-text-muted);
+  border: 1px solid var(--rj-color-border-subtle);
+  cursor: not-allowed;
 }
 
 .details-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  min-height: var(--rj-density-button-height);
   background: transparent;
   color: var(--rj-color-brand-primary);
   border: 1px solid var(--rj-color-badge-brand-border);
@@ -340,7 +354,7 @@
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background-color var(--rj-duration-fast) var(--rj-ease-hover);
 }
 
 .details-button:hover {
@@ -369,4 +383,19 @@
 .recommendations-empty {
   background: var(--rj-color-surface-input);
   color: var(--rj-color-text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .refresh-button,
+  .refresh-icon,
+  .job-card,
+  .apply-button,
+  .details-button {
+    transition-duration: 0.001ms !important;
+    transform: none !important;
+  }
+
+  .refresh-icon.spinning {
+    animation: none !important;
+  }
 }

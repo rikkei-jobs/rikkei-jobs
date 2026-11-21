@@ -1,7 +1,7 @@
 /**
  * Design Tokens - Rikkei Jobs Design System (v2.0.0-PROD)
  * Architecture: W3C DTCG 3-Tier System (Primitive -> Semantic -> Density/Component)
- * Brand Palette: Technical Deep Cobalt & Iron Obsidian (Core #132F52, Electric #4C85DE)
+ * Brand Palette: Technical Deep Cobalt & Iron Obsidian (Core #0D55B8, Electric #508CEE)
  * Semantic Collision: Cold Crimson Brick (#9B1C2A) + Mandatory Non-Color Cues
  * Typography: Self-hosted OFL WOFF2 (Be Vietnam Pro, Plus Jakarta Sans, JetBrains Mono)
  * Zero Tailwind runtime, 100% Native CSS Variables.
@@ -17,36 +17,32 @@
   font-family: 'Be Vietnam Pro';
   font-style: normal;
   font-weight: 400;
-  font-display: swap;
+  font-display: optional;
   src: url('/fonts/BeVietnamPro-Regular.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+02EA-02EB, U+0300-0309, U+0323, U+1EA0-1EF9, U+20AB, U+0100-024F, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
   font-family: 'Be Vietnam Pro';
   font-style: normal;
   font-weight: 500;
-  font-display: swap;
+  font-display: optional;
   src: url('/fonts/BeVietnamPro-Medium.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+02EA-02EB, U+0300-0309, U+0323, U+1EA0-1EF9, U+20AB, U+0100-024F, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
   font-family: 'Be Vietnam Pro';
   font-style: normal;
   font-weight: 600;
-  font-display: swap;
+  font-display: optional;
   src: url('/fonts/BeVietnamPro-SemiBold.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+02EA-02EB, U+0300-0309, U+0323, U+1EA0-1EF9, U+20AB, U+0100-024F, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
   font-family: 'Be Vietnam Pro';
   font-style: normal;
   font-weight: 700;
-  font-display: swap;
+  font-display: optional;
   src: url('/fonts/BeVietnamPro-Bold.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+02EA-02EB, U+0300-0309, U+0323, U+1EA0-1EF9, U+20AB, U+0100-024F, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 /* Plus Jakarta Sans (Display, Headings, Hero Typography) */
@@ -54,18 +50,16 @@
   font-family: 'Plus Jakarta Sans';
   font-style: normal;
   font-weight: 600;
-  font-display: swap;
+  font-display: optional;
   src: url('/fonts/PlusJakartaSans-SemiBold.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+02EA-02EB, U+0300-0309, U+0323, U+1EA0-1EF9, U+20AB, U+0100-024F, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
   font-family: 'Plus Jakarta Sans';
   font-style: normal;
   font-weight: 700;
-  font-display: swap;
+  font-display: optional;
   src: url('/fonts/PlusJakartaSans-Bold.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+02EA-02EB, U+0300-0309, U+0323, U+1EA0-1EF9, U+20AB, U+0100-024F, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 /* JetBrains Mono (Code, Data Tables, Tabular Figures) */
@@ -73,18 +67,16 @@
   font-family: 'JetBrains Mono';
   font-style: normal;
   font-weight: 400;
-  font-display: swap;
+  font-display: optional;
   src: url('/fonts/JetBrainsMono-Regular.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+02EA-02EB, U+0300-0309, U+0323, U+1EA0-1EF9, U+20AB, U+0100-024F, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
   font-family: 'JetBrains Mono';
   font-style: normal;
   font-weight: 600;
-  font-display: swap;
+  font-display: optional;
   src: url('/fonts/JetBrainsMono-SemiBold.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+02EA-02EB, U+0300-0309, U+0323, U+1EA0-1EF9, U+20AB, U+0100-024F, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 :root {
@@ -216,12 +208,12 @@
   --rj-radius-2xl: 16px;
   --rj-radius-full: 9999px;
 
-  /* Elevation Shadows */
+  /* Elevation Shadows (Aligned to Cool Iron Obsidian #0B1A2C) */
   --rj-shadow-0: none;
-  --rj-shadow-1: 0 1px 3px rgba(26, 22, 21, 0.08), 0 1px 2px rgba(26, 22, 21, 0.04);
-  --rj-shadow-2: 0 4px 6px -1px rgba(26, 22, 21, 0.08), 0 2px 4px -1px rgba(26, 22, 21, 0.04);
-  --rj-shadow-3: 0 10px 15px -3px rgba(26, 22, 21, 0.08), 0 4px 6px -2px rgba(26, 22, 21, 0.04);
-  --rj-shadow-4: 0 20px 25px -5px rgba(26, 22, 21, 0.1), 0 10px 10px -5px rgba(26, 22, 21, 0.04);
+  --rj-shadow-1: 0 1px 3px rgba(11, 26, 44, 0.08), 0 1px 2px rgba(11, 26, 44, 0.04);
+  --rj-shadow-2: 0 4px 8px -2px rgba(11, 26, 44, 0.09), 0 2px 4px -2px rgba(11, 26, 44, 0.05);
+  --rj-shadow-3: 0 12px 20px -4px rgba(11, 26, 44, 0.11), 0 4px 8px -2px rgba(11, 26, 44, 0.05);
+  --rj-shadow-4: 0 20px 28px -6px rgba(11, 26, 44, 0.14), 0 8px 12px -4px rgba(11, 26, 44, 0.06);
 
   /* Z-Index Hierarchy */
   --rj-primitive-z-hide:     -1;
@@ -239,13 +231,63 @@
   --rj-font-display: 'Plus Jakarta Sans', var(--rj-font-body);
   --rj-font-mono: 'JetBrains Mono', 'Courier New', monospace;
 
-  /* Motion & Transition Durations */
-  --rj-duration-fast: 150ms;
-  --rj-duration-base: 250ms;
-  --rj-duration-slow: 400ms;
-  --rj-ease-exit: cubic-bezier(0.4, 0, 1, 1);
-  --rj-ease-entrance: cubic-bezier(0, 0, 0.2, 1);
+  /* Motion & Transition Durations (Rule 09 Micro + Owner-Approved Showcase Tier) */
+  --rj-duration-instant:      0ms;
+  --rj-duration-micro:        100ms;   /* Active press, micro-state feedback */
+  --rj-duration-vt-out:       140ms;   /* View Transition old-root exit */
+  --rj-duration-fast:         150ms;   /* Hover, switch thumb, focus ring, dense admin */
+  --rj-duration-normal:       180ms;   /* Tooltips (<= 200ms), popovers, Select panel */
+  --rj-duration-base:         250ms;   /* Drawer, sidebar collapse rail, logo transitions */
+  --rj-duration-moderate:     280ms;   /* Modals, slide drawers, accordions (<= 300ms) */
+  --rj-duration-slow:         360ms;   /* Dense page entrance (<= 400ms), hero elements */
+  --rj-duration-vt-route:     480ms;   /* Route View Transitions & shared BrandMark (<= 600ms) */
+  --rj-duration-theme-reveal: 500ms;   /* Circular clip-path theme switch reveal (<= 600ms) */
+  --rj-duration-deliberate:   550ms;   /* SVG stroke draw, Skill Radar morph */
+  --rj-duration-showcase:     720ms;   /* Page & auth hero showcase choreography (<= 800ms) */
+  --rj-duration-ambient:      4500ms;  /* Decorative auth hero 1-shot drift (<= 5000ms) */
+  --rj-radar-cycle:           4000ms;  /* Login hero radar auto-advance interval (4s per group) */
+
+  /* Cubic-Bezier Curves (Universal Baseline + Spatial/Effects Split) */
+  --rj-ease-entrance: cubic-bezier(0.16, 1, 0.3, 1); /* Decelerate enter */
+  --rj-ease-exit:     cubic-bezier(0.7, 0, 0.84, 0);  /* Fast accelerate exit */
+  --rj-ease-hover:    cubic-bezier(0.2, 0, 0, 1);     /* Crisp standard pointer response */
+  --rj-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);   /* Balanced neutral */
+
+  /* Spring Curve Fallbacks (Browsers without CSS linear()) */
   --rj-ease-spring-snappy: cubic-bezier(0.16, 1, 0.3, 1);
+  --rj-ease-spring-stiff:  cubic-bezier(0.2, 0, 0, 1);
+  --rj-ease-spring-gentle: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Distance Scale (Restrained Spatial Offsets) */
+  --rj-motion-dist-2xs: 2px;  /* Button active press */
+  --rj-motion-dist-xs:  4px;  /* Tooltip / popover offset, subtle lift */
+  --rj-motion-dist-sm:  8px;  /* Dropdown / route enter Y-offset */
+  --rj-motion-dist-md:  16px; /* Toast / hero block offset */
+  --rj-motion-dist-lg:  24px; /* Drawer / modal slide offset */
+
+  /* Stagger Steps (Micro bounded <= 400ms; Showcase bounded <= 800ms) */
+  --rj-motion-stagger-fast:         20ms;  /* Dense lists (capped) */
+  --rj-motion-stagger-normal:       35ms;  /* Standard cards */
+  --rj-motion-stagger-slow:         45ms;  /* Hero editorial steps */
+  --rj-motion-stagger-cap:          220ms; /* Cap delay so 220ms + 180ms <= 400ms */
+  --rj-motion-stagger-showcase:     55ms;  /* Showcase item/section cascade */
+  --rj-motion-stagger-showcase-cap: 380ms; /* Cap delay so 380ms + 340ms <= 720ms <= 800ms */
+
+  /* Composite Transition Shortcuts (Spatial vs. Effects split) */
+  --rj-transition-hover:
+    transform var(--rj-duration-fast) var(--rj-ease-spring-snappy),
+    opacity var(--rj-duration-fast) var(--rj-ease-hover),
+    background-color var(--rj-duration-fast) var(--rj-ease-hover),
+    border-color var(--rj-duration-fast) var(--rj-ease-hover);
+  --rj-transition-entrance:
+    transform var(--rj-duration-normal) var(--rj-ease-spring-stiff),
+    opacity var(--rj-duration-normal) var(--rj-ease-entrance);
+  --rj-transition-exit:
+    transform var(--rj-duration-fast) var(--rj-ease-exit),
+    opacity var(--rj-duration-fast) var(--rj-ease-exit);
+  --rj-transition-dialog:
+    transform var(--rj-duration-moderate) var(--rj-ease-spring-gentle),
+    opacity var(--rj-duration-moderate) var(--rj-ease-entrance);
 
   /* ==========================================================================
      TIER 2: SEMANTIC TOKENS (LIGHT THEME DEFAULT)
@@ -278,6 +320,8 @@
   --rj-color-brand-primary:       var(--rj-primitive-brand-600);
   --rj-color-brand-primary-hover: var(--rj-primitive-brand-700);
   --rj-color-brand-surface:       var(--rj-primitive-brand-50);
+  --rj-color-story-glow:          rgba(13, 85, 184, 0.06);
+  --rj-story-panel-bg:            radial-gradient(circle at 15% 25%, var(--rj-color-story-glow) 0%, transparent 60%), linear-gradient(155deg, var(--rj-color-surface-panel) 0%, var(--rj-primitive-neutral-200) 100%);
 
   --rj-color-accent: var(--rj-primitive-accent-600);
   --rj-color-accent-hover: var(--rj-primitive-accent-700);
@@ -381,9 +425,28 @@
   --rj-sidebar-drawer-width:           280px;
   --rj-sidebar-active-indicator-width: 3px;
   --rj-ease-out:                       cubic-bezier(0, 0, 0.2, 1);
-  --rj-sidebar-transition-width:       var(--rj-duration-fast); /* 150ms */
+  --rj-sidebar-transition-width:       var(--rj-duration-base); /* 250ms gentle spring */
   --rj-tooltip-transition:             var(--rj-duration-fast); /* 150ms <= 200ms */
   --rj-drawer-transition:              var(--rj-duration-base); /* 250ms <= 300ms */
+}
+
+/* Progressive Enhancement: CSS Easing Level 2 linear() Springs */
+@supports (animation-timing-function: linear(0, 1)) {
+  :root {
+    --rj-ease-spring-snappy: linear(0, 0.04 3%, 0.56 17%, 0.92 32%, 1.01 55%, 1);
+    --rj-ease-spring-stiff: linear(0, 0.04 3%, 0.64 16%, 0.95 31%, 1.003 53%, 1);
+    --rj-ease-spring-gentle: linear(0, 0.02 3%, 0.34 15%, 0.79 35%, 0.96 58%, 0.995 80%, 1);
+  }
+}
+
+/* Dense Admin / HR / Staff Motion Dampening (Rule 09: <= 150ms) */
+[data-density="dense"] {
+  --rj-duration-normal: 120ms;
+  --rj-duration-base: 150ms;
+  --rj-duration-moderate: 150ms;
+  --rj-sidebar-transition-width: 150ms;
+  --rj-tooltip-transition: 120ms;
+  --rj-drawer-transition: 150ms;
 }
 
 /* Explicit light mode override (beats prefers-color-scheme: dark) */
@@ -397,7 +460,6 @@
 [data-theme="dark"] {
   color-scheme: dark;
   --rj-color-surface-page:     #0B1019;
-  --rj-color-canvas:           var(--rj-color-surface-page);
   --rj-color-surface-panel:    #101724;
   --rj-color-surface-card:     #162030;
   --rj-color-surface-input:    #0D1420;
@@ -413,7 +475,7 @@
   --rj-color-text-inverse:   #0B1019;
 
   --rj-color-border-subtle:      #1E2D42;
-  --rj-color-border-interactive: #33465C;
+  --rj-color-border-interactive: #5B7083;
   --rj-color-border-hover:       #CBD5E1;
   --rj-color-border-elevated:    #94A3B8;
 
@@ -424,6 +486,8 @@
   --rj-color-brand-primary:       var(--rj-primitive-brand-electric);
   --rj-color-brand-primary-hover: var(--rj-primitive-brand-electric-hover);
   --rj-color-brand-surface:       rgba(80, 140, 238, 0.15);
+  --rj-color-story-glow:          rgba(80, 140, 238, 0.08);
+  --rj-story-panel-bg:            radial-gradient(circle at 15% 25%, var(--rj-color-story-glow) 0%, transparent 60%), linear-gradient(155deg, var(--rj-color-surface-panel) 0%, var(--rj-primitive-neutral-950) 100%);
 
   --rj-color-accent: var(--rj-primitive-accent-500);
   --rj-color-accent-hover: #f7a889;
@@ -449,44 +513,17 @@
   --rj-color-badge-brand-text: #6EA2F4;
   --rj-color-badge-brand-border: #243B60;
 
-  /* Custom Select Panel & Option Tokens - Dark Mode */
-  --rj-color-select-panel-bg:                   var(--rj-color-surface-elevated);
-  --rj-color-select-panel-border:               var(--rj-color-border-elevated);
-  --rj-color-select-option-text:                var(--rj-color-text-primary);
-  --rj-color-select-option-placeholder-text:    var(--rj-color-text-muted);
-  --rj-color-select-option-optgroup-text:       var(--rj-color-text-secondary);
+  /* Custom Select & Sidebar Overrides (unchanged var() aliases inherit from :root) */
   --rj-color-select-option-hover-bg:            var(--rj-color-badge-brand-border);
   --rj-color-select-option-active-bg:           #2D4366;
-  --rj-color-select-option-selected-bg:         var(--rj-color-badge-brand-bg);
-  --rj-color-select-option-selected-text:       var(--rj-color-badge-brand-text);
   --rj-color-select-option-selected-hover-text: var(--rj-primitive-brand-200);
-  --rj-color-select-option-disabled-text:       var(--rj-color-text-disabled);
-
-  /* App Shell & Left Sidebar Tokens - Dark Mode */
-  --rj-color-sidebar-bg:                    var(--rj-color-surface-card);       /* #162030 */
-  --rj-color-sidebar-border:                var(--rj-primitive-neutral-500);    /* #6F8094 - CR 4.04:1 on Card, 4.71:1 on Canvas */
-  --rj-color-sidebar-item-bg:               transparent;
-  --rj-color-sidebar-item-text:             var(--rj-color-text-secondary);     /* #CBD5E1 - CR 11.02:1 on Card */
-  --rj-color-sidebar-item-icon:             var(--rj-color-text-secondary);     /* #CBD5E1 - CR 11.02:1 on Card */
-  --rj-color-sidebar-item-hover-bg:         var(--rj-color-surface-elevated);   /* #1E2C42 */
-  --rj-color-sidebar-item-hover-text:       var(--rj-color-text-primary);       /* #EDF2F7 - CR 12.48:1 on #1E2C42 */
-  --rj-color-sidebar-item-active-bg:        var(--rj-color-badge-brand-bg);     /* #16243A */
-  --rj-color-sidebar-item-active-text:      var(--rj-color-badge-brand-text);   /* #6EA2F4 - CR 6.04:1 on #16243A */
-  --rj-color-sidebar-item-active-indicator: var(--rj-color-brand-primary);      /* #508CEE - CR 4.70:1 on #16243A */
-  --rj-color-sidebar-item-active-border:    var(--rj-color-brand-primary);      /* #508CEE - CR 4.93:1 on #162030 */
-  --rj-color-sidebar-item-disabled-bg:      var(--rj-color-surface-disabled);   /* #101724 */
-  --rj-color-sidebar-item-disabled-text:    var(--rj-color-text-muted);         /* #94A3B8 - CR 7.00:1 on #101724 */
-  --rj-color-sidebar-item-disabled-border:  var(--rj-primitive-neutral-500);    /* #6F8094 - CR 4.04:1 on #162030 */
-  --rj-color-sidebar-soon-bg:               var(--rj-color-surface-subtle);     /* #101724 */
-  --rj-color-sidebar-soon-text:             var(--rj-color-text-muted);         /* #94A3B8 - CR 7.00:1 on #101724 */
-  --rj-color-sidebar-soon-border:           var(--rj-primitive-neutral-500);    /* #6F8094 - CR 4.44:1 on #101724 */
-  --rj-color-sidebar-toggle-bg:             var(--rj-color-surface-elevated);   /* #1E2C42 */
-  --rj-color-sidebar-toggle-hover-bg:       var(--rj-color-badge-brand-border); /* #243B60 */
-  --rj-color-sidebar-toggle-text:           var(--rj-color-text-primary);       /* #EDF2F7 - CR 12.48:1 on #1E2C42, 9.97:1 on #243B60 */
-  --rj-color-sidebar-toggle-border:         var(--rj-color-border-elevated);    /* #94A3B8 - CR 5.48:1 on #1E2C42 */
-  --rj-color-sidebar-tooltip-bg:            var(--rj-color-surface-elevated);   /* #1E2C42 */
-  --rj-color-sidebar-tooltip-text:          var(--rj-color-text-primary);       /* #EDF2F7 - CR 12.48:1 on #1E2C42 */
-  --rj-color-sidebar-tooltip-border:        var(--rj-color-border-elevated);    /* #94A3B8 - CR 5.48:1 on #1E2C42, 7.43:1 on Canvas */
+  --rj-color-sidebar-item-hover-bg:             var(--rj-color-surface-elevated);
+  --rj-color-sidebar-toggle-bg:                 var(--rj-color-surface-elevated);
+  --rj-color-sidebar-toggle-hover-bg:           var(--rj-color-badge-brand-border);
+  --rj-color-sidebar-toggle-border:             var(--rj-color-border-elevated);
+  --rj-color-sidebar-tooltip-bg:                var(--rj-color-surface-elevated);
+  --rj-color-sidebar-tooltip-text:              var(--rj-color-text-primary);
+  --rj-color-sidebar-tooltip-border:            var(--rj-color-border-elevated);
 
   /* Radar Visual Invariant Tokens - Dark Mode */
   --rj-color-radar-grid: #2E3E54;
@@ -517,7 +554,6 @@
   :root:not([data-theme="light"]) {
     color-scheme: dark;
     --rj-color-surface-page:     #0B1019;
-    --rj-color-canvas:           var(--rj-color-surface-page);
     --rj-color-surface-panel:    #101724;
     --rj-color-surface-card:     #162030;
     --rj-color-surface-input:    #0D1420;
@@ -533,7 +569,7 @@
     --rj-color-text-inverse:   #0B1019;
 
     --rj-color-border-subtle:      #1E2D42;
-    --rj-color-border-interactive: #33465C;
+    --rj-color-border-interactive: #5B7083;
     --rj-color-border-hover:       #CBD5E1;
     --rj-color-border-elevated:    #94A3B8;
 
@@ -544,6 +580,8 @@
     --rj-color-brand-primary:       var(--rj-primitive-brand-electric);
     --rj-color-brand-primary-hover: var(--rj-primitive-brand-electric-hover);
     --rj-color-brand-surface:       rgba(80, 140, 238, 0.15);
+    --rj-color-story-glow:          rgba(80, 140, 238, 0.08);
+    --rj-story-panel-bg:            radial-gradient(circle at 15% 25%, var(--rj-color-story-glow) 0%, transparent 60%), linear-gradient(155deg, var(--rj-color-surface-panel) 0%, var(--rj-primitive-neutral-950) 100%);
 
     --rj-color-accent: var(--rj-primitive-accent-500);
     --rj-color-accent-hover: #f7a889;
@@ -569,44 +607,17 @@
     --rj-color-badge-brand-text: #6EA2F4;
     --rj-color-badge-brand-border: #243B60;
 
-    /* Custom Select Panel & Option Tokens - Dark Mode */
-    --rj-color-select-panel-bg:                   var(--rj-color-surface-elevated);
-    --rj-color-select-panel-border:               var(--rj-color-border-elevated);
-    --rj-color-select-option-text:                var(--rj-color-text-primary);
-    --rj-color-select-option-placeholder-text:    var(--rj-color-text-muted);
-    --rj-color-select-option-optgroup-text:       var(--rj-color-text-secondary);
+    /* Custom Select & Sidebar Overrides */
     --rj-color-select-option-hover-bg:            var(--rj-color-badge-brand-border);
     --rj-color-select-option-active-bg:           #2D4366;
-    --rj-color-select-option-selected-bg:         var(--rj-color-badge-brand-bg);
-    --rj-color-select-option-selected-text:       var(--rj-color-badge-brand-text);
     --rj-color-select-option-selected-hover-text: var(--rj-primitive-brand-200);
-    --rj-color-select-option-disabled-text:       var(--rj-color-text-disabled);
-
-    /* App Shell & Left Sidebar Tokens - Dark Mode */
-    --rj-color-sidebar-bg:                    var(--rj-color-surface-card);       /* #162030 */
-    --rj-color-sidebar-border:                var(--rj-primitive-neutral-500);    /* #6F8094 - CR 4.04:1 on Card, 4.71:1 on Canvas */
-    --rj-color-sidebar-item-bg:               transparent;
-    --rj-color-sidebar-item-text:             var(--rj-color-text-secondary);     /* #CBD5E1 - CR 11.02:1 on Card */
-    --rj-color-sidebar-item-icon:             var(--rj-color-text-secondary);     /* #CBD5E1 - CR 11.02:1 on Card */
-    --rj-color-sidebar-item-hover-bg:         var(--rj-color-surface-elevated);   /* #1E2C42 */
-    --rj-color-sidebar-item-hover-text:       var(--rj-color-text-primary);       /* #EDF2F7 - CR 12.48:1 on #1E2C42 */
-    --rj-color-sidebar-item-active-bg:        var(--rj-color-badge-brand-bg);     /* #16243A */
-    --rj-color-sidebar-item-active-text:      var(--rj-color-badge-brand-text);   /* #6EA2F4 - CR 6.04:1 on #16243A */
-    --rj-color-sidebar-item-active-indicator: var(--rj-color-brand-primary);      /* #508CEE - CR 4.70:1 on #16243A */
-    --rj-color-sidebar-item-active-border:    var(--rj-color-brand-primary);      /* #508CEE - CR 4.93:1 on #162030 */
-    --rj-color-sidebar-item-disabled-bg:      var(--rj-color-surface-disabled);   /* #101724 */
-    --rj-color-sidebar-item-disabled-text:    var(--rj-color-text-muted);         /* #94A3B8 - CR 7.00:1 on #101724 */
-    --rj-color-sidebar-item-disabled-border:  var(--rj-primitive-neutral-500);    /* #6F8094 - CR 4.04:1 on #162030 */
-    --rj-color-sidebar-soon-bg:               var(--rj-color-surface-subtle);     /* #101724 */
-    --rj-color-sidebar-soon-text:             var(--rj-color-text-muted);         /* #94A3B8 - CR 7.00:1 on #101724 */
-    --rj-color-sidebar-soon-border:           var(--rj-primitive-neutral-500);    /* #6F8094 - CR 4.44:1 on #101724 */
-    --rj-color-sidebar-toggle-bg:             var(--rj-color-surface-elevated);   /* #1E2C42 */
-    --rj-color-sidebar-toggle-hover-bg:       var(--rj-color-badge-brand-border); /* #243B60 */
-    --rj-color-sidebar-toggle-text:           var(--rj-color-text-primary);       /* #EDF2F7 - CR 12.48:1 on #1E2C42, 9.97:1 on #243B60 */
-    --rj-color-sidebar-toggle-border:         var(--rj-color-border-elevated);    /* #94A3B8 - CR 5.48:1 on #1E2C42 */
-    --rj-color-sidebar-tooltip-bg:            var(--rj-color-surface-elevated);   /* #1E2C42 */
-    --rj-color-sidebar-tooltip-text:          var(--rj-color-text-primary);       /* #EDF2F7 - CR 12.48:1 on #1E2C42 */
-    --rj-color-sidebar-tooltip-border:        var(--rj-color-border-elevated);    /* #94A3B8 - CR 5.48:1 on #1E2C42, 7.43:1 on Canvas */
+    --rj-color-sidebar-item-hover-bg:             var(--rj-color-surface-elevated);
+    --rj-color-sidebar-toggle-bg:                 var(--rj-color-surface-elevated);
+    --rj-color-sidebar-toggle-hover-bg:           var(--rj-color-badge-brand-border);
+    --rj-color-sidebar-toggle-border:             var(--rj-color-border-elevated);
+    --rj-color-sidebar-tooltip-bg:                var(--rj-color-surface-elevated);
+    --rj-color-sidebar-tooltip-text:              var(--rj-color-text-primary);
+    --rj-color-sidebar-tooltip-border:            var(--rj-color-border-elevated);
 
     /* Radar Visual Invariant Tokens - Dark Mode */
     --rj-color-radar-grid: #2E3E54;
@@ -664,18 +675,18 @@
 /* ==========================================================================
    GLOBAL BASELINE & ACCESSIBILITY (WCAG 2.2 AA)
    ========================================================================== */
-body {
-  font-family: var(--rj-font-body);
-  line-height: var(--rj-line-height-base);
-  color: var(--rj-color-text-primary);
-  background-color: var(--rj-color-surface-page);
-  min-height: 100vh;
-}
 
-/* Focus Visible Requirement */
+/* Focus Visible Requirement with Crisp Entrance (<= 150ms) */
 :focus-visible {
   outline: 2px solid var(--rj-color-focus-ring) !important;
   outline-offset: 2px !important;
+  transition: outline-offset var(--rj-duration-fast) var(--rj-ease-spring-snappy);
+}
+
+@starting-style {
+  :focus-visible {
+    outline-offset: 0px !important;
+  }
 }
 
 /* Numeric tabular formatting for counters and timestamps */
@@ -711,7 +722,7 @@ body {
   animation: rj-spin 1s linear infinite;
 }
 
-/* View Transitions Keyframes */
+/* View Transitions Keyframes: Route Transitions vs Circular Theme Reveal */
 @keyframes rj-view-out {
   from {
     opacity: 1;
@@ -719,14 +730,14 @@ body {
   }
   to {
     opacity: 0;
-    transform: scale(0.98);
+    transform: scale(0.99);
   }
 }
 
 @keyframes rj-view-in {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(var(--rj-motion-dist-sm));
   }
   to {
     opacity: 1;
@@ -734,27 +745,152 @@ body {
   }
 }
 
+html[data-vt-density='dense'] {
+  --rj-duration-vt-route: var(--rj-duration-slow);
+}
+
+html:not(.rj-theme-transition) .rj-dashboard-nav {
+  view-transition-name: rj-shell-header;
+}
+
+html:not(.rj-theme-transition) .rj-sidebar {
+  view-transition-name: rj-shell-sidebar;
+}
+
+html:not(.rj-theme-transition) .rj-dashboard-content {
+  view-transition-name: rj-main-content;
+}
+
+html:not(.rj-theme-transition) .rj-brand-mark--shared {
+  view-transition-name: rj-brand-mark;
+}
+
+html:not(.rj-theme-transition) .rj-sidebar-active-indicator {
+  view-transition-name: rj-sidebar-indicator;
+}
+
+/* Keep persistent shell header and sidebar static only when both old & new shell exist;
+   if a transition exits the shell (:only-child), fade out cleanly instead of freezing over the target route. */
+::view-transition-old(rj-shell-header):not(:only-child),
+::view-transition-new(rj-shell-header):not(:only-child),
+::view-transition-old(rj-shell-sidebar):not(:only-child),
+::view-transition-new(rj-shell-sidebar):not(:only-child) {
+  animation: none;
+}
+
+::view-transition-old(rj-shell-header):only-child,
+::view-transition-old(rj-shell-sidebar):only-child {
+  animation: rj-view-out var(--rj-duration-vt-out) var(--rj-ease-exit) both;
+}
+
+::view-transition-group(rj-sidebar-indicator) {
+  z-index: 3;
+  animation-duration: 260ms;
+  animation-timing-function: var(--rj-ease-entrance);
+}
+
+html[data-vt-density='dense']::view-transition-group(rj-sidebar-indicator) {
+  animation-duration: var(--rj-duration-fast);
+}
+
+::view-transition-old(rj-sidebar-indicator) {
+  animation: none;
+  opacity: 0;
+}
+
+::view-transition-new(rj-sidebar-indicator) {
+  animation: none;
+  height: 100%;
+}
+
+::view-transition-old(rj-main-content) {
+  animation: rj-view-out var(--rj-duration-vt-out) var(--rj-ease-exit) both;
+}
+
+::view-transition-new(rj-main-content) {
+  animation: rj-view-in var(--rj-duration-vt-route) var(--rj-ease-entrance) both;
+}
+
+::view-transition-group(rj-brand-mark) {
+  animation-duration: var(--rj-duration-vt-route);
+  animation-timing-function: var(--rj-ease-entrance);
+}
+
 ::view-transition-old(root) {
-  animation: rj-view-out var(--rj-duration-fast) var(--rj-ease-exit) both;
+  animation: rj-view-out var(--rj-duration-vt-out) var(--rj-ease-exit) both;
 }
 
 ::view-transition-new(root) {
-  animation: rj-view-in var(--rj-duration-slow) var(--rj-ease-entrance) both;
+  animation: rj-view-in var(--rj-duration-moderate) var(--rj-ease-entrance) both;
 }
 
-/* Reduced Motion Fallback with WebKit 0.001ms safeguard */
+/* Circular Theme Reveal Isolation: disable shell/brand names so only root transitions */
+html.rj-theme-transition * {
+  view-transition-name: none !important;
+}
+
+html.rj-theme-transition::view-transition-old(root),
+html.rj-theme-transition::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+html.rj-theme-transition::view-transition-old(root) {
+  z-index: 1;
+}
+
+html.rj-theme-transition::view-transition-new(root) {
+  z-index: 2;
+}
+
+/* Reduced Motion Fallback: 100ms opacity cross-fade + 0.001ms WebKit transitionend safeguard */
 @media (prefers-reduced-motion: reduce) {
+  :root,
+  [data-density="dense"] {
+    --rj-duration-instant:      0.001ms;
+    --rj-duration-micro:        0.001ms;
+    --rj-duration-vt-out:       0.001ms;
+    --rj-duration-fast:         0.001ms;
+    --rj-duration-normal:       0.001ms;
+    --rj-duration-base:         0.001ms;
+    --rj-duration-moderate:     0.001ms;
+    --rj-duration-slow:         0.001ms;
+    --rj-duration-vt-route:     0.001ms;
+    --rj-duration-theme-reveal: 0.001ms;
+    --rj-duration-deliberate:   0.001ms;
+    --rj-duration-showcase:     0.001ms;
+    --rj-duration-ambient:      0.001ms;
+    --rj-radar-cycle:           0.001ms;
+
+    --rj-sidebar-transition-width: 0.001ms;
+    --rj-tooltip-transition:       0.001ms;
+    --rj-drawer-transition:        0.001ms;
+
+    --rj-motion-dist-2xs: 0px;
+    --rj-motion-dist-xs:  0px;
+    --rj-motion-dist-sm:  0px;
+    --rj-motion-dist-md:  0px;
+    --rj-motion-dist-lg:  0px;
+
+    --rj-transition-hover:    opacity 100ms ease;
+    --rj-transition-entrance: opacity 100ms ease;
+    --rj-transition-exit:     opacity 100ms ease;
+    --rj-transition-dialog:   opacity 100ms ease;
+  }
+
   *,
   *::before,
   *::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
 
   ::view-transition-old(root),
-  ::view-transition-new(root) {
+  ::view-transition-new(root),
+  ::view-transition-old(rj-main-content),
+  ::view-transition-new(rj-main-content),
+  ::view-transition-group(rj-brand-mark) {
     animation-duration: 100ms !important;
   }
 }

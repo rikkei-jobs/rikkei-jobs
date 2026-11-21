@@ -1,60 +1,169 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { Suspense, useState, useEffect, useCallback, useRef } from 'react';
 import {
   BrowserRouter,
   Routes,
   Route,
   Navigate,
   Link,
+  Outlet,
   useLocation,
   useNavigate,
 } from 'react-router-dom';
 import './App.css';
 import { Header } from './shared/components/Header';
 import { HealthBadge } from './shared/components/HealthBadge';
-import { ModuleCard } from './shared/components/ModuleCard';
+import { ThemeSwitch } from './shared/components/ThemeSwitch';
 import { fetchBackendHealth, type BackendHealthStatus } from './shared/api/health';
-import { BUSINESS_MODULES } from './features';
-import { JobRecommendationsSection } from './features/candidate';
-import { SkillProfilePage } from './features/candidate';
 
 import { AuthProvider } from './features/identity/context/AuthContext';
 import { useAuth } from './features/identity/context/useAuth';
-import { setAuthSessionHandlers } from './shared/api/httpClient';
+import { getAuthToken, setAuthSessionHandlers } from './shared/api/httpClient';
 import { RequireAuth } from './features/identity/guards/RequireAuth';
-import { RequireMustChangePassword } from './features/identity/guards/RequireMustChangePassword';
+import { RequireChangePasswordAccess } from './features/identity/guards/RequireChangePasswordAccess';
 import { RequireRole } from './features/identity/guards/RequireRole';
+import { SharedAppLayout } from './features/identity/components/SharedAppLayout';
+import {
+  RoleShellContext,
+  getRoleShellVisuals,
+} from './features/identity/context/RoleShellContext';
 import { PROTECTED_ROUTE_POLICIES } from './features/identity/config/routePolicies';
 import { isExcludedPostLoginPath } from './features/identity/utils/roleUtils';
 import { LoginPage } from './features/identity/pages/LoginPage';
-import { SsoCallbackPage } from './features/identity/pages/SsoCallbackPage';
-import { ChangePasswordPage } from './features/identity/pages/ChangePasswordPage';
-import { ForgotPasswordPage } from './features/identity/pages/ForgotPasswordPage';
-import { ResetPasswordPage } from './features/identity/pages/ResetPasswordPage';
 import { ForbiddenPage } from './features/identity/pages/ForbiddenPage';
-import { CandidateHomePage } from './features/identity/pages/role-homes/CandidateHomePage';
-import { CandidateSkillsPage } from './features/identity/pages/role-homes/CandidateSkillsPage';
-import { CandidateJobsPage } from './features/identity/pages/role-homes/CandidateJobsPage';
-import { CandidateGapAnalysisPage } from './features/identity/pages/role-homes/CandidateGapAnalysisPage';
-import { CandidateJobDetailPage } from './features/identity/pages/role-homes/CandidateJobDetailPage';
-import { HrHomePage } from './features/identity/pages/role-homes/HrHomePage';
-import { MentorHomePage } from './features/identity/pages/role-homes/MentorHomePage';
-import { StaffHomePage } from './features/identity/pages/role-homes/StaffHomePage';
-import { AdminHomePage } from './features/identity/pages/role-homes/AdminHomePage';
 import { Icon } from './shared/components/Icon';
-import { CandidateEvaluationsPage } from './features/candidate/pages/CandidateEvaluationsPage';
-import { CandidateInternshipsPage } from './features/internship';
-import { CompanyProfilePage } from './features/company';
+import { cancelRouteTransition, navigateWithTransition } from './shared/utils/motion';
+import {
+  lazyRoute,
+  preloadRouteForPath,
+  registerPrefixRoutePreloader,
+  registerRoutePreloader,
+} from './shared/utils/routeLazy';
+
+const LazySkillProfilePage = lazyRoute(async () => {
+  const m = await import('./features/candidate/components/SkillProfilePage');
+  return { default: m.SkillProfilePage };
+});
+const LazyJobRecommendationsSection = lazyRoute(async () => {
+  const m = await import('./features/candidate/JobRecommendationsSection');
+  return { default: m.JobRecommendationsSection };
+});
+
+const SsoCallbackPage = lazyRoute(() => import('./features/identity/pages/SsoCallbackPage'));
+const ChangePasswordPage = lazyRoute(() => import('./features/identity/pages/ChangePasswordPage'));
+const ForgotPasswordPage = lazyRoute(() => import('./features/identity/pages/ForgotPasswordPage'));
+const ResetPasswordPage = lazyRoute(() => import('./features/identity/pages/ResetPasswordPage'));
+const CandidateHomePage = lazyRoute(
+  () => import('./features/identity/pages/role-homes/CandidateHomePage'),
+);
+const CandidateSkillsPage = lazyRoute(
+  () => import('./features/identity/pages/role-homes/CandidateSkillsPage'),
+);
+const CandidateJobsPage = lazyRoute(
+  () => import('./features/identity/pages/role-homes/CandidateJobsPage'),
+);
+const CandidateGapAnalysisPage = lazyRoute(
+  () => import('./features/identity/pages/role-homes/CandidateGapAnalysisPage'),
+);
+const CandidateJobDetailPage = lazyRoute(
+  () => import('./features/identity/pages/role-homes/CandidateJobDetailPage'),
+);
+const CandidateEvaluationsPage = lazyRoute(
+  () => import('./features/candidate/pages/CandidateEvaluationsPage'),
+);
+const CandidateInternshipsPage = lazyRoute(
+  () => import('./features/internship/pages/CandidateInternshipsPage'),
+);
+const HrHomePage = lazyRoute(() => import('./features/identity/pages/role-homes/HrHomePage'));
+const CompanyProfilePage = lazyRoute(async () => {
+  const m = await import('./features/company/pages/CompanyProfilePage');
+  return { default: m.CompanyProfilePage };
+});
+const MentorHomePage = lazyRoute(
+  () => import('./features/identity/pages/role-homes/MentorHomePage'),
+);
+const StaffHomePage = lazyRoute(
+  () => import('./features/identity/pages/role-homes/StaffHomePage'),
+);
+const AdminHomePage = lazyRoute(
+  () => import('./features/identity/pages/role-homes/AdminHomePage'),
+);
+
+registerRoutePreloader('/sso-callback', SsoCallbackPage.preload, SsoCallbackPage.isLoaded);
+registerRoutePreloader('/change-password', ChangePasswordPage.preload, ChangePasswordPage.isLoaded);
+registerRoutePreloader('/forgot-password', ForgotPasswordPage.preload, ForgotPasswordPage.isLoaded);
+registerRoutePreloader('/reset-password', ResetPasswordPage.preload, ResetPasswordPage.isLoaded);
+registerPrefixRoutePreloader('/reset-password/', ResetPasswordPage.preload, ResetPasswordPage.isLoaded);
+registerRoutePreloader(
+  PROTECTED_ROUTE_POLICIES.candidateHome.path,
+  CandidateHomePage.preload,
+  CandidateHomePage.isLoaded,
+);
+registerRoutePreloader(
+  PROTECTED_ROUTE_POLICIES.candidateSkills.path,
+  CandidateSkillsPage.preload,
+  CandidateSkillsPage.isLoaded,
+);
+registerRoutePreloader(
+  PROTECTED_ROUTE_POLICIES.candidateJobs.path,
+  CandidateJobsPage.preload,
+  CandidateJobsPage.isLoaded,
+);
+registerRoutePreloader(
+  PROTECTED_ROUTE_POLICIES.candidateGapAnalysis.path,
+  CandidateGapAnalysisPage.preload,
+  CandidateGapAnalysisPage.isLoaded,
+);
+registerPrefixRoutePreloader(
+  '/candidate/jobs/',
+  CandidateJobDetailPage.preload,
+  CandidateJobDetailPage.isLoaded,
+);
+registerRoutePreloader(
+  PROTECTED_ROUTE_POLICIES.candidateEvaluations.path,
+  CandidateEvaluationsPage.preload,
+  CandidateEvaluationsPage.isLoaded,
+);
+registerRoutePreloader(
+  PROTECTED_ROUTE_POLICIES.candidateInternships.path,
+  CandidateInternshipsPage.preload,
+  CandidateInternshipsPage.isLoaded,
+);
+registerRoutePreloader(
+  PROTECTED_ROUTE_POLICIES.hrHome.path,
+  HrHomePage.preload,
+  HrHomePage.isLoaded,
+);
+registerRoutePreloader(
+  PROTECTED_ROUTE_POLICIES.hrCompany.path,
+  CompanyProfilePage.preload,
+  CompanyProfilePage.isLoaded,
+);
+registerRoutePreloader(
+  PROTECTED_ROUTE_POLICIES.mentorHome.path,
+  MentorHomePage.preload,
+  MentorHomePage.isLoaded,
+);
+registerRoutePreloader(
+  PROTECTED_ROUTE_POLICIES.staffHome.path,
+  StaffHomePage.preload,
+  StaffHomePage.isLoaded,
+);
+registerRoutePreloader(
+  PROTECTED_ROUTE_POLICIES.adminHome.path,
+  AdminHomePage.preload,
+  AdminHomePage.isLoaded,
+);
 
 export const APP_NAME = 'Rikkei Jobs - Nền tảng kết nối việc làm theo năng lực đã xác thực';
-export const APP_VERSION = 'v1.0.0-sprint1';
 export const APP_SUBTITLE =
-  'Giải pháp cầu nối minh bạch giữa Sinh viên, Doanh nghiệp tuyển dụng và Cán bộ đào tạo';
+  'Kết nối học viên Rikkei Education với doanh nghiệp qua năng lực đã được xác thực.';
 
 export const HomeSkeleton: React.FC = () => {
   const { isAuthenticated, user, logout } = useAuth();
+  const navigate = useNavigate();
   const [backendStatus, setBackendStatus] = useState<BackendHealthStatus>('CONNECTING...');
   const [statusDetails, setStatusDetails] = useState<string>(
-    'Đang thiết lập kết nối tới Backend...',
+    'Đang kiểm tra kết nối dịch vụ...',
   );
   const [isChecking, setIsChecking] = useState<boolean>(false);
   const [view, setView] = useState<'home' | 'skills'>('home');
@@ -62,7 +171,7 @@ export const HomeSkeleton: React.FC = () => {
   const checkHealth = useCallback(async () => {
     setIsChecking(true);
     setBackendStatus('CONNECTING...');
-    setStatusDetails('Đang gửi yêu cầu kiểm tra tới /api/v1/health...');
+    setStatusDetails('Đang kiểm tra tình trạng dịch vụ...');
 
     try {
       const result = await fetchBackendHealth();
@@ -70,13 +179,17 @@ export const HomeSkeleton: React.FC = () => {
       setStatusDetails(result.details || '');
     } catch {
       setBackendStatus('DOWN');
-      setStatusDetails('Không thể kết nối đến máy chủ Backend');
+      setStatusDetails('Không thể kết nối đến máy chủ');
     } finally {
       setIsChecking(false);
     }
   }, []);
 
   useEffect(() => {
+    if (!import.meta.env.DEV) {
+      return undefined;
+    }
+
     const controller = new AbortController();
 
     const initialCheck = async () => {
@@ -90,7 +203,7 @@ export const HomeSkeleton: React.FC = () => {
           return;
         }
         setBackendStatus('DOWN');
-        setStatusDetails('Không thể kết nối đến máy chủ Backend');
+        setStatusDetails('Không thể kết nối đến máy chủ');
       } finally {
         setIsChecking(false);
       }
@@ -103,9 +216,24 @@ export const HomeSkeleton: React.FC = () => {
     };
   }, []);
 
+  const handleLoginLink = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return;
+    }
+    event.preventDefault();
+    void navigateWithTransition(() => navigate('/login'));
+  };
+
   return (
     <div className="app-container">
-      <Header appName={APP_NAME} version={APP_VERSION} subtitle={APP_SUBTITLE} />
+      <Header appName={APP_NAME} subtitle={APP_SUBTITLE} rightSlot={<ThemeSwitch />} />
 
       <nav className="app-nav" aria-label="Điều hướng chính">
         <button
@@ -120,7 +248,10 @@ export const HomeSkeleton: React.FC = () => {
           type="button"
           className="app-nav-btn"
           aria-current={view === 'skills' ? 'page' : undefined}
-          onClick={() => setView('skills')}
+          onClick={() => {
+            void LazySkillProfilePage.preload();
+            setView('skills');
+          }}
         >
           Hồ sơ năng lực
         </button>
@@ -129,20 +260,30 @@ export const HomeSkeleton: React.FC = () => {
       {view === 'skills' && (
         <main className="app-main">
           {isAuthenticated ? (
-            <SkillProfilePage onLogout={() => logout()} />
+            <Suspense
+              fallback={
+                <div className="rj-surface-card" role="status" aria-busy="true">
+                  <div className="rj-skeleton rj-skeleton-card" />
+                </div>
+              }
+            >
+              <LazySkillProfilePage onLogout={() => logout()} />
+            </Suspense>
           ) : (
-            <section className="sp-cta-card" aria-labelledby="sp-cta-heading">
-              <h2 id="sp-cta-heading" className="sp-heading">
+            <section className="rj-surface-card rj-stack-md" aria-labelledby="sp-cta-heading">
+              <h2 id="sp-cta-heading" className="rj-page-title">
                 Hồ sơ năng lực
               </h2>
-              <p className="sp-lead">
-                Vui lòng đăng nhập bằng tài khoản học viên (LMS SSO) hoặc tài khoản doanh nghiệp để
-                xem chỉ số kỹ năng đã xác thực.
+              <p className="rj-page-subtitle">
+                Vui lòng đăng nhập bằng tài khoản học viên (LMS) hoặc tài khoản doanh nghiệp để xem
+                chỉ số kỹ năng đã xác thực.
               </p>
-              <Link to="/login" className="rj-btn rj-btn-primary">
-                <Icon name="shield" size={18} />
-                <span>Đăng nhập để xem hồ sơ năng lực</span>
-              </Link>
+              <div>
+                <Link to="/login" className="rj-btn rj-btn-primary" onClick={handleLoginLink}>
+                  <Icon name="shield" size={18} />
+                  <span>Đăng nhập để xem hồ sơ năng lực</span>
+                </Link>
+              </div>
             </section>
           )}
         </main>
@@ -150,72 +291,158 @@ export const HomeSkeleton: React.FC = () => {
 
       {view === 'home' && (
         <main className="app-main">
-          {/* Quick Identity Portal Entry */}
-          <section style={{ textAlign: 'center', margin: '0 0 16px 0' }}>
-            <Link to="/login" className="rj-btn rj-btn-primary">
-              <Icon name="shield" size={20} />
-              <span>Đến Cổng Đăng Nhập NT-01 (LMS SSO / Doanh Nghiệp)</span>
-            </Link>
+          <section className="rj-surface-card rj-stack-md rj-cand-hero">
+            <div className="rj-cand-next-box">
+              <div className="rj-cand-next-content">
+                <span className="rj-cand-kicker">Cổng kết nối nhân sự công nghệ</span>
+                <h2 className="rj-role-card-title">
+                  Hồ sơ năng lực tổng hợp từ kết quả học tập LMS, bài thi, thực tập IOC và đánh giá
+                  của mentor
+                </h2>
+                <p className="rj-role-card-desc">
+                  Chọn phương thức đăng nhập phù hợp với vai trò của bạn để vào không gian làm việc
+                  tương ứng.
+                </p>
+              </div>
+              <Link
+                to="/login"
+                className="rj-btn rj-btn-primary rj-cand-next-cta"
+                onClick={handleLoginLink}
+              >
+                <Icon name="shield" size={20} />
+                <span>Đăng nhập vào Rikkei Jobs</span>
+              </Link>
+            </div>
           </section>
 
-          <section className="section-health">
-            <HealthBadge
-              status={backendStatus}
-              details={statusDetails}
-              onRefresh={checkHealth}
-              isLoading={isChecking}
-            />
-          </section>
+          {user?.role === 'CANDIDATE' && (
+            <Suspense
+              fallback={
+                <div className="rj-surface-card" role="status" aria-busy="true">
+                  <div className="rj-skeleton rj-skeleton-card" />
+                </div>
+              }
+            >
+              <LazyJobRecommendationsSection />
+            </Suspense>
+          )}
 
-          {user?.role === 'CANDIDATE' && <JobRecommendationsSection />}
-
-          <section className="section-modules">
+          <section className="rj-stack-md" aria-labelledby="landing-roles-heading">
             <div className="section-header">
-              <h2 className="section-title">7 Module Nghiệp vụ Hệ thống</h2>
+              <h2 id="landing-roles-heading" className="section-title">
+                Rikkei Jobs giúp bạn làm gì
+              </h2>
               <p className="section-desc">
-                Kiến trúc Modular Monolith phân rã độc lập theo từng phân hệ nghiệp vụ chuẩn xác
+                Mỗi vai trò sử dụng một không gian làm việc riêng dựa trên cùng dữ liệu năng lực đã
+                xác thực.
               </p>
             </div>
 
-            <div className="modules-grid">
-              {BUSINESS_MODULES.map((mod) => (
-                <ModuleCard key={mod.id} module={mod} />
-              ))}
+            <div className="rj-cand-grid">
+              <div className="rj-surface-card rj-stack-md">
+                <h3 className="rj-role-card-title">Trải nghiệm đang hoạt động</h3>
+                <ul className="rj-cand-list rj-stack-sm">
+                  <li className="rj-cand-tile">
+                    <strong className="rj-cand-skill">Ứng viên (Học viên & thực tập sinh IOC)</strong>
+                    <p className="rj-cand-meta">
+                      Theo dõi 20 kỹ năng theo điểm xác thực và tự khai, xem nhận xét mentor, phân
+                      tích khoảng thiếu hụt và khám phá việc làm gợi ý.
+                    </p>
+                  </li>
+                  <li className="rj-cand-tile">
+                    <strong className="rj-cand-skill">HR (Đại diện doanh nghiệp)</strong>
+                    <p className="rj-cand-meta">
+                      Cập nhật hồ sơ giới thiệu và logo doanh nghiệp hiển thị tới học viên Rikkei
+                      Education.
+                    </p>
+                  </li>
+                  <li className="rj-cand-tile">
+                    <strong className="rj-cand-skill">Mentor</strong>
+                    <p className="rj-cand-meta">
+                      Tra cứu các mẫu phiếu đánh giá đang áp dụng cho phỏng vấn và thực tập IOC.
+                    </p>
+                  </li>
+                </ul>
+              </div>
+
+              <aside className="rj-surface-card rj-stack-md">
+                <h3 className="rj-role-card-title">Lộ trình mở rộng</h3>
+                <ul className="rj-cand-list rj-stack-sm">
+                  <li className="rj-cand-tile rj-row-between">
+                    <div>
+                      <strong className="rj-cand-skill">Ứng tuyển & phỏng vấn</strong>
+                      <p className="rj-cand-meta">
+                        Nộp hồ sơ trực tiếp, sàng lọc ứng viên và xếp lịch phỏng vấn.
+                      </p>
+                    </div>
+                    <span className="rj-card-soon-badge">Sắp ra mắt</span>
+                  </li>
+                  <li className="rj-cand-tile rj-row-between">
+                    <div>
+                      <strong className="rj-cand-skill">Điều phối thực tập & quản trị</strong>
+                      <p className="rj-cand-meta">
+                        Duyệt hồ sơ, ghép đợt thực tập IOC và quản lý danh mục kỹ năng.
+                      </p>
+                    </div>
+                    <span className="rj-card-soon-badge">Sắp ra mắt</span>
+                  </li>
+                </ul>
+              </aside>
             </div>
           </section>
 
-          <section className="section-meta">
-            <div className="meta-card">
-              <h3>Thông tin kỹ thuật Skeleton</h3>
-              <ul>
-                <li>
-                  <strong>Frontend:</strong> React 19.3.1, TypeScript 6.0.3, Vite 8.3.7, Vitest
-                  5.1.0
-                </li>
-                <li>
-                  <strong>Container:</strong> Nginx 1.30.6-alpine non-root (Port 8080 trong
-                  container)
-                </li>
-                <li>
-                  <strong>Reverse Proxy:</strong> Định tuyến <code>/api/</code> với dynamic DNS
-                  resolver
-                </li>
-                <li>
-                  <strong>Bảo mật:</strong> Tuyệt đối không định tuyến hoặc expose dịch vụ Mock nội
-                  bộ ra ngoài
-                </li>
-              </ul>
-            </div>
-          </section>
+          {import.meta.env.DEV && (
+            <details className="rj-dev-tools">
+              <summary className="rj-dev-tools-summary">
+                <Icon name="shield" size={16} />
+                <span>Trạng thái kết nối dịch vụ (chỉ môi trường phát triển)</span>
+              </summary>
+              <div className="rj-dev-tools-body">
+                <HealthBadge
+                  status={backendStatus}
+                  details={statusDetails}
+                  onRefresh={checkHealth}
+                  isLoading={isChecking}
+                />
+              </div>
+            </details>
+          )}
         </main>
       )}
 
       <footer className="app-footer">
-        <p>
-          © 2026 Rikkei Jobs Project. Sprint 1 - Task T022DB0 Skeleton & Integration Foundation.
-        </p>
+        <p>© 2026 Rikkei Jobs — Nền tảng kết nối việc làm của Rikkei Education.</p>
       </footer>
     </div>
+  );
+};
+
+const RouteFallback: React.FC = () => (
+  <div className="rj-route-fallback" role="status" aria-busy="true">
+    <span className="rj-sr-only">Đang tải trang...</span>
+  </div>
+);
+
+const ShellRouteFallback: React.FC = () => (
+  <div className="rj-route-fallback rj-route-fallback--shell" role="status" aria-busy="true">
+    <span className="rj-sr-only">Đang tải trang...</span>
+  </div>
+);
+
+const PersistentAppShell: React.FC = () => {
+  const { user } = useAuth();
+  const { badgeClass, icon, density } = getRoleShellVisuals(user?.role);
+
+  return (
+    <RequireAuth>
+      <RoleShellContext.Provider value={true}>
+        <SharedAppLayout roleBadgeClass={badgeClass} roleIcon={icon} density={density}>
+          <Suspense fallback={<ShellRouteFallback />}>
+            <Outlet />
+          </Suspense>
+        </SharedAppLayout>
+      </RoleShellContext.Provider>
+    </RequireAuth>
   );
 };
 
@@ -223,6 +450,7 @@ export const AppRoutes: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const locationRef = useRef(location);
+  const mustChangeSeqRef = useRef(0);
   const { isAuthenticated, isExplicitLogout, clearExplicitLogout, logout } = useAuth();
 
   useEffect(() => {
@@ -241,8 +469,10 @@ export const AppRoutes: React.FC = () => {
   }, [isAuthenticated, isExplicitLogout, location.pathname, clearExplicitLogout]);
 
   useEffect(() => {
-    return setAuthSessionHandlers({
+    const unregister = setAuthSessionHandlers({
       onUnauthorized: () => {
+        cancelRouteTransition();
+        mustChangeSeqRef.current += 1;
         const currentLocation = locationRef.current;
         const shouldPreserveFrom = !isExcludedPostLoginPath(currentLocation.pathname);
         logout({ preserveRedirect: true });
@@ -252,149 +482,163 @@ export const AppRoutes: React.FC = () => {
         });
       },
       onMustChangePassword: () => {
-        navigate('/change-password', { replace: true });
+        cancelRouteTransition();
+        const seq = ++mustChangeSeqRef.current;
+        const hadToken = getAuthToken() !== null;
+        const maybe = preloadRouteForPath('/change-password');
+        if (maybe) {
+          void maybe.finally(() => {
+            if (seq === mustChangeSeqRef.current && (!hadToken || getAuthToken() !== null)) {
+              navigate('/change-password', { replace: true });
+            }
+          });
+        } else {
+          navigate('/change-password', { replace: true });
+        }
       },
     });
+    return () => {
+      mustChangeSeqRef.current += 1;
+      unregister();
+    };
   }, [logout, navigate]);
 
   return (
-    <Routes>
-      {/* Root skeleton */}
-      <Route path="/" element={<HomeSkeleton />} />
+    <Suspense fallback={<RouteFallback />}>
+      <Routes>
+        {/* Public landing */}
+        <Route path="/" element={<HomeSkeleton />} />
 
-      {/* Public identity routes */}
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/sso-callback" element={<SsoCallbackPage />} />
-      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-      <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
-      <Route path="/reset-password" element={<ResetPasswordPage />} />
+        {/* Public identity routes */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/sso-callback" element={<SsoCallbackPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-      {/* Forced change password route */}
-      <Route
-        path="/change-password"
-        element={
-          <RequireMustChangePassword>
-            <ChangePasswordPage />
-          </RequireMustChangePassword>
-        }
-      />
+        {/* Change password route (forced first-login & voluntary enterprise accounts) */}
+        <Route
+          path="/change-password"
+          element={
+            <RequireChangePasswordAccess>
+              <ChangePasswordPage />
+            </RequireChangePasswordAccess>
+          }
+        />
 
-      {/* Dedicated candidate skill profile and jobs routes */}
-      <Route
-        path={PROTECTED_ROUTE_POLICIES.candidateSkills.path}
-        element={
-          <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.candidateSkills.allowedRoles}>
-            <CandidateSkillsPage />
-          </RequireRole>
-        }
-      />
-      <Route
-        path={PROTECTED_ROUTE_POLICIES.candidateJobs.path}
-        element={
-          <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.candidateJobs.allowedRoles}>
-            <CandidateJobsPage />
-          </RequireRole>
-        }
-      />
+        {/* Protected role routes sharing one persistent shell (<header> & <aside> never unmount) */}
+        <Route element={<PersistentAppShell />}>
+          {/* Dedicated candidate skill profile and jobs routes */}
+          <Route
+            path={PROTECTED_ROUTE_POLICIES.candidateSkills.path}
+            element={
+              <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.candidateSkills.allowedRoles}>
+                <CandidateSkillsPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path={PROTECTED_ROUTE_POLICIES.candidateJobs.path}
+            element={
+              <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.candidateJobs.allowedRoles}>
+                <CandidateJobsPage />
+              </RequireRole>
+            }
+          />
 
-      {/* DT-01 gap analysis and JD detail routes */}
-      <Route
-        path={PROTECTED_ROUTE_POLICIES.candidateGapAnalysis.path}
-        element={
-          <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.candidateGapAnalysis.allowedRoles}>
-            <CandidateGapAnalysisPage />
-          </RequireRole>
-        }
-      />
-      <Route
-        path={PROTECTED_ROUTE_POLICIES.candidateJobDetail.path}
-        element={
-          <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.candidateJobDetail.allowedRoles}>
-            <CandidateJobDetailPage />
-          </RequireRole>
-        }
-      />
+          {/* DT-01 gap analysis and JD detail routes */}
+          <Route
+            path={PROTECTED_ROUTE_POLICIES.candidateGapAnalysis.path}
+            element={
+              <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.candidateGapAnalysis.allowedRoles}>
+                <CandidateGapAnalysisPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path={PROTECTED_ROUTE_POLICIES.candidateJobDetail.path}
+            element={
+              <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.candidateJobDetail.allowedRoles}>
+                <CandidateJobDetailPage />
+              </RequireRole>
+            }
+          />
 
-      <Route
-        path={PROTECTED_ROUTE_POLICIES.candidateEvaluations.path}
-        element={
-          <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.candidateEvaluations.allowedRoles}>
-            <CandidateEvaluationsPage />
-          </RequireRole>
-        }
-      />
-      <Route
-        path={PROTECTED_ROUTE_POLICIES.candidateInternships.path}
-        element={
-          <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.candidateInternships.allowedRoles}>
-            <CandidateInternshipsPage />
-          </RequireRole>
-        }
-      />
+          <Route
+            path={PROTECTED_ROUTE_POLICIES.candidateEvaluations.path}
+            element={
+              <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.candidateEvaluations.allowedRoles}>
+                <CandidateEvaluationsPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path={PROTECTED_ROUTE_POLICIES.candidateInternships.path}
+            element={
+              <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.candidateInternships.allowedRoles}>
+                <CandidateInternshipsPage />
+              </RequireRole>
+            }
+          />
 
-      {/* Protected role homes */}
-      <Route
-        path={PROTECTED_ROUTE_POLICIES.candidateHome.path}
-        element={
-          <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.candidateHome.allowedRoles}>
-            <CandidateHomePage />
-          </RequireRole>
-        }
-      />
-      <Route
-        path={PROTECTED_ROUTE_POLICIES.hrHome.path}
-        element={
-          <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.hrHome.allowedRoles}>
-            <HrHomePage />
-          </RequireRole>
-        }
-      />
-      <Route
-        path={PROTECTED_ROUTE_POLICIES.hrCompany.path}
-        element={
-          <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.hrCompany.allowedRoles}>
-            <CompanyProfilePage />
-          </RequireRole>
-        }
-      />
-      <Route
-        path={PROTECTED_ROUTE_POLICIES.mentorHome.path}
-        element={
-          <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.mentorHome.allowedRoles}>
-            <MentorHomePage />
-          </RequireRole>
-        }
-      />
-      <Route
-        path={PROTECTED_ROUTE_POLICIES.staffHome.path}
-        element={
-          <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.staffHome.allowedRoles}>
-            <StaffHomePage />
-          </RequireRole>
-        }
-      />
-      <Route
-        path={PROTECTED_ROUTE_POLICIES.adminHome.path}
-        element={
-          <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.adminHome.allowedRoles}>
-            <AdminHomePage />
-          </RequireRole>
-        }
-      />
+          {/* Protected role homes */}
+          <Route
+            path={PROTECTED_ROUTE_POLICIES.candidateHome.path}
+            element={
+              <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.candidateHome.allowedRoles}>
+                <CandidateHomePage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path={PROTECTED_ROUTE_POLICIES.hrHome.path}
+            element={
+              <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.hrHome.allowedRoles}>
+                <HrHomePage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path={PROTECTED_ROUTE_POLICIES.hrCompany.path}
+            element={
+              <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.hrCompany.allowedRoles}>
+                <CompanyProfilePage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path={PROTECTED_ROUTE_POLICIES.mentorHome.path}
+            element={
+              <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.mentorHome.allowedRoles}>
+                <MentorHomePage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path={PROTECTED_ROUTE_POLICIES.staffHome.path}
+            element={
+              <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.staffHome.allowedRoles}>
+                <StaffHomePage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path={PROTECTED_ROUTE_POLICIES.adminHome.path}
+            element={
+              <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.adminHome.allowedRoles}>
+                <AdminHomePage />
+              </RequireRole>
+            }
+          />
 
-      {/* Explicit 403 forbidden route */}
-      <Route
-        path={PROTECTED_ROUTE_POLICIES.forbidden.path}
-        element={
-          <RequireAuth>
-            <ForbiddenPage />
-          </RequireAuth>
-        }
-      />
+          {/* Explicit 403 forbidden route */}
+          <Route path={PROTECTED_ROUTE_POLICIES.forbidden.path} element={<ForbiddenPage />} />
+        </Route>
 
-      {/* Fallback */}
-      <Route path="*" element={<Navigate to="/login" replace />} />
-    </Routes>
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    </Suspense>
   );
 };
 
