@@ -236,6 +236,19 @@ public class RoutePolicyRegistry {
                             OwnershipGuard.ROLE_CANDIDATE,
                             OwnershipGuard.ROLE_HR),
                     RoutePolicy.roles(
+                            HttpMethod.GET,
+                            "/api/v1/profiles/me/internships",
+                            true,
+                            "Candidate reads own internship history",
+                            OwnershipGuard.ROLE_CANDIDATE),
+                    RoutePolicy.roles(
+                            HttpMethod.GET,
+                            "/api/v1/profiles/{userId}/internships",
+                            true,
+                            "CANDIDATE (own only -> else 404) and HR (public only -> else 404)",
+                            OwnershipGuard.ROLE_CANDIDATE,
+                            OwnershipGuard.ROLE_HR),
+                    RoutePolicy.roles(
                             HttpMethod.PUT,
                             "/api/v1/me/target",
                             true,

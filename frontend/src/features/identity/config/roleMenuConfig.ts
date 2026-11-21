@@ -38,6 +38,12 @@ export const ROLE_MENU_CONFIG: Readonly<Record<UserRole, readonly RoleMenuItem[]
       icon: 'sparkles',
     },
     {
+      id: 'candidate-internships',
+      label: 'Thực tập IOC',
+      path: '/candidate/internships',
+      icon: 'graduation-cap',
+    },
+    {
       id: 'candidate-ai',
       label: 'Trợ lý AI',
       icon: 'network',

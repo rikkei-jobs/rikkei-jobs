@@ -1,6 +1,6 @@
 // Tier 1: Feature Coverage — OpenAPI /api/docs, Swagger UI Assets & Legacy Routes
 // Verifies /api/docs redirect and HTML rendering, Swagger UI CSS/JS/PNG/config assets on :8080 and :3000,
-// full OpenAPI 25-path / 27-operation contract, @Hidden exclusion of TestErrorController, and hr1 allow-list
+// full OpenAPI 27-path / 29-operation contract, @Hidden exclusion of TestErrorController, and hr1 allow-list
 
 import { describe, it, before } from 'node:test';
 import assert from 'node:assert/strict';
@@ -39,7 +39,9 @@ const EXPECTED_OPERATIONS = new Map([
   ['/api/v1/target-positions', ['get']],
   ['/api/v1/me/target', ['get', 'put']],
   ['/api/v1/me/gap-analysis', ['get']],
-  ['/api/v1/me/job-recommendations', ['get']]
+  ['/api/v1/me/job-recommendations', ['get']],
+  ['/api/v1/profiles/me/internships', ['get']],
+  ['/api/v1/profiles/{userId}/internships', ['get']]
 ]);
 
 const PUBLIC_OPERATIONS = new Set([
@@ -207,7 +209,7 @@ describe('Tier 1: OpenAPI /api/docs & Swagger UI Verification', () => {
     }
   });
 
-  it('TC-T1-DOCS-03: Should expose identical OpenAPI 3 contract with bearerAuth and all 25 paths / 27 operations across :8080 and :3000', async () => {
+  it('TC-T1-DOCS-03: Should expose identical OpenAPI 3 contract with bearerAuth and all 27 paths / 29 operations across :8080 and :3000', async () => {
     assert.ok(backendOnline, 'Backend service must be reachable');
     assert.ok(frontendOnline, 'Frontend Nginx proxy must be reachable');
 
@@ -238,7 +240,7 @@ describe('Tier 1: OpenAPI /api/docs & Swagger UI Verification', () => {
     const paths = backendApiRes.body.paths || {};
     const actualPathKeys = Object.keys(paths).sort();
     const expectedPathKeys = [...EXPECTED_OPERATIONS.keys()].sort();
-    assert.deepStrictEqual(actualPathKeys, expectedPathKeys, 'OpenAPI paths must match all 25 merged module endpoints');
+    assert.deepStrictEqual(actualPathKeys, expectedPathKeys, 'OpenAPI paths must match all 27 merged module endpoints');
 
     let totalOperations = 0;
     const rootSecurity = backendApiRes.body.security || [];
@@ -262,7 +264,7 @@ describe('Tier 1: OpenAPI /api/docs & Swagger UI Verification', () => {
       }
     }
 
-    assert.strictEqual(totalOperations, 27, `Expected 27 OpenAPI operations, got ${totalOperations}`);
+    assert.strictEqual(totalOperations, 29, `Expected 29 OpenAPI operations, got ${totalOperations}`);
 
     const getCompanyByIdOp = paths['/api/v1/companies/{id}']?.get;
     assert.ok(getCompanyByIdOp, 'GET /api/v1/companies/{id} must exist in OpenAPI');
@@ -272,6 +274,30 @@ describe('Tier 1: OpenAPI /api/docs & Swagger UI Verification', () => {
 
     const healthOp = paths['/api/v1/health']?.get;
     assert.ok(healthOp?.responses?.['200'] && healthOp?.responses?.['503'], 'GET /api/v1/health must document 200 and 503');
+
+    const myInternshipsGet = paths['/api/v1/profiles/me/internships']?.get;
+    assert.ok(myInternshipsGet, 'GET /api/v1/profiles/me/internships must exist in OpenAPI');
+    const myInternships200 = myInternshipsGet.responses?.['200']?.content?.['application/json'] ?? myInternshipsGet.responses?.['200']?.content?.['*/*'];
+    assert.strictEqual(myInternships200?.schema?.type, 'array', 'GET /api/v1/profiles/me/internships 200 must return an array');
+    assert.strictEqual(myInternships200?.schema?.items?.$ref, '#/components/schemas/InternshipResponse');
+    for (const statusCode of ['401', '403', '503']) {
+      const resp = myInternshipsGet.responses?.[statusCode];
+      assert.ok(resp, `GET /api/v1/profiles/me/internships must document ${statusCode}`);
+      const errContent = resp.content?.['application/json'] ?? resp.content?.['*/*'];
+      assert.strictEqual(errContent?.schema?.$ref, '#/components/schemas/ErrorResponse');
+    }
+
+    const userInternshipsGet = paths['/api/v1/profiles/{userId}/internships']?.get;
+    assert.ok(userInternshipsGet, 'GET /api/v1/profiles/{userId}/internships must exist in OpenAPI');
+    const userInternships200 = userInternshipsGet.responses?.['200']?.content?.['application/json'] ?? userInternshipsGet.responses?.['200']?.content?.['*/*'];
+    assert.strictEqual(userInternships200?.schema?.type, 'array', 'GET /api/v1/profiles/{userId}/internships 200 must return an array');
+    assert.strictEqual(userInternships200?.schema?.items?.$ref, '#/components/schemas/InternshipResponse');
+    for (const statusCode of ['400', '401', '403', '404']) {
+      const resp = userInternshipsGet.responses?.[statusCode];
+      assert.ok(resp, `GET /api/v1/profiles/{userId}/internships must document ${statusCode}`);
+      const errContent = resp.content?.['application/json'] ?? resp.content?.['*/*'];
+      assert.strictEqual(errContent?.schema?.$ref, '#/components/schemas/ErrorResponse');
+    }
   });
 
   it('TC-T1-DOCS-04: Should exclude @Hidden TestErrorController (/api/v1/test/*) and legacy controllers from OpenAPI spec', async () => {

@@ -239,7 +239,7 @@ Run all linting, static analysis, unit tests, and security path checks using the
 .\check.ps1
 ```
 
-Individual checks and verified baselines (`641` backend tests across `59` classes, `410` frontend tests across `35` files, `26` E2E suites / `323` cases / `1939` assertions, `120` contrast pairs, `26` active runtime quality gates):
+Individual checks and verified baselines (`701` backend tests across `64` classes, `427` frontend tests across `36` files, `27` E2E suites / `329` cases / `2020` assertions, `120` contrast pairs, `26` active runtime quality gates):
 
 - **Single Backend Permission Test Command (NT-02 RBAC & Policy Coverage, JDK 25)**: `cd backend && ./mvnw test -D "test=Rbac*IntegrationTest"` (PowerShell: `.\mvnw.cmd test -D "test=Rbac*IntegrationTest"`)
 - **Backend Full Gate (JDK 25)**: `cd backend && ./mvnw clean test spotless:check spotbugs:check`

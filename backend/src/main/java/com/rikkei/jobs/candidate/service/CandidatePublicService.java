@@ -2,6 +2,7 @@ package com.rikkei.jobs.candidate.service;
 
 import com.rikkei.jobs.candidate.dto.CandidateSkillScoreDto;
 import com.rikkei.jobs.candidate.dto.MentorSkillEvidenceDto;
+import com.rikkei.jobs.candidate.dto.PmInternshipResultCommand;
 import java.time.OffsetDateTime;
 import java.util.List;
 
@@ -12,6 +13,13 @@ import java.util.List;
 public interface CandidatePublicService {
 
     void recordMentorEvidences(Long candidateUserId, List<MentorSkillEvidenceDto> evidences);
+
+    /**
+     * Records PM internship results idempotently by {@code (candidateUserId, PM, batchId)} and
+     * recomputes candidate skill scores. Previously synced records omitted from {@code results} are
+     * retained locally so verified skill history is preserved.
+     */
+    void recordPmInternshipResults(Long candidateUserId, List<PmInternshipResultCommand> results);
 
     void recomputeCandidateSkills(Long candidateUserId);
 

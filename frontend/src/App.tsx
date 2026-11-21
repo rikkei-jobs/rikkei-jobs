@@ -70,6 +70,9 @@ const CandidateJobDetailPage = lazyRoute(
 const CandidateEvaluationsPage = lazyRoute(
   () => import('./features/candidate/pages/CandidateEvaluationsPage'),
 );
+const CandidateInternshipsPage = lazyRoute(
+  () => import('./features/internship/pages/CandidateInternshipsPage'),
+);
 const HrHomePage = lazyRoute(() => import('./features/identity/pages/role-homes/HrHomePage'));
 const CompanyProfilePage = lazyRoute(async () => {
   const m = await import('./features/company/pages/CompanyProfilePage');
@@ -119,6 +122,11 @@ registerRoutePreloader(
   PROTECTED_ROUTE_POLICIES.candidateEvaluations.path,
   CandidateEvaluationsPage.preload,
   CandidateEvaluationsPage.isLoaded,
+);
+registerRoutePreloader(
+  PROTECTED_ROUTE_POLICIES.candidateInternships.path,
+  CandidateInternshipsPage.preload,
+  CandidateInternshipsPage.isLoaded,
 );
 registerRoutePreloader(
   PROTECTED_ROUTE_POLICIES.hrHome.path,
@@ -561,6 +569,14 @@ export const AppRoutes: React.FC = () => {
             element={
               <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.candidateEvaluations.allowedRoles}>
                 <CandidateEvaluationsPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path={PROTECTED_ROUTE_POLICIES.candidateInternships.path}
+            element={
+              <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.candidateInternships.allowedRoles}>
+                <CandidateInternshipsPage />
               </RequireRole>
             }
           />
