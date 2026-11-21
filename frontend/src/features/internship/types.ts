@@ -1,22 +1,22 @@
 export interface InternshipTask {
-  id: number;
-  title: string;
-  acceptedScore: number;
-  acceptedAt: string;
+  readonly id: number;
+  readonly title: string;
+  readonly acceptedScore: number | null;
+  readonly acceptedAt: string | null;
 }
 
 export interface CandidateInternship {
-  id: number;
-  batchId: string;
-  batchName: string;
-  groupName: string;
-  topicName: string;
-  mentorEmail: string;
-  startDate: string;
-  endDate: string;
-  finalScore: number;
-  syncedAt: string;
-  tasks: InternshipTask[];
+  readonly id: number;
+  readonly batchId: string;
+  readonly batchName: string | null;
+  readonly groupName: string | null;
+  readonly topicName: string | null;
+  readonly mentorEmail: string | null;
+  readonly startDate: string | null;
+  readonly endDate: string | null;
+  readonly finalScore: number | null;
+  readonly syncedAt: string | null;
+  readonly tasks: readonly InternshipTask[];
 }
 
-export type CandidateInternshipsData = CandidateInternship[];
+export type CandidateInternshipsData = readonly CandidateInternship[];

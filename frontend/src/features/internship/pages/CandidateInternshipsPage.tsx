@@ -1,15 +1,14 @@
 import React from 'react';
 import { RoleHomeLayout } from '../../identity/pages/role-homes/RoleHomeLayout';
-import CandidateInternships from '../components/CandidateInternships';
-
+import { CandidateInternships } from '../components/CandidateInternships';
 
 export const CandidateInternshipsPage: React.FC = () => {
   return (
     <RoleHomeLayout
-      roleTitle="Ứng Viên (Candidate)"
+      roleTitle="Ứng viên"
       roleBadgeClass="rj-role-candidate"
       roleIcon="user"
-      description="Theo dõi đợt thực tập, nhóm, đề tài, mentor, điểm cuối kỳ và số task đã nghiệm thu."
+      description="Theo dõi đợt thực tập IOC, nhóm, đề tài, mentor, điểm cuối kỳ và kết quả nghiệm thu."
       hideAccountCard
     >
       <CandidateInternships />

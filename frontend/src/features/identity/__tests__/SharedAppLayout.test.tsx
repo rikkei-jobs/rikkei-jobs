@@ -98,6 +98,7 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
         { label: 'Việc làm', path: '/candidate/jobs', disabled: false },
         { label: 'Ứng tuyển', path: undefined, disabled: true },
         { label: 'Lộ trình', path: '/candidate/gap-analysis', disabled: false },
+        { label: 'Thực tập IOC', path: '/candidate/internships', disabled: false },
         { label: 'Trợ lý AI', path: undefined, disabled: true },
       ]);
 
@@ -137,7 +138,7 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
         density: 'airy',
         badgeClass: 'rj-role-candidate',
         icon: 'user' as const,
-        expectedItems: ['Hồ sơ', 'Việc làm', 'Ứng tuyển', 'Lộ trình', 'Trợ lý AI'],
+        expectedItems: ['Hồ sơ', 'Việc làm', 'Ứng tuyển', 'Lộ trình', 'Thực tập IOC', 'Trợ lý AI'],
         forbiddenItems: ['Công ty', 'Duyệt hồ sơ', 'Quản trị', 'Cần đánh giá'],
       },
       {
@@ -147,7 +148,7 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
         badgeClass: 'rj-role-hr',
         icon: 'building' as const,
         expectedItems: ['Công ty', 'JD', 'Tuyển dụng', 'Thực tập sinh'],
-        forbiddenItems: ['Hồ sơ', 'Việc làm', 'Duyệt hồ sơ', 'Quản trị', 'Cần đánh giá'],
+        forbiddenItems: ['Hồ sơ', 'Việc làm', 'Thực tập IOC', 'Duyệt hồ sơ', 'Quản trị', 'Cần đánh giá'],
       },
       {
         role: 'MENTOR',
@@ -156,7 +157,7 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
         badgeClass: 'rj-role-mentor',
         icon: 'graduation-cap' as const,
         expectedItems: ['Cần đánh giá'],
-        forbiddenItems: ['Hồ sơ', 'Công ty', 'Duyệt hồ sơ', 'Quản trị'],
+        forbiddenItems: ['Hồ sơ', 'Thực tập IOC', 'Công ty', 'Duyệt hồ sơ', 'Quản trị'],
       },
       {
         role: 'STAFF',
@@ -165,7 +166,7 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
         badgeClass: 'rj-role-staff',
         icon: 'briefcase' as const,
         expectedItems: ['Duyệt hồ sơ', 'Duyệt JD', 'Doanh nghiệp', 'Ghép thực tập', 'Báo cáo'],
-        forbiddenItems: ['Hồ sơ', 'Công ty', 'Quản trị', 'Cần đánh giá'],
+        forbiddenItems: ['Hồ sơ', 'Thực tập IOC', 'Công ty', 'Quản trị', 'Cần đánh giá'],
       },
       {
         role: 'ADMIN',
@@ -174,7 +175,7 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
         badgeClass: 'rj-role-admin',
         icon: 'shield' as const,
         expectedItems: ['Quản trị'],
-        forbiddenItems: ['Hồ sơ', 'Công ty', 'Duyệt hồ sơ', 'Cần đánh giá'],
+        forbiddenItems: ['Hồ sơ', 'Thực tập IOC', 'Công ty', 'Duyệt hồ sơ', 'Cần đánh giá'],
       },
     ];
 
@@ -289,6 +290,22 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
 
       expect(screen.getByRole('link', { name: 'Việc làm' })).toHaveAttribute('aria-current', 'page');
       unmountJobDetail();
+
+      const { unmount: unmountInternships } = render(
+        <AuthProvider initialToken="jwt" initialUser={createUser('CANDIDATE')}>
+          <MemoryRouter initialEntries={['/candidate/internships']}>
+            <SharedAppLayout roleBadgeClass="rj-role-candidate" roleIcon="user">
+              <div>Thực tập IOC</div>
+            </SharedAppLayout>
+          </MemoryRouter>
+        </AuthProvider>,
+      );
+
+      const internshipsLink = screen.getByRole('link', { name: 'Thực tập IOC' });
+      expect(internshipsLink).toHaveAttribute('aria-current', 'page');
+      expect(internshipsLink).toHaveAttribute('href', '/candidate/internships');
+      expect(screen.getByRole('link', { name: 'Trang chủ' })).not.toHaveAttribute('aria-current');
+      unmountInternships();
 
       const { unmount: unmountHrCompany } = render(
         <AuthProvider initialToken="jwt" initialUser={createUser('HR')}>
@@ -743,7 +760,7 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
 
       // Focus trap: Shift+Tab from first element wraps to last link; Tab from last wraps to first
       fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
-      const lastNavLink = screen.getByRole('link', { name: 'Lộ trình' });
+      const lastNavLink = screen.getByRole('link', { name: 'Thực tập IOC' });
       expect(lastNavLink).toHaveFocus();
 
       fireEvent.keyDown(document, { key: 'Tab' });
