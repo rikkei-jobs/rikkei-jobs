@@ -530,7 +530,7 @@ export function useCountUp(target: number, active: boolean, durationMs = 640): n
     const clampedDuration = Math.min(Math.max(durationMs, 120), 760);
 
     const step = (now: number) => {
-      const elapsed = now - startedAt;
+      const elapsed = Math.max(0, now - startedAt);
       const progress = Math.min(1, elapsed / clampedDuration);
       // Cubic ease-out matching --rj-ease-entrance feel
       const eased = 1 - Math.pow(1 - progress, 3);

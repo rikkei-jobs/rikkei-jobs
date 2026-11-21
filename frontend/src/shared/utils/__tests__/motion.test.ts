@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { act, renderHook } from '@testing-library/react';
 import {
   cancelRouteTransition,
   getShowcaseStaggerStyle,
@@ -8,6 +9,7 @@ import {
   navigateWithTransition,
   resetMotionRegistry,
   startThemeTransition,
+  useCountUp,
 } from '../motion';
 
 interface ProcessLike {
@@ -694,5 +696,96 @@ describe('motion utilities (M4b)', () => {
     } finally {
       tracker.dispose();
     }
+  });
+});
+
+describe('useCountUp', () => {
+  const originalMatchMedia = window.matchMedia;
+  const originalRaf = window.requestAnimationFrame;
+  const originalCancelRaf = window.cancelAnimationFrame;
+
+  afterEach(() => {
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      writable: true,
+      value: originalMatchMedia,
+    });
+    Object.defineProperty(window, 'requestAnimationFrame', {
+      configurable: true,
+      writable: true,
+      value: originalRaf,
+    });
+    Object.defineProperty(window, 'cancelAnimationFrame', {
+      configurable: true,
+      writable: true,
+      value: originalCancelRaf,
+    });
+    vi.restoreAllMocks();
+  });
+
+  it('clamps negative elapsed when first rAF timestamp precedes startedAt and stops cleanly on completion', () => {
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      writable: true,
+      value: vi.fn().mockReturnValue({ matches: false }),
+    });
+
+    vi.spyOn(performance, 'now').mockReturnValue(1000);
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    let nextRafId = 1;
+    let rafQueue: Array<{ id: number; cb: FrameRequestCallback }> = [];
+    Object.defineProperty(window, 'requestAnimationFrame', {
+      configurable: true,
+      writable: true,
+      value: vi.fn((cb: FrameRequestCallback) => {
+        const id = nextRafId++;
+        rafQueue.push({ id, cb });
+        return id;
+      }),
+    });
+    Object.defineProperty(window, 'cancelAnimationFrame', {
+      configurable: true,
+      writable: true,
+      value: vi.fn((id: number) => {
+        rafQueue = rafQueue.filter((item) => item.id !== id);
+      }),
+    });
+
+    const flushFrame = (timestamp: number) => {
+      const next = rafQueue.shift();
+      if (!next) {
+        throw new Error(`Expected queued rAF callback for timestamp ${timestamp}`);
+      }
+      next.cb(timestamp);
+    };
+
+    const { result, unmount } = renderHook(() => useCountUp(100, true, 640));
+    expect(result.current).toBe(0);
+    expect(rafQueue).toHaveLength(1);
+
+    // Frame 1 precedes startedAt (950 < 1000); elapsed must clamp to 0 instead of producing -25.
+    act(() => {
+      flushFrame(950);
+    });
+    expect(result.current).toBe(0);
+    expect(rafQueue).toHaveLength(1);
+
+    // Frame 2 at 50% duration (320 / 640) reaches cubic ease-out 0.875 -> 88.
+    act(() => {
+      flushFrame(1320);
+    });
+    expect(result.current).toBe(88);
+    expect(rafQueue).toHaveLength(1);
+
+    // Frame 3 at full duration (640 / 640) completes at target and leaves no idle rAF loop.
+    act(() => {
+      flushFrame(1640);
+    });
+    expect(result.current).toBe(100);
+    expect(rafQueue).toHaveLength(0);
+
+    unmount();
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
   });
 });
