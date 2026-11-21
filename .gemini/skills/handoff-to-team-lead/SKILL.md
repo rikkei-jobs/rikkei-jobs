@@ -16,7 +16,7 @@ In this repository, only the human Team Lead possesses the authority to stage, c
 ### When to Use
 
 - When all code modifications, unit tests, and documentation updates for an assigned task are 100% complete.
-- After all 25 active quality gates have executed and returned exit code 0 via `verification-before-completion`.
+- After all 26 active quality gates have executed and returned exit code 0 via `verification-before-completion`.
 - When an agent has concluded its implementation plan and is preparing to yield execution to the human supervisor or parent orchestrator.
 
 ### When NOT to Use
@@ -40,7 +40,7 @@ In this repository, only the human Team Lead possesses the authority to stage, c
 1. Re-run the full repository quality gate suite:
    - On Windows: `powershell -File .\check.ps1`
    - On Linux/macOS: `./check.sh`
-2. Confirm that all 25 active runtime gates (compilation, Spotless, linters, Vitest, documentation, gate parity) report clean passes with exit code 0.
+2. Confirm that all 26 active runtime gates (compilation, Spotless, linters, Vitest, documentation, gate parity) report clean passes with exit code 0.
 3. Capture the exact timestamp and terminal output summary to include in the handoff.
 
 ### Step 3: Architect Atomic Commit Sequence Proposals

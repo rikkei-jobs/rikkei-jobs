@@ -39,14 +39,14 @@ The Modular Monolith architecture prevents architectural erosion by enforcing:
 ### Step 1: Verify Domain Table Ownership
 
 1. Consult `docs/01-architecture-overview.md` to identify table ownership:
-   - `identity`: `roles`, `users`, `used_sso_tickets`.
-   - `candidate`: `skill_profiles`, `profile_evidences`, `candidate_cvs`, `portfolios`.
-   - `company`, `job`: `companies`, `company_hr_profiles`, `job_descriptions`, `job_skills`.
+   - `identity`: `roles`, `users`, `used_sso_tickets`, `password_reset_tokens`.
+   - `candidate`: `candidate_profiles`, `external_records`, `skill_mappings`, `skill_evidences`, `skill_scores`, `target_positions`, `position_skills`, `candidate_targets`, `gap_results`, `candidate_cvs`, `portfolios`.
+   - `company`, `job`: `companies`, `jobs`, `job_skills`, `company_hr_profiles`, `job_descriptions`.
    - `internship`: `internship_batches`, `internship_members`, `internship_tasks`.
-   - `assessment`: `skills`, `assessment_templates`, `assessment_forms`, `skill_badges`.
+   - `assessment`: `skills`, `evaluation_templates`, `evaluation_criteria`, `evaluations`, `evaluation_scores`, `skill_badges`.
    - `learning`: `skill_gaps`, `learning_recommendations`, `course_enrollments`.
    - `recruitment`: `applications`, `interview_rounds`, `interview_rooms`, `job_offers`.
-   - `ai`: Stateless (no persistent database tables).
+   - `ai`: `job_recommendations` (24h recommendation cache; `ai_chat_sessions`, `ai_interactions`, `ai_usage_quotas` planned).
 2. Iron Rule: Only the owning module's repositories may issue `SELECT`, `INSERT`, `UPDATE`, or `DELETE` statements against its tables.
 
 ### Step 2: Design Synchronous In-Process Communication

@@ -32,7 +32,7 @@ The system is partitioned into **7 business modules** plus the foundational **Id
 | **Identity & Access** | `identity` | `features/identity` | Authentication, RBAC roles, SSO verification, user accounts | `roles`, `users`, `used_sso_tickets` |
 | **Candidate Profile** | `candidate` | `features/candidate` | Competency profile, CV generation, portfolio, privacy settings | `skill_profiles`, `profile_evidences`, `candidate_cvs`, `portfolios` |
 | **Company & Job** | `company`, `job` | `features/company`, `features/job` | Enterprise management, HR accounts, JD creation, JD approval | `companies`, `company_hr_profiles`, `job_descriptions`, `job_skills` |
-| **Internship IOC** | `internship` | `features/internship` | Enterprise internship demand, batch allocation, task scoring | `internship_batches`, `internship_members`, `internship_tasks` |
+| **Internship IOC** | `internship` | `features/internship` | IOC internship sync from `lms-pm`, batch/topic tracking, accepted task scores (future allocation tables: `internship_batches`, `internship_members`) | `internships`, `internship_tasks` |
 | **Assessment** | `assessment` | `features/assessment` | Mentor evaluations, self-assessments, 20-skills catalogue | `skills`, `assessment_templates`, `assessment_forms`, `skill_badges` |
 | **Supplementary Training** | `learning` | `features/learning` | JD skill-gap analysis, LMS course recommendations, enrollments | `skill_gaps`, `learning_recommendations`, `course_enrollments` |
 | **Recruitment** | `recruitment` | `features/recruitment` | Job applications, candidate screening, interview scheduling | `applications`, `interview_rounds`, `interview_rooms`, `job_offers` |
@@ -54,6 +54,13 @@ The system is partitioned into **7 business modules** plus the foundational **Id
    - **Asynchronous**: Cross-domain events (e.g., student completes course, application status changes) are broadcast via Spring `ApplicationEventPublisher` and caught by decoupled `@EventListener` handlers.
 5. **Centralized External API Client**:
    - Outbound calls to external systems (LMS, Exam, PM, Meet) must route exclusively through `ExternalApiClient`. Direct ad-hoc HTTP calls from business domains are forbidden.
+
+### 4. Active Cross-Module Contracts (`TT-01` Internship Sync)
+
+- **`internship` -> `identity`**: Consumes `IdentityPublicService#existsById(Long userId)` and `IdentityPublicService#findLmsUserIdByUserId(Long userId)` (`Optional<String>`). The `internships.user_id` column is a plain scalar `BIGINT` with no physical foreign key to `users`.
+- **`internship` -> `candidate`**: Consumes `CandidatePublicService#isProfilePublic(Long candidateUserId)` and `CandidatePublicService#recordPmInternshipResults(Long candidateUserId, List<PmInternshipResultCommand> results)` using the immutable record `PmInternshipResultCommand(String batchId, String topicName, BigDecimal finalScore)`.
+- **`candidate` Exclusive Skill Ownership**: The `candidate` module retains exclusive ownership of `external_records`, `skill_mappings`, `skill_evidences`, and `skill_scores`, performing an idempotent upsert on `(candidateUserId, ExternalSource.PM, batchId)` (`finalScore * 10`, `RoundingMode.HALF_UP` to 2 decimals, clamped to `[0.00, 100.00]`, skipping null `finalScore` or blank `topicName`) and invoking `SkillRecomputeService#recomputeSkills`.
+- **Non-Transactional Fast-Fail HTTP & Bean Separation**: `InternshipSyncServiceImpl` invokes `ExternalApiClient#getStudentInternshipsFastFail` (`<= 2.5 s`, `0` retries) outside `@Transactional`, then delegates short database writes to a separate proxied bean (`InternshipPersistenceService`) using `@Transactional(rollbackFor = Exception.class)`.
 
 ---
 
@@ -87,7 +94,7 @@ Hệ thống được chia thành **7 module nghiệp vụ** cùng module nền 
 | **Identity & Access** | `identity` | `features/identity` | Xác thực người dùng, phân quyền RBAC, xác minh vé SSO, tài khoản | `roles`, `users`, `used_sso_tickets` |
 | **Candidate Profile** | `candidate` | `features/candidate` | Quản lý hồ sơ Skill Profile, bằng chứng, sinh CV, quyền riêng tư | `skill_profiles`, `profile_evidences`, `candidate_cvs`, `portfolios` |
 | **Company & Job** | `company`, `job` | `features/company`, `features/job` | Quản lý doanh nghiệp, tài khoản HR, tạo và duyệt JD | `companies`, `company_hr_profiles`, `job_descriptions`, `job_skills` |
-| **Internship IOC** | `internship` | `features/internship` | Nhu cầu thực tập, ghép đợt IOC (lms-pm), theo dõi đề tài và task | `internship_batches`, `internship_members`, `internship_tasks` |
+| **Internship IOC** | `internship` | `features/internship` | Đồng bộ thực tập IOC từ `lms-pm`, theo dõi đợt/đề tài và điểm task đã nghiệm thu (bảng ghép đợt dự kiến giai đoạn sau: `internship_batches`, `internship_members`) | `internships`, `internship_tasks` |
 | **Assessment** | `assessment` | `features/assessment` | Phiếu đánh giá của Mentor, tự đánh giá, danh mục 20 kỹ năng | `skills`, `assessment_templates`, `assessment_forms`, `skill_badges` |
 | **Supplementary Training** | `learning` | `features/learning` | Phân tích khoảng thiếu hụt so với JD, gợi ý môn học LMS, ghi danh | `skill_gaps`, `learning_recommendations`, `course_enrollments` |
 | **Recruitment** | `recruitment` | `features/recruitment` | Ứng tuyển bằng CV, sàng lọc, lên lịch phỏng vấn (Rikkei Meet) | `applications`, `interview_rounds`, `interview_rooms`, `job_offers` |
@@ -109,3 +116,10 @@ Hệ thống được chia thành **7 module nghiệp vụ** cùng module nền 
    - **Bất đồng bộ**: Sử dụng cơ chế phát sự kiện Spring `ApplicationEventPublisher` và các phương thức bắt sự kiện `@EventListener` để giữ tính phi tập trung.
 5. **Thành phần Tích hợp Hệ thống Ngoài Tập trung**:
    - Toàn bộ giao tiếp ra hệ thống ngoài (LMS, Khảo thí, IOC PM, Meet) bắt buộc phải đi qua `ExternalApiClient` dùng chung. Nghiêm cấm các domain module tự tạo HTTP client riêng lẻ.
+
+### 4. Hợp đồng Giao tiếp Liên Module Hiện hành (`TT-01` Đồng bộ Thực tập IOC)
+
+- **`internship` -> `identity`**: Gọi `IdentityPublicService#existsById(Long userId)` và `IdentityPublicService#findLmsUserIdByUserId(Long userId)` (`Optional<String>`). Cột `internships.user_id` là `BIGINT` vô hướng, không tạo khóa ngoại vật lý tới `users`.
+- **`internship` -> `candidate`**: Gọi `CandidatePublicService#isProfilePublic(Long candidateUserId)` và `CandidatePublicService#recordPmInternshipResults(Long candidateUserId, List<PmInternshipResultCommand> results)` qua bản ghi bất biến `PmInternshipResultCommand(String batchId, String topicName, BigDecimal finalScore)`.
+- **Quyền sở hữu độc quyền dữ liệu kỹ năng của `candidate`**: Module `candidate` toàn quyền quản lý `external_records`, `skill_mappings`, `skill_evidences` và `skill_scores`, thực hiện upsert bất biến theo khóa `(candidateUserId, ExternalSource.PM, batchId)` (`finalScore * 10`, làm tròn `RoundingMode.HALF_UP` 2 chữ số, kẹp trong khoảng `[0.00, 100.00]`, bỏ qua khi `finalScore` null hoặc `topicName` rỗng) rồi kích hoạt `SkillRecomputeService#recomputeSkills`.
+- **Tách HTTP Fast-Fail khỏi `@Transactional`**: `InternshipSyncServiceImpl` gọi `ExternalApiClient#getStudentInternshipsFastFail` (`<= 2.5 giây`, `0` retry) bên ngoài giao dịch DB, sau đó ủy quyền ghi DB ngắn qua bean riêng có proxy (`InternshipPersistenceService`) với `@Transactional(rollbackFor = Exception.class)`.

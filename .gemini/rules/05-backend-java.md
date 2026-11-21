@@ -22,6 +22,7 @@ Organize backend code under the root package `com.rikkei.jobs.*` divided into ni
   - Zero Cross-Module SQL Joins: Never perform SQL `JOIN` queries across tables belonging to different modules.
   - Service Interface Contracts: Inter-module synchronous communication must pass exclusively through public Java Service Interfaces returning immutable DTO records.
   - Asynchronous Decoupling: Inter-module event communication must use Spring `ApplicationEventPublisher` and `@EventListener` with immutable event records.
+  - User Principal Contract: The authenticated security principal is defined at `com.rikkei.jobs.identity.UserPrincipal` implementing `UserDetails`.
 
 ## 3. Strict DTO and Entity Separation
 
@@ -69,6 +70,8 @@ Observe backend development constraints for sprint `T022DB0`:
 - No Unauthorized Dependencies: Do not add third-party dependencies or plugins to `backend/pom.xml` without architectural review.
 - Hermetic Integration Tests: Use Testcontainers 2.0.5 (`testcontainers-junit-jupiter`, `testcontainers-postgresql`) pointing to `postgres:18.6-alpine`. Never bind tests to fixed host ports.
 - Ensure Spring JPA `open-in-view` remains `false` in `backend/src/main/resources/application.yml` to prevent connection leaks.
+- Test Baseline Discipline: Maintain the established baseline of 701 automated tests across 64 test classes (including unit and Testcontainers integration tests).
+- Prohibit HTTP Basic Authentication: HTTP Basic authentication is strictly forbidden. The platform relies exclusively on stateless JWT tokens and single-use SSO tickets.
 
 ## 8. Verification Commands
 

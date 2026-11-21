@@ -6,6 +6,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rikkei.jobs.common.client.ExternalApiClient;
@@ -22,6 +26,7 @@ import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Proxy;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -29,7 +34,13 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.Duration;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -38,6 +49,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -473,6 +485,148 @@ public class ExternalApiClientRobustnessTest {
                                 }
                                 return null;
                             });
+        }
+    }
+
+    // =========================================================================
+    // 5. postFormUrlEncoded Resilience, Header Isolation & Secret Log Hygiene
+    // =========================================================================
+    @Nested
+    @DisplayName("5. ExternalApiClient.postFormUrlEncoded Contract & Security Tests")
+    class PostFormUrlEncodedTests {
+
+        @Test
+        @DisplayName(
+                "Sends sorted form-urlencoded body without X-Service-Key, retries IOException once, never retries non-2xx, and logs zero secrets/bodies/URLs")
+        void testPostFormUrlEncodedBehaviorAndLogHygiene() throws Exception {
+            HttpServer formServer =
+                    HttpServer.create(
+                            new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
+            int port = formServer.getAddress().getPort();
+            CountDownLatch holdLatch = new CountDownLatch(1);
+            Logger clientLogger = (Logger) LoggerFactory.getLogger(ExternalApiClient.class);
+            Level prevLevel = clientLogger.getLevel();
+            clientLogger.setLevel(Level.DEBUG);
+            ListAppender<ILoggingEvent> appender = new ListAppender<>();
+            appender.start();
+            clientLogger.addAppender(appender);
+
+            try {
+                AtomicInteger okAttempts = new AtomicInteger(0);
+                AtomicReference<String> seenServiceKey = new AtomicReference<>("unset");
+                AtomicReference<String> seenContentType = new AtomicReference<>();
+                AtomicReference<String> seenRawBody = new AtomicReference<>();
+
+                formServer.createContext(
+                        "/retry-ok",
+                        exchange -> {
+                            int attempt = okAttempts.incrementAndGet();
+                            seenServiceKey.set(
+                                    exchange.getRequestHeaders().getFirst("X-Service-Key"));
+                            seenContentType.set(
+                                    exchange.getRequestHeaders().getFirst("Content-Type"));
+                            seenRawBody.set(
+                                    new String(
+                                            exchange.getRequestBody().readAllBytes(),
+                                            StandardCharsets.UTF_8));
+                            if (attempt == 1) {
+                                exchange.close();
+                                return;
+                            }
+                            byte[] okBytes = "{\"ok\":true}".getBytes(StandardCharsets.UTF_8);
+                            exchange.getResponseHeaders()
+                                    .set("Content-Type", "application/json; charset=UTF-8");
+                            exchange.sendResponseHeaders(200, okBytes.length);
+                            try (OutputStream os = exchange.getResponseBody()) {
+                                os.write(okBytes);
+                            }
+                        });
+
+                AtomicInteger errorAttempts = new AtomicInteger(0);
+                formServer.createContext(
+                        "/err",
+                        exchange -> {
+                            errorAttempts.incrementAndGet();
+                            exchange.getRequestBody().readAllBytes();
+                            byte[] errBytes =
+                                    "{\"secret\":\"upstream-leak-999\"}"
+                                            .getBytes(StandardCharsets.UTF_8);
+                            exchange.sendResponseHeaders(401, errBytes.length);
+                            try (OutputStream os = exchange.getResponseBody()) {
+                                os.write(errBytes);
+                            }
+                        });
+
+                formServer.createContext(
+                        "/hang",
+                        exchange -> {
+                            exchange.getRequestBody().readAllBytes();
+                            try {
+                                holdLatch.await(5, TimeUnit.SECONDS);
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                            }
+                        });
+
+                formServer.start();
+
+                ExternalApiProperties props = new ExternalApiProperties();
+                props.setServiceKey("internal-service-key-must-never-be-sent");
+                props.setTimeoutSeconds(5);
+                ExternalApiClient client = new ExternalApiClient(props, OBJECT_MAPPER);
+
+                Map<String, String> params = new LinkedHashMap<>();
+                params.put("z_param", "val&1=2");
+                params.put("a_secret", "super-secret-form-value");
+
+                String response =
+                        client.postFormUrlEncoded(
+                                "http://127.0.0.1:" + port + "/retry-ok?token=sensitiveQueryVal",
+                                params,
+                                Duration.ofSeconds(3));
+                assertEquals("{\"ok\":true}", response);
+                assertEquals(2, okAttempts.get());
+                assertEquals(null, seenServiceKey.get());
+                assertTrue(seenContentType.get().startsWith("application/x-www-form-urlencoded"));
+                assertEquals(
+                        "a_secret=super-secret-form-value&z_param=val%261%3D2", seenRawBody.get());
+
+                ExternalUnavailableException errEx =
+                        assertThrows(
+                                ExternalUnavailableException.class,
+                                () ->
+                                        client.postFormUrlEncoded(
+                                                "http://127.0.0.1:"
+                                                        + port
+                                                        + "/err?token=sensitiveQueryVal",
+                                                params,
+                                                Duration.ofSeconds(2)));
+                assertEquals(1, errorAttempts.get());
+                assertFalse(errEx.getMessage().contains("upstream-leak-999"));
+                assertFalse(errEx.getMessage().contains("sensitiveQueryVal"));
+
+                assertThrows(
+                        ExternalUnavailableException.class,
+                        () ->
+                                client.postFormUrlEncoded(
+                                        "http://127.0.0.1:" + port + "/hang",
+                                        params,
+                                        Duration.ofMillis(250)));
+
+                for (ILoggingEvent event : appender.list) {
+                    String msg = event.getFormattedMessage();
+                    assertFalse(msg.contains("super-secret-form-value"));
+                    assertFalse(msg.contains("upstream-leak-999"));
+                    assertFalse(msg.contains("sensitiveQueryVal"));
+                    assertFalse(msg.contains("127.0.0.1:" + port));
+                }
+            } finally {
+                holdLatch.countDown();
+                clientLogger.detachAppender(appender);
+                appender.stop();
+                clientLogger.setLevel(prevLevel);
+                formServer.stop(0);
+            }
         }
     }
 }

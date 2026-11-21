@@ -17,8 +17,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
- * Verifies that the default profile (no active profiles specified) executes ONLY the V1 schema
- * migration and does NOT seed any sample users.
+ * Verifies that the default profile (no active profiles specified) executes ONLY prod schema
+ * migrations (V1, V3, V5, V7, V9, V11, V13 and V15) and does NOT seed any sample users or dev data
+ * (neither V2, V4, V6, V8, V10, V12 nor V14).
  */
 @SpringBootTest
 @Testcontainers
@@ -32,6 +33,7 @@ public class DefaultProfileIntegrationTest {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
+        registry.add("jwt.secret", () -> "default-profile-test-secret-min-32-chars-long!");
     }
 
     @Autowired private UserRepository userRepository;
@@ -49,16 +51,18 @@ public class DefaultProfileIntegrationTest {
     }
 
     @Test
-    @DisplayName("Default profile must apply only V1 migration, not V2 dev seed")
+    @DisplayName(
+            "Default profile must apply only V1, V3, V5, V7, V9, V11, V13 and V15 schema migrations, not dev seeds")
     void testDefaultProfileAppliesOnlyV1Schema() {
         Integer migrationCount =
                 jdbcTemplate.queryForObject(
                         "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                         Integer.class);
         assertEquals(
-                1,
+                8,
                 migrationCount,
-                "Default profile must only apply V1 migration (schema), migration count must be 1");
+                "Default profile must only apply schema migrations V1, V3, V5, V7, V9, V11, V13 and"
+                        + " V15, count must be 8");
 
         Boolean hasV2 =
                 jdbcTemplate.queryForObject(
@@ -67,6 +71,94 @@ public class DefaultProfileIntegrationTest {
         assertFalse(
                 Boolean.TRUE.equals(hasV2),
                 "V2 seed migration must NOT be applied in default profile");
+
+        Boolean hasV3 =
+                jdbcTemplate.queryForObject(
+                        "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '3')",
+                        Boolean.class);
+        assertTrue(
+                Boolean.TRUE.equals(hasV3),
+                "V3 schema migration must be applied in default profile");
+
+        Boolean hasV4 =
+                jdbcTemplate.queryForObject(
+                        "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '4')",
+                        Boolean.class);
+        assertFalse(
+                Boolean.TRUE.equals(hasV4),
+                "V4 dev seed migration must NOT be applied in default profile");
+
+        Boolean hasV7 =
+                jdbcTemplate.queryForObject(
+                        "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '7')",
+                        Boolean.class);
+        assertTrue(
+                Boolean.TRUE.equals(hasV7),
+                "V7 schema migration must be applied in default profile");
+
+        Boolean hasV8 =
+                jdbcTemplate.queryForObject(
+                        "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '8')",
+                        Boolean.class);
+        assertFalse(
+                Boolean.TRUE.equals(hasV8),
+                "V8 dev seed migration must NOT be applied in default profile");
+
+        Boolean hasV9 =
+                jdbcTemplate.queryForObject(
+                        "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '9')",
+                        Boolean.class);
+        assertTrue(
+                Boolean.TRUE.equals(hasV9),
+                "V9 schema migration must be applied in default profile");
+
+        Boolean hasV10 =
+                jdbcTemplate.queryForObject(
+                        "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '10')",
+                        Boolean.class);
+        assertFalse(
+                Boolean.TRUE.equals(hasV10),
+                "V10 dev seed migration must NOT be applied in default profile");
+
+        Boolean hasV11 =
+                jdbcTemplate.queryForObject(
+                        "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '11')",
+                        Boolean.class);
+        assertTrue(
+                Boolean.TRUE.equals(hasV11),
+                "V11 schema migration must be applied in default profile");
+
+        Boolean hasV12 =
+                jdbcTemplate.queryForObject(
+                        "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '12')",
+                        Boolean.class);
+        assertFalse(
+                Boolean.TRUE.equals(hasV12),
+                "V12 dev seed migration must NOT be applied in default profile");
+
+        Boolean hasV13 =
+                jdbcTemplate.queryForObject(
+                        "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '13')",
+                        Boolean.class);
+        assertTrue(
+                Boolean.TRUE.equals(hasV13),
+                "V13 schema migration must be applied in default profile");
+
+        Boolean hasV14 =
+                jdbcTemplate.queryForObject(
+                        "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '14')",
+                        Boolean.class);
+        assertFalse(
+                Boolean.TRUE.equals(hasV14),
+                "V14 dev seed migration must NOT be applied in default profile");
+
+        Boolean hasV15 =
+                jdbcTemplate.queryForObject(
+                        "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '15')",
+                        Boolean.class);
+        assertTrue(
+                Boolean.TRUE.equals(hasV15),
+                "V15 schema migration must be applied in default profile");
     }
 
     @Test

@@ -9,7 +9,7 @@ Compliant with WCAG 2.2 Level AA Standards.
 - [ ] Regular body text (< 18pt or < 14pt bold) achieves minimum **4.5:1** contrast ratio against its background.
 - [ ] Large headings (>= 18pt or >= 14pt bold) achieve minimum **3.0:1** contrast ratio.
 - [ ] Essential UI controls (form borders, active tabs, toggle switches) achieve minimum **3.0:1** contrast ratio.
-- [ ] Contrast compliance is independently verified in both Light Mode (`#F7F9FC` canvas) and Dark Mode (`#0A111E` canvas).
+- [ ] Contrast compliance is independently verified in both Light Mode (`#EEF2F8` canvas) and Dark Mode (`#0B1019` canvas).
 
 ## 2. Touch Target Size (WCAG 2.2 SC 2.5.8)
 
@@ -50,5 +50,5 @@ Compliant with WCAG 2.2 Level AA Standards.
 ## 8. Motion & Flashing Safety (WCAG 2.2.2 & 2.3.1)
 
 - [ ] All non-essential animations respect `@media (prefers-reduced-motion: reduce)` with a 100ms cross-fade and 0.001ms duration.
-- [ ] Animations lasting longer than 5 seconds provide an accessible Pause or Stop control.
+- [ ] Animations lasting longer than 5 seconds provide an accessible Pause or Stop control (or an Owner-approved bounded auto-stop + interaction pause/hold/resume mechanism, as on `/login` hero `CompetencyRadarVisual`).
 - [ ] Zero animations flash more than 3 times per second (> 3Hz).

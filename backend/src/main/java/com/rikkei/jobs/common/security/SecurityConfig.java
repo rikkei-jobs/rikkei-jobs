@@ -1,12 +1,13 @@
 package com.rikkei.jobs.common.security;
 
+import com.rikkei.jobs.identity.security.JwtAuthFilter;
+import com.rikkei.jobs.identity.security.MustChangePasswordFilter;
 import java.util.Arrays;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -14,17 +15,17 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 /**
  * Spring Security Configuration. Restricts access to all business endpoints, requiring
- * authentication. Permits public access only to /api/v1/health, Actuator health, and OpenAPI
- * documentation. Test endpoints (/api/v1/test/**) are only permitted when the dev profile is
- * active.
+ * authentication. Permits public access only to auth endpoints (login, sso, forgot/reset password),
+ * /api/v1/health, Actuator health, error, and OpenAPI documentation. Test endpoints
+ * (/api/v1/test/**) are only permitted when the dev profile is active.
  */
 @Configuration
 @EnableWebSecurity
@@ -33,24 +34,47 @@ public class SecurityConfig {
 
     private final CustomAuthenticationEntryPoint authenticationEntryPoint;
     private final CustomAccessDeniedHandler accessDeniedHandler;
+    private final JwtAuthFilter jwtAuthFilter;
+    private final MustChangePasswordFilter mustChangePasswordFilter;
+    private final RoutePolicyRegistry routePolicyRegistry;
     private final Environment environment;
     private final String corsAllowedOrigins;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public SecurityConfig(
+            CustomAuthenticationEntryPoint authenticationEntryPoint,
+            CustomAccessDeniedHandler accessDeniedHandler,
+            JwtAuthFilter jwtAuthFilter,
+            MustChangePasswordFilter mustChangePasswordFilter,
+            RoutePolicyRegistry routePolicyRegistry,
+            Environment environment,
+            @Value("${CORS_ALLOWED_ORIGINS:}") String corsAllowedOrigins) {
+        this.authenticationEntryPoint = authenticationEntryPoint;
+        this.accessDeniedHandler = accessDeniedHandler;
+        this.jwtAuthFilter = jwtAuthFilter;
+        this.mustChangePasswordFilter = mustChangePasswordFilter;
+        this.routePolicyRegistry = routePolicyRegistry;
+        this.environment = environment;
+        this.corsAllowedOrigins = corsAllowedOrigins;
+    }
 
     public SecurityConfig(
             CustomAuthenticationEntryPoint authenticationEntryPoint,
             CustomAccessDeniedHandler accessDeniedHandler,
             Environment environment,
-            @Value("${CORS_ALLOWED_ORIGINS:}") String corsAllowedOrigins) {
-        this.authenticationEntryPoint = authenticationEntryPoint;
-        this.accessDeniedHandler = accessDeniedHandler;
-        this.environment = environment;
-        this.corsAllowedOrigins = corsAllowedOrigins;
+            String corsAllowedOrigins) {
+        this(
+                authenticationEntryPoint,
+                accessDeniedHandler,
+                null,
+                null,
+                new RoutePolicyRegistry(),
+                environment,
+                corsAllowedOrigins);
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(
-            HttpSecurity http, JwtAuthenticationConverter jwtAuthenticationConverter)
-            throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(
@@ -62,30 +86,33 @@ public class SecurityConfig {
                                         .accessDeniedHandler(accessDeniedHandler))
                 .authorizeHttpRequests(
                         auth -> {
-                            auth.requestMatchers(
-                                            HttpMethod.POST,
-                                            "/api/v1/auth/hr/sessions",
-                                            "/api/v1/auth/candidate/sessions")
-                                    .permitAll();
-                            auth.requestMatchers(
-                                            "/api/v1/health",
-                                            "/actuator/health",
-                                            "/swagger-ui.html",
-                                            "/swagger-ui/**",
-                                            "/api-docs/**",
-                                            "/v3/api-docs/**")
-                                    .permitAll();
-                            if (environment.matchesProfiles("dev")) {
-                                auth.requestMatchers("/api/v1/test/**").permitAll();
+                            boolean isDev = environment.matchesProfiles("dev");
+                            for (RoutePolicy policy : routePolicyRegistry.policies()) {
+                                if (policy.devOnly() && !isDev) {
+                                    continue;
+                                }
+                                var matcher =
+                                        (policy.method() != null && policy.methodScoped())
+                                                ? auth.requestMatchers(
+                                                        policy.method(), policy.pattern())
+                                                : auth.requestMatchers(policy.pattern());
+                                switch (policy.accessType()) {
+                                    case PUBLIC -> matcher.permitAll();
+                                    case AUTHENTICATED_ANY -> matcher.authenticated();
+                                    case ROLES ->
+                                            matcher.hasAnyRole(
+                                                    policy.allowedRoles().toArray(String[]::new));
+                                }
                             }
-                            auth.anyRequest().authenticated();
-                        })
-                .oauth2ResourceServer(
-                        oauth2 ->
-                                oauth2.jwt(
-                                        jwt ->
-                                                jwt.jwtAuthenticationConverter(
-                                                        jwtAuthenticationConverter)));
+                            auth.anyRequest().denyAll();
+                        });
+
+        if (jwtAuthFilter != null) {
+            http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+            if (mustChangePasswordFilter != null) {
+                http.addFilterAfter(mustChangePasswordFilter, JwtAuthFilter.class);
+            }
+        }
 
         return http.build();
     }

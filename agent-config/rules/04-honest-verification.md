@@ -21,8 +21,8 @@ Support every assertion of system correctness with verifiable raw terminal evide
 
 The repository enforces a synchronized quality gate matrix across local runners and CI pipelines:
 
-- Local Runners: `check.sh` (Linux/macOS) and `check.ps1` (Windows PowerShell) execute exactly 28 gate definitions (25 active runtime gates and 3 fallback guards).
-- CI Pipeline: `.github/workflows/ci.yml` maps these definitions to 21 automated validation steps across 6 CI jobs.
+- Local Runners: `check.sh` (Linux/macOS) and `check.ps1` (Windows PowerShell) execute exactly 29 gate definitions (26 active runtime gates and 3 fallback guards).
+- CI Pipeline: `.github/workflows/ci.yml` maps these definitions to 23 automated validation steps across 6 CI jobs.
 - Mechanical Verification: `scripts/check-gate-sync.mjs` verifies that `check.sh`, `check.ps1`, and `ci.yml` remain 100% synchronized with zero gate drift.
 - Execute the full local verification script prior to completing any work package:
   - Linux / macOS / Git Bash: `./check.sh`

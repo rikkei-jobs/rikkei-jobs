@@ -4,11 +4,23 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  overflow-x: clip;
+}
+
 body {
   margin: 0;
   padding: 0;
-  background-color: #f8fafc;
-  color: #0f172a;
+  min-height: 100vh;
+  background-color: var(--rj-color-surface-page);
+  color: var(--rj-color-text-primary);
+  font-family: var(--rj-font-body);
+  line-height: var(--rj-line-height-base);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+button {
+  font: inherit;
 }

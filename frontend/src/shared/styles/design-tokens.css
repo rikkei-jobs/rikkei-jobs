@@ -1,0 +1,896 @@
+/**
+ * Design Tokens - Rikkei Jobs Design System (v2.0.0-PROD)
+ * Architecture: W3C DTCG 3-Tier System (Primitive -> Semantic -> Density/Component)
+ * Brand Palette: Technical Deep Cobalt & Iron Obsidian (Core #0D55B8, Electric #508CEE)
+ * Semantic Collision: Cold Crimson Brick (#9B1C2A) + Mandatory Non-Color Cues
+ * Typography: Self-hosted OFL WOFF2 (Be Vietnam Pro, Plus Jakarta Sans, JetBrains Mono)
+ * Zero Tailwind runtime, 100% Native CSS Variables.
+ */
+
+/* ==========================================================================
+   SELF-HOSTED OFL TYPOGRAPHY (@font-face)
+   Zero runtime CDN dependency, full Vietnamese precomposed & combining diacritics
+   ========================================================================== */
+
+/* Be Vietnam Pro (Body, UI, Editorial Text) */
+@font-face {
+  font-family: 'Be Vietnam Pro';
+  font-style: normal;
+  font-weight: 400;
+  font-display: optional;
+  src: url('/fonts/BeVietnamPro-Regular.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Be Vietnam Pro';
+  font-style: normal;
+  font-weight: 500;
+  font-display: optional;
+  src: url('/fonts/BeVietnamPro-Medium.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Be Vietnam Pro';
+  font-style: normal;
+  font-weight: 600;
+  font-display: optional;
+  src: url('/fonts/BeVietnamPro-SemiBold.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Be Vietnam Pro';
+  font-style: normal;
+  font-weight: 700;
+  font-display: optional;
+  src: url('/fonts/BeVietnamPro-Bold.woff2') format('woff2');
+}
+
+/* Plus Jakarta Sans (Display, Headings, Hero Typography) */
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: optional;
+  src: url('/fonts/PlusJakartaSans-SemiBold.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: optional;
+  src: url('/fonts/PlusJakartaSans-Bold.woff2') format('woff2');
+}
+
+/* JetBrains Mono (Code, Data Tables, Tabular Figures) */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: optional;
+  src: url('/fonts/JetBrainsMono-Regular.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: optional;
+  src: url('/fonts/JetBrainsMono-SemiBold.woff2') format('woff2');
+}
+
+:root {
+  color-scheme: light;
+
+  /* ==========================================================================
+     TIER 1: PRIMITIVE TOKENS
+     ========================================================================== */
+
+  /* Technical Iron Charcoal Neutrals */
+  --rj-primitive-neutral-50:  #F8FAFD; /* Field Inset Light Mode (Sunken Well) */
+  --rj-primitive-neutral-100: #EEF2F8; /* Canvas Light Mode */
+  --rj-primitive-neutral-150: #E1E8F2; /* Hero / Story Panel Light Mode */
+  --rj-primitive-neutral-200: #D8E2EE; /* Subtle Divider & Track Light */
+  --rj-primitive-neutral-300: #BACAD9; /* Card Border & Layout Divider Light */
+  --rj-primitive-neutral-400: #879BB0; /* Radar Grid & Subtle Boundary */
+  --rj-primitive-neutral-500: #6F8094; /* Interactive Form Border Light (CR >= 3.5:1) */
+  --rj-primitive-neutral-600: #475B70; /* Muted Text Light / Interactive Border Dark */
+  --rj-primitive-neutral-700: #25394E; /* Secondary Text Light */
+  --rj-primitive-neutral-800: #162030; /* Card Surface Dark Mode */
+  --rj-primitive-neutral-900: #0B1A2C; /* Primary Text Light Deep Navy (CR 17.5:1) */
+  --rj-primitive-neutral-950: #0B1019; /* Canvas Base Dark Deep Obsidian */
+
+  /* Brand Primary: Confident Royal Cobalt */
+  --rj-primitive-brand-50:             rgba(13, 85, 184, 0.08); /* Soft Brand Wash */
+  --rj-primitive-brand-100:            #D0E1F9;
+  --rj-primitive-brand-200:            #A3C5F3;
+  --rj-primitive-brand-500:            #1B6BD8;
+  --rj-primitive-brand-600:            #0D55B8; /* Confident Royal Cobalt - CR 6.98:1 on #FFFFFF */
+  --rj-primitive-brand-700:            #0A4596; /* Deep Cobalt Hover - CR 9.35:1 */
+  --rj-primitive-brand-800:            #083674; /* Deep Cobalt Active - CR 12.10:1 */
+  --rj-primitive-brand-electric:       #508CEE; /* Luminous Cobalt Dark Mode - CR 4.93:1 on Card */
+  --rj-primitive-brand-electric-hover: #6EA2F4; /* Hover Dark Mode - CR 7.15:1 */
+
+  /* Explicit Brand Interface Contract Aliases */
+  --rj-primitive-white:      #FFFFFF;
+  --rj-brand-core:           #0D55B8;
+  --rj-brand-deep:           #0A4596;
+  --rj-brand-electric:       #508CEE;
+  --rj-brand-electric-hover: #6EA2F4;
+  --rj-color-brand-electric: var(--rj-brand-electric);
+  --rj-brand-mark:           #C8161D;
+  --rj-brand-mark-red:       #C8161D;
+  --rj-brand-mark-contrast:  #FFFFFF;
+  --rj-brand-mark-bars:      #FFFFFF;
+
+  /* Accent (Cyber Persimmon / Warm Terracotta) */
+  --rj-primitive-accent-50:  #FEF2ED;
+  --rj-primitive-accent-100: #FDE2D6;
+  --rj-primitive-accent-500: #F08C65; /* Dark Mode Accent */
+  --rj-primitive-accent-600: #D9480F; /* Light Mode Accent */
+  --rj-primitive-accent-700: #BF3A0A;
+
+  /* Status Indicators: Distinct Non-Brand Functional Semantics */
+  /* Error / Danger: Cold Crimson Brick (Tách biệt hoàn toàn khỏi Brand Blue) */
+  --rj-primitive-danger-50:    #FDF2F4;
+  --rj-primitive-danger-100:   #FCE4E7;
+  --rj-primitive-danger-200:   #F5B7B1;
+  --rj-primitive-danger-600:   #943126;
+  --rj-primitive-danger-700:   #9B1C2A; /* Cold Crimson Core Error - CR 8.10:1 on #FFFFFF */
+  --rj-primitive-danger-800:   #781620;
+  --rj-primitive-danger-light: #F1707A; /* Dark Mode Error Text - CR 6.32:1 on #2D0A0E */
+  --rj-primitive-danger-950:   #2D0A0E;
+
+  --rj-primitive-danger-bg: #FDF2F4;
+  --rj-primitive-danger-text: #9B1C2A;
+  --rj-primitive-danger-border: #F5B7B1;
+  --rj-primitive-danger-dark-text: #F1707A;
+
+  --rj-error-core: #9B1C2A;
+
+  /* Success Indicators */
+  --rj-primitive-success-50:   #E8F8F5;
+  --rj-primitive-success-200:  #A2D9CE;
+  --rj-primitive-success-600:  #196F3D;
+  --rj-primitive-success-700:  #0E6251; /* CR 7.28:1 on #FFFFFF */
+  --rj-primitive-success-light:#48C78E; /* Dark Mode Success Text */
+  --rj-primitive-success-950:  #06281E;
+
+  --rj-primitive-success-bg: #E8F8F5;
+  --rj-primitive-success-text: #0E6251;
+  --rj-primitive-success-border: #A2D9CE;
+  --rj-primitive-success-dark-text: #48C78E;
+
+  /* Warning Indicators */
+  --rj-primitive-warning-50:   #FEF9E7;
+  --rj-primitive-warning-200:  #F9E79F;
+  --rj-primitive-warning-600:  #935116;
+  --rj-primitive-warning-700:  #7A4305; /* CR 7.98:1 on #FFFFFF */
+  --rj-primitive-warning-light:#F5B041; /* Dark Mode Warning Text */
+  --rj-primitive-warning-950:  #2C1600;
+
+  --rj-primitive-warning-bg: #FEF9E7;
+  --rj-primitive-warning-text: #7A4305;
+  --rj-primitive-warning-border: #F9E79F;
+  --rj-primitive-warning-dark-text: #F5B041;
+
+  /* Info Indicators */
+  --rj-primitive-info-50:      #EBF5FB;
+  --rj-primitive-info-200:     #A9CCE3;
+  --rj-primitive-info-600:     #1F618D;
+  --rj-primitive-info-700:     #134B5E; /* CR 9.56:1 on #FFFFFF */
+  --rj-primitive-info-light:   #5DADE2; /* Dark Mode Info Text */
+  --rj-primitive-info-950:     #071E28;
+
+  --rj-primitive-info-bg: #EBF5FB;
+  --rj-primitive-info-text: #134B5E;
+  --rj-primitive-info-border: #A9CCE3;
+  --rj-primitive-info-dark-text: #5DADE2;
+
+  /* Spacing Scale (4px/8px base) */
+  --rj-primitive-space-0: 0px;
+  --rj-primitive-space-1: 4px;
+  --rj-primitive-space-2: 8px;
+  --rj-primitive-space-3: 12px;
+  --rj-primitive-space-4: 16px;
+  --rj-primitive-space-5: 20px;
+  --rj-primitive-space-6: 24px;
+  --rj-primitive-space-8: 32px;
+  --rj-primitive-space-10: 40px;
+  --rj-primitive-space-12: 48px;
+  --rj-primitive-space-16: 64px;
+
+  /* Radii */
+  --rj-radius-sm: 4px;
+  --rj-radius-md: 6px;
+  --rj-radius-lg: 8px;
+  --rj-radius-xl: 12px;
+  --rj-radius-2xl: 16px;
+  --rj-radius-full: 9999px;
+
+  /* Elevation Shadows (Aligned to Cool Iron Obsidian #0B1A2C) */
+  --rj-shadow-0: none;
+  --rj-shadow-1: 0 1px 3px rgba(11, 26, 44, 0.08), 0 1px 2px rgba(11, 26, 44, 0.04);
+  --rj-shadow-2: 0 4px 8px -2px rgba(11, 26, 44, 0.09), 0 2px 4px -2px rgba(11, 26, 44, 0.05);
+  --rj-shadow-3: 0 12px 20px -4px rgba(11, 26, 44, 0.11), 0 4px 8px -2px rgba(11, 26, 44, 0.05);
+  --rj-shadow-4: 0 20px 28px -6px rgba(11, 26, 44, 0.14), 0 8px 12px -4px rgba(11, 26, 44, 0.06);
+
+  /* Z-Index Hierarchy */
+  --rj-primitive-z-hide:     -1;
+  --rj-primitive-z-base:     0;
+  --rj-primitive-z-dropdown: 1000;
+  --rj-primitive-z-sticky:   1100;
+  --rj-primitive-z-fixed:    1200;
+  --rj-primitive-z-backdrop: 1300;
+  --rj-primitive-z-modal:    1400;
+  --rj-primitive-z-popover:  1500;
+  --rj-primitive-z-toast:    1600;
+
+  /* Typography Font Stacks */
+  --rj-font-body: 'Be Vietnam Pro', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --rj-font-display: 'Plus Jakarta Sans', var(--rj-font-body);
+  --rj-font-mono: 'JetBrains Mono', 'Courier New', monospace;
+
+  /* Motion & Transition Durations (Rule 09 Micro + Owner-Approved Showcase Tier) */
+  --rj-duration-instant:      0ms;
+  --rj-duration-micro:        100ms;   /* Active press, micro-state feedback */
+  --rj-duration-vt-out:       140ms;   /* View Transition old-root exit */
+  --rj-duration-fast:         150ms;   /* Hover, switch thumb, focus ring, dense admin */
+  --rj-duration-normal:       180ms;   /* Tooltips (<= 200ms), popovers, Select panel */
+  --rj-duration-base:         250ms;   /* Drawer, sidebar collapse rail, logo transitions */
+  --rj-duration-moderate:     280ms;   /* Modals, slide drawers, accordions (<= 300ms) */
+  --rj-duration-slow:         360ms;   /* Dense page entrance (<= 400ms), hero elements */
+  --rj-duration-vt-route:     480ms;   /* Route View Transitions & shared BrandMark (<= 600ms) */
+  --rj-duration-theme-reveal: 500ms;   /* Circular clip-path theme switch reveal (<= 600ms) */
+  --rj-duration-deliberate:   550ms;   /* SVG stroke draw, Skill Radar morph */
+  --rj-duration-showcase:     720ms;   /* Page & auth hero showcase choreography (<= 800ms) */
+  --rj-duration-ambient:      4500ms;  /* Decorative auth hero 1-shot drift (<= 5000ms) */
+  --rj-radar-cycle:           4000ms;  /* Login hero radar auto-advance interval (4s per group) */
+
+  /* Cubic-Bezier Curves (Universal Baseline + Spatial/Effects Split) */
+  --rj-ease-entrance: cubic-bezier(0.16, 1, 0.3, 1); /* Decelerate enter */
+  --rj-ease-exit:     cubic-bezier(0.7, 0, 0.84, 0);  /* Fast accelerate exit */
+  --rj-ease-hover:    cubic-bezier(0.2, 0, 0, 1);     /* Crisp standard pointer response */
+  --rj-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);   /* Balanced neutral */
+
+  /* Spring Curve Fallbacks (Browsers without CSS linear()) */
+  --rj-ease-spring-snappy: cubic-bezier(0.16, 1, 0.3, 1);
+  --rj-ease-spring-stiff:  cubic-bezier(0.2, 0, 0, 1);
+  --rj-ease-spring-gentle: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Distance Scale (Restrained Spatial Offsets) */
+  --rj-motion-dist-2xs: 2px;  /* Button active press */
+  --rj-motion-dist-xs:  4px;  /* Tooltip / popover offset, subtle lift */
+  --rj-motion-dist-sm:  8px;  /* Dropdown / route enter Y-offset */
+  --rj-motion-dist-md:  16px; /* Toast / hero block offset */
+  --rj-motion-dist-lg:  24px; /* Drawer / modal slide offset */
+
+  /* Stagger Steps (Micro bounded <= 400ms; Showcase bounded <= 800ms) */
+  --rj-motion-stagger-fast:         20ms;  /* Dense lists (capped) */
+  --rj-motion-stagger-normal:       35ms;  /* Standard cards */
+  --rj-motion-stagger-slow:         45ms;  /* Hero editorial steps */
+  --rj-motion-stagger-cap:          220ms; /* Cap delay so 220ms + 180ms <= 400ms */
+  --rj-motion-stagger-showcase:     55ms;  /* Showcase item/section cascade */
+  --rj-motion-stagger-showcase-cap: 380ms; /* Cap delay so 380ms + 340ms <= 720ms <= 800ms */
+
+  /* Composite Transition Shortcuts (Spatial vs. Effects split) */
+  --rj-transition-hover:
+    transform var(--rj-duration-fast) var(--rj-ease-spring-snappy),
+    opacity var(--rj-duration-fast) var(--rj-ease-hover),
+    background-color var(--rj-duration-fast) var(--rj-ease-hover),
+    border-color var(--rj-duration-fast) var(--rj-ease-hover);
+  --rj-transition-entrance:
+    transform var(--rj-duration-normal) var(--rj-ease-spring-stiff),
+    opacity var(--rj-duration-normal) var(--rj-ease-entrance);
+  --rj-transition-exit:
+    transform var(--rj-duration-fast) var(--rj-ease-exit),
+    opacity var(--rj-duration-fast) var(--rj-ease-exit);
+  --rj-transition-dialog:
+    transform var(--rj-duration-moderate) var(--rj-ease-spring-gentle),
+    opacity var(--rj-duration-moderate) var(--rj-ease-entrance);
+
+  /* ==========================================================================
+     TIER 2: SEMANTIC TOKENS (LIGHT THEME DEFAULT)
+     ========================================================================== */
+  --rj-color-surface-page:     var(--rj-primitive-neutral-100);
+  --rj-color-canvas:           var(--rj-color-surface-page);
+  --rj-color-surface-panel:    var(--rj-primitive-neutral-150);
+  --rj-color-surface-card:     #FFFFFF;
+  --rj-color-surface-input:    var(--rj-primitive-neutral-50);
+  --rj-color-surface-elevated: #FFFFFF;
+  --rj-color-surface-subtle:   var(--rj-primitive-neutral-150);
+  --rj-color-surface-disabled: var(--rj-primitive-neutral-100);
+  --rj-color-surface-overlay:  rgba(12, 26, 48, 0.55);
+
+  --rj-color-text-primary:   var(--rj-primitive-neutral-900);
+  --rj-color-text-secondary: var(--rj-primitive-neutral-700);
+  --rj-color-text-muted:     var(--rj-primitive-neutral-600);
+  --rj-color-text-disabled:  var(--rj-primitive-neutral-500);
+  --rj-color-text-inverse:   #FFFFFF;
+
+  --rj-color-border-subtle:      var(--rj-primitive-neutral-300);
+  --rj-color-border-interactive: var(--rj-primitive-neutral-500);
+  --rj-color-border-hover:       var(--rj-primitive-neutral-700);
+  --rj-color-border-elevated:    var(--rj-color-border-interactive);
+
+  --rj-color-focus-ring: #0D55B8; /* Confident Royal Cobalt Focus Ring */
+  --rj-color-focus-halo: rgba(13, 85, 184, 0.18);
+  --rj-color-danger-halo: rgba(155, 28, 42, 0.14);
+
+  --rj-color-brand-primary:       var(--rj-primitive-brand-600);
+  --rj-color-brand-primary-hover: var(--rj-primitive-brand-700);
+  --rj-color-brand-surface:       var(--rj-primitive-brand-50);
+  --rj-color-story-glow:          rgba(13, 85, 184, 0.06);
+  --rj-story-panel-bg:            radial-gradient(circle at 15% 25%, var(--rj-color-story-glow) 0%, transparent 60%), linear-gradient(155deg, var(--rj-color-surface-panel) 0%, var(--rj-primitive-neutral-200) 100%);
+
+  --rj-color-accent: var(--rj-primitive-accent-600);
+  --rj-color-accent-hover: var(--rj-primitive-accent-700);
+
+  --rj-color-status-success-bg: var(--rj-primitive-success-bg);
+  --rj-color-status-success-text: var(--rj-primitive-success-text);
+  --rj-color-status-success-border: var(--rj-primitive-success-border);
+
+  --rj-color-status-warning-bg: var(--rj-primitive-warning-bg);
+  --rj-color-status-warning-text: var(--rj-primitive-warning-text);
+  --rj-color-status-warning-border: var(--rj-primitive-warning-border);
+
+  --rj-color-status-danger-bg: var(--rj-primitive-danger-bg);
+  --rj-color-status-danger-text: var(--rj-primitive-danger-text);
+  --rj-color-status-danger-border: var(--rj-primitive-danger-border);
+
+  --rj-color-status-info-bg: var(--rj-primitive-info-bg);
+  --rj-color-status-info-text: var(--rj-primitive-info-text);
+  --rj-color-status-info-border: var(--rj-primitive-info-border);
+
+  /* Brand Badge & Tint Tokens */
+  --rj-color-badge-brand-bg: #EBF2FC;
+  --rj-color-badge-brand-text: #0D55B8;
+  --rj-color-badge-brand-border: #A3C5F3;
+
+  /* Custom Select Panel & Option Tokens - Light Mode */
+  --rj-color-select-panel-bg:                   var(--rj-color-surface-elevated);
+  --rj-color-select-panel-border:               var(--rj-color-border-elevated);
+  --rj-color-select-option-text:                var(--rj-color-text-primary);
+  --rj-color-select-option-placeholder-text:    var(--rj-color-text-muted);
+  --rj-color-select-option-optgroup-text:       var(--rj-color-text-secondary);
+  --rj-color-select-option-hover-bg:            var(--rj-primitive-neutral-100);
+  --rj-color-select-option-active-bg:           var(--rj-primitive-neutral-150);
+  --rj-color-select-option-selected-bg:         var(--rj-color-badge-brand-bg);
+  --rj-color-select-option-selected-text:       var(--rj-color-badge-brand-text);
+  --rj-color-select-option-selected-hover-text: var(--rj-color-badge-brand-text);
+  --rj-color-select-option-disabled-text:       var(--rj-color-text-disabled);
+
+  /* App Shell & Left Sidebar Tokens - Light Mode */
+  --rj-color-sidebar-bg:                    var(--rj-color-surface-card);       /* #FFFFFF */
+  --rj-color-sidebar-border:                var(--rj-primitive-neutral-500);    /* #6F8094 - CR 4.05:1 on Card, 3.60:1 on Canvas */
+  --rj-color-sidebar-item-bg:               transparent;
+  --rj-color-sidebar-item-text:             var(--rj-color-text-secondary);     /* #25394E - CR 11.84:1 on Card */
+  --rj-color-sidebar-item-icon:             var(--rj-color-text-secondary);     /* #25394E - CR 11.84:1 on Card */
+  --rj-color-sidebar-item-hover-bg:         var(--rj-primitive-neutral-100);    /* #EEF2F8 */
+  --rj-color-sidebar-item-hover-text:       var(--rj-color-text-primary);       /* #0B1A2C - CR 15.60:1 on #EEF2F8 */
+  --rj-color-sidebar-item-active-bg:        var(--rj-color-badge-brand-bg);     /* #EBF2FC */
+  --rj-color-sidebar-item-active-text:      var(--rj-color-badge-brand-text);   /* #0D55B8 - CR 6.20:1 on #EBF2FC */
+  --rj-color-sidebar-item-active-indicator: var(--rj-color-brand-primary);      /* #0D55B8 - CR 6.20:1 on #EBF2FC */
+  --rj-color-sidebar-item-active-border:    var(--rj-color-brand-primary);      /* #0D55B8 - CR 6.98:1 on #FFFFFF */
+  --rj-color-sidebar-item-disabled-bg:      var(--rj-color-surface-disabled);   /* #EEF2F8 */
+  --rj-color-sidebar-item-disabled-text:    var(--rj-color-text-muted);         /* #475B70 - CR 6.23:1 on #EEF2F8 */
+  --rj-color-sidebar-item-disabled-border:  var(--rj-primitive-neutral-500);    /* #6F8094 - CR 4.05:1 on #FFFFFF */
+  --rj-color-sidebar-soon-bg:               var(--rj-color-surface-subtle);     /* #E1E8F2 */
+  --rj-color-sidebar-soon-text:             var(--rj-color-text-muted);         /* #475B70 - CR 5.68:1 on #E1E8F2 */
+  --rj-color-sidebar-soon-border:           var(--rj-primitive-neutral-500);    /* #6F8094 - CR 3.28:1 on #E1E8F2 */
+  --rj-color-sidebar-toggle-bg:             var(--rj-color-surface-card);       /* #FFFFFF */
+  --rj-color-sidebar-toggle-hover-bg:       var(--rj-primitive-neutral-100);    /* #EEF2F8 */
+  --rj-color-sidebar-toggle-text:           var(--rj-color-text-primary);       /* #0B1A2C - CR 17.52:1 on #FFFFFF */
+  --rj-color-sidebar-toggle-border:         var(--rj-primitive-neutral-500);    /* #6F8094 - CR 4.05:1 on #FFFFFF */
+  --rj-color-sidebar-tooltip-bg:            var(--rj-primitive-neutral-900);    /* #0B1A2C */
+  --rj-color-sidebar-tooltip-text:          var(--rj-primitive-white);          /* #FFFFFF - CR 17.52:1 on #0B1A2C */
+  --rj-color-sidebar-tooltip-border:        var(--rj-primitive-neutral-600);    /* #475B70 - CR 6.23:1 on Canvas */
+
+  /* Radar Visual Invariant Tokens */
+  --rj-color-radar-grid: var(--rj-primitive-neutral-400);
+
+  /* Role Badges Tokens - Light Mode */
+  --rj-color-role-candidate-bg: rgba(3, 105, 161, 0.12);
+  --rj-color-role-candidate-text: #0369a1;
+  --rj-color-role-candidate-border: rgba(3, 105, 161, 0.22);
+
+  --rj-color-role-hr-bg: rgba(4, 120, 87, 0.12);
+  --rj-color-role-hr-text: #047857;
+  --rj-color-role-hr-border: rgba(4, 120, 87, 0.22);
+
+  --rj-color-role-mentor-bg: rgba(126, 34, 206, 0.12);
+  --rj-color-role-mentor-text: #7e22ce;
+  --rj-color-role-mentor-border: rgba(126, 34, 206, 0.22);
+
+  --rj-color-role-staff-bg: rgba(180, 83, 9, 0.12);
+  --rj-color-role-staff-text: #92400e;
+  --rj-color-role-staff-border: rgba(180, 83, 9, 0.22);
+
+  --rj-color-role-admin-bg: rgba(190, 18, 60, 0.12);
+  --rj-color-role-admin-text: #be123c;
+  --rj-color-role-admin-border: rgba(190, 18, 60, 0.22);
+
+  /* ==========================================================================
+     TIER 3: DENSITY & INTERACTIVE DIMENSIONS
+     ========================================================================== */
+  --rj-density-input-height: 44px;
+  --rj-density-button-height: 44px;
+  --rj-density-card-padding: var(--rj-primitive-space-6);
+  --rj-line-height-base: 1.5;
+
+  /* App Shell & Sidebar Dimensions & Motion Budgets */
+  --rj-header-height:                  56px;
+  --rj-sidebar-width-expanded:         280px;
+  --rj-sidebar-width-collapsed:        72px;
+  --rj-sidebar-drawer-width:           280px;
+  --rj-sidebar-active-indicator-width: 3px;
+  --rj-ease-out:                       cubic-bezier(0, 0, 0.2, 1);
+  --rj-sidebar-transition-width:       var(--rj-duration-base); /* 250ms gentle spring */
+  --rj-tooltip-transition:             var(--rj-duration-fast); /* 150ms <= 200ms */
+  --rj-drawer-transition:              var(--rj-duration-base); /* 250ms <= 300ms */
+}
+
+/* Progressive Enhancement: CSS Easing Level 2 linear() Springs */
+@supports (animation-timing-function: linear(0, 1)) {
+  :root {
+    --rj-ease-spring-snappy: linear(0, 0.04 3%, 0.56 17%, 0.92 32%, 1.01 55%, 1);
+    --rj-ease-spring-stiff: linear(0, 0.04 3%, 0.64 16%, 0.95 31%, 1.003 53%, 1);
+    --rj-ease-spring-gentle: linear(0, 0.02 3%, 0.34 15%, 0.79 35%, 0.96 58%, 0.995 80%, 1);
+  }
+}
+
+/* Dense Admin / HR / Staff Motion Dampening (Rule 09: <= 150ms) */
+[data-density="dense"] {
+  --rj-duration-normal: 120ms;
+  --rj-duration-base: 150ms;
+  --rj-duration-moderate: 150ms;
+  --rj-sidebar-transition-width: 150ms;
+  --rj-tooltip-transition: 120ms;
+  --rj-drawer-transition: 150ms;
+}
+
+/* Explicit light mode override (beats prefers-color-scheme: dark) */
+[data-theme="light"] {
+  color-scheme: light;
+}
+
+/* ==========================================================================
+   DARK THEME OVERRIDES
+   ========================================================================== */
+[data-theme="dark"] {
+  color-scheme: dark;
+  --rj-color-surface-page:     #0B1019;
+  --rj-color-surface-panel:    #101724;
+  --rj-color-surface-card:     #162030;
+  --rj-color-surface-input:    #0D1420;
+  --rj-color-surface-elevated: #1E2C42;
+  --rj-color-surface-subtle:   #101724;
+  --rj-color-surface-disabled: #101724;
+  --rj-color-surface-overlay:  rgba(11, 16, 25, 0.85);
+
+  --rj-color-text-primary:   #EDF2F7;
+  --rj-color-text-secondary: #CBD5E1;
+  --rj-color-text-muted:     #94A3B8;
+  --rj-color-text-disabled:  #879BB0;
+  --rj-color-text-inverse:   #0B1019;
+
+  --rj-color-border-subtle:      #1E2D42;
+  --rj-color-border-interactive: #5B7083;
+  --rj-color-border-hover:       #CBD5E1;
+  --rj-color-border-elevated:    #94A3B8;
+
+  --rj-color-focus-ring: #508CEE;
+  --rj-color-focus-halo: rgba(80, 140, 238, 0.28);
+  --rj-color-danger-halo: rgba(241, 112, 122, 0.24);
+
+  --rj-color-brand-primary:       var(--rj-primitive-brand-electric);
+  --rj-color-brand-primary-hover: var(--rj-primitive-brand-electric-hover);
+  --rj-color-brand-surface:       rgba(80, 140, 238, 0.15);
+  --rj-color-story-glow:          rgba(80, 140, 238, 0.08);
+  --rj-story-panel-bg:            radial-gradient(circle at 15% 25%, var(--rj-color-story-glow) 0%, transparent 60%), linear-gradient(155deg, var(--rj-color-surface-panel) 0%, var(--rj-primitive-neutral-950) 100%);
+
+  --rj-color-accent: var(--rj-primitive-accent-500);
+  --rj-color-accent-hover: #f7a889;
+
+  --rj-color-status-success-bg: rgba(72, 199, 142, 0.15);
+  --rj-color-status-success-text: var(--rj-primitive-success-dark-text);
+  --rj-color-status-success-border: rgba(72, 199, 142, 0.3);
+
+  --rj-color-status-warning-bg: rgba(245, 176, 65, 0.15);
+  --rj-color-status-warning-text: var(--rj-primitive-warning-dark-text);
+  --rj-color-status-warning-border: rgba(245, 176, 65, 0.3);
+
+  --rj-color-status-danger-bg: rgba(155, 28, 42, 0.15);
+  --rj-color-status-danger-text: var(--rj-primitive-danger-dark-text);
+  --rj-color-status-danger-border: rgba(241, 112, 122, 0.35);
+
+  --rj-color-status-info-bg: rgba(93, 173, 226, 0.15);
+  --rj-color-status-info-text: var(--rj-primitive-info-dark-text);
+  --rj-color-status-info-border: rgba(93, 173, 226, 0.3);
+
+  /* Brand Badge & Tint Tokens - Dark Mode */
+  --rj-color-badge-brand-bg: #16243A;
+  --rj-color-badge-brand-text: #6EA2F4;
+  --rj-color-badge-brand-border: #243B60;
+
+  /* Custom Select & Sidebar Overrides (unchanged var() aliases inherit from :root) */
+  --rj-color-select-option-hover-bg:            var(--rj-color-badge-brand-border);
+  --rj-color-select-option-active-bg:           #2D4366;
+  --rj-color-select-option-selected-hover-text: var(--rj-primitive-brand-200);
+  --rj-color-sidebar-item-hover-bg:             var(--rj-color-surface-elevated);
+  --rj-color-sidebar-toggle-bg:                 var(--rj-color-surface-elevated);
+  --rj-color-sidebar-toggle-hover-bg:           var(--rj-color-badge-brand-border);
+  --rj-color-sidebar-toggle-border:             var(--rj-color-border-elevated);
+  --rj-color-sidebar-tooltip-bg:                var(--rj-color-surface-elevated);
+  --rj-color-sidebar-tooltip-text:              var(--rj-color-text-primary);
+  --rj-color-sidebar-tooltip-border:            var(--rj-color-border-elevated);
+
+  /* Radar Visual Invariant Tokens - Dark Mode */
+  --rj-color-radar-grid: #2E3E54;
+
+  /* Role Badges Tokens - Dark Mode */
+  --rj-color-role-candidate-bg: rgba(56, 189, 248, 0.16);
+  --rj-color-role-candidate-text: #7dd3fc;
+  --rj-color-role-candidate-border: rgba(56, 189, 248, 0.3);
+
+  --rj-color-role-hr-bg: rgba(52, 211, 153, 0.16);
+  --rj-color-role-hr-text: #6ee7b7;
+  --rj-color-role-hr-border: rgba(52, 211, 153, 0.3);
+
+  --rj-color-role-mentor-bg: rgba(192, 132, 252, 0.16);
+  --rj-color-role-mentor-text: #d8b4fe;
+  --rj-color-role-mentor-border: rgba(192, 132, 252, 0.3);
+
+  --rj-color-role-staff-bg: rgba(251, 191, 36, 0.16);
+  --rj-color-role-staff-text: #fde68a;
+  --rj-color-role-staff-border: rgba(251, 191, 36, 0.3);
+
+  --rj-color-role-admin-bg: rgba(251, 113, 133, 0.16);
+  --rj-color-role-admin-text: #fca5a5;
+  --rj-color-role-admin-border: rgba(251, 113, 133, 0.3);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --rj-color-surface-page:     #0B1019;
+    --rj-color-surface-panel:    #101724;
+    --rj-color-surface-card:     #162030;
+    --rj-color-surface-input:    #0D1420;
+    --rj-color-surface-elevated: #1E2C42;
+    --rj-color-surface-subtle:   #101724;
+    --rj-color-surface-disabled: #101724;
+    --rj-color-surface-overlay:  rgba(11, 16, 25, 0.85);
+
+    --rj-color-text-primary:   #EDF2F7;
+    --rj-color-text-secondary: #CBD5E1;
+    --rj-color-text-muted:     #94A3B8;
+    --rj-color-text-disabled:  #879BB0;
+    --rj-color-text-inverse:   #0B1019;
+
+    --rj-color-border-subtle:      #1E2D42;
+    --rj-color-border-interactive: #5B7083;
+    --rj-color-border-hover:       #CBD5E1;
+    --rj-color-border-elevated:    #94A3B8;
+
+    --rj-color-focus-ring: #508CEE;
+    --rj-color-focus-halo: rgba(80, 140, 238, 0.28);
+    --rj-color-danger-halo: rgba(241, 112, 122, 0.24);
+
+    --rj-color-brand-primary:       var(--rj-primitive-brand-electric);
+    --rj-color-brand-primary-hover: var(--rj-primitive-brand-electric-hover);
+    --rj-color-brand-surface:       rgba(80, 140, 238, 0.15);
+    --rj-color-story-glow:          rgba(80, 140, 238, 0.08);
+    --rj-story-panel-bg:            radial-gradient(circle at 15% 25%, var(--rj-color-story-glow) 0%, transparent 60%), linear-gradient(155deg, var(--rj-color-surface-panel) 0%, var(--rj-primitive-neutral-950) 100%);
+
+    --rj-color-accent: var(--rj-primitive-accent-500);
+    --rj-color-accent-hover: #f7a889;
+
+    --rj-color-status-success-bg: rgba(72, 199, 142, 0.15);
+    --rj-color-status-success-text: var(--rj-primitive-success-dark-text);
+    --rj-color-status-success-border: rgba(72, 199, 142, 0.3);
+
+    --rj-color-status-warning-bg: rgba(245, 176, 65, 0.15);
+    --rj-color-status-warning-text: var(--rj-primitive-warning-dark-text);
+    --rj-color-status-warning-border: rgba(245, 176, 65, 0.3);
+
+    --rj-color-status-danger-bg: rgba(155, 28, 42, 0.15);
+    --rj-color-status-danger-text: var(--rj-primitive-danger-dark-text);
+    --rj-color-status-danger-border: rgba(241, 112, 122, 0.35);
+
+    --rj-color-status-info-bg: rgba(93, 173, 226, 0.15);
+    --rj-color-status-info-text: var(--rj-primitive-info-dark-text);
+    --rj-color-status-info-border: rgba(93, 173, 226, 0.3);
+
+    /* Brand Badge & Tint Tokens - Dark Mode */
+    --rj-color-badge-brand-bg: #16243A;
+    --rj-color-badge-brand-text: #6EA2F4;
+    --rj-color-badge-brand-border: #243B60;
+
+    /* Custom Select & Sidebar Overrides */
+    --rj-color-select-option-hover-bg:            var(--rj-color-badge-brand-border);
+    --rj-color-select-option-active-bg:           #2D4366;
+    --rj-color-select-option-selected-hover-text: var(--rj-primitive-brand-200);
+    --rj-color-sidebar-item-hover-bg:             var(--rj-color-surface-elevated);
+    --rj-color-sidebar-toggle-bg:                 var(--rj-color-surface-elevated);
+    --rj-color-sidebar-toggle-hover-bg:           var(--rj-color-badge-brand-border);
+    --rj-color-sidebar-toggle-border:             var(--rj-color-border-elevated);
+    --rj-color-sidebar-tooltip-bg:                var(--rj-color-surface-elevated);
+    --rj-color-sidebar-tooltip-text:              var(--rj-color-text-primary);
+    --rj-color-sidebar-tooltip-border:            var(--rj-color-border-elevated);
+
+    /* Radar Visual Invariant Tokens - Dark Mode */
+    --rj-color-radar-grid: #2E3E54;
+
+    /* Role Badges Tokens - Dark Mode */
+    --rj-color-role-candidate-bg: rgba(56, 189, 248, 0.16);
+    --rj-color-role-candidate-text: #7dd3fc;
+    --rj-color-role-candidate-border: rgba(56, 189, 248, 0.3);
+
+    --rj-color-role-hr-bg: rgba(52, 211, 153, 0.16);
+    --rj-color-role-hr-text: #6ee7b7;
+    --rj-color-role-hr-border: rgba(52, 211, 153, 0.3);
+
+    --rj-color-role-mentor-bg: rgba(192, 132, 252, 0.16);
+    --rj-color-role-mentor-text: #d8b4fe;
+    --rj-color-role-mentor-border: rgba(192, 132, 252, 0.3);
+
+    --rj-color-role-staff-bg: rgba(251, 191, 36, 0.16);
+    --rj-color-role-staff-text: #fde68a;
+    --rj-color-role-staff-border: rgba(251, 191, 36, 0.3);
+
+    --rj-color-role-admin-bg: rgba(251, 113, 133, 0.16);
+    --rj-color-role-admin-text: #fca5a5;
+    --rj-color-role-admin-border: rgba(251, 113, 133, 0.3);
+  }
+}
+
+/* Official Brand Mark Dark Mode Surface Ring (Anti-Halation & Visual Contrast) */
+[data-theme="dark"] .rj-brand-mark {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15);
+  border-radius: 7px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .rj-brand-mark {
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15);
+    border-radius: 7px;
+  }
+}
+
+/* Brand Mark Lockup Alignment */
+.rj-story-brand-header .rj-brand-lockup,
+.rj-brand-lockup {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--rj-primitive-space-3);
+}
+
+.rj-brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ==========================================================================
+   GLOBAL BASELINE & ACCESSIBILITY (WCAG 2.2 AA)
+   ========================================================================== */
+
+/* Focus Visible Requirement with Crisp Entrance (<= 150ms) */
+:focus-visible {
+  outline: 2px solid var(--rj-color-focus-ring) !important;
+  outline-offset: 2px !important;
+  transition: outline-offset var(--rj-duration-fast) var(--rj-ease-spring-snappy);
+}
+
+@starting-style {
+  :focus-visible {
+    outline-offset: 0px !important;
+  }
+}
+
+/* Numeric tabular formatting for counters and timestamps */
+.rj-tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* Screen reader only utility */
+.rj-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Motion & Animation */
+@keyframes rj-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.rj-spin {
+  animation: rj-spin 1s linear infinite;
+}
+
+/* View Transitions Keyframes: Route Transitions vs Circular Theme Reveal */
+@keyframes rj-view-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.99);
+  }
+}
+
+@keyframes rj-view-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--rj-motion-dist-sm));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+html[data-vt-density='dense'] {
+  --rj-duration-vt-route: var(--rj-duration-slow);
+}
+
+html:not(.rj-theme-transition) .rj-dashboard-nav {
+  view-transition-name: rj-shell-header;
+}
+
+html:not(.rj-theme-transition) .rj-sidebar {
+  view-transition-name: rj-shell-sidebar;
+}
+
+html:not(.rj-theme-transition) .rj-dashboard-content {
+  view-transition-name: rj-main-content;
+}
+
+html:not(.rj-theme-transition) .rj-brand-mark--shared {
+  view-transition-name: rj-brand-mark;
+}
+
+html:not(.rj-theme-transition) .rj-sidebar-active-indicator {
+  view-transition-name: rj-sidebar-indicator;
+}
+
+/* Keep persistent shell header and sidebar static only when both old & new shell exist;
+   if a transition exits the shell (:only-child), fade out cleanly instead of freezing over the target route. */
+::view-transition-old(rj-shell-header):not(:only-child),
+::view-transition-new(rj-shell-header):not(:only-child),
+::view-transition-old(rj-shell-sidebar):not(:only-child),
+::view-transition-new(rj-shell-sidebar):not(:only-child) {
+  animation: none;
+}
+
+::view-transition-old(rj-shell-header):only-child,
+::view-transition-old(rj-shell-sidebar):only-child {
+  animation: rj-view-out var(--rj-duration-vt-out) var(--rj-ease-exit) both;
+}
+
+::view-transition-group(rj-sidebar-indicator) {
+  z-index: 3;
+  animation-duration: 260ms;
+  animation-timing-function: var(--rj-ease-entrance);
+}
+
+html[data-vt-density='dense']::view-transition-group(rj-sidebar-indicator) {
+  animation-duration: var(--rj-duration-fast);
+}
+
+::view-transition-old(rj-sidebar-indicator) {
+  animation: none;
+  opacity: 0;
+}
+
+::view-transition-new(rj-sidebar-indicator) {
+  animation: none;
+  height: 100%;
+}
+
+::view-transition-old(rj-main-content) {
+  animation: rj-view-out var(--rj-duration-vt-out) var(--rj-ease-exit) both;
+}
+
+::view-transition-new(rj-main-content) {
+  animation: rj-view-in var(--rj-duration-vt-route) var(--rj-ease-entrance) both;
+}
+
+::view-transition-group(rj-brand-mark) {
+  animation-duration: var(--rj-duration-vt-route);
+  animation-timing-function: var(--rj-ease-entrance);
+}
+
+::view-transition-old(root) {
+  animation: rj-view-out var(--rj-duration-vt-out) var(--rj-ease-exit) both;
+}
+
+::view-transition-new(root) {
+  animation: rj-view-in var(--rj-duration-moderate) var(--rj-ease-entrance) both;
+}
+
+/* Circular Theme Reveal Isolation: disable shell/brand names so only root transitions */
+html.rj-theme-transition * {
+  view-transition-name: none !important;
+}
+
+html.rj-theme-transition::view-transition-old(root),
+html.rj-theme-transition::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+html.rj-theme-transition::view-transition-old(root) {
+  z-index: 1;
+}
+
+html.rj-theme-transition::view-transition-new(root) {
+  z-index: 2;
+}
+
+/* Reduced Motion Fallback: 100ms opacity cross-fade + 0.001ms WebKit transitionend safeguard */
+@media (prefers-reduced-motion: reduce) {
+  :root,
+  [data-density="dense"] {
+    --rj-duration-instant:      0.001ms;
+    --rj-duration-micro:        0.001ms;
+    --rj-duration-vt-out:       0.001ms;
+    --rj-duration-fast:         0.001ms;
+    --rj-duration-normal:       0.001ms;
+    --rj-duration-base:         0.001ms;
+    --rj-duration-moderate:     0.001ms;
+    --rj-duration-slow:         0.001ms;
+    --rj-duration-vt-route:     0.001ms;
+    --rj-duration-theme-reveal: 0.001ms;
+    --rj-duration-deliberate:   0.001ms;
+    --rj-duration-showcase:     0.001ms;
+    --rj-duration-ambient:      0.001ms;
+    --rj-radar-cycle:           0.001ms;
+
+    --rj-sidebar-transition-width: 0.001ms;
+    --rj-tooltip-transition:       0.001ms;
+    --rj-drawer-transition:        0.001ms;
+
+    --rj-motion-dist-2xs: 0px;
+    --rj-motion-dist-xs:  0px;
+    --rj-motion-dist-sm:  0px;
+    --rj-motion-dist-md:  0px;
+    --rj-motion-dist-lg:  0px;
+
+    --rj-transition-hover:    opacity 100ms ease;
+    --rj-transition-entrance: opacity 100ms ease;
+    --rj-transition-exit:     opacity 100ms ease;
+    --rj-transition-dialog:   opacity 100ms ease;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root),
+  ::view-transition-old(rj-main-content),
+  ::view-transition-new(rj-main-content),
+  ::view-transition-group(rj-brand-mark) {
+    animation-duration: 100ms !important;
+  }
+}

@@ -42,7 +42,11 @@ public class ProdEnvironmentValidatorOrderingTest {
                                     // to trigger validation
                                     // failure
                                     "CORS_ALLOWED_ORIGINS=https://rikkeijobs.com",
-                                    "JWT_SECRET=production-jwt-signing-secret-with-adequate-length");
+                                    "CLOUDINARY_CLOUD_NAME=prod-rikkei-cloud",
+                                    "CLOUDINARY_API_KEY=prod-cloudinary-key-123",
+                                    "CLOUDINARY_API_SECRET=prod-cloudinary-secret-xyz-987",
+                                    "CLOUDINARY_API_BASE_URL=https://api.cloudinary.com/v1_1",
+                                    "CLOUDINARY_DELIVERY_BASE_URL=https://res.cloudinary.com/prod-rikkei-cloud/image/upload");
 
             IllegalStateException ex = assertThrows(IllegalStateException.class, builder::run);
 
@@ -62,6 +66,55 @@ public class ProdEnvironmentValidatorOrderingTest {
                         accepted,
                         "Database connection must NOT be attempted or accepted before validation"
                                 + " fails");
+            } finally {
+                if (accepted != null) {
+                    accepted.close();
+                }
+            }
+        }
+    }
+
+    @Test
+    @DisplayName(
+            "Fail-fast ordering: Startup fails when JWT_SECRET is missing with 0 database connections accepted")
+    void testValidationFailsWhenJwtSecretMissingBeforeDatabaseConnection() throws Exception {
+        try (ServerSocketChannel serverChannel = ServerSocketChannel.open()) {
+            serverChannel.bind(new InetSocketAddress("127.0.0.1", 0));
+            serverChannel.configureBlocking(false);
+            int port = ((InetSocketAddress) serverChannel.getLocalAddress()).getPort();
+
+            SpringApplicationBuilder builder =
+                    new SpringApplicationBuilder(RikkeiJobsApplication.class)
+                            .profiles("prod")
+                            .properties(
+                                    "SPRING_DATASOURCE_URL=jdbc:postgresql://127.0.0.1:"
+                                            + port
+                                            + "/unreachable_db?loginTimeout=1&connectTimeout=1&socketTimeout=1",
+                                    "SPRING_DATASOURCE_USERNAME=prod_app_user",
+                                    "SPRING_DATASOURCE_PASSWORD=ValidStrongPassword#2026",
+                                    "spring.datasource.hikari.connection-timeout=500",
+                                    "spring.datasource.hikari.initialization-fail-timeout=1",
+                                    "EXTERNAL_BASE_URL=https://partner.api.example.com",
+                                    "EXTERNAL_SERVICE_KEY=prod-external-service-key-valid-32-chars-long",
+                                    "CORS_ALLOWED_ORIGINS=https://rikkeijobs.com",
+                                    "CLOUDINARY_CLOUD_NAME=prod-rikkei-cloud",
+                                    "CLOUDINARY_API_KEY=prod-cloudinary-key-123",
+                                    "CLOUDINARY_API_SECRET=prod-cloudinary-secret-xyz-987",
+                                    "CLOUDINARY_API_BASE_URL=https://api.cloudinary.com/v1_1",
+                                    "CLOUDINARY_DELIVERY_BASE_URL=https://res.cloudinary.com/prod-rikkei-cloud/image/upload"
+                                    // JWT_SECRET intentionally omitted!
+                                    );
+
+            IllegalStateException ex = assertThrows(IllegalStateException.class, builder::run);
+            assertTrue(
+                    ex.getMessage().contains("JWT_SECRET"),
+                    "Error must specifically flag missing JWT_SECRET");
+
+            SocketChannel accepted = serverChannel.accept();
+            try {
+                assertNull(
+                        accepted,
+                        "Zero database connections must be accepted before validation halts the application");
             } finally {
                 if (accepted != null) {
                     accepted.close();

@@ -11,7 +11,7 @@ This skill establishes the production-grade visual design standards and strict A
 
 Core design tenets:
 
-- Implementation of semantic design tokens: Bespoke Technical Iron Cobalt brand anchors, Cyber Persimmon / Terracotta accents, Technical Iron Charcoal surfaces, and mathematically calculated contrast ratios.
+- Implementation of semantic design tokens: Bespoke Confident Royal Cobalt & Iron Obsidian brand anchors (Core #0D55B8, Deep Hover #0A4596, Electric #508CEE, Brand Mark #C8161D), quarantined semantic error (#9B1C2A / #F1707A) with non-color cues, 5-level surface ladder in light mode (Canvas #EEF2F8, Panel #E1E8F2, Card #FFFFFF, Field #F8FAFD) and tonal elevation in dark mode (Canvas #0B1019, Panel #101724, Card #162030, Field #0D1420, Elevated #1E2C42), and mathematically calculated contrast ratios.
 - Comprehensive Vietnamese typography support utilizing deliberate pairing (Plus Jakarta Sans + Be Vietnam Pro + JetBrains Mono), validated diacritics rendering, and tabular numeric alignment for skill metrics.
 - Role Density segregation: Airy density for candidate discovery vs dense tabular density for administration and verification workflows.
 - Asymmetrical 65/35 editorial layouts with deliberate visual rhythm, eliminating generic symmetrical AI slop templates.
@@ -40,17 +40,17 @@ Core design tenets:
 ### Step 1: Establish Persona Context & Role Density
 
 1. Identify the target audience for the view:
-   - **Candidate Views (`CANDIDATE`)**: Apply **Airy Density**. Use generous padding and margins (16px to 32px), spacious card padding (24px), row height 56px, touch targets >= 44px, clear visual hierarchy, and an encouraging, editorial atmosphere.
-   - **Operational Views (`ADMIN`, `HR`, `STAFF`, `MENTOR`)**: Apply **Dense Density**. Use compact spacing (6px to 12px), condensed table rows (36px to 38px), right-aligned tabular numbers, and streamlined toolbars to maximize audit efficiency on large monitors.
+   - **Candidate & Mentor Views (`CANDIDATE`, `MENTOR`)**: Apply **Airy Density**. Use generous padding and margins (16px to 32px), spacious card padding (24px), row height 56px, touch targets >= 44px, clear visual hierarchy, and an encouraging, editorial atmosphere.
+   - **Operational Views (`ADMIN`, `HR`, `STAFF`)**: Apply **Dense Density**. Use compact spacing (6px to 12px), condensed table rows (36px to 38px), right-aligned tabular numbers, and streamlined toolbars to maximize audit efficiency on large monitors.
 2. Cross-reference density properties in [token-tables.md](references/token-tables.md).
 
 ### Step 2: Bind Bespoke Semantic Design Tokens & Calculate Contrast
 
 1. Reference semantic tokens from `docs/design/DESIGN_SYSTEM.md` and [token-tables.md](references/token-tables.md):
-   - Brand Primary: Technical Iron Cobalt (`#132F52` Light / `#4C85DE` Dark).
-   - Accent Highlight: Cyber Persimmon / Terracotta (`#D9480F` Light / `#F08C65` Dark).
-   - Light Surfaces: Background canvas `#F7F9FC`, card surface `#FFFFFF`, primary text `#0C1A30` (CR 17.41:1), secondary text `#334E68` (CR 8.64:1).
-   - Dark Surfaces: Background canvas `#0A111E`, card surface `#111C2E`, primary text `#EDF2F7` (CR 15.17:1), secondary text `#CBD5E1` (CR 11.51:1).
+   - Brand Primary: Confident Royal Cobalt (`#0D55B8` Core Light / `#0A4596` Deep Light / `#508CEE` Electric Dark) with dedicated Brand Mark (`#C8161D`).
+   - Error State: Quarantined Danger (`#9B1C2A` Light / `#F1707A` Dark) with mandatory non-color cues (Icon alert-circle, border, text).
+   - Light Surfaces: Background canvas `#EEF2F8`, hero panel `#E1E8F2`, card surface `#FFFFFF`, field inset `#F8FAFD`, primary text `#0B1A2C` (CR 17.5:1), secondary text `#25394E` (CR 11.2:1).
+   - Dark Surfaces: Background canvas `#0B1019`, hero panel `#101724`, card surface `#162030`, field inset `#0D1420`, elevated `#1E2C42`, primary text `#EDF2F7` (CR 16.8:1), secondary text `#BACAD9` (CR 10.4:1).
 2. Compute mathematical contrast ratios ($L_1 + 0.05) / (L_2 + 0.05)$:
    - Regular body text (< 18pt or < 14pt bold): minimum **4.5:1** contrast ratio against background.
    - Large headings (>= 18pt or >= 14pt bold) and essential UI controls: minimum **3.0:1** contrast ratio.
@@ -72,10 +72,11 @@ font-variant-numeric: tabular-nums;
 2. Build asymmetrical compositions pairing structured data tables with context panels or interactive previews using an editorial 65/35 ratio (8 primary columns / 4 sticky sidebar columns).
 3. Constrain all spacing to the 4px base rhythm scale: 4px, 8px, 12px, 16px, 20px, 24px, 32px, 48px, 64px.
 
-### Step 5: Draft Authentic Production Copy
+### Step 5: Draft Authentic Role-Centered Copy
 
-1. Replace all "Lorem ipsum", "Title here", or empty placeholder text with realistic domain terminology in Vietnamese and English.
-2. Mirror authentic recruitment terminology (e.g., "Hồ sơ năng lực", "Khoảng thiếu hụt kỹ năng", "Assessment Form", "Matching Score").
+1. Write from the user's perspective per role in authentic, concrete Vietnamese with full diacritics; forbid technical/internal showcase copy (`ASVS`, `RBAC`, `TTL`, `JWT`, `Modular Monolith`, `Backend`, `AI Provider`, module codes, invented numbers).
+2. Mark unimplemented workflows honestly as `Sắp ra mắt`, and isolate developer/QA helpers inside collapsed `<details className="rj-dev-tools">` behind `import.meta.env.DEV`.
+3. Pair route-level `React.lazy` + `<Suspense>` (`lazyRoute` + `preloadRouteForPath`) with upfront geometric reservation (`font-display: optional`, `.rj-metric-slot` for count-ups, keyed loading/ready containers) so `CLS === 0`.
 
 ### Step 6: Verify Multi-Breakpoint Responsiveness
 
@@ -135,7 +136,7 @@ Evaluate the view against the 6 criteria in [anti-ai-rubric.md](references/anti-
 - Anti-AI review rubric: [references/anti-ai-rubric.md](references/anti-ai-rubric.md).
 - Screenshot review protocol: [references/screenshot-protocol.md](references/screenshot-protocol.md).
 - Global stylesheet assets: `frontend/src/index.css`, `frontend/src/App.css`.
-- Shared layout primitives: `frontend/src/shared/components/Header.tsx`, `ModuleCard.tsx`.
+- Shared layout & interactive primitives: `frontend/src/features/identity/components/SharedAppLayout.tsx`, `AuthEditorialLayout.tsx`, `CompetencyRadarVisual.tsx`, `frontend/src/shared/components/ThemeSwitch.tsx`, `Select.tsx`, `Header.tsx`, `frontend/src/shared/utils/routeLazy.ts`.
 - Verification commands:
 
 ```bash

@@ -11,7 +11,7 @@ This skill establishes the engineering and verification methodology for ensuring
 
 Key auditing pillars:
 
-- Mathematical color contrast validation ($L_1 + 0.05) / (L_2 + 0.05)$ for text and interface components in both light (`#F7F9FC` canvas) and dark (`#0A111E` canvas) themes.
+- Mathematical color contrast validation ($L_1 + 0.05) / (L_2 + 0.05)$ for text and interface components in both light (`#EEF2F8` canvas) and dark (`#0B1019` canvas) themes.
 - Touch target sizing meeting the 44x44 pixel minimum requirement for touch interfaces (WCAG 2.2 SC 2.5.8).
 - Comprehensive keyboard operability with logical focus order and prominent focus indicators (`outline: 2px solid var(--rj-color-focus-ring); outline-offset: 2px;`).
 - Robust focus trapping and focus restoration for modal dialogs and slide-over drawers.
@@ -49,7 +49,7 @@ Key auditing pillars:
   - Body text (< 18pt regular or < 14pt bold): minimum **4.5:1** against the background.
   - Large text (>= 18pt regular or >= 14pt bold): minimum **3.0:1**.
   - User Interface Components (form field borders, toggles, status indicator icons): minimum **3.0:1**.
-- Verify contrast independently for both light mode (`#F7F9FC` canvas) and dark mode (`#0A111E` canvas).
+- Verify contrast independently for both light mode (`#EEF2F8` canvas) and dark mode (`#0B1019` canvas).
 
 ### Step 3: Verify Touch Target Dimensions (WCAG 2.2 SC 2.5.8)
 
@@ -118,13 +118,17 @@ Key auditing pillars:
 - [ ] Modals correctly trap keyboard focus and restore focus to the trigger upon closing.
 - [ ] Form controls are bound to `<label>` elements and utilize `aria-describedby` for error states.
 - [ ] Touch targets measure at least 44x44px on mobile devices.
+- [ ] WAI-ARIA `role="switch"` controls maintain a static `aria-label`, toggle `aria-checked`, and respond to `Space` and `Enter` without storing credentials or extra visible text.
+- [ ] Hover/focus tooltips (WCAG 1.4.13) appear within `<= 200ms`, remain hoverable, and dismiss cleanly on `Escape` without moving focus.
+- [ ] Any non-exempt ambient animation `>= 6s` provides a visible Pause/Play toggle (`aria-pressed`, WCAG 2.2.2) and pauses automatically when `document.hidden` (on `/login` hero, Owner-approved WCAG 2.2.2 exception uses 1-shot `<= 5s` ambient arcs, interaction pause/hold/resume, 3-round auto-stop, and dynamic `aria-live="off"`/`"polite"`).
+- [ ] Route transitions and async data hydration maintain exact `CLS === 0` (`PerformanceObserver` `layout-shift`).
 - [ ] Full compliance with [a11y-checklist.md](references/a11y-checklist.md) verified.
 
 ## 8. Rikkei Jobs Specifics
 
 - Verification checklist: [references/a11y-checklist.md](references/a11y-checklist.md).
 - Test setup: `frontend/src/setupTests.ts` (configures `@testing-library/jest-dom/vitest`).
-- Layout primitives: `frontend/src/shared/components/Header.tsx`, `HealthBadge.tsx`.
+- Layout & interactive primitives: `frontend/src/features/identity/components/SharedAppLayout.tsx`, `CompetencyRadarVisual.tsx`, `frontend/src/shared/components/ThemeSwitch.tsx`, `Select.tsx`, `Header.tsx`.
 - Verification commands:
 
 ```bash

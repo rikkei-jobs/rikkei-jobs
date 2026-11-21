@@ -20,10 +20,16 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
 import java.time.Duration;
+import java.util.Base64;
+import java.util.HexFormat;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -242,5 +248,48 @@ public class ExternalApiClientIntegrationTest {
         assertEquals(
                 "EXTERNAL_UNAVAILABLE", ex.getCode(), "Error code must be EXTERNAL_UNAVAILABLE");
         assertEquals(503, ex.getStatus().value(), "HTTP Status must be 503");
+    }
+
+    @Test
+    @DisplayName(
+            "Real Mock: postFormUrlEncoded signs and uploads image to /cloudinary/v1_1/dev-cloud/image/upload")
+    void testLiveMockCloudinaryUploadViaPostFormUrlEncoded() throws Exception {
+        String timestamp = String.valueOf(System.currentTimeMillis() / 1000L);
+        String publicId = "rikkei-jobs/company-logos/company-99";
+        String stringToSign =
+                "invalidate=true&overwrite=true&public_id="
+                        + publicId
+                        + "&timestamp="
+                        + timestamp
+                        + "&unique_filename=false"
+                        + "dev-secret";
+        String signature =
+                HexFormat.of()
+                        .formatHex(
+                                MessageDigest.getInstance("SHA-1")
+                                        .digest(stringToSign.getBytes(StandardCharsets.UTF_8)));
+
+        byte[] pngHeader = new byte[] {(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
+        Map<String, String> formParams = new LinkedHashMap<>();
+        formParams.put("api_key", "dev-key");
+        formParams.put("timestamp", timestamp);
+        formParams.put("public_id", publicId);
+        formParams.put("overwrite", "true");
+        formParams.put("invalidate", "true");
+        formParams.put("unique_filename", "false");
+        formParams.put(
+                "file", "data:image/png;base64," + Base64.getEncoder().encodeToString(pngHeader));
+        formParams.put("signature", signature);
+
+        String response =
+                externalApiClient.postFormUrlEncoded(
+                        properties.getBaseUrl() + "/cloudinary/v1_1/dev-cloud/image/upload",
+                        formParams,
+                        Duration.ofSeconds(5));
+        JsonNode json = objectMapper.readTree(response);
+        assertEquals(publicId, json.get("public_id").asText());
+        assertTrue(json.get("secure_url").asText().contains("/cloudinary/dev-cloud/image/upload/"));
+        assertTrue(json.get("version").asLong() > 0);
+        assertEquals(pngHeader.length, json.get("bytes").asInt());
     }
 }

@@ -37,9 +37,11 @@ Presenting a list of job postings or candidate cards sequentially upon page entr
   opacity: 0;
   transform: translateY(var(--rj-motion-dist-md));
   animation: rj-cascade-enter var(--rj-duration-moderate) var(--rj-ease-entrance) forwards;
-  animation-delay: calc(var(--stagger-index, 0) * var(--rj-motion-stagger-normal));
-  /* Cap total stagger delay at 400ms to avoid blocking reading flow */
-  max-delay: 400ms;
+  /* Cap total stagger delay so entrance stays within Rule 09 budget */
+  animation-delay: min(
+    calc(var(--stagger-index, 0) * var(--rj-motion-stagger-normal)),
+    var(--rj-motion-stagger-cap)
+  );
 }
 
 @keyframes rj-cascade-enter {
@@ -129,13 +131,10 @@ Revealing historical curriculum milestones or work experience items as they ente
 ### Implementation
 
 ```css
-.rj-timeline-item {
-  opacity: 0;
-  transform: translateY(var(--rj-motion-dist-md));
-}
-
 @supports (animation-timeline: view()) {
   .rj-timeline-item {
+    opacity: 0;
+    transform: translateY(var(--rj-motion-dist-md));
     animation: rj-scroll-reveal linear both;
     animation-timeline: view();
     animation-range: entry 10% cover 30%;
@@ -446,15 +445,11 @@ Full stateful tactile feedback for candidate application submission buttons: Def
   outline-offset: 2px;
 }
 
-/* Error state shake micro-animation (<= 150ms) */
+/* Shake-free error feedback (<= 150ms; Rule 09 forbids bounce/jiggle/shake) */
 .rj-action-btn.has-error {
-  animation: rj-tactile-shake 140ms ease-in-out;
-}
-
-@keyframes rj-tactile-shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-4px); }
-  75% { transform: translateX(4px); }
+  border-color: var(--rj-color-status-danger-border);
+  animation: rj-enter-y var(--rj-duration-fast) var(--rj-ease-entrance) both;
+  --rj-enter-y: -2px;
 }
 ```
 

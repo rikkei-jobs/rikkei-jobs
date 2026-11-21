@@ -5,7 +5,7 @@ Use this 10-step mechanical verification checklist before adding any icon to the
 ## 1. Domain Concept Integrity
 
 - [ ] Represents a distinct, authentic concept in recruitment or vocational IT training.
-- [ ] Does not duplicate existing icons in `frontend/src/shared/components/Icon/iconRegistry.ts`.
+- [ ] Does not duplicate existing icons in `frontend/src/shared/components/Icon.tsx`.
 
 ## 2. Canvas Geometry
 
