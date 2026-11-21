@@ -377,3 +377,174 @@ Binding operational invariants for Round `UIUX-radar`:
 - **Git Read-Only**: Never stage, commit, push, reset, stash, or switch branches; keep all modifications uncommitted on `feature/uiux-motion-polish`.
 - **Zero New Dependencies & Zero New Gates**: Keep `frontend/package.json`, `mock/package.json`, `backend/pom.xml`, and `check.sh`/`check.ps1` gate counts unchanged.
 - **Token, Emoji & Path Hygiene**: Zero emojis anywhere, zero raw color literals outside `design-tokens.css`, UTF-8 no BOM, LF endings, full Vietnamese diacritics, and zero personal machine paths.
+
+---
+
+## Phase 0 Acknowledgement — Round UIUX-align
+
+Document Path: `docs/uiux/PHASE0_ACK.md`
+Task Code: None (Documented Exception: commit prefix `"UIUX: "`, PR title prefix `` `"[UIUX]"` ``)
+Round: `UIUX-align` — Visual, Structural, Motion, State, Accessibility, and CSS-Diet Alignment of `/candidate/internships` (`TT-01`) with Polished Candidate Pages (`/candidate`, `/candidate/jobs`, `/candidate/skills`)
+Branch: `feature/uiux-motion-polish`
+Base: `HEAD 5f817fe` (clean merge of `develop` PR #17 `TT-01` internships onto `UIUX-polish` + `UIUX-radar`)
+Working Directory: `D:\GitHub\Rikkei\rikkei-jobs`
+Timestamp: `2026-11-21T02:00:00Z`
+Status: Completed Prior to Any Source Code, CSS, Test, Rule, Skill, Config, or Other Documentation Modification for Round `UIUX-align`
+Zero Emoji Compliance: Verified (0 emoji characters)
+
+### Documented Task-Code Commit-Prefix Exception and Precedence (UIUX-align)
+
+**Explicit Task-Code Commit-Prefix Exception**: Like `UIUX-polish` and `UIUX-radar`, Round `UIUX-align` has **NO separate task code** (unlike `T022DB0:` in `CLAUDE.md`, `GEMINI.md`, `AGENTS.md`, and Rules `01`, `02`, `11`). Pursuant to `D:\GitHub\Rikkei\.agents\PROMPT_UIUX_ALIGN_EN.txt` (line 1) and `<teamwork-state>/ORIGINAL_REQUEST.md` (line 3), every proposed commit message uses the English prefix `"UIUX: "` and the pull request title starts with `` `"[UIUX]"` ``.
+
+**Binding Precedence Hierarchy**:
+`D:\GitHub\Rikkei\.agents\PROMPT_UIUX_ALIGN_EN.txt` > `D:\GitHub\Rikkei\.agents\PROMPT_BASE_RULES_EN.txt` > Enterprise Rules (`01`–`16` in `.claude/rules/`) > Repository Skills (`28` in `agent-config/skills/`).
+
+### 1. Inventory of Authoritative Files Read and Inspected (UIUX-align)
+
+#### 1.1 Prompts, Root Configurations, and Survey Reports (UIUX-align)
+
+1. **Task and Base Prompts**:
+   - `<teamwork-state>/ORIGINAL_REQUEST.md` (lines 1–87)
+   - `<teamwork-state>/PROJECT.md` (lines 1–46)
+   - `D:\GitHub\Rikkei\.agents\PROMPT_BASE_RULES_EN.txt` (lines 1–53)
+   - `D:\GitHub\Rikkei\.agents\PROMPT_UIUX_ALIGN_EN.txt` (lines 1–42)
+   - `<teamwork-state>/teamwork_explorer_survey_1/handoff.md` (lines 1–287)
+   - `<teamwork-state>/teamwork_explorer_survey_3/handoff.md` (lines 1–291)
+2. **Root Agent Configurations**:
+   - `CLAUDE.md` (lines 1–47)
+   - `GEMINI.md` (lines 1–61)
+   - `AGENTS.md` (lines 1–44)
+
+#### 1.2 All 16 Enterprise Rules (`.claude/rules/`) (UIUX-align)
+
+1. `.claude/rules/01-project-context.md` (lines 1–94)
+2. `.claude/rules/02-git-and-delivery.md` (lines 1–90)
+3. `.claude/rules/03-safety-and-secrets.md` (lines 1–70)
+4. `.claude/rules/04-honest-verification.md` (lines 1–59)
+5. `.claude/rules/05-backend-java.md` (lines 1–83)
+6. `.claude/rules/06-database-flyway.md` (lines 1–73)
+7. `.claude/rules/07-security-rbac.md` (lines 1–78)
+8. `.claude/rules/08-frontend-engineering.md` (lines 1–79)
+9. `.claude/rules/09-frontend-design-bar.md` (lines 1–79)
+10. `.claude/rules/10-testing-strategy.md` (lines 1–66)
+11. `.claude/rules/11-docs-and-bilingual.md` (lines 1–53)
+12. `.claude/rules/12-ci-and-quality-gates.md` (lines 1–85)
+13. `.claude/rules/13-backend-data-access-performance.md` (lines 1–79)
+14. `.claude/rules/14-backend-module-boundaries.md` (lines 1–66)
+15. `.claude/rules/15-backend-observability-ops.md` (lines 1–80)
+16. `.claude/rules/16-backend-integrations.md` (lines 1–93)
+
+#### 1.3 Design System, UIUX Docs, and Infrastructure Specs (UIUX-align)
+
+1. `docs/design/DESIGN_SYSTEM.md` (lines 1–1817)
+2. `docs/uiux/CONTENT.md` (lines 1–344)
+3. `docs/uiux/RESEARCH.md` (lines 1–427)
+4. `docs/uiux/PHASE0_ACK.md` (lines 1–379)
+5. `docker-compose.yml` (lines 1–168)
+6. `.markdownlint-cli2.jsonc` (lines 1–11)
+
+#### 1.4 Applicable and Non-Applicable Skills (`.claude/skills/*/SKILL.md`) (UIUX-align)
+
+Directly read in full prior to any edit for Round `UIUX-align`:
+
+1. `.claude/skills/using-rikkei-skills/SKILL.md` (lines 1–86)
+2. `.claude/skills/frontend-visual-design/SKILL.md` (lines 1–146)
+3. `.claude/skills/frontend-motion-design/SKILL.md` (lines 1–254)
+4. `.claude/skills/frontend-accessibility-audit/SKILL.md` (lines 1–138)
+5. `.claude/skills/frontend-iconography/SKILL.md` (lines 1–154)
+6. `.claude/skills/frontend-feature-slice/SKILL.md` (lines 1–152)
+7. `.claude/skills/test-driven-development/SKILL.md` (lines 1–89)
+8. `.claude/skills/docs-bilingual-update/SKILL.md` (lines 1–137)
+9. `.claude/skills/verification-before-completion/SKILL.md` (lines 1–125)
+10. `.claude/skills/ci-local-and-debug/SKILL.md` (lines 1–178)
+11. `.claude/skills/handoff-to-team-lead/SKILL.md` (lines 1–121)
+
+Additional repository process skills remain available if triggered during execution (`brainstorming-before-building`, `writing-implementation-plans`, `executing-plans`, `dispatching-parallel-agents`, `systematic-debugging`, `requesting-code-review`, `receiving-code-review`, `module-domain-knowledge`). Eight backend/integration/migration skills (`api-contract-and-errors`, `backend-module-boundaries`, `backend-module-feature`, `backend-persistence-performance`, `external-system-integration-and-mock`, `flyway-migration-authoring`, `security-review-checklist`, `spring-security-rbac-endpoint`) and `writing-skills` are omitted as non-applicable unless triggered (see Section 3).
+
+### 2. Concrete Constraints and Proof Methods for All 16 Enterprise Rules (UIUX-align)
+
+| Rule | Rule File | Concrete Actionable Constraint for Round `UIUX-align` | Proof Method |
+|---|---|---|---|
+| Rule 01 | `01-project-context.md` | Keep all 9 modules/domains, 5 canonical roles (`CANDIDATE`, `HR`, `MENTOR`, `STAFF`, `ADMIN`), 20 standard skill codes, and pinned stack versions unchanged; apply documented `"UIUX: "` commit prefix exception. | `git diff` confirms zero stack/role/module drift; `node scripts/check-version-drift.mjs` exits `0`. |
+| Rule 02 | `02-git-and-delivery.md` | Stay on `feature/uiux-motion-polish`; keep Git strictly READ-ONLY (never run `commit`, `push`, `add`, `stage`, `amend`, `rebase`, `reset`, `stash`, `tag`, `switch`, `restore`); leave all changes uncommitted and unstaged; propose `"UIUX: "` English commits matching `git status --porcelain -uall` excluding git-ignored files under `docs/uiux/pr-screenshots/`. | `git branch --show-current` = `feature/uiux-motion-polish`; `git diff --cached --name-only` is empty; `git status --porcelain -uall` matches `PR_DESCRIPTION.md` file list. |
+| Rule 03 | `03-safety-and-secrets.md` | Write only inside `D:\GitHub\Rikkei\rikkei-jobs` (and external Teamwork scratch state); keep `Tài liệu dự án`, `.agents`, and `.vscode` read-only; never open, read, or print `.env`, `*.pem`, `first-key.pem`, or credentials; never add `.agents/teamwork/` inside the repo; tear down Docker via `docker compose down -v` and clean OS temp files. | Secret scan and personal-path scan in `check.sh` / `check.ps1` pass; `docker ps -a` and `docker volume ls` show `0` `rikkei` leftovers after final teardown. |
+| Rule 04 | `04-honest-verification.md` | Claim `PASS` only for commands actually executed on the final state with verbatim raw stdout/stderr and exit code `0`; zero `console.log`/`TODO`/`FIXME`/personal machine paths; disclose `webview_browser` sandbox limits honestly. | Raw outputs recorded in `docs/uiux/BROWSER_OBSERVATIONS.md` and handoff; `check.sh` & `check.ps1` (`26/26`) exit `0`. |
+| Rule 05 | `05-backend-java.md` | Keep Java backend code completely untouched (`backend/` unchanged beyond running read-only gates). | `git diff --name-only backend/` is empty. |
+| Rule 06 | `06-database-flyway.md` | Keep Flyway migrations `V1..V15` immutable and add zero new migrations. | `git diff --name-only backend/src/main/resources/db/` is empty and SQLFluff gate passes. |
+| Rule 07 | `07-security-rbac.md` | Preserve `routePolicies.ts`, `roleMenuConfig.ts`, `RoutePolicyRegistry`, `OwnershipGuard`, `MustChangePasswordFilter`, and `/candidate/internships` `CANDIDATE`-only guard unchanged. | `git diff` on `routePolicies.ts` & `roleMenuConfig.ts` empty; security Vitest specs & `e2e/run-all.mjs` (`27` suites) pass. |
+| Rule 08 | `08-frontend-engineering.md` | Enforce TypeScript strict mode (`0 any`, `0 @ts-ignore`), keep `httpClient.ts` & `candidateInternships.ts` API contract and `CandidateInternshipsProps` intact, use single `<h1>` (`rj-page-title`), semantic `<dl>`/`<dt>`/`<dd>`, `role="status"`/`aria-live="polite"` only for loading, `role="alert"` for errors, no focus stealing, `>= 44px` `"Thử lại"` target with `:focus-visible`, and `vi-VN` (`dd/MM/yyyy`) en dash dates. | `npm --prefix frontend run lint`, `typecheck`, `test -- --run`, and `/browser` keyboard walkthrough (`Tab`, `Enter`, `Space`) pass. |
+| Rule 09 | `09-frontend-design-bar.md` | Zero emoji, `<Icon name=... />` on `24px` grid (`aria-hidden`), zero raw color literals outside `design-tokens.css` (Check 9), no inline style objects, no `!important`, `rj-surface-card` / `rj-stack-lg` / metric hierarchy matching candidate pages, Rule 09 Showcase & Micro motion budgets (`<= 150ms` card hover/press, entrance once per navigation, `useCountUp <= 800ms` with `.rj-metric-slot` if used, `CLS = 0`, no new keyframes or ambient loops, `prefers-reduced-motion` immediate final values), and Anti-AI rubric `>= 11/12`. | `validate-agent-config.mjs` (Check 9), `compute-contrast.mjs` (`120/120`), bundle caps (`Entry JS <= 128.81 kB`, `Combined CSS <= 20.736 kB`), `/browser` parity table & `CLS = 0` measurement. |
+| Rule 10 | `10-testing-strategy.md` | Update `CandidateInternships.test.tsx` (Vitest + Testing Library, `0 act()` warnings) asserting `rj-page-title`, `rj-surface-card`, single `h1`, loading skeleton, `rj-empty-state`, error alert + retry, null-safe fallbacks, reduced-motion immediate values, and `vi-VN` date format while keeping all `36` files / `427+` tests green and E2E `27/329/2020` green. | `npm --prefix frontend run test -- --run` and fresh Docker `node e2e/run-all.mjs` exit `0`. |
+| Rule 11 | `11-docs-and-bilingual.md` | Update `docs/uiux/PHASE0_ACK.md`, `README.md`, `BROWSER_OBSERVATIONS.md`, `PR_DESCRIPTION.md`, and `pr-screenshots/ORDER.txt` (`DESIGN_SYSTEM.md` only if a shared class is added) with English doc bodies, full Vietnamese diacritics where Vietnamese copy/reports appear, UTF-8 no BOM, LF, zero inline `cspell` ignores. | `markdownlint-cli2`, `cspell` (`en,vi`), and `node scripts/check-version-drift.mjs` exit `0`. |
+| Rule 12 | `12-ci-and-quality-gates.md` | Add zero new quality gates (`29` definitions = `26` active + `3` fallbacks); never execute `scripts/run-ci-in-docker.*`. | `node scripts/check-gate-sync.mjs`, `./check.sh`, and `.\check.ps1` (`26/26`) exit `0`. |
+| Rule 13 | `13-backend-data-access-performance.md` | Keep backend persistence config (`open-in-view: false`, `ddl-auto: none`, Hikari) untouched. | `git diff --name-only backend/` empty. |
+| Rule 14 | `14-backend-module-boundaries.md` | Keep all 9 backend module boundaries and `App.tsx` structure untouched. | `git diff --name-only backend/ frontend/src/App.tsx` empty. |
+| Rule 15 | `15-backend-observability-ops.md` | Never expose secrets, tokens, passwords, or real personal data in UI copy, tests, or `docs/uiux/pr-screenshots/`. | Secret scan and screenshot audit pass cleanly. |
+| Rule 16 | `16-backend-integrations.md` | Add zero new dependencies (`backend/pom.xml`, `frontend/package.json`, `mock/package.json` unchanged); keep mock port `9000` untouched. | `git diff` on all 3 manifests empty; `node mock/test-runner.js` passes. |
+
+### 3. Applicable Skills, Non-Applicable Skills, and Proof Methods (UIUX-align)
+
+#### 3.1 Applicable Skills (11 Core Skills + Supporting Process Skills)
+
+| # | Skill Name | Why It Applies to Round `UIUX-align` | Concrete Constraint & Proof Method |
+|---|---|---|---|
+| 1 | `using-rikkei-skills` | Mandatory governance entrypoint required by R1 (`PROMPT_BASE_RULES_EN.txt:9-10`). | Enforce precedence (`PROMPT_UIUX_ALIGN_EN.txt` > `PROMPT_BASE_RULES_EN.txt` > Rules `01`–`16` > Skills) and progressive loading. *Proof*: This `UIUX-align` Phase 0 ACK appended prior to any edit. |
+| 2 | `frontend-visual-design` | Required by R1/prompt; governs alignment of `/candidate/internships` with `/candidate`, `/candidate/jobs`, and `/candidate/skills`. | Use `rj-page-header`/`rj-page-title`/`rj-page-subtitle`, `rj-stack-lg`, `rj-surface-card`, shared metric hierarchy, Airy mode (`375/768/1024/1440px`, `scrollWidth <= requestedWidth`), tokens only (Check 9), 0 emoji, authentic Vietnamese, Anti-AI `>= 11/12`. *Proof*: `validate-agent-config.mjs` Check 9, `compute-contrast.mjs`, `/browser` parity table. |
+| 3 | `frontend-motion-design` | Required by R5/prompt; governs entrance, hover/press, and optional `useCountUp` under Rule 09. | Use shared entrance/stagger and `.rj-interactive-card` (`<= 150ms`, border/shadow tokens, no scale-jiggle), optional `useCountUp` (`<= 800ms`, 1x/nav, `.rj-metric-slot`), `CLS = 0`, zero new keyframes or ambient loops, `prefers-reduced-motion` instant final values. *Proof*: CSS inspection, `CandidateInternships.test.tsx`, `/browser` `CLS = 0` check. |
+| 4 | `frontend-accessibility-audit` | Required by R4/prompt; governs semantic markup, live regions, keyboard focus, and target sizes. | Single `<h1>`, semantic `<dl>`/`<dt>`/`<dd>`, `role="status"`/`aria-live="polite"` only for loading, `role="alert"` for errors, no focus stealing, `"Thử lại"` button `>= 44x44px` with `:focus-visible`, full `Tab`/`Enter`/`Space` walkthrough. *Proof*: `CandidateInternships.test.tsx` + `/browser` keyboard audit. |
+| 5 | `frontend-iconography` | Required by R3/prompt; governs all icons on `/candidate/internships`. | Render 100% icons via existing `<Icon name=... />` (`24x24` grid, `stroke-width="2"`, `currentColor`, `aria-hidden="true"`), zero emoji, zero raw inline `<svg>`. *Proof*: JSX inspection + Check 3 zero-emoji gate. |
+| 6 | `frontend-feature-slice` | Edits reside inside `frontend/src/features/internship/**`. | Preserve all 4 async states (Loading skeleton, Error alert + retry, Empty state, Data cards), `types.ts`, `api/candidateInternships.ts`, `index.ts` barrel, and `CandidateInternshipsProps`. *Proof*: `git diff` on `types.ts`/`api/`/`index.ts` empty; `typecheck` & `lint` pass. |
+| 7 | `test-driven-development` | Required by R7 for updating `CandidateInternships.test.tsx`. | Keep existing `17` internship tests green with `0 act()` warnings; assert shared classes, single `h1`, skeleton loading, `rj-empty-state`, error alert + retry, null-safe fallbacks, reduced-motion immediate render, and `vi-VN` dates without `setTimeout`. *Proof*: `npm --prefix frontend run test -- --run` passes `0` warnings. |
+| 8 | `docs-bilingual-update` | Required by R8 for `docs/uiux/*` updates. | Update `PHASE0_ACK.md`, `README.md`, `BROWSER_OBSERVATIONS.md`, `PR_DESCRIPTION.md`, and `pr-screenshots/ORDER.txt`; UTF-8 no BOM, LF, zero inline `cspell` ignores. *Proof*: `markdownlint-cli2`, `cspell`, `check-version-drift.mjs` exit `0`. |
+| 9 | `verification-before-completion` | Mandatory before declaring completion on `UIUX-align`. | Measure and report raw before/after `candidateInternships.css` lines, Entry JS gzip (`<= 128.81 kB`), Combined CSS gzip (`<= 20.736 kB`), `120/120` contrast, `10/10` agent-config checks, and `26/26` local gates. *Proof*: Verbatim raw outputs in `BROWSER_OBSERVATIONS.md` and handoff. |
+| 10 | `ci-local-and-debug` | Governs running `./check.sh`, `.\check.ps1`, and Docker Compose E2E. | Run both `./check.sh` and `.\check.ps1` (`26/26`) and fresh `docker compose up -d --build --wait` -> `node e2e/run-all.mjs` -> `docker compose down -v` (`0` leftovers); never run `scripts/run-ci-in-docker.*`. *Proof*: Raw gate logs and `docker ps -a` / `docker volume ls` empty. |
+| 11 | `handoff-to-team-lead` | Governs final uncommitted delivery and `"UIUX: "` commit proposals. | Leave all edits uncommitted/unstaged; verify `PR_DESCRIPTION.md` commit proposal (`"UIUX: "`) matches `git status --porcelain -uall` excluding git-ignored files under `docs/uiux/pr-screenshots/`. *Proof*: `git status --porcelain -uall` & `git diff --cached --name-only` empty. |
+
+Supporting process skills (`brainstorming-before-building`, `writing-implementation-plans`, `executing-plans`, `dispatching-parallel-agents`, `systematic-debugging`, `requesting-code-review`, `receiving-code-review`, `module-domain-knowledge`) are applied as workflow discipline where triggered.
+
+#### 3.2 Non-Applicable Skills (Omitted Unless Triggered — 9 Skills)
+
+| # | Skill Name | Rationale for Omission in Round `UIUX-align` |
+|---|---|---|
+| 1 | `backend-module-feature` | Frontend-only UI/UX alignment round; zero Java backend controllers, services, or DTOs are modified. |
+| 2 | `backend-module-boundaries` | Zero Java packages or module boundaries under `backend/src/main/java/` are touched. |
+| 3 | `backend-persistence-performance` | Zero JPA entities, queries, or Hikari/persistence settings are changed. |
+| 4 | `flyway-migration-authoring` | Flyway migrations `V1..V15` are immutable; zero schema/seed changes needed. |
+| 5 | `spring-security-rbac-endpoint` | Backend RBAC policies (`InternshipProfileController`, `RoutePolicyRegistry`, `OwnershipGuard`) remain untouched. |
+| 6 | `api-contract-and-errors` | Backend REST endpoints and `InternshipResponse` JSON contracts remain unchanged. |
+| 7 | `external-system-integration-and-mock` | Mock server (`mock/server.js`) is untouched and used read-only for LMS SSO tickets and E2E. |
+| 8 | `security-review-checklist` | No backend auth/IDOR or token-storage logic changes; frontend secret/PII/RBAC invariants remain enforced via Rules `03`, `07`, `08` and E2E/gate scans. |
+| 9 | `writing-skills` | No files in `agent-config/skills/` or `agent-config/rules/` are targeted unless an unexpected skill defect is discovered. |
+
+### 4. Start-of-Round Baseline Measurements and Thresholds (UIUX-align)
+
+Measured directly on clean `HEAD` (`5f817fe`) on branch `feature/uiux-motion-polish` prior to any modification:
+
+| Metric / Gate | Verified Start-of-Round Baseline (`5f817fe`) | Round `UIUX-align` Threshold / Target |
+|---|---|---|
+| **Frontend Lint** (`npm --prefix frontend run lint`) | `0` errors, `0` warnings (`eslint .`, exit `0`) | Must remain `0` errors / `0` warnings. |
+| **Frontend Typecheck** (`npm --prefix frontend run typecheck`) | `0` diagnostics (`tsc --noEmit`, exit `0`) | Must remain `0` diagnostics. |
+| **Frontend Vitest Suite** (`npm --prefix frontend run test -- --run`) | **`36` files / `427` tests PASS** (`CandidateInternships.test.tsx`: `17` tests; `0` `act()` warnings; exit `0`) | All existing `427` tests + new R7 assertions PASS with `0` `act()` warnings. |
+| **Entry JS Bundle** (`dist/assets/index-*.js`) | **`320,267 B`** (`320.26 kB` Vite CLI) raw / **`98,732 B`** (`98.73 kB`) gz6 / **`98,538 B`** (`98.54 kB`) gz9 / **`99.75 kB`** Vite CLI gzip | **`<= 128.81 kB`** ceiling. |
+| **`CandidateInternshipsPage` CSS** (`dist/assets/CandidateInternshipsPage-*.css`) | **`6,486 B`** (`6.48 kB` Vite CLI) raw / **`1,468 B`** (`1.46 kB` Vite CLI) gz6 / **`1,462 B`** gz9 | Shrink substantially by removing duplicated rules. |
+| **`candidateInternships.css` Source Lines** | **`511` lines** (`9,256` bytes) | Substantial line-count reduction (target ~70–120 lines of feature-specific layout). |
+| **Combined Single-Stream CSS** (all `8` `.css` files in `dist/assets/`) | **`136,843 B`** raw / **`21,292 B` (`21.29 kB`) gz6** / **`21,009 B` (`21.01 kB`) gz9** (`556 B` over cap at gz6) | **`<= 20.736 kB` (`20,736 B`)** ceiling (trimming `candidateInternships.css` must restore compliance). |
+| **Contrast Audit** (`node scripts/compute-contrast.mjs`) | **`120/120` contrast pairs PASS** (`9` CIELAB surface + `10` UI boundary invariants, `0` violations, exit `0`) | Maintain **`120/120` PASS** (`0` violations). |
+| **Version Drift** (`node scripts/check-version-drift.mjs`) | **`32/32` manifest tokens PASS** (exit `0`) | Maintain exit `0`. |
+| **Quality Gate Sync** (`node scripts/check-gate-sync.mjs`) | **`29` gate definitions = `26` active + `3` fallbacks** (`23` CI checks, `25` Docker harness gates, exit `0`) | Zero new gates; `./check.sh` & `.\check.ps1` `26/26` PASS. |
+| **Agent Config Parity & Validation** (`sync-agent-config.mjs --check` & `validate-agent-config.mjs`) | **`168` mirror files, `28` skills, `215` artifacts, Checks `1–10` PASS** (exit `0`) | Maintain `168` mirrors, `28` skills, `10/10` PASS. |
+| **E2E Suite Baseline** (`ORIGINAL_REQUEST.md` / `5f817fe`) | **`27` suites / `329` cases / `2,020` assertions** | Re-run fresh on Docker Compose stack in M2; `docker compose down -v` afterwards. |
+
+### 5. Operational Checklist and Verbatim Working Method (UIUX-align)
+
+Mandatory working method (kept verbatim from `D:\GitHub\Rikkei\.agents\PROMPT_BASE_RULES_EN.txt` line 30):
+
+> "Hay check that ky tim hieu va nghien cuu that ky chuyen sau nhat tung buoc roi search, nghien cuu ky google chuyen sau nhat song song nhieu huong cung luc kieu nhu GitHub uy tin hoac dien dan IT uy tin, bai bao nghien cuu uy tin truoc khi tim giai phap tot nhat de hoan thien hoan chinh va chinh chu nhat giup toi. Sau khi sua xong dong thoi phai test luon ket qua thuc te tho trung thuc thay vi dua vao li thuyet. Neu van chua dat duoc thi quay lai workflow tren."
+
+Binding operational invariants for Round `UIUX-align`:
+
+- **Strict Order**: This `UIUX-align` Phase 0 section is appended **first** to `docs/uiux/PHASE0_ACK.md` prior to any code, CSS, test, or other documentation edit (`docs/nt01/PHASE0_ACK.md` and prior `UIUX-polish`/`UIUX-radar` sections remain verbatim).
+- **Showcase Motion & R3 Gate Discipline**: Rule 09 Showcase Tier explicitly permits `(b) data-viz and number reveals (radar, counters, progress)` up to `<= 800ms` (`useCountUp` runs once per navigation in `<= 760ms`, reserves space via `.rj-metric-slot` for `CLS = 0`, and renders the final number immediately under `prefers-reduced-motion`). Any deviation requiring a shared stylesheet change affecting `/candidate`, `/candidate/jobs`, or `/candidate/skills`, any missed bundle/gate threshold after CSS diet, or any out-of-scope defect triggers an immediate stop of sub-agents/Docker and a single `[CAN DUYET - DOI TEAM LEAD]` request per R3.
+- **Git Read-Only**: Never stage, commit, push, reset, stash, or switch branches; keep all modifications uncommitted on `feature/uiux-motion-polish`.
+- **Zero New Dependencies & Zero New Gates**: Keep `frontend/package.json`, `mock/package.json`, `backend/pom.xml`, and `check.sh`/`check.ps1` gate counts unchanged.
+- **Token, Emoji & Path Hygiene**: Zero emojis anywhere, zero raw color literals outside `design-tokens.css`, no inline style objects, no `!important`, UTF-8 no BOM, LF endings, full Vietnamese diacritics in UI/VI sections, zero inline `cspell` ignores, and zero personal machine paths.
