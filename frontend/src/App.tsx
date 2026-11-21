@@ -42,6 +42,7 @@ import { StaffHomePage } from './features/identity/pages/role-homes/StaffHomePag
 import { AdminHomePage } from './features/identity/pages/role-homes/AdminHomePage';
 import { Icon } from './shared/components/Icon';
 import { CandidateEvaluationsPage } from './features/candidate/pages/CandidateEvaluationsPage';
+import { CandidateInternshipsPage } from './features/internship';
 import { CompanyProfilePage } from './features/company';
 
 export const APP_NAME = 'Rikkei Jobs - Nền tảng kết nối việc làm theo năng lực đã xác thực';
@@ -319,6 +320,14 @@ export const AppRoutes: React.FC = () => {
         element={
           <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.candidateEvaluations.allowedRoles}>
             <CandidateEvaluationsPage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path={PROTECTED_ROUTE_POLICIES.candidateInternships.path}
+        element={
+          <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.candidateInternships.allowedRoles}>
+            <CandidateInternshipsPage />
           </RequireRole>
         }
       />

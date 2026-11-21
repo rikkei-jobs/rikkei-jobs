@@ -289,25 +289,47 @@ Retrieves standardized certification or placement examination results.
 
 #### 3.9 `GET /pm/students/{lmsUserId}/internships`
 
-Retrieves internship project history, completed tasks, and evaluation scores from the IOC project management tool (`lms-pm`).
+Retrieves internship project history, accepted tasks, and evaluation scores from the IOC project management tool (`lms-pm`).
 
 - **Request Headers**: `X-Service-Key: dev-key`
-- **Response `200 OK`**:
+- **Response `200 OK`** (`lms-sv-001` sample):
 
   ```json
   [
     {
       "batchId": "IOC-JB-2026-09",
-      "projectName": "Hệ thống Quản lý Bán lẻ",
-      "role": "Backend Intern",
-      "mentorId": "lms-mt-001",
-      "tasksCompleted": 12,
-      "finalScore": 8.7,
-      "startDate": "2026-09-01",
-      "endDate": "2026-10-31"
+      "batchName": "IOC Java Backend 09/2026",
+      "groupName": "Nhóm 2",
+      "topicName": "Hệ thống đặt lịch phòng họp",
+      "mentorEmail": "mentor1@rikkeijobs.test",
+      "startDate": "2026-09-07",
+      "endDate": "2026-10-30",
+      "finalScore": 8.5,
+      "tasks": [
+        {
+          "title": "API đặt phòng và kiểm trùng lịch",
+          "acceptedScore": 9,
+          "acceptedAt": "2026-09-25T17:00:00+07:00"
+        },
+        {
+          "title": "Phân quyền quản trị phòng",
+          "acceptedScore": 8,
+          "acceptedAt": "2026-10-09T17:00:00+07:00"
+        },
+        {
+          "title": "Báo cáo tần suất sử dụng phòng",
+          "acceptedScore": 8.5,
+          "acceptedAt": "2026-10-23T17:00:00+07:00"
+        }
+      ]
     }
   ]
   ```
+
+- **Field Notes (`PMInternshipResponse`)**:
+  - `batchId` (`string`, required for backend sync), `batchName` (`string | null`), `groupName` (`string | null`), `topicName` (`string | null`), `mentorEmail` (`string | null`), `startDate` (`string | null`, `YYYY-MM-DD`), `endDate` (`string | null`, `YYYY-MM-DD`), `finalScore` (`number | null`, `0..10` scale).
+  - `tasks` (`array` of `{ title, acceptedScore, acceptedAt }`, where `acceptedScore` is `number | null` and `acceptedAt` is ISO-8601 `OffsetDateTime | null`).
+- **Empty State**: `lms-sv-002`, `lms-sv-003`, and unknown `lmsUserId` values return `200 OK` with `[]`.
 
 #### 3.10 `POST /pm/batches/{batchId}/members`
 
@@ -442,7 +464,7 @@ Deletes a stored asset from in-memory storage after verifying `api_key` and SHA-
 
 ### 5. Administrative Testing Tools (`/mock/*` — 5 Tools)
 
-These endpoints are strictly for automated integration testing and development diagnostics. They require NO `X-Service-Key` and are NOT logged in `requestLog`. The backend never calls them in production.
+These endpoints are strictly for automated integration testing and development diagnostics. They require NO `X-Service-Key` and are NOT logged in `requestLog`. The backend never calls them in production. Note: There is no `/mock/*` endpoint to mutate PM internship scores at runtime; score-update idempotency is verified in backend unit/integration tests or by editing `data.json` and calling `POST /mock/reload`.
 
 #### 5.1 `POST /mock/reload`
 
@@ -636,7 +658,10 @@ Trả về danh sách điểm thi khảo thí của sinh viên (`200 OK`).
 
 #### 3.9 `GET /pm/students/{lmsUserId}/internships`
 
-Trả về lịch sử dự án thực tập IOC của sinh viên từ `lms-pm` (`200 OK`).
+Trả về lịch sử dự án thực tập IOC, các task đã nghiệm thu và điểm đánh giá của sinh viên từ `lms-pm` (`200 OK`).
+
+- **Mẫu `lms-sv-001`**: Mỗi phần tử gồm `batchId` (`string`, bắt buộc khi đồng bộ), `batchName`, `groupName`, `topicName`, `mentorEmail`, `startDate` (`YYYY-MM-DD | null`), `endDate` (`YYYY-MM-DD | null`), `finalScore` (`number | null`, thang `0..10`), và mảng `tasks` gồm `{ title, acceptedScore, acceptedAt }` (`acceptedScore` là `number | null`, `acceptedAt` là ISO-8601 `OffsetDateTime | null`).
+- **Trạng thái rỗng**: `lms-sv-002`, `lms-sv-003` và `lmsUserId` chưa có đợt thực tập trả về `200 OK` với mảng rỗng `[]`.
 
 #### 3.10 `POST /pm/batches/{batchId}/members`
 
@@ -680,7 +705,7 @@ Xóa ảnh khỏi bộ nhớ tạm sau khi xác thực `api_key` và chữ ký S
 
 ### 5. Bảng 5 Công Cụ Kiểm Thử (`/mock/*`)
 
-Các endpoint `/mock/*` không yêu cầu `X-Service-Key` và không bị ghi vào `requestLog`.
+Các endpoint `/mock/*` không yêu cầu `X-Service-Key` và không bị ghi vào `requestLog`. Lưu ý: chỉ có đúng 5 công cụ dưới đây và không có endpoint `/mock/*` để chỉnh sửa điểm thực tập PM trực tiếp trên RAM (kiểm thử đổi điểm được chứng minh qua unit/integration test backend hoặc nạp lại `data.json` qua `POST /mock/reload`).
 
 #### 5.1 `POST /mock/reload`
 

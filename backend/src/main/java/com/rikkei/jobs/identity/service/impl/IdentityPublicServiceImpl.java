@@ -20,6 +20,7 @@ import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -109,6 +110,19 @@ public class IdentityPublicServiceImpl implements IdentityPublicService {
             return false;
         }
         return userRepository.existsById(userId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<String> findLmsUserIdByUserId(Long userId) {
+        if (userId == null || userId <= 0) {
+            return Optional.empty();
+        }
+        return userRepository
+                .findById(userId)
+                .map(User::getLmsUserId)
+                .map(String::trim)
+                .filter(lmsId -> !lmsId.isBlank());
     }
 
     @Override
