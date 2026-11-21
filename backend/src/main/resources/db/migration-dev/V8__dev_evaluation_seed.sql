@@ -53,7 +53,7 @@ ON CONFLICT (template_id, skill_id) DO NOTHING;
 -- 4. Sample Evaluations
 -- Phiếu 1: Candidate 1 (Nguyễn Văn An) - SUBMITTED
 INSERT INTO evaluations (template_id, user_id, mentor_id, context, batch_id, interview_round_id, status, overall_comment, submitted_at, version)
-SELECT t.id, 1, 6, 'INTERNSHIP', 'IOC-JB-2026-09', NULL, 'SUBMITTED',
+SELECT t.id, 1, 6, 'INTERNSHIP', 1, NULL, 'SUBMITTED',
        'Ứng viên có nền tảng Java và Spring Boot tốt. Có khả năng xây dựng REST API và sử dụng SQL. Cần cải thiện thêm kỹ năng làm việc nhóm.',
        NOW() - INTERVAL '5 days', 0
 FROM evaluation_templates t
@@ -75,7 +75,7 @@ WHERE t.name = 'Phỏng vấn kỹ thuật chung' AND t.context = 'INTERVIEW'
 
 -- Phiếu 3: Candidate 3 (Lê Minh Châu) - DRAFT
 INSERT INTO evaluations (template_id, user_id, mentor_id, context, batch_id, interview_round_id, status, overall_comment, submitted_at, version)
-SELECT t.id, 3, 6, 'INTERNSHIP', 'IOC-JB-2026-09', NULL, 'DRAFT',
+SELECT t.id, 3, 6, 'INTERNSHIP', 1, NULL, 'DRAFT',
        'Đang trong quá trình đánh giá. Cần bổ sung nhận xét và hoàn thiện điểm các tiêu chí.',
        NULL, 0
 FROM evaluation_templates t

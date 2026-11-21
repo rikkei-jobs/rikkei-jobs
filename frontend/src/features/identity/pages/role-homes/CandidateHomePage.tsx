@@ -81,41 +81,6 @@ export const CandidateHomePage: React.FC = () => {
           }}
         >
           <div>
-            <h3 style={{ margin: '0 0 8px 0', fontSize: '1rem', fontWeight: 600 }}>Thực Tập IOC</h3>
-            <p
-              style={{
-                margin: '0 0 16px 0',
-                fontSize: '0.875rem',
-                color: 'var(--rj-color-text-secondary)',
-              }}
-            >
-              Theo dõi đợt thực tập, nhóm, đề tài, mentor, điểm cuối kỳ và số task đã nghiệm thu.
-            </p>
-          </div>
-          <Link
-            to="/candidate/internships"
-            className="rj-btn rj-btn-primary"
-            style={{
-              alignSelf: 'flex-start',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-            }}
-          >
-            <Icon name="check-circle" size={16} />
-            <span>Xem Thực Tập IOC</span>
-          </Link>
-        </div>
-        <div
-          className="rj-auth-card"
-          style={{
-            maxWidth: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div>
             <h3 style={{ margin: '0 0 8px 0', fontSize: '1rem', fontWeight: 600 }}>
               Khoảng Thiếu Hụt Năng Lực
             </h3>
