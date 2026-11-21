@@ -205,6 +205,63 @@ class OpenApiCoverageIntegrationTest {
             JsonNode healthGet = paths.path("/api/v1/health").path("get");
             assertTrue(healthGet.path("responses").has("200"));
             assertTrue(healthGet.path("responses").has("503"));
+
+            // Spot-check IOC internship endpoints (D11 OpenAPI contract)
+            JsonNode myInternshipsGet = paths.path("/api/v1/profiles/me/internships").path("get");
+            JsonNode myInternshipsResponses = myInternshipsGet.path("responses");
+            assertTrue(myInternshipsResponses.has("200"));
+            assertTrue(myInternshipsResponses.has("401"));
+            assertTrue(myInternshipsResponses.has("403"));
+            assertTrue(myInternshipsResponses.has("503"));
+            JsonNode my200Schema = responseSchema(myInternshipsResponses.path("200"));
+            assertEquals("array", my200Schema.path("type").asText());
+            assertEquals(
+                    "#/components/schemas/InternshipResponse",
+                    my200Schema.path("items").path("$ref").asText());
+            for (String code : new String[] {"401", "403", "503"}) {
+                assertEquals(
+                        "#/components/schemas/ErrorResponse",
+                        responseSchema(myInternshipsResponses.path(code)).path("$ref").asText());
+            }
+            String my403Desc = myInternshipsResponses.path("403").path("description").asText();
+            assertTrue(my403Desc.contains("CANDIDATE"));
+            assertTrue(my403Desc.contains("MUST_CHANGE_PASSWORD"));
+
+            JsonNode userInternshipsGet =
+                    paths.path("/api/v1/profiles/{userId}/internships").path("get");
+            JsonNode userInternshipsResponses = userInternshipsGet.path("responses");
+            assertTrue(userInternshipsResponses.has("200"));
+            assertTrue(userInternshipsResponses.has("400"));
+            assertTrue(userInternshipsResponses.has("401"));
+            assertTrue(userInternshipsResponses.has("403"));
+            assertTrue(userInternshipsResponses.has("404"));
+            JsonNode user200Schema = responseSchema(userInternshipsResponses.path("200"));
+            assertEquals("array", user200Schema.path("type").asText());
+            assertEquals(
+                    "#/components/schemas/InternshipResponse",
+                    user200Schema.path("items").path("$ref").asText());
+            for (String code : new String[] {"400", "401", "403", "404"}) {
+                assertEquals(
+                        "#/components/schemas/ErrorResponse",
+                        responseSchema(userInternshipsResponses.path(code)).path("$ref").asText());
+            }
+            String user403Desc = userInternshipsResponses.path("403").path("description").asText();
+            assertTrue(user403Desc.contains("CANDIDATE"));
+            assertTrue(user403Desc.contains("HR"));
+            assertTrue(user403Desc.contains("MUST_CHANGE_PASSWORD"));
+
+            JsonNode schemas = primarySpec.path("components").path("schemas");
+            assertTrue(schemas.has("InternshipResponse"));
+            assertTrue(schemas.has("InternshipTaskResponse"));
+            assertTrue(schemas.has("ErrorResponse"));
+        }
+
+        private JsonNode responseSchema(JsonNode responseNode) {
+            JsonNode content = responseNode.path("content");
+            if (content.has("application/json")) {
+                return content.path("application/json").path("schema");
+            }
+            return content.path("*/*").path("schema");
         }
 
         @Test

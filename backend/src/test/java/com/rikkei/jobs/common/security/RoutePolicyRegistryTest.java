@@ -50,6 +50,42 @@ class RoutePolicyRegistryTest {
         assertTrue(mySkills < skillsOf);
         assertTrue(recomputeSkills < skillsOf);
         assertTrue(mySkills < evalsOf);
+
+        int myInternships = indexOf(policies, HttpMethod.GET, "/api/v1/profiles/me/internships");
+        int internshipsOf =
+                indexOf(policies, HttpMethod.GET, "/api/v1/profiles/{userId}/internships");
+        assertTrue(myInternships >= 0 && internshipsOf >= 0);
+        assertTrue(myInternships < internshipsOf);
+        assertEquals(
+                "/api/v1/profiles/me/internships",
+                registry.findMatchingPolicy(HttpMethod.GET, "/api/v1/profiles/me/internships")
+                        .orElseThrow()
+                        .pattern());
+        assertEquals(
+                "/api/v1/profiles/{userId}/internships",
+                registry.findMatchingPolicy(HttpMethod.GET, "/api/v1/profiles/1/internships")
+                        .orElseThrow()
+                        .pattern());
+    }
+
+    @Test
+    @DisplayName("Internship route policies match D5 authorization matrix")
+    void internshipPoliciesMatchAuthorizationMatrix() {
+        RoutePolicy myInternships =
+                registry.findExactPolicy(HttpMethod.GET, "/api/v1/profiles/me/internships")
+                        .orElseThrow();
+        assertEquals(PolicyAccessType.ROLES, myInternships.accessType());
+        assertEquals(Set.of("CANDIDATE"), myInternships.allowedRoles());
+        assertTrue(myInternships.methodScoped());
+        assertTrue(!myInternships.devOnly());
+
+        RoutePolicy internshipsOf =
+                registry.findExactPolicy(HttpMethod.GET, "/api/v1/profiles/{userId}/internships")
+                        .orElseThrow();
+        assertEquals(PolicyAccessType.ROLES, internshipsOf.accessType());
+        assertEquals(Set.of("CANDIDATE", "HR"), internshipsOf.allowedRoles());
+        assertTrue(internshipsOf.methodScoped());
+        assertTrue(!internshipsOf.devOnly());
     }
 
     @Test
