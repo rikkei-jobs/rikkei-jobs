@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Icon } from '../../../../shared/components/Icon';
 import { hasPlayedMotionOnce, markMotionPlayed } from '../../../../shared/utils/motion';
 import { useAuth } from '../../context/useAuth';
@@ -42,13 +43,15 @@ export const AdminHomePage: React.FC = () => {
           <div className="rj-cand-next-box">
             <div className="rj-cand-next-content">
               <span className="rj-cand-kicker">Trạng thái phân hệ quản trị</span>
-              <h2 className="rj-role-card-title">Công cụ quản trị đang được xây dựng</h2>
+              <h2 className="rj-role-card-title">Kiểm soát trợ lý AI</h2>
               <p className="rj-role-card-desc">
-                Tài khoản quản trị viên đã sẵn sàng. Các màn hình cấu hình khung kỹ năng, xử lý báo
-                sai bằng chứng và tra cứu nhật ký thao tác sẽ mở ở bản cập nhật tiếp theo.
+                Chọn mô hình, điều chỉnh hạn mức và tra cứu nhật ký đã che dữ liệu cá nhân của từng
+                lượt gọi AI.
               </p>
             </div>
-            <span className="rj-card-soon-badge">Sắp ra mắt</span>
+            <Link className="rj-btn rj-btn-primary" to="/admin/ai-config">
+              Mở cấu hình AI
+            </Link>
           </div>
         </section>
 
@@ -75,7 +78,9 @@ export const AdminHomePage: React.FC = () => {
               </li>
               <li className="rj-cand-tile rj-row-between">
                 <div>
-                  <strong className="rj-cand-skill">Xử lý báo sai bằng chứng & nhật ký thao tác</strong>
+                  <strong className="rj-cand-skill">
+                    Xử lý báo sai bằng chứng & nhật ký thao tác
+                  </strong>
                   <p className="rj-cand-meta">
                     Tiếp nhận khiếu nại điểm xác thực, đối chiếu nguồn dữ liệu và tra cứu lịch sử
                     thao tác.
@@ -95,7 +100,8 @@ export const AdminHomePage: React.FC = () => {
                 <div>
                   <strong className="rj-cand-skill">Cấu hình mẫu đánh giá</strong>
                   <p className="rj-cand-meta">
-                    Thiết lập bộ tiêu chí chấm điểm và trọng số áp dụng cho phỏng vấn và thực tập IOC.
+                    Thiết lập bộ tiêu chí chấm điểm và trọng số áp dụng cho phỏng vấn và thực tập
+                    IOC.
                   </p>
                 </div>
                 <span className="rj-card-soon-badge">Sắp ra mắt</span>

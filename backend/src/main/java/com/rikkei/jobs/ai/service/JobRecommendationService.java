@@ -68,6 +68,18 @@ public class JobRecommendationService {
     public JobRecommendationsResponse getRecommendations(
             Long userId, int limit, boolean forceRefresh) {
         int boundedLimit = Math.max(1, Math.min(limit, 100));
+        if (!aiService.isEnabled()) {
+            // Disabled AI must never leak stale generated explanations from the 24-hour cache.
+            aiService.generate(userId, com.rikkei.jobs.ai.model.AiFeature.RECOMMEND, "", "");
+            return new JobRecommendationsResponse(
+                    List.of(),
+                    0,
+                    userId,
+                    false,
+                    OffsetDateTime.now(clock),
+                    aiService.getActiveProvider().name(),
+                    AiService.DISABLED_MESSAGE);
+        }
         OffsetDateTime now = OffsetDateTime.now(clock);
         List<JobRecommendation> cached =
                 jobRecommendationRepository.findByUserIdOrderByScoreDescJobIdAsc(userId);
@@ -143,6 +155,7 @@ public class JobRecommendationService {
             AiService.AiExplanation explanation =
                     rank <= AI_EXPLANATION_LIMIT
                             ? aiService.generateJobExplanation(
+                                    userId,
                                     buildAnonymizedPrompt(match, candidateSkillMap),
                                     fallbackExplanation)
                             : new AiService.AiExplanation(fallbackExplanation, false);

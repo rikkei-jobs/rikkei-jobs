@@ -14,21 +14,27 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.rikkei.jobs.ai.config.AiProperties;
+import com.rikkei.jobs.ai.dto.AiConfigDto;
+import com.rikkei.jobs.ai.dto.AiGenerationResult;
 import com.rikkei.jobs.ai.dto.JobRecommendationsResponse;
 import com.rikkei.jobs.ai.model.JobRecommendation;
 import com.rikkei.jobs.ai.repository.JobRecommendationRepository;
+import com.rikkei.jobs.ai.service.AiAuditService;
 import com.rikkei.jobs.ai.service.AiClient;
+import com.rikkei.jobs.ai.service.AiConfigService;
 import com.rikkei.jobs.ai.service.AiProvider;
 import com.rikkei.jobs.ai.service.AiService;
 import com.rikkei.jobs.ai.service.JobRecommendationCacheStore;
 import com.rikkei.jobs.ai.service.JobRecommendationService;
 import com.rikkei.jobs.ai.service.MockAiClient;
+import com.rikkei.jobs.ai.service.PiiMasker;
 import com.rikkei.jobs.candidate.dto.CandidateSkillScoreDto;
 import com.rikkei.jobs.candidate.service.CandidatePublicService;
 import com.rikkei.jobs.common.exception.RateLimitException;
 import com.rikkei.jobs.company.dto.JobSkillRequirementDto;
 import com.rikkei.jobs.company.dto.OpenJobDto;
 import com.rikkei.jobs.company.service.JobQueryService;
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -40,6 +46,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -62,7 +69,7 @@ public class JobRecommendationServiceTest {
     void setUp() {
         aiProperties = new AiProperties();
         aiProperties.setProvider("mock");
-        aiService = new AiService(aiProperties, List.of(new MockAiClient(aiProperties)));
+        aiService = gateway(AiProvider.MOCK, List.of(new MockAiClient(aiProperties)));
         recommendationService =
                 new JobRecommendationService(
                         jobQueryService,
@@ -71,6 +78,29 @@ public class JobRecommendationServiceTest {
                         cacheStore,
                         aiService,
                         CLOCK);
+    }
+
+    private static AiService gateway(AiProvider provider, List<AiClient> clients) {
+        AiConfigService configs = Mockito.mock(AiConfigService.class);
+        AiAuditService audit = Mockito.mock(AiAuditService.class);
+        Mockito.lenient()
+                .when(configs.get())
+                .thenReturn(
+                        new AiConfigDto(
+                                1,
+                                provider,
+                                "test-model",
+                                new BigDecimal("0.30"),
+                                150,
+                                100,
+                                true,
+                                null,
+                                NOW,
+                                0));
+        Mockito.lenient()
+                .when(audit.reserve(Mockito.anyLong(), Mockito.any(), Mockito.anyInt()))
+                .thenReturn(true);
+        return new AiService(configs, audit, new PiiMasker(), CLOCK, clients);
     }
 
     @Test
@@ -223,32 +253,32 @@ public class JobRecommendationServiceTest {
                     }
 
                     @Override
-                    public String generateExplanation(String prompt) {
+                    public AiGenerationResult generate(String prompt, AiConfigDto config) {
                         throw new RuntimeException("401 Unauthorized: Invalid OpenAI API key");
                     }
                 };
 
         AiProperties brokenProps = new AiProperties();
         brokenProps.setProvider("openai");
-        AiService resilientService = new AiService(brokenProps, List.of(brokenClient));
+        AiService resilientService = gateway(AiProvider.OPENAI, List.of(brokenClient));
 
         String fallback = "Hồ sơ của bạn phù hợp 90% với vị trí này. Điểm mạnh: Java.";
         AiService.AiExplanation result =
-                resilientService.generateJobExplanation("Safe prompt without PII", fallback);
+                resilientService.generateJobExplanation(1L, "Safe prompt without PII", fallback);
 
         assertEquals(fallback, result.text(), "Should fall back on AI error");
         assertFalse(result.aiGenerated(), "Fallback text must not be labelled AI-generated");
     }
 
     @Test
-    @DisplayName("PII in the prompt must not produce a 500: the fallback is returned")
+    @DisplayName("PII is masked before generation without a 500")
     void testPiiRejectionFallsBack() {
         String fallback = "Giải thích mặc định";
         AiService.AiExplanation result =
                 aiService.generateJobExplanation(
-                        "Liên hệ student@gmail.com để biết thêm", fallback);
+                        1L, "Liên hệ student@gmail.com để biết thêm", fallback);
 
-        assertEquals(fallback, result.text());
+        assertEquals(aiProperties.getMock().getExplanation(), result.text());
         assertFalse(result.aiGenerated());
     }
 

@@ -127,6 +127,8 @@ export const ROLE_MENU_CONFIG: Readonly<Record<UserRole, readonly RoleMenuItem[]
     },
   ],
   ADMIN: [
+    { id: 'admin-ai-config', label: 'Cấu hình AI', path: '/admin/ai-config', icon: 'shield-check' },
+    { id: 'admin-ai-logs', label: 'Nhật ký AI', path: '/admin/ai-logs', icon: 'clock' },
     {
       id: 'admin-portal',
       label: 'Quản trị',

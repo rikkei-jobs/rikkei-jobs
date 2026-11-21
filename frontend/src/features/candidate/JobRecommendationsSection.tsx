@@ -170,7 +170,10 @@ export const JobRecommendationsSection: React.FC = () => {
 
       {!loading && !error && recommendations.length === 0 && (
         <div className="recommendations-empty">
-          <p>Hiện chưa có tin tuyển dụng nào phù hợp với hồ sơ kỹ năng hiện tại của bạn.</p>
+          <p role="status">
+            {meta?.message ||
+              'Hiện chưa có tin tuyển dụng nào phù hợp với hồ sơ kỹ năng hiện tại của bạn.'}
+          </p>
         </div>
       )}
 

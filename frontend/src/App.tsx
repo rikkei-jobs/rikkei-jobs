@@ -81,18 +81,29 @@ const CompanyProfilePage = lazyRoute(async () => {
 const MentorHomePage = lazyRoute(
   () => import('./features/identity/pages/role-homes/MentorHomePage'),
 );
-const StaffHomePage = lazyRoute(
-  () => import('./features/identity/pages/role-homes/StaffHomePage'),
-);
-const AdminHomePage = lazyRoute(
-  () => import('./features/identity/pages/role-homes/AdminHomePage'),
-);
+const StaffHomePage = lazyRoute(() => import('./features/identity/pages/role-homes/StaffHomePage'));
+const AiConfigPage = lazyRoute(async () => {
+  const m = await import('./features/ai');
+  return { default: m.AiConfigPage };
+});
+const AiLogsPage = lazyRoute(async () => {
+  const m = await import('./features/ai');
+  return { default: m.AiLogsPage };
+});
+registerRoutePreloader('/admin/ai-config', AiConfigPage.preload, AiConfigPage.isLoaded);
+registerRoutePreloader('/admin/ai-logs', AiLogsPage.preload, AiLogsPage.isLoaded);
+
+const AdminHomePage = lazyRoute(() => import('./features/identity/pages/role-homes/AdminHomePage'));
 
 registerRoutePreloader('/sso-callback', SsoCallbackPage.preload, SsoCallbackPage.isLoaded);
 registerRoutePreloader('/change-password', ChangePasswordPage.preload, ChangePasswordPage.isLoaded);
 registerRoutePreloader('/forgot-password', ForgotPasswordPage.preload, ForgotPasswordPage.isLoaded);
 registerRoutePreloader('/reset-password', ResetPasswordPage.preload, ResetPasswordPage.isLoaded);
-registerPrefixRoutePreloader('/reset-password/', ResetPasswordPage.preload, ResetPasswordPage.isLoaded);
+registerPrefixRoutePreloader(
+  '/reset-password/',
+  ResetPasswordPage.preload,
+  ResetPasswordPage.isLoaded,
+);
 registerRoutePreloader(
   PROTECTED_ROUTE_POLICIES.candidateHome.path,
   CandidateHomePage.preload,
@@ -162,9 +173,7 @@ export const HomeSkeleton: React.FC = () => {
   const { isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
   const [backendStatus, setBackendStatus] = useState<BackendHealthStatus>('CONNECTING...');
-  const [statusDetails, setStatusDetails] = useState<string>(
-    'Đang kiểm tra kết nối dịch vụ...',
-  );
+  const [statusDetails, setStatusDetails] = useState<string>('Đang kiểm tra kết nối dịch vụ...');
   const [isChecking, setIsChecking] = useState<boolean>(false);
   const [view, setView] = useState<'home' | 'skills'>('home');
 
@@ -343,7 +352,9 @@ export const HomeSkeleton: React.FC = () => {
                 <h3 className="rj-role-card-title">Trải nghiệm đang hoạt động</h3>
                 <ul className="rj-cand-list rj-stack-sm">
                   <li className="rj-cand-tile">
-                    <strong className="rj-cand-skill">Ứng viên (Học viên & thực tập sinh IOC)</strong>
+                    <strong className="rj-cand-skill">
+                      Ứng viên (Học viên & thực tập sinh IOC)
+                    </strong>
                     <p className="rj-cand-meta">
                       Theo dõi 20 kỹ năng theo điểm xác thực và tự khai, xem nhận xét mentor, phân
                       tích khoảng thiếu hụt và khám phá việc làm gợi ý.
@@ -550,7 +561,9 @@ export const AppRoutes: React.FC = () => {
           <Route
             path={PROTECTED_ROUTE_POLICIES.candidateGapAnalysis.path}
             element={
-              <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.candidateGapAnalysis.allowedRoles}>
+              <RequireRole
+                allowedRoles={PROTECTED_ROUTE_POLICIES.candidateGapAnalysis.allowedRoles}
+              >
                 <CandidateGapAnalysisPage />
               </RequireRole>
             }
@@ -567,7 +580,9 @@ export const AppRoutes: React.FC = () => {
           <Route
             path={PROTECTED_ROUTE_POLICIES.candidateEvaluations.path}
             element={
-              <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.candidateEvaluations.allowedRoles}>
+              <RequireRole
+                allowedRoles={PROTECTED_ROUTE_POLICIES.candidateEvaluations.allowedRoles}
+              >
                 <CandidateEvaluationsPage />
               </RequireRole>
             }
@@ -575,7 +590,9 @@ export const AppRoutes: React.FC = () => {
           <Route
             path={PROTECTED_ROUTE_POLICIES.candidateInternships.path}
             element={
-              <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.candidateInternships.allowedRoles}>
+              <RequireRole
+                allowedRoles={PROTECTED_ROUTE_POLICIES.candidateInternships.allowedRoles}
+              >
                 <CandidateInternshipsPage />
               </RequireRole>
             }
@@ -627,6 +644,23 @@ export const AppRoutes: React.FC = () => {
             element={
               <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.adminHome.allowedRoles}>
                 <AdminHomePage />
+              </RequireRole>
+            }
+          />
+
+          <Route
+            path={PROTECTED_ROUTE_POLICIES.adminAiConfig.path}
+            element={
+              <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.adminAiConfig.allowedRoles}>
+                <AiConfigPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path={PROTECTED_ROUTE_POLICIES.adminAiLogs.path}
+            element={
+              <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.adminAiLogs.allowedRoles}>
+                <AiLogsPage />
               </RequireRole>
             }
           />

@@ -3,6 +3,8 @@ package com.rikkei.jobs.ai.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rikkei.jobs.ai.config.AiProperties;
+import com.rikkei.jobs.ai.dto.AiConfigDto;
+import com.rikkei.jobs.ai.dto.AiGenerationResult;
 import com.rikkei.jobs.common.client.ExternalApiClient;
 import java.time.Duration;
 import java.util.List;
@@ -35,7 +37,7 @@ public class ClaudeAiClient implements AiClient {
     }
 
     @Override
-    public String generateExplanation(String prompt) {
+    public AiGenerationResult generate(String prompt, AiConfigDto config) {
         String apiKey = aiProperties.getClaude().getApiKey();
         if (apiKey == null || apiKey.trim().isEmpty()) {
             throw new IllegalStateException("Claude API key is not configured");
@@ -45,8 +47,9 @@ public class ClaudeAiClient implements AiClient {
 
         Map<String, Object> body =
                 Map.of(
-                        "model", aiProperties.getClaude().getModel(),
-                        "max_tokens", 150,
+                        "model", config.model(),
+                        "max_tokens", config.maxTokens(),
+                        "temperature", config.temperature(),
                         "messages", List.of(Map.of("role", "user", "content", prompt)));
 
         String responseBody =
@@ -58,10 +61,23 @@ public class ClaudeAiClient implements AiClient {
 
         try {
             JsonNode root = objectMapper.readTree(responseBody);
-            return root.path("content").get(0).path("text").asText().trim();
+            StringBuilder text = new StringBuilder();
+            for (JsonNode block : root.path("content")) {
+                if ("text".equals(block.path("type").asText())) {
+                    text.append(block.path("text").asText());
+                }
+            }
+            return new AiGenerationResult(
+                    text.toString().trim(),
+                    tokenCount(root.path("usage").path("input_tokens")),
+                    tokenCount(root.path("usage").path("output_tokens")));
         } catch (Exception e) {
             log.error("Failed to parse Claude response: {}", e.getClass().getSimpleName());
             throw new RuntimeException("Failed to parse Claude response", e);
         }
+    }
+
+    private static Integer tokenCount(JsonNode node) {
+        return node.canConvertToInt() && node.asInt() >= 0 ? node.asInt() : null;
     }
 }
