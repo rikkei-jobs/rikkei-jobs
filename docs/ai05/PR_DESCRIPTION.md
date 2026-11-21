@@ -30,7 +30,7 @@ mode runs the same assertions without skipping; local PostgreSQL 18.4 evidence i
 Current command output and outstanding environment blockers are recorded in [verification](VERIFICATION.md).
 
 - Backend AI unit suite: 47 tests passed, no failures/errors/skips.
-- Disposable host PostgreSQL 18.4 integration: 12 tests passed, no failures/errors/skips.
+- Disposable host PostgreSQL 18.4 integration: 13 tests passed, no failures/errors/skips.
 - Full frontend suite: 441 tests passed across 38 files; lint, typecheck and build passed.
 - Java compilation, Spotless, SpotBugs, Markdownlint, CSpell and agent mirror/validation passed.
 - `./check.sh` exited 1: **NOT VERIFIED** pinned Testcontainers and the four Docker-based
@@ -54,6 +54,15 @@ They cover mobile/tablet/desktop, light/dark, no page overflow, dialog Escape an
 ![Masked prompt and response](screenshots/ai-log-detail-1440.png)
 
 [Mobile](screenshots/ai-logs-375.png) · [Dark mode](screenshots/ai-logs-dark-1440.png)
+
+## Migration regression coverage
+
+The existing profile and migration suites now expect V17 in the latest inventory: 9 schema
+migrations, or 16 migrations including dev seeds. The test specifically validating the V15
+upgrade is pinned to target 15, preserving its original one-migration expectation. Seed
+exclusion, zero production users, upgrade data and idempotency assertions remain intact.
+An additional real-database test checks the exact latest/dev/V15 version lists and V17 table
+presence without populating production users.
 
 ## Review status
 

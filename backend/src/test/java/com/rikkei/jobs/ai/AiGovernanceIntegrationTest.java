@@ -17,9 +17,11 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -292,6 +294,53 @@ class AiGovernanceIntegrationTest {
         assertEquals(
                 "Không thể nhận phản hồi từ dịch vụ AI.",
                 jdbc.queryForObject("SELECT response FROM ai_logs", String.class));
+    }
+
+    @Test
+    void migrationInventorySeparatesLatestSchemaFromDevSeedsAndFrozenV15() {
+        assertEquals(
+                List.of(
+                        "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14",
+                        "15", "17"),
+                jdbc.queryForList(
+                        "SELECT version FROM public.flyway_schema_history WHERE success = true AND version IS NOT NULL ORDER BY installed_rank",
+                        String.class));
+        for (boolean latest : new boolean[] {false, true}) {
+            String schema = latest ? "ai05_latest_schema" : "ai05_v15_schema";
+            try {
+                var configuration =
+                        Flyway.configure()
+                                .dataSource(jdbc.getDataSource())
+                                .schemas(schema)
+                                .defaultSchema(schema)
+                                .locations("classpath:db/migration");
+                if (!latest) configuration.target("15");
+                configuration.load().migrate();
+                List<String> expected =
+                        latest
+                                ? List.of("1", "3", "5", "7", "9", "11", "13", "15", "17")
+                                : List.of("1", "3", "5", "7", "9", "11", "13", "15");
+                assertEquals(
+                        expected,
+                        jdbc.queryForList(
+                                "SELECT version FROM "
+                                        + schema
+                                        + ".flyway_schema_history WHERE success = true AND version IS NOT NULL ORDER BY installed_rank",
+                                String.class));
+                assertEquals(
+                        0L,
+                        jdbc.queryForObject(
+                                "SELECT count(*) FROM " + schema + ".users", Long.class));
+                assertEquals(
+                        latest,
+                        jdbc.queryForObject(
+                                "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = ? AND table_name = 'ai_config')",
+                                Boolean.class,
+                                schema));
+            } finally {
+                jdbc.execute("DROP SCHEMA IF EXISTS " + schema + " CASCADE");
+            }
+        }
     }
 
     @Test

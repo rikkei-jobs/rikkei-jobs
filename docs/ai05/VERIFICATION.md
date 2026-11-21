@@ -172,3 +172,25 @@ the focused backend suite and the disposable local integration suite were rerun,
 Review found no additional application changes needed before publication. The PostgreSQL
 18.4 cluster and its unique OS temporary directory were cleaned after the recheck. Peer review,
 mentor approval and verification with the pinned PostgreSQL 18.6 image remain pending.
+
+## CI migration inventory regression
+
+The initial [backend CI run](https://github.com/rikkei-jobs/rikkei-jobs/actions/runs/44950241450/job/136986344523)
+executed 750 tests and failed 11 assertions. All 11 were stale migration counts after adding V17:
+production/default/staging expected 8 instead of 9, dev expected 15 instead of 16, and the
+V15-only upgrade test unintentionally ran newer migrations.
+
+The fix updates the five affected test classes for the latest inventory and pins the V15-only
+upgrade to target 15. It preserves all no-seed, zero-user, data preservation and idempotency
+assertions. A new real PostgreSQL regression checks exact version lists for current schema,
+current dev seed and frozen V15 targets, including AI-table presence and empty production users.
+
+The supplemental local PostgreSQL 18.4 integration command exited 0:
+
+```text
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+```
+
+The pinned PostgreSQL 18.6 suites remain authoritative on GitHub Actions. Production application
+code and migration SQL were not changed by this regression fix.
