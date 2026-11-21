@@ -1,16 +1,16 @@
-# Nhật Ký Quan Sát & Đo Đạc Trình Duyệt Thực Tế (`BROWSER_OBSERVATIONS.md` — `UIUX-polish` & `UIUX-radar`)
+# Nhật Ký Quan Sát & Đo Đạc Trình Duyệt Thực Tế (`BROWSER_OBSERVATIONS.md` — `UIUX-polish`, `UIUX-radar` & `UIUX-align`)
 
-**Dự án**: Rikkei Jobs — Vòng `UIUX-polish` (M1–M8) & Vòng bổ sung `UIUX-radar` (`/login` `CompetencyRadarVisual` tự chuyển có giới hạn, gỡ nút tạm dừng hiển thị, vòng nền 1-shot `<= 5s`, cân đối bố cục màn hình rộng)  
+**Dự án**: Rikkei Jobs — Vòng `UIUX-polish` (M1–M8), Vòng `UIUX-radar` (`/login` `CompetencyRadarVisual` tự chuyển có giới hạn, gỡ nút tạm dừng hiển thị, vòng nền 1-shot `<= 5s`, cân đối bố cục màn hình rộng) & Vòng `UIUX-align` (đồng bộ `/candidate/internships` với `/candidate/jobs`, `/candidate` & `/candidate/skills`)  
 **Nhánh**: `feature/uiux-motion-polish`  
-**Ảnh chụp màn hình**: `docs/uiux/pr-screenshots/` (`89` tệp PNG git-ignored: `15` M4 + `24` M4b + `28` M7 + `21` `UIUX-radar` + `1` ảnh báo lỗi gốc từ Owner, đối chiếu 1:1 với `docs/uiux/pr-screenshots/ORDER.txt`)
+**Ảnh chụp màn hình**: `docs/uiux/pr-screenshots/` (`98` tệp PNG git-ignored: `15` M4 + `24` M4b + `28` M7 + `21` `UIUX-radar` + `1` ảnh báo lỗi gốc từ Owner + `9` `UIUX-align`, đối chiếu 1:1 với `docs/uiux/pr-screenshots/ORDER.txt`)
 
 ## 1. Phân Tách Nguồn Bằng Chứng & Giới Hạn Sandbox `webview_browser`
 
 Mọi số liệu trong tài liệu này được gắn nhãn trung thực theo đúng công cụ thực thi:
 
-1. `` `[/browser]` ``: Thực thi trên Antigravity `/browser` (`webview_browser`) đối chiếu trực tiếp stack Docker Compose (`http://127.0.0.1:3000`) qua các lượt **M4 Pilot** (`15` ảnh `m4-01`..`m4-15`), **M4b Pilot Rework** (`24` ảnh `m4b-seq-*` và `m4b-01`..`m4b-12`), **M7 Pass 1 & Pass 2** (phát hiện BUG 1–4), **M7 Targeted Re-Verification** (`28` ảnh `m7-01`..`m7-28`), và **UIUX-radar** (`21` ảnh `radar-01`..`radar-09`, `radar-11`..`radar-22`, phiên `70a37ec7-1ad5-481e-828d-cf6b0eb8e75f`, asset `index-wGCI4iLJ.js` & `index-BANbuE8W.css`).
+1. `` `[/browser]` ``: Thực thi trên Antigravity `/browser` (`webview_browser`) đối chiếu trực tiếp stack Docker Compose (`http://127.0.0.1:3000`) qua các lượt **M4 Pilot** (`15` ảnh `m4-01`..`m4-15`), **M4b Pilot Rework** (`24` ảnh `m4b-seq-*` và `m4b-01`..`m4b-12`), **M7 Pass 1 & Pass 2** (phát hiện BUG 1–4), **M7 Targeted Re-Verification** (`28` ảnh `m7-01`..`m7-28`), **UIUX-radar** (`21` ảnh `radar-01`..`radar-09`, `radar-11`..`radar-22`, phiên `70a37ec7-1ad5-481e-828d-cf6b0eb8e75f`), và **UIUX-align** (`4` ảnh `align-before-*` tại `M0-Before` + `5` ảnh `align-after-*` tại `M3-Browser`, subagent `8b6f05f3-6509-491b-be78-3117fb0b95aa`).
 2. `` `[Chromium PerformanceObserver / CDP]` ``: Đo đạc tự động qua probe Playwright Chromium (`UIUX-polish` Wave 10: `CLS`, `rawAll`, `getAnimations()`, `MutationObserver` chuyển cảnh đăng xuất, giả lập API trễ `650ms`) và probe Chrome headless CDP phụ trợ (`UIUX-radar`: đo trước/sau `scrollWidth === innerWidth` và `boundingBox()` trên `1280/1440/1600/1660/1662/1920/375px` — tách biệt hoàn toàn với bằng chứng `` `[/browser]` ``).
-3. `` `[Static CSS / Vitest / compute-contrast]` ``: Số liệu mã nguồn CSS/TSX, kết quả `35/35` tệp Vitest (`410/410` tests gồm `14` test fake-timer mới của `CompetencyRadarVisual.test.tsx`, `0` `act()`), `node scripts/compute-contrast.mjs` (`120/120` cặp màu Light & Dark), và `node scripts/validate-agent-config.mjs` (`10/10`, `168` mirror files).
+3. `` `[Static CSS / Vitest / compute-contrast]` ``: Số liệu mã nguồn CSS/TSX, kết quả **`36/36` tệp Vitest / `429/429` tests** ở vòng `UIUX-align` (gồm `18` tests trong `CandidateInternships.test.tsx` và test mới cho `useCountUp` tại `motion.test.ts`, `0` cảnh báo `act()`), `node scripts/compute-contrast.mjs` (`120/120` cặp màu Light & Dark), và `node scripts/validate-agent-config.mjs` (`10/10`, `168` mirror files).
 
 ### 1.1. Báo Cáo Trung Thực Giới Hạn Sandbox `webview_browser`
 
@@ -101,11 +101,51 @@ Thực thi trên `/login` (`http://127.0.0.1:3000`, `index-wGCI4iLJ.js` & `index
 
 *(Ghi chú: Số đo `[CDP]` phụ trợ của Worker 1 trên cùng bản build cho thấy `docScrollW === innerWidth` tại mọi kích thước `1280/1440/1600/1660/1662/1920/375` với `docScrollH === innerHeight`).*
 
+### 2.5. Vòng `UIUX-align` — Đồng Bộ `/candidate/internships` (`9` ảnh `align-*`) `` `[/browser]` ``
+
+Thực thi đối chiếu **BEFORE (`M0-Before`, `HEAD 5f817fe`)** và **AFTER (`M3-Browser`, subagent `8b6f05f3-6509-491b-be78-3117fb0b95aa`, `http://127.0.0.1:3000`)** trên `/candidate/internships`, `/candidate`, `/candidate/jobs`, và `/candidate/skills`:
+
+#### A. Số đo BEFORE (`M0-Before`, `4` ảnh `align-before-*`)
+
+- **Ảnh đã lưu**: `align-before-1440-light.png` (`74,141 B`), `align-before-1440-dark.png` (`73,229 B`), `align-before-375-light.png` (`62,150 B`), `align-before-375-dark.png` (`63,205 B`).
+- **`1440x900` Light**: `h1.ci-heading` `{x:304, y:96.8, w:507.9, h:36}` (lệch dọc **`+8.0px`** so với `/candidate/jobs` `h1.rj-page-title` `y:88.8` và chỉ chiếm `507.9px` thay vì toàn bộ chiều rộng nội dung `1096.8px`), `.ci-overview` `{x:1101.9, y:96.8, w:298.9, h:74.4}`, `.ci-card` `{x:304, y:211.2, w:1096.8, h:410.2}`.
+- **`375x812` Light**: `html/body w:360`, `h1` `{x:16, y:185.9, w:328, h:30}` (lệch dọc **`+8.0px`** so với `/candidate/jobs` `h1.rj-page-title` `y:177.9`), `.ci-overview` `{x:16, y:281.9, w:328, h:95.2}`, `.ci-card` `{x:16, y:413.1, w:328, h:535.8}`.
+
+#### B. Kết quả AFTER Live `/browser` (`5` ảnh `align-after-*`)
+
+- **Ảnh đã lưu**: `align-after-1440-light.png` (`79,139 B`), `align-after-1440-dark.png` (`76,752 B`), `align-after-375-light.png` (`62,641 B`), `align-after-375-dark.png` (`63,472 B`), `align-after-empty-1440-light.png` (`64,921 B`).
+- **Xác thực & Trạng thái rỗng (`lms-sv-002`, `Trần Thị Bình`)**: Đăng nhập LMS SSO thật `POST /api/v1/auth/sso -> HTTP 200`, `GET /api/v1/profiles/me/internships -> HTTP 200 []`, `.rj-empty-state` = `1`, `h1.rj-page-title` = `1`, `[role="status"]` = `0`, `[role="alert"]` = `0`; tại `1440x900` Light: `html w=1424.8 <= 1440`, `.rj-empty-state {x:304, y:179.7, w:1096.8, h:136.1}`; tại `375x812` Light: `html w=375.2` (`+0.2px` làm tròn DPI phân số trên Windows, không có thanh cuộn ngang).
+- **Tài khoản có dữ liệu (`lms-sv-001`, `candidate1@rikkeijobs.test`)**: `GET /api/v1/profiles/me/internships -> HTTP 200`, `0` lỗi console, `0` lỗi HTTP `>= 400` trên `/candidate/internships`, `/candidate/jobs`, và `/candidate/skills`. *(Ghi nhận trung thực: vé SSO 60 giây cấp sẵn trước phiên kiểm thử đã hết hạn do độ trễ khởi động nguội giữa các bước nên lượt `lms-sv-001` ở bước AFTER dùng luồng đăng nhập doanh nghiệp dự phòng `POST /api/v1/auth/login -> HTTP 200`, trong khi luồng LMS SSO thật `POST /api/v1/auth/sso -> HTTP 200` đã chạy thành công trên `lms-sv-002` trong cùng lượt AFTER và trên `lms-sv-001` ở lượt `M0-Before`).*
+- **Kiểm tra không hồi quy `useCountUp` trên `/candidate`**: Sau khi áp dụng bản sửa 1 dòng tại `motion.ts:533`, các chỉ số hiển thị chính xác: `Kỹ năng đã xác thực: 11`, `Điểm trung bình: 79/100`, `Mức sẵn sàng mục tiêu: Chưa chọn`, `Đánh giá từ mentor: 1` (`0` giá trị âm, `0` lỗi runtime).
+
+#### C. Ma trận `locator.boundingBox()` AFTER trên `/candidate/internships` (`375/768/1024/1440px`, Light & Dark)
+
+| Viewport & Theme | `html w` (`<= requested`) | `main` (`x, y, w, h`) | `.rj-page-header` / `h1.rj-page-title` | `.ci-metrics-strip` | `.rj-surface-card` & khối con (`dl`, `.ci-stats`) |
+|---|---|---|---|---|---|
+| `1440x900` Light (`align-after-1440-light.png`) | `w=1424.8 <= 1440` | `{x:280, y:56.8, w:1144.8, h:844}` | `.rj-page-header {x:304, y:88.8, w:1096.8, h:66.9}`; `h1 {x:304, y:88.8, w:1096.8, h:36.4}` | `{x:304, y:179.7, w:1096.8, h:80.6}` | `.rj-surface-card {x:304, y:284.3, w:1096.8, h:352.55}`, `dl {x:328.8, y:374.7, w:1047.2, h:138.25}`, `.ci-stats {x:328.8, y:528.95, w:1047.2, h:83.1}` |
+| `1440x900` Dark (`align-after-1440-dark.png`) | `w=1424.8 <= 1440` | Khớp kích thước Light | `.rj-page-header {w:1096.8, h:66.9}`; `h1 {w:1096.8, h:36.4}` | `{w:1096.8, h:80.6}` | `.rj-surface-card {w:1096.8, h:352.55}` (kích thước khớp 100% Light) |
+| `1024x768` Dark & Light | Dark `w=1008.8 <= 1024`; Light `w=1024 <= 1024` | `0` tràn ngang | Đồng nhất khung `SharedAppLayout` | 2 cột cân đối | Không tràn ngang |
+| `768x1024` Dark & Light | `w=752.8 <= 768` | `0` tràn ngang | `.rj-page-header w=440.8` | `.ci-metrics-strip w=440.8` | `.rj-surface-card w=440.8` (`0` tràn ngang) |
+| `375x812` Light & Dark (`align-after-375-*.png`) | `w=360 <= 375` | `{x:0, y:161.9, w:360, h:950.85}` | `.rj-page-header {x:16, y:177.9, w:328, h:111.9}`; `h1 {x:16, y:177.9, w:328, h:36.4}` | `{x:16, y:313.8, w:328, h:173.2}` | `.rj-surface-card {x:16, y:511, w:328, h:585.75}`, `dl {x:40.8, y:626.2, w:278.4, h:251.55}` |
+
+#### D. Bảng đối chiếu song song (`/candidate/internships` vs `/candidate/jobs` & `/candidate/skills`)
+
+| Tuyến đường | `1440x900` (`main` & tiêu đề đầu trang) | `375x812` (`html w` & tiêu đề đầu trang) | Kết luận parity |
+|---|---|---|---|
+| `/candidate/internships` (AFTER) | `main {x:280, w:1144.8}`, `.rj-page-header {x:304, y:88.8, w:1096.8, h:66.9}`, `h1.rj-page-title {x:304, y:88.8, w:1096.8, h:36.4}` | `html w=360`, `h1.rj-page-title {x:16, y:177.9, w:328, h:36.4}` | Chuẩn đích sau đồng bộ |
+| `/candidate/jobs` | `main {x:280, w:1144.8}`, `.rj-page-header {x:304, y:88.8/88, w:1096.8, h:66.9}`, `h1.rj-page-title {x:304, y:88.8/88, w:1096.8, h:36.4}` | `html w=360`, `h1.rj-page-title {x:16, y:177.9, w:328, h:36.4}` | **`0.0px` parity chính xác** (triệt tiêu độ lệch `+8px` ở BEFORE) |
+| `/candidate/skills` | `main {x:280, w:1144.8}`, `h2 {x:304, y:96.8}` | `html w=360`, `h2 {x:16, y:185.9}` | Không đổi, `0` sai lệch hồi quy |
+
+#### E. Tương tác người dùng thực R2 & công bố trung thực giới hạn sandbox `webview_browser`
+
+- **Tương tác R2 đã kiểm chứng trong `/browser`**: Click chuột trái, chuột phải, double-click trên `h1.rj-page-title`, hover trên thẻ và nút điều hướng, cuộn chuột (`wheel`), điều hướng bàn phím (`Tab`/`Shift+Tab`/`Enter`/`Space`/`Escape`), mở/đóng drawer mobile ở `375px`, điều hướng `goBack()`/`goForward()` qua `/candidate/jobs`, `page.reload()` (JWT lưu RAM nên chuyển sạch về `/login`), và truy cập `/candidate/internships` khi chưa đăng nhập (chuyển sạch về `/login`).
+- **Công bố trung thực giới hạn sandbox `webview_browser` (R2 / R8)**: Trong môi trường `webview_browser`, các API `page.evaluate`, `locator.evaluate`, `$eval`, `$$eval`, `waitForFunction`, `page.emulateMedia`, `page.request`, và `page.route` đều bị chặn. Do đó, các phép đo cần JS trong trang hoặc giả lập mạng/media gồm `PerformanceObserver` (`CLS`), `getComputedStyle()`, `prefers-reduced-motion: reduce`, và chặn mạng giả lập lỗi/API chậm (`page.route`) **không thể thực thi bên trong `/browser`** và được chứng minh bằng bộ kiểm thử Vitest (`CandidateInternships.test.tsx`, `motion.test.ts`), phân tích CSS tĩnh, và các probe `CLS` trước đó.
+
 ---
 
-## 3. Ma Trận Đo Đạc Toàn Bộ Tuyến Đường (`19` Route Entries + `*` Fallback)
+## 3. Ma Trận Đo Đạc Toàn Bộ Tuyến Đường (`19` Route Entries + `TT-01` `/candidate/internships` + `*` Fallback)
 
-Toàn bộ kết quả bên dưới tổng hợp từ `` `[/browser]` `` (`m4-*`, `m4b-*`, `m7-01`..`m7-28`, `radar-*`) và `` `[Chromium PerformanceObserver]` `` Wave 10 trên `375x812`..`1920x1080` (Light & Dark):
+Toàn bộ kết quả bên dưới tổng hợp từ `` `[/browser]` `` (`m4-*`, `m4b-*`, `m7-01`..`m7-28`, `radar-*`, `align-*`) và `` `[Chromium PerformanceObserver]` `` Wave 10 trên `375x812`..`1920x1080` (Light & Dark):
 
 | # | Tuyến (`App.tsx`) | Vai trò / Ngữ cảnh | `scrollWidth <= requestedWidth` (`375..1920px`, Light & Dark) | `CLS` & `rawAll` `` `[Chromium PerformanceObserver]` `` | Quan sát nội dung, M1 & tương tác R2 | Ảnh đại diện |
 |---:|---|---|---|---:|---|---|
@@ -128,6 +168,7 @@ Toàn bộ kết quả bên dưới tổng hợp từ `` `[/browser]` `` (`m4-*`
 | 17 | `/admin` | `ADMIN` (`lms-ad-001`, Dense `36px`) | Đạt (`375/768/1024/1440px`, Light & Dark) | `0` (`6/6` lượt) | Nội dung quản trị danh mục 20 kỹ năng/trọng số (`Sắp ra mắt`), zero technical showcase, `3` nút không trùng lặp (BUG 2) | `m7-26`, `m7-27`, `m7-28` |
 | 18 | `/403` | Đã đăng nhập truy cập trái vai trò (`ForbiddenPage`) | Đạt (`375/1440px` via SPA + Vitest) | `0` (SPA) | Nằm bên trong `SharedAppLayout` giữ nguyên sidebar vai trò hiện tại; bỏ `<BrandMark />` lặp trong card `403` | Xác minh SPA + Vitest |
 | 19 | `*` (`404` fallback) | Đường dẫn không khớp (`<Navigate to="/login" replace />`) | Đạt (`375/1440px`) | `0` | Điều hướng sạch về `/login` (`0` lỗi JS runtime) | Xác minh SPA + Vitest |
+| 20 | `/candidate/internships` | `CANDIDATE` (`lms-sv-001` & `lms-sv-002`, `UIUX-align`) | Đạt (`375/768/1024/1440px`, Light & Dark) | `0` (`Vitest` + `.rj-metric-slot` / `.ci-skeleton-card`) | `0.0px` parity với `/candidate/jobs` (`y=88.8` / `177.9`), `<dl>` ngữ nghĩa, `vi-VN` en dash, trạng thái rỗng `lms-sv-002` không gắn `status`/`alert` | `align-before-*`, `align-after-*` (`9` ảnh) |
 
 Ghi chú bổ sung về chuyển động có chủ đích của người dùng: khi người dùng chủ động click nút thu gọn sidebar (`280px <-> 72px`) trên `/hr` tại `1440x900`, `PerformanceObserver` ghi nhận `rawAll = 0.0781` với `hadRecentInput: true` trong khung `500ms` (do chính thao tác thu gọn cột trả lại `208px` chiều ngang cho `<main>`), còn chỉ số `CLS` chính thức vẫn bằng **`0`**.
 
@@ -157,12 +198,13 @@ Ghi chú bổ sung về chuyển động có chủ đích của người dùng: 
 
 ---
 
-## 6. Chỉ Mục `89` Ảnh Trong `docs/uiux/pr-screenshots/`
+## 6. Chỉ Mục `98` Ảnh Trong `docs/uiux/pr-screenshots/`
 
-Toàn bộ `89` tệp PNG (`15` M4 + `24` M4b + `28` M7 + `21` `UIUX-radar` + `1` ảnh báo lỗi gốc từ Owner) được lưu trong thư mục git-ignored `docs/uiux/pr-screenshots/` và lập chỉ mục đầy đủ từng dòng trong [`docs/uiux/pr-screenshots/ORDER.txt`](pr-screenshots/ORDER.txt):
+Toàn bộ `98` tệp PNG (`15` M4 + `24` M4b + `28` M7 + `21` `UIUX-radar` + `1` ảnh báo lỗi gốc từ Owner + `9` `UIUX-align`) được lưu trong thư mục git-ignored `docs/uiux/pr-screenshots/` và lập chỉ mục đầy đủ từng dòng trong [`docs/uiux/pr-screenshots/ORDER.txt`](pr-screenshots/ORDER.txt):
 
 - **M4 (`15` ảnh)**: `m4-01-login-lms-1440-light.png` đến `m4-15-hr-company-375-dark-tooltip.png` (3 màn hình thí điểm ban đầu, M1a, M1b, custom `Select`, tooltip & mobile drawer `375px`).
 - **M4b (`24` ảnh)**: `m4b-seq-login-t000-84ms.png`..`m4b-seq-login-t800-939ms.png` (`5` ảnh chuỗi mở màn `/login`), `m4b-seq-theme-01-525ms-clippath.png`..`04-1436ms.png` (`4` ảnh circular `clip-path` theme transition), `m4b-seq-sidebar-01-455ms.png`..`03-1048ms.png` (`3` ảnh sidebar collapse), và `m4b-01-login-radar-hover-1440-light.png`..`m4b-12-hr-company-375-dark.png` (`12` ảnh trạng thái ổn định Light/Dark/375/768/1440px).
 - **M7 (`28` ảnh)**: `m7-01-landing-1440-light.png` đến `m7-28-admin-375-light.png` (toàn bộ các tuyến công khai, xác thực, 5 trang chủ vai trò, 5 trang con ứng viên, `/hr/company`, xác nhận cả 4 lỗi BUG 1–4 đã sửa).
 - **UIUX-radar (`21` ảnh)**: `radar-01-seq-step1-t0.png`..`radar-09-3round-autostop-overview.png` (`9` ảnh chuỗi tự chuyển `4s`, 1-shot ambient dừng sau `<= 5s`, hover pause, click giữ `8s` & resume, `Tab`/`Enter`/`Space`/`Escape`, tự dừng sau 3 vòng về overview; không có `radar-10-reduced-motion.png` do sandbox chặn `page.emulateMedia`) và `radar-11-login-1280-light.png`..`radar-22-login-375-dark.png` (`12` ảnh Light/Dark trên `1280/1440/1600/1660/1920/375px`).
 - **Tham chiếu lỗi Owner (`1` ảnh)**: `owner-report-login-left-clipped.png` (ảnh chụp crop trái `1662x862` từ màn hình `1920px` trước vòng `UIUX-radar`).
+- **UIUX-align (`9` ảnh)**: `align-before-1440-light.png` (`74,141 B`), `align-before-1440-dark.png` (`73,229 B`), `align-before-375-light.png` (`62,150 B`), `align-before-375-dark.png` (`63,205 B`) cho trạng thái BEFORE (`M0-Before`), và `align-after-1440-light.png` (`79,139 B`), `align-after-1440-dark.png` (`76,752 B`), `align-after-375-light.png` (`62,641 B`), `align-after-375-dark.png` (`63,472 B`), `align-after-empty-1440-light.png` (`64,921 B`) cho trạng thái AFTER (`lms-sv-001` & `lms-sv-002`).

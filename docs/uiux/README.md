@@ -1,7 +1,7 @@
-# `[UIUX]` UI/UX Polish, Motion Language, Login Radar Auto-Cycle & Role-Centered Content Guide / Tài Liệu Tổng Quan Vòng `UIUX-polish` & `UIUX-radar`
+# `[UIUX]` UI/UX Polish, Login Radar Auto-Cycle, `/candidate/internships` Alignment & Role-Centered Content Guide / Tài Liệu Tổng Quan `UIUX-polish`, `UIUX-radar` & `UIUX-align`
 
-**Rounds / Đợt triển khai**: `UIUX-polish` + follow-up `UIUX-radar` (Commit prefix exception: `"UIUX: "`; PR title prefix: `` `"[UIUX]"` ``)  
-**Branch / Nhánh**: `feature/uiux-motion-polish` (cut from `feature/T022BB1-phan-quyen-5-vai-tro`)  
+**Rounds / Đợt triển khai**: `UIUX-polish` + `UIUX-radar` + `UIUX-align` (Commit prefix exception: `"UIUX: "`; PR title prefix: `` `"[UIUX]"` ``)  
+**Branch / Nhánh**: `feature/uiux-motion-polish` (base `5f817fe` after merging `TT-01` internships)  
 **Stack / Công nghệ**: React 19.3.1, TypeScript 6.0.3, Vite 8.3.7, Vitest 5.1.0, CSS Design Tokens, WAAPI & View Transitions API (zero new dependencies)
 
 ---
@@ -25,6 +25,10 @@ Round `UIUX-polish` transforms Rikkei Jobs from a functional prototype with tech
   - Removed the `"Tạm dừng nền"` / `"Phát nền"` button, `isUserPaused` state, and old pause-button tests per Owner mandate; bounded `.rj-story-ambient` arcs to a 1-shot drift (`4500ms`/`4800ms <= 5s`, paused when `document.hidden`, static under `prefers-reduced-motion`).
   - Added bounded auto-cycle exclusively on `/login` `CompetencyRadarVisual` (`autoCycle={false}` default elsewhere): `--rj-radar-cycle: 4000ms` per group, `<= 400ms` compositor/stroke highlight, single `setTimeout` per step (no `setInterval`), pauses on hover (radar or detail box) / focus inside radar / `document.hidden` / `prefers-reduced-motion: reduce` (`0` timers, static manual-only), holds `8s` on click/`Enter`/`Space` before resuming from next group (re-click deselects & resumes immediately), `Escape` clears selection and resumes without stealing focus, stops after 3 rounds (18 steps, ~72s) onto overview, dynamic `aria-live="off"` during auto-cycle vs `"polite"` on user action, and concise Vietnamese caption.
   - Investigated `owner-report-login-left-clipped.png` (`1662x862` left-cropped `1920px` personal capture, non-reproducible in live browsers), fixed `1280x800` vertical overflow (`6.9px -> 0px`) and `1600–1920px` divider-to-card balance with minimal CSS (`overflow-x: clip`, `min-width: 0`, `max-width` constraints, `1536px+` grid track alignment), verified via `21` new `radar-*` `/browser` screenshots, added `14` fake-timer unit tests (`CompetencyRadarVisual.test.tsx`), and synced Rule 09/10, `DESIGN_SYSTEM.md`, `frontend-motion-design` & `frontend-accessibility-audit` skills (`168` mirrors, `10/10`).
+- **Round `UIUX-align` — `/candidate/internships` (`TT-01`) Alignment (`R1`–`R7` + Approved `motion.ts:533` Fix)**:
+  - **R1–R4 (Header, Metrics, Semantic Batch Card & Async States)**: Aligned `CandidateInternshipsPage.tsx` (`hideAccountCard`) and `CandidateInternships.tsx` with `/candidate/jobs` and `/candidate` using `.rj-page-header` / `h1.rj-page-title` / `.rj-page-subtitle` (eliminating the `+8px` vertical offset drift vs `/candidate/jobs`), `.rj-stack-lg`, `.rj-cand-tile`, `.rj-metric-slot` (`CLS = 0`), semantic `<dl>/<dt>/<dd>` inside `.rj-surface-card.rj-interactive-card` (`InternshipCard.tsx`), 100% `<Icon name=... />`, `vi-VN` (`Asia/Ho_Chi_Minh`) dates with en dash `–`, null-safe fallbacks (`Chưa có điểm`), skeleton loading (`role="status"`), clean `.rj-empty-state` (`role="status"`/`"alert"` omitted), and `.rj-alert.rj-alert-danger` + `>= 44px` `.rj-btn.rj-btn-primary` retry button.
+  - **R5–R6 (Bounded Motion & CSS Diet)**: Applied once-per-navigation entrance stagger (`hasPlayedMotionOnce`/`markMotionPlayed`), `<= 150ms` card hover/press, and `@media (prefers-reduced-motion: reduce)` (`transform: none; animation-delay: 0ms;` + immediate final `useCountUp` values); reduced `candidateInternships.css` from **`511 -> 195` lines** (`-61.8%`) and `CandidateInternshipsPage-*.css` chunk from **`6,486 B -> 3,034 B` raw** (`-53.2%`) / **`1,468 B -> 861 B` gz6** (`-41.3%`) with 100% design tokens and zero edits to CSS chunks outside `frontend/src/features/internship/**`.
+  - **R7 & Team Lead Decision #2 (Out-of-Scope-But-Approved `motion.ts:533` Fix)**: Fixed negative first-frame `elapsed` in `useCountUp` at `frontend/src/shared/utils/motion.ts:533` (`const elapsed = Math.max(0, now - startedAt);`), added a dedicated unit test in `frontend/src/shared/utils/__tests__/motion.test.ts` (`now < startedAt`), updated `CandidateInternships.test.tsx` (`18` tests PASS), and verified `/candidate` (`CandidateHomePage.tsx` untouched, `RoleHomes.test.tsx` `37/37` PASS).
 
 ### 1.2 Motion Language & Showcase Tier Summary (`09-frontend-design-bar.md`)
 
@@ -36,35 +40,34 @@ Everyday micro-interactions preserve strict Rule 09 restraint (`<= 150ms` hover/
 
 ### 1.3 Production Bundle Size Comparison (Before vs. After)
 
-Measured directly on `frontend/dist/assets` via `npm --prefix frontend run build` (`0` Vite warnings, `111` modules transformed) using both Vite CLI gzip (`gz9`) and Node `zlib.gzipSync` (`gz6` / `gz9`):
+Measured directly on `frontend/dist/assets` via `npm --prefix frontend run build` (`0` Vite warnings, `116` modules transformed in `UIUX-align`) using Vite CLI gzip and Node `zlib.gzipSync` (`gz6` / `gz9`). Per Team Lead Binding Decision #1 for `UIUX-align`, **both** Combined CSS metrics are reported alongside the `candidateInternships.css` chunk delta:
 
-| Bundle Metric | Start Baseline (`PHASE0_ACK.md`) | End of `UIUX-polish` | Current `UIUX-radar` Build | Threshold Compliance |
+| Bundle Metric | Start Baseline (`UIUX-polish`) | Post-Merge `UIUX-align` Base (`5f817fe`) | Current `UIUX-align` Build | Threshold Compliance |
 |---|---:|---:|---:|---|
-| **Entry JS (Node gz6)** | `120.81 kB` (`415.90 kB` raw) | `97.80 kB` (`97,796 B`) | **`98.62 kB`** (`98,621 B` gz6 / `319,664 B` raw) | **`-22.19 kB` vs baseline** (`<= 128.81 kB` PASS) |
-| **Entry JS (Vite CLI / gz9)** | `120.81 kB` | `97.61 kB` (`97,605 B`) | **`99.64 kB`** Vite CLI / **`98.42 kB`** (`98,424 B` gz9) | **`<= 128.81 kB` PASS** |
-| **Total JS (`30` chunks, gz6)** | `120.81 kB` (single bundle) | `149.91 kB` (`149,905 B`) | **`150.69 kB`** (`150,693 B` gz6 / `478,259 B` raw) | Route-level `React.lazy` chunks defer non-initial pages |
-| **Entry CSS (Node gz6 / Vite CLI)** | `17.28 kB` (`116.17 kB` raw) | `13.94 kB` (`13,943 B`) | **`14.10 kB`** gz6 (`14,099 B`) / **`14.04 kB`** Vite CLI | **`-3.18 kB` vs baseline** |
-| **Combined Single-Stream CSS (gz6)** | `17.28 kB` | `20.44 kB` (`20,442 B`) | **`20.60 kB`** alpha (`20,597 B` gz6 / `20.32 kB` gz9; `20.42 kB` entry-first; `130,357 B` raw) | **`+3.32 kB` (`+19.2%`, `<= 20.736 kB` PASS)** |
-| **Sum of `7` Independent CSS Chunks (gz6)** | `17.28 kB` | `24.25 kB` (`24,255 B`) | **`24.41 kB`** (`24,411 B` gz6 across `7` separate files) | Includes `7` per-chunk gzip headers/dictionaries |
+| **Entry JS (Node gz6)** | `120.81 kB` (`415.90 kB` raw) | `98.73 kB` (`98,732 B` gz6 / `320,267 B` raw) | **`98.72 kB`** (`98,721 B` gz6 / `320,279 B` raw) | **`-22.09 kB` vs start** (`<= 128.81 kB` PASS) |
+| **Entry JS (Vite CLI / gz9)** | `120.81 kB` | `99.75 kB` Vite CLI / `98,538 B` gz9 | **`99.74 kB`** Vite CLI / **`98,526 B`** gz9 | **`<= 128.81 kB` PASS** |
+| **Combined CSS (alpha gz6, `8` files)** | `17.28 kB` (`7` files earlier) | `21,292 B` (`136,843 B` raw) | **`21,140 B`** (`133,391 B` raw; gz9: `20,860 B`) | **`<= 21,292 B` revised baseline PASS** (`-152 B`) |
+| **Combined CSS (entry-first gz9, `8` files)** | `17.28 kB` | `21,009 B` | **`20,717 B`** (gz6: `20,975 B`) | **`<= 20,736 B` entry-first PASS** (`-19 B`) |
+| **`CandidateInternshipsPage-*.css` chunk** | `—` | `6,486 B` raw / `1,468 B` gz6 (`1,462 B` gz9) | **`3,034 B`** raw / **`861 B`** gz6 (`861 B` gz9) | **`-53.2%` raw, `-41.3%` gz6** (`511 -> 195` lines) |
 
 ### 1.4 Verified Test & Quality Gate Counts
 
-- **Frontend Vitest**: **`35` test files / `410` tests PASS** (`0` failed, `0` skipped, `0` `act()` warnings; includes `14` fake-timer radar tests in `CompetencyRadarVisual.test.tsx`).
-- **Backend JUnit + Testcontainers**: **`641` tests across `59` classes** (backend Java code untouched in `UIUX-polish` & `UIUX-radar`).
+- **Frontend Vitest (`UIUX-align`)**: **`36` test files / `429` tests PASS** (`0` failed, `0` skipped, `0` `act()` warnings; includes `18` tests in `CandidateInternships.test.tsx` and the new `useCountUp` negative-frame test in `motion.test.ts`).
+- **Backend JUnit + Testcontainers**: **`701` tests PASS** (`Failures: 0, Errors: 0, Skipped: 0`; backend Java code untouched across `UIUX-polish`, `UIUX-radar`, and `UIUX-align`).
 - **Mock Server Suite (`node mock/test-runner.js`)**: **`8/8` criteria + Cloudinary mock extension PASS**.
-- **E2E Suite (`node e2e/run-all.mjs`)**: **`26` suites / `323` test cases / `1,939` assertions PASS** (fresh Docker Compose build/run + clean `docker compose down -v` teardown).
+- **E2E Suite (`node e2e/run-all.mjs`) & Full Quality Gates (`./check.sh`, `.\check.ps1`)**: **`27/27` suites / `329/329` test cases / `2,020` assertions PASS** in `36.51s` (`docker compose down -v` clean teardown leaving `0` `rikkei` containers, volumes, or networks); **`./check.sh` `26/26` PASS** and **`.\check.ps1` `26/26` PASS** verified in `M5-Gates`.
 - **Contrast Audit (`node scripts/compute-contrast.mjs`)**: **`120/120` color pairs PASS** (`9` CIELAB surface + `10` UI boundary border invariants).
 - **Agent Config (`sync-agent-config.mjs --check` & `validate-agent-config.mjs`)**: **`28` skills / `168` mirrored files** (`215` total artifacts, Checks `1`–`10` ALL GREEN).
 
 ### 1.5 Document Index
 
-- [`docs/uiux/PHASE0_ACK.md`](PHASE0_ACK.md) — Phase 0 acknowledgements for both `UIUX-polish` and `UIUX-radar`, baseline measurements, and `"UIUX: "` exception record.
+- [`docs/uiux/PHASE0_ACK.md`](PHASE0_ACK.md) — Phase 0 acknowledgements for `UIUX-polish`, `UIUX-radar`, and `UIUX-align`, baseline measurements, and `"UIUX: "` exception record.
 - [`docs/uiux/RESEARCH.md`](RESEARCH.md) — Bilingual multi-source motion, accessibility, and anti-AI research synthesis.
 - [`docs/uiux/AUDIT.md`](AUDIT.md) — Measured route-by-route and stylesheet-by-stylesheet UI/motion audit.
 - [`docs/uiux/CONTENT.md`](CONTENT.md) — Bilingual copy audit, role-centered narrative map, lexicon, and forbidden terms.
-- [`docs/uiux/BROWSER_OBSERVATIONS.md`](BROWSER_OBSERVATIONS.md) — Live `/browser` & Chromium evidence across M4/M4b/M7 and `UIUX-radar`, BUG 1–4 & R4 layout fixes, honest `webview_browser` sandbox disclosure, and Rule 09 rubric (`11/12`).
-- [`docs/uiux/PR_DESCRIPTION.md`](PR_DESCRIPTION.md) — Bilingual `[UIUX]` PR summary, bundle sizes, complete teammate file disclosure, test updates, and ordered `"UIUX: "` commit proposals matching `git status`.
-- [`docs/uiux/pr-screenshots/ORDER.txt`](pr-screenshots/ORDER.txt) — Ordered manifest of all `89` PNGs on disk (`67` M4/M4b/M7 + `21` `UIUX-radar` + `1` Owner defect reference, git-ignored).
+- [`docs/uiux/BROWSER_OBSERVATIONS.md`](BROWSER_OBSERVATIONS.md) — Live `/browser` & Chromium evidence across `M4`/`M4b`/`M7`, `UIUX-radar`, and `UIUX-align` (`/candidate/internships` before/after parity vs `/candidate/jobs` & `/candidate/skills`, `lms-sv-001` & `lms-sv-002`, honest `webview_browser` sandbox disclosure), and Rule 09 rubric (`11/12`).
+- [`docs/uiux/PR_DESCRIPTION.md`](PR_DESCRIPTION.md) — Bilingual `[UIUX]` PR summary for `UIUX-align`, bundle budgets, explicit `motion.ts:533` out-of-scope-but-approved disclosure, test summary, and ordered `"UIUX: "` commit proposals matching `git status`.
+- [`docs/uiux/pr-screenshots/ORDER.txt`](pr-screenshots/ORDER.txt) — Ordered manifest of all `98` PNGs on disk (`67` M4/M4b/M7 + `21` `UIUX-radar` + `1` Owner defect reference + `9` `UIUX-align`, git-ignored).
 - [`docs/design/DESIGN_SYSTEM.md`](../design/DESIGN_SYSTEM.md) — Elevation shadows (Section 3.5), Showcase motion tokens & `/login` radar exception (Sections 8.1–8.4), and M1 shell controls (Section 14.5).
 
 ---
@@ -88,6 +91,10 @@ Vòng `UIUX-polish` nâng cấp toàn diện giao diện Rikkei Jobs theo hướ
   - Gỡ bỏ nút `"Tạm dừng nền"` / `"Phát nền"`, state `isUserPaused` và test cũ; giới hạn `.rj-story-ambient` chạy 1 lần duy nhất (`4500ms`/`4800ms <= 5s`) rồi đứng yên, tự dừng khi `document.hidden`, tĩnh khi `prefers-reduced-motion: reduce`.
   - Triển khai tự chuyển có giới hạn duy nhất trên radar `/login` (`autoCycle={false}` mặc định ở mọi nơi khác): `--rj-radar-cycle: 4000ms` mỗi nhóm, highlight `<= 400ms` chỉ dùng compositor/stroke-dashoffset, 1 `setTimeout` mỗi bước (không `setInterval`), tạm dừng khi hover radar/hộp chi tiết, focus bên trong, `document.hidden`, hoặc `prefers-reduced-motion: reduce` (`0` timer, tĩnh hoàn toàn); click/`Enter`/`Space` giữ `8s` trước khi chạy tiếp từ nhóm kế (click lại để bỏ chọn và chạy tiếp ngay); `Escape` chạy tiếp không cướp focus; tự dừng sau 3 vòng (18 bước ~72s) về trạng thái tổng quan; `aria-live="off"` khi tự chạy và `"polite"` khi người dùng thao tác; chú thích tiếng Việt súc tích.
   - Điều tra `owner-report-login-left-clipped.png` (`1662x862` là ảnh crop/dịch trái của bản `1920px` trên máy cá nhân Owner, không tái hiện trên trình duyệt sống), sửa tràn dọc `1280x800` (`6.9px -> 0px`) và cân đối khoảng cách `1600–1920px` quanh đường chia giữa, kiểm chứng qua `21` ảnh `radar-*` từ `/browser`, bổ sung `14` unit test fake-timer (`CompetencyRadarVisual.test.tsx`), và đồng bộ Rule 09/10, `DESIGN_SYSTEM.md`, các skill liên quan (`168` bản sao, `10/10`).
+- **Vòng `UIUX-align` — Đồng bộ `/candidate/internships` (`TT-01`) (`R1`–`R7` + Bản sửa `motion.ts:533` đã phê duyệt)**:
+  - **R1–R4 (Header, Chỉ số, Thẻ đợt thực tập & Trạng thái bất đồng bộ)**: Đồng bộ `CandidateInternshipsPage.tsx` (`hideAccountCard`) và `CandidateInternships.tsx` với `/candidate/jobs` và `/candidate` bằng `.rj-page-header` / `h1.rj-page-title` / `.rj-page-subtitle` (xóa độ lệch dọc `+8px` so với `/candidate/jobs`), `.rj-stack-lg`, `.rj-cand-tile`, `.rj-metric-slot` (`CLS = 0`), `<dl>/<dt>/<dd>` ngữ nghĩa trong `.rj-surface-card.rj-interactive-card` (`InternshipCard.tsx`), 100% `<Icon name=... />`, định dạng ngày `vi-VN` (`Asia/Ho_Chi_Minh`) với en dash `–`, fallback an toàn (`Chưa có điểm`), skeleton loading (`role="status"`), `.rj-empty-state` không gắn `role="status"`/`"alert"`, và `.rj-alert.rj-alert-danger` kèm nút `"Thử lại"` `.rj-btn.rj-btn-primary` (`>= 44px`).
+  - **R5–R6 (Chuyển động có giới hạn & Tinh gọn CSS)**: Áp dụng stagger vào trang 1 lần mỗi lượt điều hướng (`hasPlayedMotionOnce`/`markMotionPlayed`), hover/press `<= 150ms`, và `@media (prefers-reduced-motion: reduce)` (`transform: none; animation-delay: 0ms;` cùng giá trị `useCountUp` tức thì); rút gọn `candidateInternships.css` từ **`511 -> 195` dòng** (`-61.8%`) và chunk `CandidateInternshipsPage-*.css` từ **`6,486 B -> 3,034 B` raw** (`-53.2%`) / **`1,468 B -> 861 B` gz6** (`-41.3%`) với 100% token thiết kế, không chạm bất kỳ tệp CSS nào ngoài `frontend/src/features/internship/**`.
+  - **R7 & Quyết định #2 của Team Lead (Bản sửa ngoài phạm vi nhưng đã phê duyệt tại `motion.ts:533`)**: Sửa `elapsed` âm ở frame đầu của `useCountUp` tại `frontend/src/shared/utils/motion.ts:533` (`const elapsed = Math.max(0, now - startedAt);`), bổ sung unit test riêng trong `frontend/src/shared/utils/__tests__/motion.test.ts` (`now < startedAt`), cập nhật `CandidateInternships.test.tsx` (`18` tests PASS), và chứng minh `/candidate` (`CandidateHomePage.tsx` giữ nguyên `0` diff, `RoleHomes.test.tsx` `37/37` PASS).
 
 ### 2.2 Tóm Tắt Ngôn Ngữ Chuyển Động & Showcase Tier (`09-frontend-design-bar.md`)
 
@@ -99,33 +106,32 @@ Tương tác hằng ngày giữ nguyên kỷ luật chặt chẽ của Rule 09 (
 
 ### 2.3 Bảng So Sánh Dung Lượng Bundle (Trước và Sau)
 
-Đo trực tiếp trên `frontend/dist/assets` bằng `npm --prefix frontend run build` (`0` cảnh báo Vite, `111` module) với cả báo cáo gzip Vite CLI (`gz9`) và Node `zlib.gzipSync` (`gz6` / `gz9`):
+Đo trực tiếp trên `frontend/dist/assets` bằng `npm --prefix frontend run build` (`0` cảnh báo Vite, `116` module ở `UIUX-align`) với báo cáo gzip Vite CLI và Node `zlib.gzipSync` (`gz6` / `gz9`). Theo Quyết định #1 của Team Lead cho vòng `UIUX-align`, **cả hai** số đo CSS gộp được báo cáo đầy đủ cùng mức giảm của chunk `candidateInternships.css`:
 
-| Chỉ số Bundle | Mốc Gốc Đầu Vòng (`PHASE0_ACK.md`) | Cuối `UIUX-polish` | Build `UIUX-radar` Hiện Tại | Tuân thủ Ngưỡng |
+| Chỉ số Bundle | Mốc Đầu `UIUX-polish` | Mốc Sau Merge `UIUX-align` (`5f817fe`) | Build `UIUX-align` Hiện Tại | Tuân thủ Ngưỡng |
 |---|---:|---:|---:|---|
-| **Entry JS (Node gz6)** | `120.81 kB` (`415.90 kB` raw) | `97.80 kB` (`97,796 B`) | **`98.62 kB`** (`98,621 B` gz6 / `319,664 B` raw) | **`-22.19 kB` so với gốc** (`<= 128.81 kB` ĐẠT) |
-| **Entry JS (Vite CLI / gz9)** | `120.81 kB` | `97.61 kB` (`97,605 B`) | **`99.64 kB`** Vite CLI / **`98.42 kB`** (`98,424 B` gz9) | **`<= 128.81 kB` ĐẠT** |
-| **Tổng JS (`30` chunk, gz6)** | `120.81 kB` (1 gói đơn) | `149.91 kB` (`149,905 B`) | **`150.69 kB`** (`150,693 B` gz6 / `478,259 B` raw) | Tách route `React.lazy` trì hoãn tải các trang chưa mở |
-| **Entry CSS (Node gz6 / Vite CLI)** | `17.28 kB` (`116.17 kB` raw) | `13.94 kB` (`13,943 B`) | **`14.10 kB`** gz6 (`14,099 B`) / **`14.04 kB`** Vite CLI | **`-3.18 kB` so với gốc** |
-| **CSS Gộp Đơn Luồng (gz6)** | `17.28 kB` | `20.44 kB` (`20,442 B`) | **`20.60 kB`** alpha (`20,597 B` gz6 / `20.32 kB` gz9; `20.42 kB` entry-first; `130,357 B` raw) | **`+3.32 kB` (`+19.2%`, `<= 20.736 kB` ĐẠT)** |
-| **Tổng `7` Chunk CSS Nén Rời (gz6)** | `17.28 kB` | `24.25 kB` (`24,255 B`) | **`24.41 kB`** (`24,411 B` gz6 trên `7` tệp `.css` tách riêng) | Tổng số học bao gồm `7` phần header & từ điển gzip độc lập |
+| **Entry JS (Node gz6)** | `120.81 kB` (`415.90 kB` raw) | `98.73 kB` (`98,732 B` gz6 / `320,267 B` raw) | **`98.72 kB`** (`98,721 B` gz6 / `320,279 B` raw) | **`-22.09 kB` so với đầu** (`<= 128.81 kB` ĐẠT) |
+| **Entry JS (Vite CLI / gz9)** | `120.81 kB` | `99.75 kB` Vite CLI / `98,538 B` gz9 | **`99.74 kB`** Vite CLI / **`98,526 B`** gz9 | **`<= 128.81 kB` ĐẠT** |
+| **CSS Gộp (alpha gz6, `8` tệp)** | `17.28 kB` (`7` tệp trước đó) | `21,292 B` (`136,843 B` raw) | **`21,140 B`** (`133,391 B` raw; gz9: `20,860 B`) | **`<= 21,292 B` baseline mới ĐẠT** (`-152 B`) |
+| **CSS Gộp (entry-first gz9, `8` tệp)** | `17.28 kB` | `21,009 B` | **`20,717 B`** (gz6: `20,975 B`) | **`<= 20,736 B` entry-first ĐẠT** (`-19 B`) |
+| **Chunk `CandidateInternshipsPage-*.css`** | `—` | `6,486 B` raw / `1,468 B` gz6 (`1,462 B` gz9) | **`3,034 B`** raw / **`861 B`** gz6 (`861 B` gz9) | **`-53.2%` raw, `-41.3%` gz6** (`511 -> 195` dòng) |
 
 ### 2.4 Số Liệu Kiểm Thử & Cổng Chất Lượng Đã Xác Minh
 
-- **Frontend Vitest**: **`35` tệp / `410` tests PASS** (`0` lỗi, `0` bỏ qua, `0` cảnh báo `act()`, gồm `14` test fake-timer mới của `CompetencyRadarVisual.test.tsx`).
-- **Backend JUnit + Testcontainers**: **`641` tests trên `59` lớp** (mã Java backend giữ nguyên không đổi).
+- **Frontend Vitest (`UIUX-align`)**: **`36` tệp / `429` tests PASS** (`0` lỗi, `0` bỏ qua, `0` cảnh báo `act()`, gồm `18` test trong `CandidateInternships.test.tsx` và test mới cho `useCountUp` trong `motion.test.ts`).
+- **Backend JUnit + Testcontainers**: **`701` tests PASS** (`Failures: 0, Errors: 0, Skipped: 0`; mã Java backend giữ nguyên không đổi qua `UIUX-polish`, `UIUX-radar`, `UIUX-align`).
 - **Mock Server Suite (`node mock/test-runner.js`)**: **`8/8` tiêu chí + Cloudinary mock PASS**.
-- **Bộ E2E (`node e2e/run-all.mjs`)**: **`26` suites / `323` ca kiểm thử / `1,939` assertions PASS** (chạy mới trên Docker Compose và dọn sạch bằng `docker compose down -v`).
+- **Bộ E2E (`node e2e/run-all.mjs`) & Cổng Toàn diện (`./check.sh`, `.\check.ps1`)**: **`27/27` suites / `329/329` ca / `2,020` assertions PASS** trong `36.51s` (dọn `docker compose down -v` sạch `0` tài nguyên `rikkei` còn sót); **`./check.sh` `26/26` PASS** và **`.\check.ps1` `26/26` PASS** đã xác minh tại `M5-Gates`.
 - **Tương phản (`node scripts/compute-contrast.mjs`)**: **`120/120` cặp màu PASS** (`9` CIELAB surface + `10` UI boundary border invariants).
 - **Cấu hình Agent (`sync-agent-config.mjs --check` & `validate-agent-config.mjs`)**: **`28` skills / `168` tệp sao chép** (`215` artifact, Checks `1`–`10` ALL GREEN).
 
 ### 2.5 Chỉ Mục Tài Liệu Liên Quan
 
-- [`docs/uiux/PHASE0_ACK.md`](PHASE0_ACK.md) — Xác nhận Giai đoạn 0 cho cả `UIUX-polish` và `UIUX-radar`, số đo gốc và ngoại lệ tiền tố `"UIUX: "`.
+- [`docs/uiux/PHASE0_ACK.md`](PHASE0_ACK.md) — Xác nhận Giai đoạn 0 cho `UIUX-polish`, `UIUX-radar` và `UIUX-align`, số đo gốc và ngoại lệ tiền tố `"UIUX: "`.
 - [`docs/uiux/RESEARCH.md`](RESEARCH.md) — Tổng hợp nghiên cứu đa nguồn về chuyển động, trợ năng và tiêu chuẩn chống mẫu AI.
 - [`docs/uiux/AUDIT.md`](AUDIT.md) — Báo cáo kiểm toán chi tiết từng tuyến đường và từng tệp CSS.
 - [`docs/uiux/CONTENT.md`](CONTENT.md) — Kiểm toán văn bản hiển thị, bản đồ nội dung 5 vai trò, từ vựng chuẩn và danh sách từ cấm.
-- [`docs/uiux/BROWSER_OBSERVATIONS.md`](BROWSER_OBSERVATIONS.md) — Bằng chứng `/browser` & Chromium (M4/M4b/M7 & `UIUX-radar`), sửa lỗi BUG 1–4 & R4, giới hạn sandbox `webview_browser` và chấm điểm Rule 09 (`11/12`).
-- [`docs/uiux/PR_DESCRIPTION.md`](PR_DESCRIPTION.md) — Mô tả PR `[UIUX]` song ngữ, bảng dung lượng bundle, công bố đầy đủ tệp đồng đội đã chạm, danh sách test cập nhật và đề xuất commit `"UIUX: "` khớp `git status`.
-- [`docs/uiux/pr-screenshots/ORDER.txt`](pr-screenshots/ORDER.txt) — Danh mục `89` tệp PNG trên đĩa (`67` M4/M4b/M7 + `21` `UIUX-radar` + `1` ảnh lỗi Owner, nằm trong `.gitignore`).
+- [`docs/uiux/BROWSER_OBSERVATIONS.md`](BROWSER_OBSERVATIONS.md) — Bằng chứng `/browser` & Chromium (`M4`/`M4b`/`M7`, `UIUX-radar` và `UIUX-align` parity `/candidate/internships` vs `/candidate/jobs` & `/candidate/skills`, `lms-sv-001` & `lms-sv-002`, giới hạn sandbox `webview_browser`) và chấm điểm Rule 09 (`11/12`).
+- [`docs/uiux/PR_DESCRIPTION.md`](PR_DESCRIPTION.md) — Mô tả PR `[UIUX]` song ngữ cho `UIUX-align`, bảng dung lượng bundle, công bố bản sửa `motion.ts:533` ngoài phạm vi nhưng đã phê duyệt, danh sách test và đề xuất commit `"UIUX: "` khớp `git status`.
+- [`docs/uiux/pr-screenshots/ORDER.txt`](pr-screenshots/ORDER.txt) — Danh mục `98` tệp PNG trên đĩa (`67` M4/M4b/M7 + `21` `UIUX-radar` + `1` ảnh lỗi Owner + `9` `UIUX-align`, nằm trong `.gitignore`).
 - [`docs/design/DESIGN_SYSTEM.md`](../design/DESIGN_SYSTEM.md) — Bóng đổ navy lạnh (Mục 3.5), Ngôn ngữ Chuyển động Showcase & ngoại lệ radar `/login` (Mục 8.1–8.4) và hai điều khiển M1 (Mục 14.5).

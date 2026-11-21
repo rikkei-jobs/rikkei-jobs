@@ -271,3 +271,117 @@ Locked files verified untouched (`0` diff): `frontend/src/features/candidate/api
    - `docs/uiux/BROWSER_OBSERVATIONS.md`
    - `docs/uiux/PR_DESCRIPTION.md`
    - `docs/uiux/README.md`
+
+---
+
+## 6. Follow-Up Round `UIUX-align` (after merging `develop` / TT-01) / Vòng Bổ Sung `UIUX-align` (Sau Khi Merge `develop`)
+
+### Part 1: English Section
+
+#### 1.1 Executive Summary (`UIUX-align` `R1`–`R7` + Team Lead Decisions `#1` & `#2`)
+
+Round `UIUX-align` aligns `/candidate/internships` (`TT-01`, merged at `5f817fe`) visually, structurally, semantically, and in CSS/motion discipline with `/candidate/jobs`, `/candidate`, and `/candidate/skills`, adding zero new dependencies and touching zero CSS chunks outside `frontend/src/features/internship/**`:
+
+- **R1 — Page Header & Shell Alignment (`CandidateInternshipsPage.tsx`, `CandidateInternships.tsx`)**:
+  - Replaced custom `.ci-heading` / `.ci-lead` with `<header className="rj-page-header"><h1 id="ci-heading" className="rj-page-title">Thực tập IOC</h1><p className="rj-page-subtitle">...</p></header>` (exactly one `<h1>`), eliminating the `+8.0px` vertical header offset drift seen in `M0-Before` (`y: 96.8px -> 88.8px` on `1440px`, `y: 185.9px -> 177.9px` on `375px` — achieving `0.0px` parity with `/candidate/jobs`).
+  - Kept `RoleHomeLayout` (`roleTitle="Ứng viên"`, `hideAccountCard`, non-duplicating `description`), clean Vietnamese copy with full diacritics, and zero internal technical labels (`"PM"`, raw IDs).
+- **R2 — Metrics Strip & `CLS = 0` Geometry (`CandidateInternships.tsx`, `candidateInternships.css`)**:
+  - Adopted `.rj-stack-lg`, `.rj-cand-tile.rj-stack-xs`, `.rj-cand-kicker`, and `.rj-cand-metric-val.ci-metric-val.rj-tabular-nums` for summary metrics (`Đợt thực tập`, `Hạng mục nghiệm thu`).
+  - Wrapped `useCountUp` values inside `.rj-metric-slot` / `.rj-metric-slot-reserve` / `.rj-metric-slot-live` (`CLS = 0`), collapsing the 2-column `.ci-metrics-strip` / `.ci-stats` grid cleanly to 1 column at `<= 479px`.
+- **R3 — Semantic Batch Card (`InternshipCard.tsx`)**:
+  - Rendered each batch as `<article className="rj-surface-card rj-interactive-card rj-stack-md ... ci-card">`, batch title in `h2.ci-batch-name` (`--rj-font-display`), batch code in `span.ci-batch-code.rj-tabular-nums` (`--rj-font-mono`, `overflow-wrap: anywhere`), 100% icons via `<Icon name=... />`, semantic `<dl>/<dt>/<dd>` metadata (`Đề tài thực tập`, `Nhóm`, `Mentor`, `Thời gian thực tập`, `Điểm cuối kỳ`, `Hạng mục nghiệm thu`), `vi-VN` (`Asia/Ho_Chi_Minh`) date formatting with en dash `–`, and null/NaN-safe fallbacks (`Chưa có điểm`, `Chưa phân nhóm`, `Chưa có mentor`, `Chưa cập nhật thời gian`).
+- **R4 — Async & Error States (`CandidateInternships.tsx`)**:
+  - **Loading**: `role="status"` + `aria-live="polite"` + `.rj-sr-only` + `.rj-skeleton` / `.rj-skeleton-card` / `.ci-skeleton-card` (`min-height: 356px`).
+  - **Empty**: `.rj-empty-state` without `role="status"` or `role="alert"` (`[role="status"]=0`, `[role="alert"]=0` verified live on `lms-sv-002`).
+  - **Error / Missing Auth**: `.rj-alert.rj-alert-danger.ci-alert` (`role="alert"`) preserving `403`/`404`/`400`/`503`/network error mapping and a `>= 44px` `.rj-btn.rj-btn-primary` `"Thử lại"` retry button.
+- **R5 — Bounded Motion & Reduced Motion (`CandidateInternships.tsx`, `candidateInternships.css`)**:
+  - Entrance stagger plays once per navigation via `hasPlayedMotionOnce`/`markMotionPlayed` (`INTERNSHIPS_MOTION_KEY`), zero new `@keyframes`, zero idle loops, `<= 150ms` card hover/press, and `@media (prefers-reduced-motion: reduce)` (`transform: none; animation-delay: 0ms;` + immediate final `useCountUp` values).
+- **R6 — CSS Diet & Token Hygiene (`candidateInternships.css`)**:
+  - Reduced `candidateInternships.css` from **`511` lines -> `195` lines** (`-316` lines, `-61.8%`) and `CandidateInternshipsPage-*.css` chunk from **`6,486 B -> 3,034 B` raw** (`-53.2%`) / **`1,468 B -> 861 B` gz6** (`-41.3%`), 100% design tokens (Check 9 PASS), `0` `!important`, `0` inline style objects, `0` emoji, and zero edits to CSS chunks outside `frontend/src/features/internship/**`.
+- **R7 & Decision #2 — Vitest Coverage & Approved `motion.ts:533` Fix**:
+  - Updated `CandidateInternships.test.tsx` (`18` tests PASS, `0` `act()` warnings) and added a dedicated `useCountUp` negative-first-frame (`now < startedAt`) unit test in `frontend/src/shared/utils/__tests__/motion.test.ts` (`36` files / `429` tests PASS total).
+
+#### 1.2 Production Bundle Budgets (Team Lead Binding Decision `#1`)
+
+Measured directly on `frontend/dist/assets` via `npm --prefix frontend run build` (`0` warnings, `116` modules transformed) and Node `zlib.gzipSync`:
+
+| Metric | Post-Merge Baseline (`5f817fe`) | Current `UIUX-align` Build | Threshold & Status |
+|---|---:|---:|---|
+| **Entry JS (`index-*.js`, gz6)** | `98,732 B` (`98.73 kB`) / `320,267 B` raw | **`98,721 B`** (`98.72 kB` gz6 / `98,526 B` gz9 / `320,279 B` raw; Vite CLI `99.74 kB`) | **`<= 128.81 kB` PASS** |
+| **Combined CSS (alpha gz6, `8` files)** | `21,292 B` (`136,843 B` raw) | **`21,140 B`** (`133,391 B` raw; gz9: `20,860 B`) | **`<= 21,292 B` revised baseline PASS** (`-152 B`) |
+| **Combined CSS (entry-first gz9, `8` files)** | `21,009 B` | **`20,717 B`** (gz6: `20,975 B`) | **`<= 20,736 B` entry-first PASS** (`-19 B`) |
+| **`CandidateInternshipsPage-*.css` chunk** | `6,486 B` raw / `1,468 B` gz6 (`1,462 B` gz9) | **`3,034 B`** raw / **`861 B`** gz6 (`861 B` gz9) | **`-53.2%` raw, `-41.3%` gz6 PASS** |
+| **`candidateInternships.css` lines** | `511` lines | **`195` lines** | **`-316` lines (`-61.8%`)** |
+
+#### 1.3 Live `/browser` Parity Summary & Sandbox Disclosure
+
+Verified via live `/browser` (`webview_browser` subagent `8b6f05f3-6509-491b-be78-3117fb0b95aa` on `http://127.0.0.1:3000`, `0` console errors, `0` HTTP `>= 400` errors):
+
+- **Exact Parity**: At `1440x900` Light & Dark, `/candidate/internships` renders `.rj-page-header {x:304, y:88.8, w:1096.8, h:66.9}` and `h1.rj-page-title {x:304, y:88.8, w:1096.8, h:36.4}`, and at `375x812` Light & Dark renders `html w=360` and `h1.rj-page-title {x:16, y:177.9, w:328, h:36.4}` — **`0.0px` exact parity** with `/candidate/jobs`, while `/candidate/skills` (`1440x900` `h2 {x:304, y:96.8}`; `375x812` `h2 {x:16, y:185.9}`) and `/candidate` remain unchanged.
+- **Responsive & Empty State**: Zero horizontal overflow across `375/768/1024/1440px` Light & Dark (`align-after-1440-light.png`, `align-after-1440-dark.png`, `align-after-375-light.png`, `align-after-375-dark.png`); `lms-sv-002` (`Trần Thị Bình`) authenticated via real LMS SSO `POST /api/v1/auth/sso -> HTTP 200` and `GET /api/v1/profiles/me/internships -> HTTP 200 []` rendering `.rj-empty-state` with `[role="status"]=0` and `[role="alert"]=0` (`align-after-empty-1440-light.png`); `lms-sv-001` used enterprise fallback `POST /api/v1/auth/login -> HTTP 200` after pre-minted 60s SSO tickets expired during cold-start latency.
+- **Honest `webview_browser` Sandbox Disclosure**: `page.evaluate`, `locator.evaluate`, `$eval`, `$$eval`, `waitForFunction`, `page.emulateMedia`, `page.request`, and `page.route` are blocked inside `webview_browser`. Therefore, JS `PerformanceObserver` (`CLS`), `getComputedStyle()`, `prefers-reduced-motion: reduce`, and synthetic error/slow-API network interception (`page.route`) could not run inside `/browser` and are verified via Vitest (`CandidateInternships.test.tsx`, `motion.test.ts`), static CSS rules, and prior Chromium `CLS` probes.
+
+#### 1.4 Verified Full Quality Gates & Docker Compose E2E Results (`M5-Gates`)
+
+- **Cross-Platform Full Quality Gates**: **`./check.sh` `26/26` PASS** (`exit 0`) and **`.\check.ps1` `26/26` PASS** (`exit 0`), covering Frontend (`lint`, `typecheck`, `test`, `build`), Backend (`-Xlint:all -Werror`, Spotless, SpotBugs, JUnit), Mock (`8/8`), Docker/Hadolint/Yamllint/Actionlint/SQLFluff, Docs (`markdownlint`, `cspell`, `check-version-drift.mjs`), `compute-contrast.mjs`, `check-gate-sync.mjs`, `validate-agent-config.mjs` (`10/10`, `168` mirrors), and secret/path/TODO scans.
+- **Backend Maven JUnit + Testcontainers**: **`701/701` tests PASS** (`Failures: 0, Errors: 0, Skipped: 0`).
+- **Frontend Vitest**: **`36/36` files / `429/429` tests PASS** (`0` `act()` warnings; includes `18` `CandidateInternships.test.tsx`, `20` `motion.test.ts`, and `37` `RoleHomes.test.tsx` tests).
+- **Docker Compose Opaque-Box E2E (`node e2e/run-all.mjs`)**: **`27/27` suites / `329/329` test cases / `2,020` assertions PASS** in **`36.51s`** against a fresh 5-container stack (`docker compose up -d --build --wait`), followed by `docker compose down -v` leaving **`0` `rikkei` containers, volumes, or networks**.
+
+---
+
+### Part 2: Vietnamese Section / Bản Dịch Tiếng Việt
+
+#### 2.1 Tóm Tắt Vòng `UIUX-align` (`R1`–`R7` + Quyết Định `#1` & `#2`)
+
+Vòng `UIUX-align` đồng bộ trang `/candidate/internships` (`TT-01`, đã merge tại `5f817fe`) về bố cục, thứ bậc thị giác, ngữ nghĩa, trạng thái, chuyển động và kỷ luật CSS với `/candidate/jobs`, `/candidate`, và `/candidate/skills`, giữ nguyên `0` dependency mới và không chạm bất kỳ tệp CSS nào ngoài `frontend/src/features/internship/**`:
+
+- **R1–R4 (Header, Thống kê, Thẻ đợt thực tập & Trạng thái bất đồng bộ)**: Chuyển sang `.rj-page-header` / `h1.rj-page-title` / `.rj-page-subtitle` (triệt tiêu độ lệch dọc `+8.0px` so với `/candidate/jobs`), `.rj-stack-lg`, `.rj-cand-tile`, `.rj-metric-slot` (`CLS = 0`), thẻ `<article className="rj-surface-card rj-interactive-card ... ci-card">` dùng `<dl>/<dt>/<dd>`, 100% `<Icon name=... />`, định dạng `vi-VN` (`Asia/Ho_Chi_Minh`) với en dash `–`, fallback an toàn (`Chưa có điểm`), skeleton loading (`role="status"`), `.rj-empty-state` không gắn `role="status"`/`"alert"`, và `.rj-alert.rj-alert-danger` kèm nút `"Thử lại"` (`>= 44px`).
+- **R5–R6 (Chuyển động & Tinh gọn CSS)**: Stagger chạy 1 lần mỗi lượt điều hướng (`hasPlayedMotionOnce`/`markMotionPlayed`), hover/press `<= 150ms`, đầy đủ `@media (prefers-reduced-motion: reduce)`; giảm `candidateInternships.css` từ **`511 -> 195` dòng** (`-61.8%`) và chunk CSS từ **`6,486 B -> 3,034 B` raw** (`-53.2%`) / **`1,468 B -> 861 B` gz6** (`-41.3%`).
+- **R7 & Kiểm chứng `/browser`**: `36/36` tệp Vitest / `429/429` tests PASS (`0` cảnh báo `act()`), `120/120` contrast, `10/10` agent-config, parity `0.0px` với `/candidate/jobs` tại `1440px` và `375px` Light/Dark, không tràn ngang ở `375/768/1024/1440px`, cùng công bố trung thực giới hạn sandbox `webview_browser` (xem mục 1.3 và `docs/uiux/BROWSER_OBSERVATIONS.md`).
+
+#### 2.2 Kết Quả Cổng Chất Lượng & Docker Compose E2E (`M5-Gates`)
+
+- **Cổng chất lượng đa nền tảng**: **`./check.sh` `26/26` PASS** (`exit 0`) và **`.\check.ps1` `26/26` PASS** (`exit 0`).
+- **Backend Maven JUnit + Testcontainers**: **`701/701` tests PASS** (`Failures: 0, Errors: 0, Skipped: 0`).
+- **Docker Compose E2E (`node e2e/run-all.mjs`)**: **`27/27` suites / `329/329` ca / `2,020` assertions PASS** trong **`36.51s`** trên stack 5 container mới dựng, sau đó `docker compose down -v` dọn sạch **`0`** container/volume/network `rikkei` còn sót.
+
+---
+
+### 3. Out-of-Scope-But-Approved Fix Disclosure (`Team Lead Decision #2`) / Công Bố Bản Sửa Ngoài Phạm Vi Đã Được Phê Duyệt
+
+Per Team Lead Decision `#2` at the M1 stop gate, two files outside `frontend/src/features/internship/**` were modified with explicit approval:
+
+1. **`frontend/src/shared/utils/motion.ts` (Line `533`)**:
+   - **Change**: `const elapsed = now - startedAt;` -> `const elapsed = Math.max(0, now - startedAt);` inside `useCountUp`.
+   - **Why**: Prevents negative `elapsed` and negative rendered numbers on the first `requestAnimationFrame` callback when `now < startedAt`.
+2. **`frontend/src/shared/utils/__tests__/motion.test.ts` (Lines `702`–`791`)**:
+   - **Change**: Added a dedicated `useCountUp` unit test verifying `now = 950 < startedAt = 1000` clamps `elapsed` to `0`, advances cleanly (`88` at `1320ms`), completes at `100` (`1640ms`), leaves `rafQueue` empty, and emits `0` `console.error` calls.
+3. **Proof `/candidate` (`CandidateHomePage.tsx`) Is Unchanged**:
+   - Only two `useCountUp` consumers exist in the codebase (`CandidateHomePage.tsx:51` and `CandidateInternships.tsx:33`).
+   - `git diff -- frontend/src/features/identity/pages/role-homes/CandidateHomePage.tsx` is **empty (`0` lines changed)**.
+   - `RoleHomes.test.tsx` (`37/37` tests PASS) and live `/browser` on `/candidate` verified exact non-regressed metric values (`Kỹ năng đã xác thực: 11`, `Điểm trung bình: 79/100`, `Mức sẵn sàng mục tiêu: Chưa chọn`, `Đánh giá từ mentor: 1`, `0` negative values, `0` errors).
+4. **Locked / Untouched Verification**:
+   - Zero CSS files outside `frontend/src/features/internship/styles/candidateInternships.css` were modified; `backend/`, `e2e/`, `frontend/src/App.tsx`, `frontend/package.json`, `mock/package.json`, `backend/pom.xml`, and `docs/design/DESIGN_SYSTEM.md` all have `0` diff.
+
+---
+
+### 4. Ordered `"UIUX: "` Commit Proposals (Verified 1:1 Against `git status --porcelain=v1 -uall`)
+
+> Note: Git remains strictly read-only (`0` staged files, `0` commits created). Excluding git-ignored artifacts under `docs/uiux/pr-screenshots/` (`ORDER.txt` and `*.png` via `.gitignore`), the **`11` modified files** in `git status --porcelain=v1 -uall` map 1:1 to the following ordered `"UIUX: "` commits:
+
+1. `UIUX: record Phase 0 acknowledgement for /candidate/internships alignment`
+   - `docs/uiux/PHASE0_ACK.md`
+2. `UIUX: clamp negative rAF elapsed time in useCountUp with unit test`
+   - `frontend/src/shared/utils/motion.ts`
+   - `frontend/src/shared/utils/__tests__/motion.test.ts`
+3. `UIUX: align /candidate/internships layout, semantics, motion, CSS diet and tests`
+   - `frontend/src/features/internship/pages/CandidateInternshipsPage.tsx`
+   - `frontend/src/features/internship/components/CandidateInternships.tsx`
+   - `frontend/src/features/internship/components/InternshipCard.tsx`
+   - `frontend/src/features/internship/styles/candidateInternships.css`
+   - `frontend/src/features/internship/__tests__/CandidateInternships.test.tsx`
+4. `UIUX: update UIUX documentation, browser parity logs and PR description`
+   - `docs/uiux/README.md`
+   - `docs/uiux/BROWSER_OBSERVATIONS.md`
+   - `docs/uiux/PR_DESCRIPTION.md`
