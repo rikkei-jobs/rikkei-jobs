@@ -39,7 +39,7 @@ public class CompanyMigrationIntegrationTest {
     private static final String POSTGRES_IMAGE = "postgres:18.6-alpine";
 
     @Nested
-    @DisplayName("Clean Empty DB, Incremental V1..V8 -> V9..V14 Upgrade & Direct SQL Idempotency")
+    @DisplayName("Clean Empty DB, Incremental V1..V8 -> V9..V15 Upgrade & Direct SQL Idempotency")
     class LifecycleAndIdempotencyTests {
 
         private DataSource createDataSource(PostgreSQLContainer db) {
@@ -65,7 +65,7 @@ public class CompanyMigrationIntegrationTest {
 
         @Test
         @DisplayName(
-                "Prod migrations (V1, V3, V5, V7, V9, V11, V13) apply cleanly from empty DB with 0 companies and 0 users")
+                "Prod migrations (V1, V3, V5, V7, V9, V11, V13, V15) apply cleanly from empty DB with 0 companies and 0 users")
         void testProdMigrationsApplyCleanlyFromEmptyDatabase() {
             try (PostgreSQLContainer db = new PostgreSQLContainer(POSTGRES_IMAGE)) {
                 db.start();
@@ -120,6 +120,12 @@ public class CompanyMigrationIntegrationTest {
                                 Boolean.class);
                 assertFalse(Boolean.TRUE.equals(hasV14));
 
+                Boolean hasV15 =
+                        jdbc.queryForObject(
+                                "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '15' AND success = true)",
+                                Boolean.class);
+                assertTrue(Boolean.TRUE.equals(hasV15));
+
                 assertEquals(
                         Integer.valueOf(0),
                         jdbc.queryForObject("SELECT count(*) FROM companies", Integer.class));
@@ -145,7 +151,7 @@ public class CompanyMigrationIntegrationTest {
 
         @Test
         @DisplayName(
-                "Dev migrations V1..V14 (including V9 and V10) apply cleanly from empty DB with 2 seeded companies, sequence >= 3 and 9 users")
+                "Dev migrations V1..V15 (including V9 and V10) apply cleanly from empty DB with 2 seeded companies, sequence >= 3 and 9 users")
         void testDevMigrationsApplyCleanlyFromEmptyDatabase() {
             try (PostgreSQLContainer db = new PostgreSQLContainer(POSTGRES_IMAGE)) {
                 db.start();
@@ -180,7 +186,7 @@ public class CompanyMigrationIntegrationTest {
         }
 
         @Test
-        @DisplayName("V9 through V14 upgrade cleanly on top of existing baseline V1..V8")
+        @DisplayName("V9 through V15 upgrade cleanly on top of existing baseline V1..V8")
         void testUpgradeOnTopOfDevelopBaselineV1ThroughV8() {
             try (PostgreSQLContainer db = new PostgreSQLContainer(POSTGRES_IMAGE)) {
                 db.start();
