@@ -32,18 +32,23 @@ import org.springframework.stereotype.Component;
 public class ExternalApiClient {
 
     private static final Logger log = LoggerFactory.getLogger(ExternalApiClient.class);
+    private static final long FAST_FAIL_TIMEOUT_MILLIS = 2500L;
 
     private final ExternalApiProperties properties;
     private final HttpClient httpClient;
+    private final HttpClient fastFailHttpClient;
+    private final Duration fastFailTimeout;
     private final ObjectMapper objectMapper;
 
     public ExternalApiClient(ExternalApiProperties properties, ObjectMapper objectMapper) {
         this.properties = properties;
         this.objectMapper = objectMapper;
-        this.httpClient =
-                HttpClient.newBuilder()
-                        .connectTimeout(Duration.ofSeconds(properties.getTimeoutSeconds()))
-                        .build();
+        Duration defaultTimeout = Duration.ofSeconds(Math.max(1, properties.getTimeoutSeconds()));
+        this.httpClient = HttpClient.newBuilder().connectTimeout(defaultTimeout).build();
+        long configuredMillis = Math.max(1L, properties.getTimeoutSeconds()) * 1000L;
+        this.fastFailTimeout =
+                Duration.ofMillis(Math.min(FAST_FAIL_TIMEOUT_MILLIS, configuredMillis));
+        this.fastFailHttpClient = HttpClient.newBuilder().connectTimeout(fastFailTimeout).build();
     }
 
     /**
@@ -218,13 +223,30 @@ public class ExternalApiClient {
 
     /** Core execution method with retry and error transformation. */
     public String executeRequest(String method, String path, String body, String customServiceKey) {
+        return executeRequest(
+                httpClient,
+                method,
+                path,
+                body,
+                customServiceKey,
+                Duration.ofSeconds(properties.getTimeoutSeconds()),
+                properties.getMaxRetries());
+    }
+
+    private String executeRequest(
+            HttpClient client,
+            String method,
+            String path,
+            String body,
+            String customServiceKey,
+            Duration requestTimeout,
+            int maxRetries) {
         String serviceKey =
                 (customServiceKey != null) ? customServiceKey : properties.getServiceKey();
         String fullUrl =
                 properties.getBaseUrl().replaceAll("/+$", "")
                         + (path.startsWith("/") ? path : "/" + path);
 
-        int maxRetries = properties.getMaxRetries();
         int attempt = 0;
 
         while (true) {
@@ -233,7 +255,7 @@ public class ExternalApiClient {
                 HttpRequest.Builder requestBuilder =
                         HttpRequest.newBuilder()
                                 .uri(URI.create(fullUrl))
-                                .timeout(Duration.ofSeconds(properties.getTimeoutSeconds()))
+                                .timeout(requestTimeout)
                                 .header("Accept", "application/json");
 
                 if (serviceKey != null && !serviceKey.isBlank()) {
@@ -270,7 +292,7 @@ public class ExternalApiClient {
 
                 HttpRequest request = requestBuilder.build();
                 HttpResponse<String> response =
-                        httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                        client.send(request, HttpResponse.BodyHandlers.ofString());
                 int status = response.statusCode();
 
                 log.debug("ExternalApiClient {} {} returned HTTP {}", method, fullUrl, status);
@@ -348,5 +370,22 @@ public class ExternalApiClient {
         String path = "/pm/students/" + encodedLmsUserId + "/internships";
 
         return executeRequest("GET", path, null, null);
+    }
+
+    /**
+     * Fetches student internships from PM with a bounded fast-fail timeout and zero retries so
+     * callers can degrade quickly to locally stored internship data.
+     */
+    public String getStudentInternshipsFastFail(String lmsUserId) {
+        if (lmsUserId == null || lmsUserId.isBlank()) {
+            throw new ValidationException("LMS User ID không được để trống");
+        }
+
+        String encodedLmsUserId =
+                URLEncoder.encode(lmsUserId.trim(), StandardCharsets.UTF_8).replace("+", "%20");
+
+        String path = "/pm/students/" + encodedLmsUserId + "/internships";
+
+        return executeRequest(fastFailHttpClient, "GET", path, null, null, fastFailTimeout, 0);
     }
 }

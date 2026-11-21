@@ -1,127 +1,109 @@
 package com.rikkei.jobs.internship.service.impl;
 
-import com.rikkei.jobs.candidate.model.CandidateProfile;
-import com.rikkei.jobs.candidate.repository.CandidateProfileRepository;
-import com.rikkei.jobs.identity.model.User;
-import com.rikkei.jobs.identity.repository.UserRepository;
+import com.rikkei.jobs.candidate.service.CandidatePublicService;
+import com.rikkei.jobs.common.exception.ExternalResourceNotFoundException;
+import com.rikkei.jobs.common.exception.ExternalUnavailableException;
+import com.rikkei.jobs.common.exception.InvalidServiceKeyException;
+import com.rikkei.jobs.common.exception.ResourceNotFoundException;
+import com.rikkei.jobs.common.exception.ValidationException;
+import com.rikkei.jobs.common.security.OwnershipGuard;
+import com.rikkei.jobs.identity.service.IdentityPublicService;
 import com.rikkei.jobs.internship.dto.InternshipResponse;
-import com.rikkei.jobs.internship.dto.InternshipTaskResponse;
-import com.rikkei.jobs.internship.model.Internship;
-import com.rikkei.jobs.internship.model.InternshipTask;
-import com.rikkei.jobs.internship.repository.InternshipRepository;
+import com.rikkei.jobs.internship.service.InternshipPersistenceService;
 import com.rikkei.jobs.internship.service.InternshipService;
 import com.rikkei.jobs.internship.service.InternshipSyncService;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+import java.util.Optional;
+import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * Implements candidate self-service internship sync-on-read and HR/candidate stored-only profile
+ * reads with horizontal IDOR protection and graceful PM outage fallback.
+ */
 @Service
-@RequiredArgsConstructor
 public class InternshipServiceImpl implements InternshipService {
 
-    private final UserRepository userRepository;
-    private final InternshipRepository internshipRepository;
+    private static final Logger log = LoggerFactory.getLogger(InternshipServiceImpl.class);
+    private static final String NOT_FOUND_MESSAGE = "Không tìm thấy hồ sơ ứng viên";
+
+    private final IdentityPublicService identityPublicService;
+    private final CandidatePublicService candidatePublicService;
     private final InternshipSyncService internshipSyncService;
-    private final CandidateProfileRepository candidateProfileRepository;
+    private final InternshipPersistenceService internshipPersistenceService;
+
+    public InternshipServiceImpl(
+            IdentityPublicService identityPublicService,
+            CandidatePublicService candidatePublicService,
+            InternshipSyncService internshipSyncService,
+            InternshipPersistenceService internshipPersistenceService) {
+        this.identityPublicService = identityPublicService;
+        this.candidatePublicService = candidatePublicService;
+        this.internshipSyncService = internshipSyncService;
+        this.internshipPersistenceService = internshipPersistenceService;
+    }
 
     @Override
     public List<InternshipResponse> getMyInternships(Long currentUserId) {
-        User user = findUser(currentUserId);
+        if (currentUserId == null
+                || currentUserId <= 0
+                || !identityPublicService.existsById(currentUserId)) {
+            throw new ResourceNotFoundException(NOT_FOUND_MESSAGE);
+        }
 
-        return syncAndGetInternships(user);
+        Optional<String> lmsUserId = identityPublicService.findLmsUserIdByUserId(currentUserId);
+        if (lmsUserId.isPresent()) {
+            try {
+                internshipSyncService.syncInternships(currentUserId, lmsUserId.get());
+            } catch (ExternalUnavailableException
+                    | ExternalResourceNotFoundException
+                    | InvalidServiceKeyException ex) {
+                List<InternshipResponse> stored =
+                        internshipPersistenceService.getStoredInternships(currentUserId);
+                if (!stored.isEmpty()) {
+                    log.warn(
+                            "PM internship sync failed for userId={}, returning {} cached"
+                                    + " record(s)",
+                            currentUserId,
+                            stored.size());
+                    return stored;
+                }
+                if (ex instanceof ExternalUnavailableException unavailable) {
+                    throw unavailable;
+                }
+                throw new ExternalUnavailableException("Hệ thống PM tạm thời không khả dụng", ex);
+            }
+        }
+
+        return internshipPersistenceService.getStoredInternships(currentUserId);
     }
 
     @Override
     public List<InternshipResponse> getUserInternships(
             Long userId, Long currentUserId, String currentUserRole) {
         if (userId == null || userId <= 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User ID không hợp lệ");
+            throw new ValidationException("User ID không hợp lệ");
         }
 
-        if ("HR".equalsIgnoreCase(currentUserRole)) {
+        boolean isSelf =
+                OwnershipGuard.requireSelfOrRoles(
+                        currentUserId,
+                        currentUserRole,
+                        userId,
+                        Set.of(OwnershipGuard.ROLE_CANDIDATE),
+                        Set.of(OwnershipGuard.ROLE_HR),
+                        NOT_FOUND_MESSAGE);
 
-            // HR chỉ được xem profile công khai.
-            CandidateProfile profile =
-                    candidateProfileRepository
-                            .findById(userId)
-                            .filter(CandidateProfile::isPublicProfile)
-                            .orElseThrow(
-                                    () ->
-                                            new ResponseStatusException(
-                                                    HttpStatus.NOT_FOUND,
-                                                    "Candidate profile not found"));
-
-        } else if ("CANDIDATE".equalsIgnoreCase(currentUserRole)) {
-
-            // Candidate chỉ được xem dữ liệu của chính mình.
-            if (!userId.equals(currentUserId)) {
-                throw new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Candidate profile not found");
+        if (isSelf) {
+            if (!identityPublicService.existsById(userId)) {
+                throw new ResourceNotFoundException(NOT_FOUND_MESSAGE);
             }
-
-        } else {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bạn không có quyền truy cập");
+        } else if (!candidatePublicService.isProfilePublic(userId)) {
+            throw new ResourceNotFoundException(NOT_FOUND_MESSAGE);
         }
 
-        User user = findUser(userId);
-
-        return syncAndGetInternships(user);
-    }
-
-    private User findUser(Long userId) {
-        return userRepository
-                .findById(userId)
-                .orElseThrow(
-                        () ->
-                                new ResponseStatusException(
-                                        HttpStatus.NOT_FOUND, "Không tìm thấy người dùng"));
-    }
-
-    private List<InternshipResponse> syncAndGetInternships(User user) {
-
-        // Đồng bộ dữ liệu từ PM nếu user có LMS User ID.
-        if (user.getLmsUserId() != null && !user.getLmsUserId().isBlank()) {
-            internshipSyncService.syncInternships(user.getLmsUserId());
-        }
-
-        return getInternships(user.getId());
-    }
-
-    @Transactional(readOnly = true)
-    protected List<InternshipResponse> getInternships(Long userId) {
-
-        List<Internship> internships =
-                internshipRepository.findAllByUser_IdOrderBySyncedAtDesc(userId);
-
-        return internships.stream().map(this::toResponse).toList();
-    }
-
-    private InternshipResponse toResponse(Internship internship) {
-
-        List<InternshipTaskResponse> tasks =
-                internship.getTasks() == null
-                        ? List.of()
-                        : internship.getTasks().stream().map(this::toTaskResponse).toList();
-
-        return new InternshipResponse(
-                internship.getId(),
-                internship.getBatchId(),
-                internship.getBatchName(),
-                internship.getGroupName(),
-                internship.getTopicName(),
-                internship.getMentorEmail(),
-                internship.getStartDate(),
-                internship.getEndDate(),
-                internship.getFinalScore(),
-                internship.getSyncedAt(),
-                tasks);
-    }
-
-    private InternshipTaskResponse toTaskResponse(InternshipTask task) {
-        return new InternshipTaskResponse(
-                task.getId(), task.getTitle(), task.getAcceptedScore(), task.getAcceptedAt());
+        return internshipPersistenceService.getStoredInternships(userId);
     }
 }

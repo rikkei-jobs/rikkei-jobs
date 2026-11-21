@@ -236,6 +236,19 @@ public class RoutePolicyRegistry {
                             OwnershipGuard.ROLE_CANDIDATE,
                             OwnershipGuard.ROLE_HR),
                     RoutePolicy.roles(
+                            HttpMethod.GET,
+                            "/api/v1/profiles/me/internships",
+                            true,
+                            "Candidate reads own internship history",
+                            OwnershipGuard.ROLE_CANDIDATE),
+                    RoutePolicy.roles(
+                            HttpMethod.GET,
+                            "/api/v1/profiles/{userId}/internships",
+                            true,
+                            "CANDIDATE (own only -> else 404) and HR (public only -> else 404)",
+                            OwnershipGuard.ROLE_CANDIDATE,
+                            OwnershipGuard.ROLE_HR),
+                    RoutePolicy.roles(
                             HttpMethod.PUT,
                             "/api/v1/me/target",
                             true,
@@ -323,20 +336,7 @@ public class RoutePolicyRegistry {
                             false,
                             "HR reads own company (404 on mismatch), STAFF reads any (methodScoped=false preserves 405 on PUT)",
                             OwnershipGuard.ROLE_HR,
-                            OwnershipGuard.ROLE_STAFF),
-                    RoutePolicy.roles(
-                            HttpMethod.GET,
-                            "/api/v1/profiles/me/internships",
-                            true,
-                            "Candidate reads own internship history",
-                            OwnershipGuard.ROLE_CANDIDATE),
-                    RoutePolicy.roles(
-                            HttpMethod.GET,
-                            "/api/v1/profiles/{userId}/internships",
-                            true,
-                            "CANDIDATE (own only) and HR reads candidate internship history",
-                            OwnershipGuard.ROLE_CANDIDATE,
-                            OwnershipGuard.ROLE_HR));
+                            OwnershipGuard.ROLE_STAFF));
 
     private static final PathPatternParser PATTERN_PARSER = new PathPatternParser();
 

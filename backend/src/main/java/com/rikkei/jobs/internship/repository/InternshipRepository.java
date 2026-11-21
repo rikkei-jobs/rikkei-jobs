@@ -9,10 +9,9 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface InternshipRepository extends JpaRepository<Internship, Long> {
-    Optional<Internship> findByUser_IdAndBatchId(Long userId, String batchId);
 
-    List<Internship> findAllByUser_Id(Long userId);
+    Optional<Internship> findByUserIdAndBatchId(Long userId, String batchId);
 
     @EntityGraph(attributePaths = "tasks")
-    List<Internship> findAllByUser_IdOrderBySyncedAtDesc(Long userId);
+    List<Internship> findAllByUserIdOrderBySyncedAtDesc(Long userId);
 }

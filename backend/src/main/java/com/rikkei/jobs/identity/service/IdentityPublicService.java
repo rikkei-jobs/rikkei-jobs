@@ -5,6 +5,7 @@ import com.rikkei.jobs.identity.dto.CreatedHrUserResult;
 import com.rikkei.jobs.identity.dto.SendHrOnboardingEmailCommand;
 import com.rikkei.jobs.identity.dto.UserSummaryDto;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -18,6 +19,8 @@ public interface IdentityPublicService {
     UserSummaryDto getUserById(Long userId);
 
     boolean existsById(Long userId);
+
+    Optional<String> findLmsUserIdByUserId(Long userId);
 
     boolean isCandidate(Long userId);
 

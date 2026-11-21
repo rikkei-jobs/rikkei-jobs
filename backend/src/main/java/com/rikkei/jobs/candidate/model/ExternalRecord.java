@@ -39,22 +39,7 @@ public class ExternalRecord {
     @Column(name = "recorded_at", nullable = false)
     private OffsetDateTime recordedAt;
 
-    public ExternalRecord() {}
-
-    public ExternalRecord(
-            Long id,
-            ExternalSource externalSource,
-            String sourceCode,
-            String title,
-            BigDecimal score,
-            OffsetDateTime recordedAt) {
-        this.id = id;
-        this.source = externalSource;
-        this.sourceCode = sourceCode;
-        this.title = title;
-        this.score = score;
-        this.recordedAt = recordedAt;
-    }
+    protected ExternalRecord() {}
 
     public ExternalRecord(
             ExternalSource externalSource,

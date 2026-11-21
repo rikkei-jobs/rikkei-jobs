@@ -1,13 +1,9 @@
 package com.rikkei.jobs.internship.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
-import lombok.Data;
 
-@Data
-public class PMInternshipTaskResponse {
-
-    private String title;
-    private BigDecimal acceptedScore;
-    private OffsetDateTime acceptedAt;
-}
+@JsonIgnoreProperties(ignoreUnknown = true)
+public record PMInternshipTaskResponse(
+        String title, BigDecimal acceptedScore, OffsetDateTime acceptedAt) {}

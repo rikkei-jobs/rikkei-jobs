@@ -1,19 +1,24 @@
 package com.rikkei.jobs.internship.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
-import lombok.Data;
+import java.util.Objects;
 
-@Data
-public class PMInternshipResponse {
-    private String batchId;
-    private String batchName;
-    private String groupName;
-    private String topicName;
-    private String mentorEmail;
-    private LocalDate startDate;
-    private LocalDate endDate;
-    private BigDecimal finalScore;
-    private List<PMInternshipTaskResponse> tasks;
+@JsonIgnoreProperties(ignoreUnknown = true)
+public record PMInternshipResponse(
+        String batchId,
+        String batchName,
+        String groupName,
+        String topicName,
+        String mentorEmail,
+        LocalDate startDate,
+        LocalDate endDate,
+        BigDecimal finalScore,
+        List<PMInternshipTaskResponse> tasks) {
+
+    public PMInternshipResponse {
+        tasks = tasks == null ? List.of() : tasks.stream().filter(Objects::nonNull).toList();
+    }
 }
