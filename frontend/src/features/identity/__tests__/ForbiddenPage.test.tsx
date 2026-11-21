@@ -19,7 +19,7 @@ const LocationProbe = () => {
 const createUser = (role: string, overrides: Partial<UserDto> = {}): UserDto => ({
   id: 50,
   email: `${role.toLowerCase()}@rikkei.vn`,
-  fullName: `User ${role}`,
+  fullName: 'Nguyễn Văn Kiểm Thử',
   role,
   companyId: role === 'HR' ? 1 : null,
   status: 'ACTIVE',
@@ -194,7 +194,7 @@ describe('ForbiddenPage & Route Guard 403 Behavior (F2 + D8)', () => {
       </AuthProvider>,
     );
 
-    expect(await screen.findByRole('heading', { level: 1, name: /Cổng Đăng Nhập/i })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: /^Đăng nhập$/i })).toBeInTheDocument();
   });
 
   it('renders 403 inside SharedAppLayout with user sidebar and clears state.from on explicit logout', () => {

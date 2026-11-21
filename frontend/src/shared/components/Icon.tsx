@@ -37,7 +37,9 @@ export type IconName =
   | 'menu'
   | 'home'
   | 'panel-left-close'
-  | 'panel-left-open';
+  | 'panel-left-open'
+  | 'pause'
+  | 'play';
 
 export interface IconProps extends React.SVGAttributes<SVGSVGElement> {
   name: IconName;
@@ -287,6 +289,13 @@ const iconPaths: Record<IconName, React.ReactNode> = {
       <path d="m14 9 3 3-3 3" />
     </>
   ),
+  pause: (
+    <>
+      <rect x="6" y="4" width="4" height="16" rx="1" />
+      <rect x="14" y="4" width="4" height="16" rx="1" />
+    </>
+  ),
+  play: <polygon points="6 4 20 12 6 20 6 4" />,
 };
 
 export const Icon: React.FC<IconProps> = ({

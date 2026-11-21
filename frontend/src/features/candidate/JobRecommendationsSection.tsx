@@ -106,7 +106,7 @@ export const JobRecommendationsSection: React.FC = () => {
             Việc làm phù hợp với bạn
           </h2>
           <p className="recommendations-subtitle">
-            Hệ thống tự động phân tích hồ sơ năng lực đã xác thực và gợi ý các vị trí tối ưu nhất
+            Gợi ý các vị trí dựa trên điểm kỹ năng đã xác thực của bạn.
           </p>
         </div>
 
@@ -129,25 +129,20 @@ export const JobRecommendationsSection: React.FC = () => {
       {meta && (
         <div className="meta-status-bar">
           <div>
-            Đã tìm thấy <strong>{recommendations.length}</strong> vị trí phù hợp nhất với năng lực
-            của bạn
+            Tìm thấy <strong>{recommendations.length}</strong> vị trí phù hợp với kỹ năng của bạn
           </div>
           <div className="meta-badges">
             {meta.isCached ? (
               <span className="badge-tag badge-cached">
                 <Icon name="clock" size={14} />
-                Đã lưu bộ nhớ đệm (hiệu lực 24h)
+                Cập nhật trong ngày
               </span>
             ) : (
               <span className="badge-tag badge-cached">
                 <Icon name="sparkles" size={14} />
-                Mới tính toán
+                Vừa cập nhật
               </span>
             )}
-            <span className="badge-tag badge-provider">
-              <Icon name="network" size={14} />
-              AI Provider: {meta.activeProvider}
-            </span>
           </div>
         </div>
       )}
@@ -155,8 +150,8 @@ export const JobRecommendationsSection: React.FC = () => {
       {loading && !refreshing && (
         <div className="recommendations-loading">
           <p>
-            <Icon name="spinner" size={18} className="spinning" />
-            Đang phân tích hồ sơ kỹ năng và tính toán độ tương đồng công việc...
+            <Icon name="spinner" size={18} className="rj-spin" />
+            Đang phân tích hồ sơ kỹ năng và tìm vị trí phù hợp...
           </p>
         </div>
       )}
@@ -245,8 +240,13 @@ export const JobRecommendationsSection: React.FC = () => {
               </div>
 
               <div className="job-card-actions">
-                <button type="button" className="apply-button">
-                  Ứng tuyển ngay
+                <button
+                  type="button"
+                  className="apply-button"
+                  disabled
+                  title="Tính năng nộp hồ sơ trực tiếp sắp ra mắt"
+                >
+                  Ứng tuyển (Sắp ra mắt)
                 </button>
                 <Link to={`/candidate/jobs/${job.jobId}`} className="details-button">
                   Chi tiết JD

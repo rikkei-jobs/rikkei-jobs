@@ -40,8 +40,8 @@ Core design tenets:
 ### Step 1: Establish Persona Context & Role Density
 
 1. Identify the target audience for the view:
-   - **Candidate Views (`CANDIDATE`)**: Apply **Airy Density**. Use generous padding and margins (16px to 32px), spacious card padding (24px), row height 56px, touch targets >= 44px, clear visual hierarchy, and an encouraging, editorial atmosphere.
-   - **Operational Views (`ADMIN`, `HR`, `STAFF`, `MENTOR`)**: Apply **Dense Density**. Use compact spacing (6px to 12px), condensed table rows (36px to 38px), right-aligned tabular numbers, and streamlined toolbars to maximize audit efficiency on large monitors.
+   - **Candidate & Mentor Views (`CANDIDATE`, `MENTOR`)**: Apply **Airy Density**. Use generous padding and margins (16px to 32px), spacious card padding (24px), row height 56px, touch targets >= 44px, clear visual hierarchy, and an encouraging, editorial atmosphere.
+   - **Operational Views (`ADMIN`, `HR`, `STAFF`)**: Apply **Dense Density**. Use compact spacing (6px to 12px), condensed table rows (36px to 38px), right-aligned tabular numbers, and streamlined toolbars to maximize audit efficiency on large monitors.
 2. Cross-reference density properties in [token-tables.md](references/token-tables.md).
 
 ### Step 2: Bind Bespoke Semantic Design Tokens & Calculate Contrast
@@ -72,10 +72,11 @@ font-variant-numeric: tabular-nums;
 2. Build asymmetrical compositions pairing structured data tables with context panels or interactive previews using an editorial 65/35 ratio (8 primary columns / 4 sticky sidebar columns).
 3. Constrain all spacing to the 4px base rhythm scale: 4px, 8px, 12px, 16px, 20px, 24px, 32px, 48px, 64px.
 
-### Step 5: Draft Authentic Production Copy
+### Step 5: Draft Authentic Role-Centered Copy
 
-1. Replace all "Lorem ipsum", "Title here", or empty placeholder text with realistic domain terminology in Vietnamese and English.
-2. Mirror authentic recruitment terminology (e.g., "Hồ sơ năng lực", "Khoảng thiếu hụt kỹ năng", "Assessment Form", "Matching Score").
+1. Write from the user's perspective per role in authentic, concrete Vietnamese with full diacritics; forbid technical/internal showcase copy (`ASVS`, `RBAC`, `TTL`, `JWT`, `Modular Monolith`, `Backend`, `AI Provider`, module codes, invented numbers).
+2. Mark unimplemented workflows honestly as `Sắp ra mắt`, and isolate developer/QA helpers inside collapsed `<details className="rj-dev-tools">` behind `import.meta.env.DEV`.
+3. Pair route-level `React.lazy` + `<Suspense>` (`lazyRoute` + `preloadRouteForPath`) with upfront geometric reservation (`font-display: optional`, `.rj-metric-slot` for count-ups, keyed loading/ready containers) so `CLS === 0`.
 
 ### Step 6: Verify Multi-Breakpoint Responsiveness
 
@@ -135,7 +136,7 @@ Evaluate the view against the 6 criteria in [anti-ai-rubric.md](references/anti-
 - Anti-AI review rubric: [references/anti-ai-rubric.md](references/anti-ai-rubric.md).
 - Screenshot review protocol: [references/screenshot-protocol.md](references/screenshot-protocol.md).
 - Global stylesheet assets: `frontend/src/index.css`, `frontend/src/App.css`.
-- Shared layout primitives: `frontend/src/shared/components/Header.tsx`, `ModuleCard.tsx`.
+- Shared layout & interactive primitives: `frontend/src/features/identity/components/SharedAppLayout.tsx`, `AuthEditorialLayout.tsx`, `CompetencyRadarVisual.tsx`, `frontend/src/shared/components/ThemeSwitch.tsx`, `Select.tsx`, `Header.tsx`, `frontend/src/shared/utils/routeLazy.ts`.
 - Verification commands:
 
 ```bash

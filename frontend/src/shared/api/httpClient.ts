@@ -127,7 +127,7 @@ async function executeFetch(
 
 async function handleErrorResponse(response: Response, options: RequestOptions): Promise<never> {
   let errorCode = 'UNKNOWN_ERROR';
-  let errorMessage = `Yêu cầu thất bại với mã trạng thái ${response.status}`;
+  let errorMessage = `Không thể xử lý yêu cầu (mã lỗi ${response.status}). Vui lòng thử lại.`;
 
   try {
     const errorJson = (await response.json()) as ErrorResponseBody;

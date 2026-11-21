@@ -1,12 +1,15 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Icon } from '../../../../shared/components/Icon';
 import {
   formatDisplayValue,
   getAccountStatusLabel,
   getRoleLabel,
 } from '../../../../shared/i18n/enumLabels';
+import { navigateWithTransition } from '../../../../shared/utils/motion';
+import { preloadRouteForPath } from '../../../../shared/utils/routeLazy';
 import { SharedAppLayout } from '../../components/SharedAppLayout';
+import { useIsInsidePersistentShell } from '../../context/RoleShellContext';
 import { useAuth } from '../../context/useAuth';
 
 function getAccountStatusColor(status?: string | null, mustChangePassword?: boolean): string {
@@ -24,99 +27,108 @@ function getAccountStatusColor(status?: string | null, mustChangePassword?: bool
 }
 
 export interface RoleHomeLayoutProps {
-  roleTitle: string;
+  roleTitle?: string;
   roleBadgeClass: string;
   roleIcon: 'user' | 'building' | 'graduation-cap' | 'briefcase' | 'shield';
-  description: string;
+  description?: string;
   density?: 'airy' | 'dense';
   hideAccountCard?: boolean;
+  /** @deprecated No-op kept for caller compatibility; the secondary account card never unmounts on load. */
+  isLoading?: boolean;
   children?: React.ReactNode;
 }
 
 export const RoleHomeLayout: React.FC<RoleHomeLayoutProps> = ({
-  roleTitle,
   roleBadgeClass,
   roleIcon,
-  description,
   density,
   hideAccountCard = false,
   children,
 }) => {
   const { user } = useAuth();
-  const effectiveDensity = density || (roleBadgeClass.includes('candidate') ? 'airy' : 'dense');
+  const navigate = useNavigate();
+  const insidePersistentShell = useIsInsidePersistentShell();
+  // LMS SSO accounts authenticate via LMS and do not carry a local password to change here.
+  const canChangePassword = Boolean(user && !user.lmsUserId);
+  const effectiveDensity =
+    density ||
+    (roleBadgeClass.includes('candidate') || roleBadgeClass.includes('mentor') ? 'airy' : 'dense');
 
-  return (
-    <SharedAppLayout roleBadgeClass={roleBadgeClass} roleIcon={roleIcon} density={effectiveDensity}>
+  const content = (
+    <div className="rj-stack-lg">
+      {children}
+
       {!hideAccountCard && (
-        <div className="rj-auth-card" style={{ maxWidth: '100%', marginBottom: '24px' }}>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '16px',
-            }}
-          >
+        <section
+          className="rj-surface-card rj-account-card-secondary"
+          aria-labelledby="account-summary-heading"
+        >
+          <div className="rj-account-header">
             <div>
-              <span className={`rj-role-badge ${roleBadgeClass}`} style={{ marginBottom: '8px' }}>
-                <Icon name={roleIcon} size={16} />
-                <span>{roleTitle}</span>
-              </span>
-              <h1 className="rj-auth-title" style={{ margin: '8px 0 4px 0' }}>
-                Chào mừng, {user?.fullName || 'Người dùng'}!
-              </h1>
-              <p className="rj-auth-subtitle">{description}</p>
+              <h2 id="account-summary-heading" className="rj-role-card-title">
+                Thông tin tài khoản
+              </h2>
+              <p className="rj-role-card-desc">
+                Thông tin định danh và trạng thái hoạt động của tài khoản.
+              </p>
             </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <Link to="/change-password" className="rj-btn rj-btn-secondary">
-                <Icon name="key" size={16} />
-                <span>Đổi Mật Khẩu</span>
-              </Link>
-            </div>
+            {canChangePassword && (
+              <div className="rj-account-actions">
+                <Link
+                  to="/change-password"
+                  className="rj-btn rj-btn-secondary"
+                  onMouseEnter={() => {
+                    void preloadRouteForPath('/change-password');
+                  }}
+                  onFocus={() => {
+                    void preloadRouteForPath('/change-password');
+                  }}
+                  onClick={(event) => {
+                    if (
+                      event.defaultPrevented ||
+                      event.button !== 0 ||
+                      event.metaKey ||
+                      event.ctrlKey ||
+                      event.shiftKey ||
+                      event.altKey
+                    ) {
+                      return;
+                    }
+                    event.preventDefault();
+                    void navigateWithTransition(
+                      () => navigate('/change-password'),
+                      () => preloadRouteForPath('/change-password'),
+                    );
+                  }}
+                >
+                  <Icon name="key" size={16} />
+                  <span>Đổi mật khẩu</span>
+                </Link>
+              </div>
+            )}
           </div>
 
-          <h2
-            style={{
-              fontSize: '1.125rem',
-              fontWeight: 600,
-              marginTop: '24px',
-              marginBottom: '8px',
-            }}
-          >
-            Thông Tin Tài Khoản
-          </h2>
           <table className={`rj-info-table rj-density-${effectiveDensity}`}>
             <tbody>
-              <tr>
-                <th>Mã người dùng (User ID)</th>
-                <td className="rj-tabular-nums">{formatDisplayValue(user?.id)}</td>
-              </tr>
               <tr>
                 <th>Họ và tên</th>
                 <td>{formatDisplayValue(user?.fullName)}</td>
               </tr>
               <tr>
-                <th>Địa chỉ Email</th>
+                <th>Email</th>
                 <td>{formatDisplayValue(user?.email)}</td>
               </tr>
               <tr>
-                <th>Vai trò hệ thống</th>
+                <th>Vai trò</th>
                 <td>
                   <span className={`rj-role-badge ${roleBadgeClass}`}>
                     {getRoleLabel(user?.role)}
                   </span>
                 </td>
               </tr>
-              {user?.companyId !== null && user?.companyId !== undefined && (
-                <tr>
-                  <th>Mã doanh nghiệp (Company ID)</th>
-                  <td className="rj-tabular-nums">{user.companyId}</td>
-                </tr>
-              )}
               {user?.lmsUserId && (
                 <tr>
-                  <th>Tài khoản LMS liên kết</th>
+                  <th>Mã học viên LMS</th>
                   <td className="rj-tabular-nums">{user.lmsUserId}</td>
                 </tr>
               )}
@@ -124,9 +136,9 @@ export const RoleHomeLayout: React.FC<RoleHomeLayoutProps> = ({
                 <th>Trạng thái tài khoản</th>
                 <td>
                   <span
+                    className="rj-account-status-text"
                     style={{
                       color: getAccountStatusColor(user?.status, user?.mustChangePassword),
-                      fontWeight: 600,
                     }}
                   >
                     {getAccountStatusLabel(user?.status, user?.mustChangePassword)}
@@ -135,10 +147,18 @@ export const RoleHomeLayout: React.FC<RoleHomeLayoutProps> = ({
               </tr>
             </tbody>
           </table>
-        </div>
+        </section>
       )}
+    </div>
+  );
 
-      {children}
+  if (insidePersistentShell) {
+    return content;
+  }
+
+  return (
+    <SharedAppLayout roleBadgeClass={roleBadgeClass} roleIcon={roleIcon} density={effectiveDensity}>
+      {content}
     </SharedAppLayout>
   );
 };

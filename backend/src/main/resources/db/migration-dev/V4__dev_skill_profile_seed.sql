@@ -16,34 +16,34 @@ UPDATE skills SET skill_group = 'SOFT_SKILL' WHERE code IN ('ENGLISH', 'TEAMWORK
 INSERT INTO skill_mappings (source, source_code, skill_id, weight)
 SELECT m.source, m.source_code, s.id, m.weight
 FROM (VALUES
-          ('LMS', 'JAVA01', 'JAVA', 0.7),
-          ('LMS', 'JAVA01', 'OOP', 0.3),
-          ('LMS', 'SQL01', 'SQL', 1.0),
-          ('LMS', 'SPRING01', 'SPRING_BOOT', 0.7),
-          ('LMS', 'SPRING01', 'REST_API', 0.3),
-          ('LMS', 'WEB01', 'HTML_CSS', 0.5),
-          ('LMS', 'WEB01', 'JAVASCRIPT', 0.5),
-          ('LMS', 'GIT01', 'GIT', 0.8),
-          ('LMS', 'GIT01', 'TEAMWORK', 0.2),
-          ('LMS', 'REACT01', 'REACTJS', 0.7),
-          ('LMS', 'REACT01', 'JAVASCRIPT', 0.3),
-          ('EXAM', 'EX-JAVA-2026-10', 'JAVA', 0.8),
-          ('EXAM', 'EX-JAVA-2026-10', 'DSA', 0.2),
-          ('EXAM', 'EX-REACT-2026-10', 'REACTJS', 1.0),
-          ('PM', 'IOC-JB-2026-09', 'JAVA', 0.3),
-          ('PM', 'IOC-JB-2026-09', 'SPRING_BOOT', 0.3),
-          ('PM', 'IOC-JB-2026-09', 'TEAMWORK', 0.2),
-          ('PM', 'IOC-JB-2026-09', 'AGILE', 0.2)
-     ) AS m (source, source_code, skill_code, weight)
-         INNER JOIN skills AS s ON m.skill_code = s.code
-    ON CONFLICT DO NOTHING;
+    ('LMS', 'JAVA01', 'JAVA', 0.7),
+    ('LMS', 'JAVA01', 'OOP', 0.3),
+    ('LMS', 'SQL01', 'SQL', 1.0),
+    ('LMS', 'SPRING01', 'SPRING_BOOT', 0.7),
+    ('LMS', 'SPRING01', 'REST_API', 0.3),
+    ('LMS', 'WEB01', 'HTML_CSS', 0.5),
+    ('LMS', 'WEB01', 'JAVASCRIPT', 0.5),
+    ('LMS', 'GIT01', 'GIT', 0.8),
+    ('LMS', 'GIT01', 'TEAMWORK', 0.2),
+    ('LMS', 'REACT01', 'REACTJS', 0.7),
+    ('LMS', 'REACT01', 'JAVASCRIPT', 0.3),
+    ('EXAM', 'EX-JAVA-2026-10', 'JAVA', 0.8),
+    ('EXAM', 'EX-JAVA-2026-10', 'DSA', 0.2),
+    ('EXAM', 'EX-REACT-2026-10', 'REACTJS', 1.0),
+    ('PM', 'IOC-JB-2026-09', 'JAVA', 0.3),
+    ('PM', 'IOC-JB-2026-09', 'SPRING_BOOT', 0.3),
+    ('PM', 'IOC-JB-2026-09', 'TEAMWORK', 0.2),
+    ('PM', 'IOC-JB-2026-09', 'AGILE', 0.2)
+) AS m (source, source_code, skill_code, weight)
+INNER JOIN skills AS s ON m.skill_code = s.code
+ON CONFLICT DO NOTHING;
 
 -- 3. Visibility: candidate1 and candidate3 are private, candidate2 is public
 INSERT INTO candidate_profiles (user_id, is_public) VALUES
-                                                        (1, FALSE),
-                                                        (2, TRUE),
-                                                        (3, FALSE)
-    ON CONFLICT DO NOTHING;
+(1, FALSE),
+(2, TRUE),
+(3, FALSE)
+ON CONFLICT DO NOTHING;
 
 -- 4. Sample external records (scores normalized from the 0-10 mock scale to 0-100)
 INSERT INTO external_records (user_id, source, source_code, title, score, recorded_at) VALUES
@@ -67,17 +67,17 @@ INSERT INTO external_records (user_id, source, source_code, title, score, record
 (3, 'LMS', 'SQL01', 'Cơ sở dữ liệu', 60, NOW() - INTERVAL '35 days'),
 (3, 'LMS', 'WEB01', 'HTML/CSS/JavaScript', 50, NOW() - INTERVAL '55 days'),
 (3, 'EXAM', 'EX-JAVA-2026-10', 'Bài thi Java 10/2026', 45, NOW() - INTERVAL '10 days')
-    ON CONFLICT DO NOTHING;
+ON CONFLICT DO NOTHING;
 
 -- 5. Self-declared evidences. COMMUNICATION and ENGLISH have no verified evidence (self-only).
 INSERT INTO skill_evidences (user_id, skill_id, source, source_ref, title, score, weight, recorded_at, verified)
 SELECT e.user_id, s.id, 'SELF', NULL, e.title, e.score, 1, NOW() - e.age, FALSE
 FROM (VALUES
-          (1, 'JAVA', 'Tự đánh giá', 90, INTERVAL '20 days'),
-          (1, 'TEAMWORK', 'Tự đánh giá', 75, INTERVAL '20 days'),
-          (1, 'COMMUNICATION', 'Tự đánh giá', 70, INTERVAL '20 days'),
-          (1, 'ENGLISH', 'Tự đánh giá', 65, INTERVAL '20 days'),
-          (2, 'COMMUNICATION', 'Tự đánh giá', 80, INTERVAL '15 days'),
-          (3, 'ENGLISH', 'Tự đánh giá', 55, INTERVAL '15 days')
-     ) AS e (user_id, skill_code, title, score, age)
-         INNER JOIN skills AS s ON e.skill_code = s.code;
+    (1, 'JAVA', 'Tự đánh giá', 90, INTERVAL '20 days'),
+    (1, 'TEAMWORK', 'Tự đánh giá', 75, INTERVAL '20 days'),
+    (1, 'COMMUNICATION', 'Tự đánh giá', 70, INTERVAL '20 days'),
+    (1, 'ENGLISH', 'Tự đánh giá', 65, INTERVAL '20 days'),
+    (2, 'COMMUNICATION', 'Tự đánh giá', 80, INTERVAL '15 days'),
+    (3, 'ENGLISH', 'Tự đánh giá', 55, INTERVAL '15 days')
+) AS e (user_id, skill_code, title, score, age)
+INNER JOIN skills AS s ON e.skill_code = s.code;

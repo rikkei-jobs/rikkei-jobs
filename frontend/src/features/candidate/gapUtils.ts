@@ -8,5 +8,5 @@ export const describeGapError = (err: unknown): string | null => {
   if (err instanceof ApiError) {
     return `Không tải được dữ liệu phân tích (${err.message})`;
   }
-  return 'Không thể kết nối đến máy chủ Backend';
+  return 'Không thể kết nối đến máy chủ. Vui lòng thử lại.';
 };

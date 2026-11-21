@@ -1,15 +1,24 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Icon } from '../../../shared/components/Icon';
+import { navigateWithTransition } from '../../../shared/utils/motion';
+import { preloadRouteForPath } from '../../../shared/utils/routeLazy';
 import { useAuth } from '../context/useAuth';
 import { AuthApiError } from '../types';
 import { extractFromPathname, resolvePostLoginPath } from '../utils/roleUtils';
 import { PasswordField } from './PasswordField';
 import { LockoutCountdown } from './LockoutCountdown';
 
-export const EnterpriseLoginForm: React.FC = () => {
+export interface EnterpriseLoginFormProps {
+  readonly skipEntrance?: boolean;
+}
+
+export const EnterpriseLoginForm: React.FC<EnterpriseLoginFormProps> = ({
+  skipEntrance = false,
+}) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const seqClass = skipEntrance ? '' : ' rj-form-seq';
   const [isLocked, setIsLocked] = useState(
     Boolean(
       import.meta.env.DEV &&
@@ -50,10 +59,20 @@ export const EnterpriseLoginForm: React.FC = () => {
       const response = await login({ email: email.trim(), password });
 
       if (response.mustChangePassword || response.user.mustChangePassword) {
-        navigate('/change-password', { state: location.state, replace: true });
+        void navigateWithTransition(
+          () => {
+            navigate('/change-password', { state: location.state, replace: true });
+          },
+          () => preloadRouteForPath('/change-password'),
+        );
       } else {
         const targetPath = resolvePostLoginPath(fromPathname, response.user.role);
-        navigate(targetPath, { replace: true });
+        void navigateWithTransition(
+          () => {
+            navigate(targetPath, { replace: true });
+          },
+          () => preloadRouteForPath(targetPath),
+        );
       }
     } catch (err: unknown) {
       if (err instanceof AuthApiError) {
@@ -102,6 +121,8 @@ export const EnterpriseLoginForm: React.FC = () => {
     );
   }
 
+  const isBusy = isLoading || mockLoading;
+
   return (
     <form onSubmit={handleSubmit} className="rj-form">
       {errorMessage && (
@@ -111,9 +132,9 @@ export const EnterpriseLoginForm: React.FC = () => {
         </div>
       )}
 
-      <div className="rj-form-group">
+      <div className={`rj-form-group${seqClass}`} style={{ '--stagger-index': 0 } as React.CSSProperties}>
         <label htmlFor="enterprise-email" className="rj-label">
-          Email Doanh Nghiệp
+          Email doanh nghiệp
         </label>
         <div className="rj-input-wrapper">
           <span className="rj-input-icon">
@@ -134,34 +155,44 @@ export const EnterpriseLoginForm: React.FC = () => {
         </div>
       </div>
 
-      <PasswordField
-        id="enterprise-password"
-        label="Mật Khẩu"
-        labelAction={
-          <Link to="/forgot-password" className="rj-link">
-            Quên mật khẩu?
-          </Link>
-        }
-        placeholder="Nhập mật khẩu"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        required
-        aria-invalid={Boolean(errorMessage)}
-        aria-describedby={errorMessage ? 'enterprise-login-error' : undefined}
-      />
+      <div className={seqClass.trim() || undefined} style={{ '--stagger-index': 1 } as React.CSSProperties}>
+        <PasswordField
+          id="enterprise-password"
+          label="Mật khẩu"
+          labelAction={
+            <Link to="/forgot-password" className="rj-link">
+              Quên mật khẩu?
+            </Link>
+          }
+          placeholder="Nhập mật khẩu"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          aria-invalid={Boolean(errorMessage)}
+          aria-describedby={errorMessage ? 'enterprise-login-error' : undefined}
+        />
+      </div>
 
-      <button type="submit" className="rj-btn rj-btn-primary rj-btn-block" disabled={isLoading || mockLoading}>
-        {isLoading || mockLoading ? (
-          <>
-            <Icon name="spinner" size={20} className="rj-spin" />
-            <span>Đang xác thực...</span>
-          </>
-        ) : (
-          <>
-            <Icon name="building" size={20} />
-            <span>Đăng Nhập</span>
-          </>
-        )}
+      <button
+        type="submit"
+        className={`rj-btn rj-btn-primary rj-btn-block rj-btn-morph${seqClass}`}
+        style={{ '--stagger-index': 2 } as React.CSSProperties}
+        disabled={isBusy}
+      >
+        <span
+          className={`rj-btn-morph-layer${isBusy ? ' is-hidden' : ' is-visible'}`}
+          aria-hidden={isBusy}
+        >
+          <Icon name="building" size={20} />
+          <span>Đăng nhập</span>
+        </span>
+        <span
+          className={`rj-btn-morph-layer${isBusy ? ' is-visible' : ' is-hidden'}`}
+          aria-hidden={!isBusy}
+        >
+          <Icon name="spinner" size={20} className={isBusy ? 'rj-spin' : undefined} />
+          <span>Đang xác thực...</span>
+        </span>
       </button>
     </form>
   );

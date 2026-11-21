@@ -9,11 +9,11 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface InternshipRepository extends JpaRepository<Internship, Long> {
-    Optional<Internship> findByUser_IdAndBatchId(Long userId, String batchId);
 
-    List<Internship> findAllByUser_Id(Long userId);
+    Optional<Internship> findByUserIdAndBatchId(Long userId, String batchId);
 
     @EntityGraph(attributePaths = "tasks")
+<<<<<<< HEAD
     List<Internship> findAllByUser_IdOrderBySyncedAtDesc(Long userId);
 
     // Lấy danh sách thực tập sinh do Mentor phụ trách
@@ -23,4 +23,7 @@ public interface InternshipRepository extends JpaRepository<Internship, Long> {
     // Lấy danh sách thực tập sinh do Mentor phụ trách trong batch
     @EntityGraph(attributePaths = "user")
     List<Internship> findAllByMentorEmailIgnoreCaseAndBatchId(String mentorEmail, String batchId);
+=======
+    List<Internship> findAllByUserIdOrderBySyncedAtDesc(Long userId);
+>>>>>>> origin/develop
 }

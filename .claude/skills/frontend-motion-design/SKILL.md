@@ -16,7 +16,7 @@ Motion in Rikkei Jobs is **purposeful, physical, and restrained**. It exists to 
 All motion implementations adhere to three core principles:
 
 1. **Zero Runtime Footprint**: Leverage 100% Native CSS and the Web Animations API (WAAPI) for 0 KB bundle overhead.
-2. **Strict Compositor Performance**: Animate only GPU-composited properties (`transform`, `opacity`) to guarantee 60fps and zero layout shifts (`CLS = 0`).
+2. **Strict Compositor Performance**: Animate only GPU-composited properties (`transform`, `opacity`, and measured `clip-path` reveals) to guarantee 60fps and zero layout shifts (`CLS = 0`).
 3. **Inclusive Vestibular Accessibility**: Comprehensive `@media (prefers-reduced-motion: reduce)` support providing genuine 100ms cross-fade alternatives and preserving WebKit event loop integrity with `0.001ms` durations.
 
 ---
@@ -51,22 +51,27 @@ See the complete token stylesheet in [motion-tokens.css](references/motion-token
 |---|---|---|---|
 | **Duration** | `--rj-duration-micro` | `100ms` | Button active press, badge count bump |
 | | `--rj-duration-fast` | `150ms` | Tooltip reveal, hover lift, admin transitions |
-| | `--rj-duration-normal` | `200ms` | Dropdowns, popovers, segmented controls |
-| | `--rj-duration-moderate`| `300ms` | Modal dialogs, slide drawers |
-| | `--rj-duration-slow` | `400ms` | Page route transitions, hero reveals |
-| | `--rj-duration-deliberate`| `600ms` | SVG stroke drawing, chart reveals |
+| | `--rj-duration-normal` | `180ms` | Dropdowns, popovers, Select listbox (`<= 200ms`) |
+| | `--rj-duration-moderate`| `280ms` | Modal dialogs, slide drawers (`<= 300ms`) |
+| | `--rj-duration-slow` | `360ms` | Dense workspace entrance (`<= 400ms`), hero elements |
+| | `--rj-duration-vt-route` | `480ms` | Route View Transitions & shared BrandMark (`<= 600ms`) |
+| | `--rj-duration-theme-reveal` | `500ms` | Circular `clip-path` theme switch reveal (`<= 600ms`) |
+| | `--rj-duration-deliberate`| `550ms` | SVG stroke drawing, chart polygon reveal |
+| | `--rj-duration-showcase` | `720ms` | Page & auth hero showcase choreography (`<= 800ms`) |
+| | `--rj-duration-ambient` | `4500ms` | Decorative auth hero 1-shot drift (`<= 5000ms`, arc 2 `4800ms`) |
+| | `--rj-radar-cycle` | `4000ms` | `/login` hero `CompetencyRadarVisual` auto-advance step interval |
 | **Cubic-Bezier**| `--rj-ease-entrance` | `(0.16, 1, 0.3, 1)` | Decelerating entrance curve |
 | | `--rj-ease-exit` | `(0.7, 0, 0.84, 0)` | Rapid accelerating exit curve |
 | | `--rj-ease-hover` | `(0.2, 0, 0, 1)` | Immediate interactive cursor response |
-| **Spring linear()**| `--rj-ease-spring-snappy` | `linear(...)` | Toggles, switches, tab indicator (260ms) |
-| | `--rj-ease-spring-gentle`| `linear(...)` | Modal sheets, drawers, expanders (400ms) |
-| | `--rj-ease-spring-stiff` | `linear(...)` | Tooltips, focus rings, counters (250ms) |
-| | `--rj-ease-spring-bouncy`| `linear(...)` | Verified badge completion, bookmarking |
+| **Spring linear()**| `--rj-ease-spring-snappy` | `linear(...)` | Toggles, switches, tab indicator (150–260ms) |
+| | `--rj-ease-spring-gentle`| `linear(...)` | Modal sheets, drawers, expanders (280–400ms) |
+| | `--rj-ease-spring-stiff` | `linear(...)` | Tooltips, focus rings, counters (180–250ms) |
 | **Distance** | `--rj-motion-dist-2xs` | `2px` | Micro button depression |
 | | `--rj-motion-dist-xs` | `4px` | Card hover elevation |
 | | `--rj-motion-dist-sm` | `8px` | Dropdown descent, tooltip pop-up |
 | | `--rj-motion-dist-md` | `16px` | Toast notifications, modal reveals |
 | **Stagger** | `--rj-motion-stagger-normal`| `35ms` | Grid item cascade interval |
+| | `--rj-motion-stagger-showcase` | `55ms` | Showcase hero & section cascade (cap `380ms`) |
 
 Detailed mathematical derivations and spring physics formulas are documented in [spring-presets.md](references/spring-presets.md).
 
@@ -84,9 +89,9 @@ Rikkei Jobs maintains 12 verified, production-ready motion recipes with complete
 6. **Recipe 6: SVG Stroke Drawing**: Hexagonal badge vector drawing via `stroke-dasharray` and `pathLength="100"`.
 7. **Recipe 7: Number & Stat Tweens**: Decelerated counter tweens for matching scores and salary estimates.
 8. **Recipe 8: Skeleton-to-Content Morphs**: Shimmer loading transitions with zero Cumulative Layout Shift (`CLS = 0`).
-9. **Recipe 9: Stateful Micro-Interactions**: Tactile button feedback covering Default, Hover, Active, Loading, and Shake Error.
+9. **Recipe 9: Stateful Micro-Interactions**: Tactile button feedback covering Default, Hover, Active, Loading, and Shake-Free Error Feedback.
 10. **Recipe 10: List Reorder, Enter & Exit**: Smooth insertion, removal, and FLIP space closing.
-11. **Recipe 11: Hero Landing Entrance Sequence**: Curated 4-stage candidate portal reveal within 400ms.
+11. **Recipe 11: Hero Landing Entrance Sequence**: Curated 4-stage candidate portal reveal within 800ms (Showcase Tier).
 12. **Recipe 12: Admin Data-Dense Restraint**: Strict motion dampening (<= 150ms) and zero vertical shift for dense tables.
 
 ---
@@ -158,6 +163,11 @@ Using `transition-duration: 0s` in Safari/WebKit fails to fire the `transitionen
 
 Any auto-playing or looped motion lasting longer than 5 seconds (such as partner logo carousels or applicant tickers) must provide an accessible keyboard-operable Pause / Play toggle.
 
+- **Owner-Approved `/login` Hero Exception (`UIUX-radar`)**: The `/login` hero omits the visible Pause/Play button (`"Tạm dừng nền"` / `"Phát nền"` removed) as a documented knowing deviation from the visible-pause clause, compensated for WCAG 2.2.2 by:
+  1. Interaction-based pause/hold/resume documented in the Vietnamese radar caption (hover on radar or detail box pauses; keyboard focus inside radar pauses; click/`Enter`/`Space` holds `8s` of no pointer/focus interaction then resumes from next group; re-click deselects & resumes immediately; `Escape` resumes without stealing focus).
+  2. Decorative `.rj-story-ambient` arcs bounded to a 1-shot drift (`<= 5s` total: `4500ms` / `4800ms` `1 forwards`, paused when `document.hidden`, static under `prefers-reduced-motion`).
+  3. Bounded `CompetencyRadarVisual` auto-cycle (`--rj-radar-cycle: 4000ms`, highlight `<= 400ms` compositor/stroke-dashoffset only, single `setTimeout` per step with zero `setInterval`, `aria-live="off"` during auto-cycle and `"polite"` only on user action, stops after 3 full rounds / 18 steps ~72s onto overview; disabled under `prefers-reduced-motion: reduce`; enabled ONLY on `/login`).
+
 ### 4. WCAG 2.3.1 (Three Flashes or Below Threshold)
 
 Zero elements may flash, strobe, or oscillate more than 3 times per second (> 3Hz). Loading skeleton shimmer pulses must have a period of $\ge 1.5$ seconds.
@@ -170,11 +180,19 @@ Blanket duration limits are replaced with purpose-based budgets categorized by u
 
 | Interaction Type | Maximum Budget | Permitted Curves | Role / Context |
 |---|---|---|---|
-| **Micro-interactions** | `<= 150ms` | `--rj-ease-spring-snappy`, `--rj-ease-hover` | Button clicks, toggles, checkmarks |
+| **Micro-interactions** | `<= 150ms` | `--rj-ease-spring-snappy`, `--rj-ease-hover` | Button clicks, toggles, checkmarks, focus rings |
 | **Menus & Tooltips** | `<= 200ms` | `--rj-ease-spring-stiff`, `--rj-ease-entrance`| Popovers, tooltips, dropdowns |
-| **Dialogs & Drawers** | `<= 300ms` | `--rj-ease-spring-gentle`, `--rj-ease-entrance`| Modal sheets, slide drawers |
-| **Route Transitions** | `<= 400ms` | `--rj-ease-entrance`, `--rj-ease-exit` | View Transitions, page reveals |
-| **Admin Dense Views** | `<= 150ms` | Background color only, zero vertical shift | High-density data matrices |
+| **Dialogs & Drawers** | `<= 300ms` | `--rj-ease-spring-gentle`, `--rj-ease-entrance`| Modal sheets, slide drawers, sidebar collapse |
+| **Dense Workspace Entrance** | `<= 400ms` | `--rj-ease-entrance` | Page entrance only for HR, Staff, Admin (`micro <= 150ms`) |
+| **Showcase Route & Theme** | `<= 600ms` | `--rj-ease-entrance`, `--rj-ease-spring-gentle` | Route View Transitions (shared BrandMark), circular theme reveal |
+| **Showcase Page & Data-Viz** | `<= 800ms` | `--rj-ease-entrance`, `--rj-ease-spring-gentle` | First page/hero entrance, radar draw/morph, counters, progress (`/login` radar auto-cycle `4s`/group, `<= 400ms` highlight, 3-round stop) |
+| **Ambient Hero Drift (1-Shot)** | `<= 5000ms` | `ease-in-out` `1 forwards` (`transform`/`opacity` only) | Decorative auth hero only (`4500ms`/`4800ms`), `document.hidden` pause, static under reduced motion |
+| **Admin Dense Micro** | `<= 150ms` | Background/border/opacity only, zero lift | High-density data matrices and forms |
+
+### Showcase Motion Tier Scope (Owner-Approved after M4 and UIUX-radar)
+
+- Allowed **only** for: (a) first entrance of a page's primary content and the auth hero (`<= 800ms`), (b) data-viz and number reveals (`<= 800ms`), (c) route/page transitions with shared elements (`<= 600ms`), (d) circular theme change transition (`<= 600ms`), (e) scroll-driven reveals on long pages (`animation-timeline: view()` + `IntersectionObserver`/CSS fallback), and (f) **exclusively on `/login` hero `CompetencyRadarVisual`**: bounded 4s/group auto-cycle (3 rounds / 18 steps ~72s, hover/focus/hidden/reduced-motion pause, 8s click hold, `Escape` resume, zero `setInterval`).
+- Entrance plays once per navigation and is never replayed by tab switches or re-renders; dense `HR`/`STAFF`/`ADMIN` views never use auto-cycle. Do not widen this tier without explicit Owner/Team Lead approval.
 
 ### Non-Blocking Constraint
 
@@ -224,9 +242,11 @@ No animation may intercept, delay, or block user input. User clicks, keystrokes,
 
 Before finalizing any motion implementation, verify the following:
 
-- [ ] All animated properties are restricted to `transform` and `opacity`.
+- [ ] All animated properties are restricted to `transform`, `opacity`, and measured `clip-path` (theme/line-mask reveals).
 - [ ] No layout shifts occur (`CLS = 0` in Chrome DevTools Performance panel).
-- [ ] Motion completes within its designated purpose-based budget (Micro <= 150ms, Modal <= 300ms, Route <= 400ms).
+- [ ] Motion completes within its designated purpose-based budget (Micro `<= 150ms`, Modal `<= 300ms`, Dense entrance `<= 400ms`, Route/Theme `<= 600ms`, Showcase entrance/Data-Viz `<= 800ms`).
+- [ ] Showcase entrance plays once per navigation and never replays on tab switch or re-render.
+- [ ] Decorative auth hero ambient arcs are bounded 1-shot (`<= 5s` total then static) and pause when `document.hidden`; any non-exempt loop `> 5s` elsewhere exposes a Pause/Play button (WCAG 2.2.2); `/login` hero radar auto-cycle pauses on hover/focus/`document.hidden`, holds 8s on click, stops after 3 rounds (18 steps), sets `aria-live="off"` during auto-cycle (`"polite"` on user action), and disables timers under `prefers-reduced-motion: reduce`.
 - [ ] `@media (prefers-reduced-motion: reduce)` is tested and replaces spatial motion with a 100ms opacity cross-fade.
 - [ ] WebKit `transitionend` listeners fire reliably under reduced motion.
 - [ ] Skeleton loaders pulse at $\ge 1.5$s cycle time (no flash > 3Hz).

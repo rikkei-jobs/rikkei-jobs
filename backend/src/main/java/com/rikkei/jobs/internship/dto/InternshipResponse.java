@@ -2,7 +2,7 @@ package com.rikkei.jobs.internship.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 public record InternshipResponse(
@@ -15,5 +15,10 @@ public record InternshipResponse(
         LocalDate startDate,
         LocalDate endDate,
         BigDecimal finalScore,
-        LocalDateTime syncedAt,
-        List<InternshipTaskResponse> tasks) {}
+        OffsetDateTime syncedAt,
+        List<InternshipTaskResponse> tasks) {
+
+    public InternshipResponse {
+        tasks = tasks == null ? List.of() : List.copyOf(tasks);
+    }
+}

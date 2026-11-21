@@ -1,15 +1,18 @@
-@import './shared/styles/design-tokens.css';
-@import './features/identity/styles/identity.css';
-
 *,
 *::before,
 *::after {
   box-sizing: border-box;
 }
 
+html,
+body {
+  overflow-x: clip;
+}
+
 body {
   margin: 0;
   padding: 0;
+  min-height: 100vh;
   background-color: var(--rj-color-surface-page);
   color: var(--rj-color-text-primary);
   font-family: var(--rj-font-body);

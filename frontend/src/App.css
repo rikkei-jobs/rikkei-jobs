@@ -18,8 +18,7 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem 1.5rem;
-  font-family:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-family: var(--rj-font-body);
   color: var(--text-primary);
 }
 
@@ -28,13 +27,27 @@
   margin-bottom: 2.5rem;
 }
 
+.header-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
 .header-brand {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 1rem;
   flex-wrap: wrap;
-  margin-bottom: 0.75rem;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
 }
 
 .header-title {
@@ -71,7 +84,7 @@
   border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 1.5rem 2rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--rj-shadow-2);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -94,7 +107,10 @@
   font-weight: 700;
   font-size: 1rem;
   letter-spacing: 0.05em;
-  transition: all 0.2s ease-in-out;
+  transition:
+    background-color var(--rj-duration-fast) var(--rj-ease-hover),
+    color var(--rj-duration-fast) var(--rj-ease-hover),
+    border-color var(--rj-duration-fast) var(--rj-ease-hover);
 }
 
 .status-up {
@@ -118,6 +134,7 @@
 .health-details {
   color: var(--text-secondary);
   font-size: 0.95rem;
+  min-height: 2.85em;
   margin: 0;
 }
 
@@ -163,7 +180,7 @@
 
 .modules-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
   gap: 1.5rem;
 }
 
@@ -182,7 +199,7 @@
 
 .module-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 12px -2px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--rj-shadow-3);
 }
 
 .module-card-header {
@@ -249,7 +266,7 @@
   margin: 0;
   padding-left: 1.25rem;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
   gap: 0.5rem 1.5rem;
 }
 
@@ -293,4 +310,13 @@
 .app-nav-btn:focus-visible {
   outline: 3px solid var(--rj-color-focus-ring);
   outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-badge,
+  .refresh-btn,
+  .module-card {
+    transition-duration: 0.001ms !important;
+    transform: none !important;
+  }
 }

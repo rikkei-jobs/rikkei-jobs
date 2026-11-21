@@ -7,5 +7,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface InternshipTaskRepository extends JpaRepository<InternshipTask, Long> {
-    Optional<InternshipTask> findByInternship_IdAndTitle(Long internshipId, String title);
+
+    Optional<InternshipTask> findByInternshipIdAndTitle(Long internshipId, String title);
 }

@@ -4,83 +4,150 @@ import { Icon } from '../../../shared/components/Icon';
 
 export interface InternshipCardProps {
   readonly internship: CandidateInternship;
+  readonly animateEntrance?: boolean;
 }
 
-export const InternshipCard: React.FC<InternshipCardProps> = ({ internship }) => {
+const VI_DATE_FORMATTER = new Intl.DateTimeFormat('vi-VN', {
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+  timeZone: 'Asia/Ho_Chi_Minh',
+});
+
+const formatInternshipDate = (value?: string | null): string | null => {
+  if (!value) {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  // Interpret date-only strings in Vietnam timezone to avoid UTC midnight day shifts.
+  const isoInput = /^\d{4}-\d{2}-\d{2}$/.test(trimmed) ? `${trimmed}T00:00:00+07:00` : trimmed;
+  const parsed = new Date(isoInput);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return VI_DATE_FORMATTER.format(parsed);
+};
+
+const formatDateRange = (startDate?: string | null, endDate?: string | null): string => {
+  const start = formatInternshipDate(startDate);
+  const end = formatInternshipDate(endDate);
+
+  if (start && end) {
+    return `${start} – ${end}`;
+  }
+  if (start) {
+    return `Từ ${start}`;
+  }
+  if (end) {
+    return `Đến ${end}`;
+  }
+  return 'Chưa cập nhật thời gian';
+};
+
+export const InternshipCard: React.FC<InternshipCardProps> = ({
+  internship,
+  animateEntrance = false,
+}) => {
   const taskCount = internship.tasks?.length ?? 0;
-
-  const formatDate = (date?: string) => {
-    if (!date) return '--';
-
-    return new Date(`${date}T00:00:00`).toLocaleDateString('vi-VN');
-  };
+  const hasFinalScore =
+    internship.finalScore !== null &&
+    internship.finalScore !== undefined &&
+    Number.isFinite(internship.finalScore);
 
   return (
-    <article className="ci-card">
+    <article
+      className={`rj-surface-card rj-interactive-card rj-stack-md${animateEntrance ? ' rj-stagger-item' : ''} ci-card`}
+    >
       <div className="ci-card-header">
-        <div className="ci-batch-icon">
+        <div className="ci-batch-icon" aria-hidden="true">
           <Icon name="briefcase" size={20} />
         </div>
 
         <div className="ci-batch-info">
-          <h3 className="ci-batch-name">{internship.batchName}</h3>
-          <span className="ci-batch-code">{internship.batchId}</span>
+          <h2 className="ci-batch-name">
+            {internship.batchName || internship.batchId || 'Chưa cập nhật đợt thực tập'}
+          </h2>
+          {internship.batchId && (
+            <span className="ci-batch-code rj-tabular-nums">{internship.batchId}</span>
+          )}
         </div>
       </div>
 
-      <div className="ci-topic">
-        <span className="ci-label">Đề tài thực tập</span>
-        <h4 className="ci-topic-name">{internship.topicName || 'Chưa cập nhật đề tài'}</h4>
-      </div>
-
-      <div className="ci-details">
-        <div className="ci-detail-item">
-          <Icon name="user" size={16} />
-          <div>
-            <span className="ci-label">Nhóm</span>
-            <strong>{internship.groupName || 'Chưa phân nhóm'}</strong>
-          </div>
+      <dl className="ci-dl">
+        <div className="rj-cand-tile rj-stack-xs ci-dl-topic">
+          <dt className="ci-dl-label">
+            <Icon name="file-check" size={16} />
+            <span>Đề tài thực tập</span>
+          </dt>
+          <dd className="ci-dl-value rj-role-card-title">
+            {internship.topicName || 'Chưa cập nhật đề tài'}
+          </dd>
         </div>
 
-        <div className="ci-detail-item">
-          <Icon name="mail" size={16} />
-          <div>
-            <span className="ci-label">Mentor</span>
-            <strong className="ci-mentor">{internship.mentorEmail || 'Chưa có mentor'}</strong>
-          </div>
-        </div>
-      </div>
-
-      <div className="ci-date-range">
-        <Icon name="calendar" size={16} />
-        <span>
-          {formatDate(internship.startDate)} – {formatDate(internship.endDate)}
-        </span>
-      </div>
-
-      <div className="ci-stats">
-        <div className="ci-stat-box ci-score">
-          <span className="ci-stat-label">
-            <Icon name="briefcase" size={15} />
-            Điểm cuối kỳ
-          </span>
-          <strong className="ci-stat-value">
-            {internship.finalScore != null ? internship.finalScore.toFixed(2) : '--'}
-            <small>/10</small>
-          </strong>
+        <div className="ci-dl-row">
+          <dt className="ci-dl-label">
+            <Icon name="user" size={16} />
+            <span>Nhóm</span>
+          </dt>
+          <dd className="ci-dl-value">{internship.groupName || 'Chưa phân nhóm'}</dd>
         </div>
 
-        <div className="ci-stat-box ci-tasks">
-          <span className="ci-stat-label">
-            <Icon name="check-circle" size={15} />
-            Task nghiệm thu
-          </span>
-          <strong className="ci-stat-value">
+        <div className="ci-dl-row">
+          <dt className="ci-dl-label">
+            <Icon name="mail" size={16} />
+            <span>Mentor</span>
+          </dt>
+          <dd className="ci-dl-value">{internship.mentorEmail || 'Chưa có mentor'}</dd>
+        </div>
+
+        <div className="ci-dl-row">
+          <dt className="ci-dl-label">
+            <Icon name="calendar" size={16} />
+            <span>Thời gian thực tập</span>
+          </dt>
+          <dd className="ci-dl-value rj-tabular-nums">
+            {formatDateRange(internship.startDate, internship.endDate)}
+          </dd>
+        </div>
+      </dl>
+
+      <dl className="ci-stats">
+        <div className="rj-cand-tile rj-stack-xs">
+          <dt className="ci-dl-label">
+            <Icon name="badge-check" size={16} />
+            <span>Điểm cuối kỳ</span>
+          </dt>
+          <dd
+            className={`ci-stat-value${hasFinalScore ? ' ci-stat-value--score rj-tabular-nums' : ' ci-stat-value--empty'}`}
+          >
+            {hasFinalScore ? (
+              <>
+                {internship.finalScore!.toFixed(2)}
+                <span className="ci-score-scale">/10</span>
+              </>
+            ) : (
+              'Chưa có điểm'
+            )}
+          </dd>
+        </div>
+
+        <div className="rj-cand-tile rj-stack-xs">
+          <dt className="ci-dl-label">
+            <Icon name="check-circle" size={16} />
+            <span>Hạng mục nghiệm thu</span>
+          </dt>
+          <dd className="ci-stat-value rj-tabular-nums">
             {taskCount}
-            <small> task</small>
-          </strong>
+            <span className="ci-score-scale"> hạng mục</span>
+          </dd>
         </div>
-      </div>
+      </dl>
     </article>
   );
 };

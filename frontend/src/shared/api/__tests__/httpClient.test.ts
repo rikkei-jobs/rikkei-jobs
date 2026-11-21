@@ -407,7 +407,7 @@ describe('Centralized HTTP Auth Client (httpClient)', () => {
       name: 'ApiError',
       status: 502,
       code: 'UNKNOWN_ERROR',
-      message: 'Yêu cầu thất bại với mã trạng thái 502',
+      message: 'Không thể xử lý yêu cầu (mã lỗi 502). Vui lòng thử lại.',
     });
   });
 

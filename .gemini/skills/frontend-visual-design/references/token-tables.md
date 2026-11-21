@@ -10,40 +10,38 @@ This reference document provides concrete CSS Custom Properties for typography, 
 
 | Token Name | Light Mode Value | Dark Mode Value | Usage / Semantic Role |
 |---|---|---|---|
-| `--rj-color-bg-canvas` | `#EEF2F8` | `#0B1019` | Primary page canvas background (Level 1) |
-| `--rj-color-bg-subtle` | `#E1E8F2` | `#101724` | Hero section panel, subtle surface (Level 2) |
+| `--rj-color-surface-page` | `#EEF2F8` | `#0B1019` | Primary page canvas background (Level 1) |
+| `--rj-color-surface-panel` | `#E1E8F2` | `#101724` | Hero section panel, subtle surface (Level 2) |
 | `--rj-color-surface-card` | `#FFFFFF` | `#162030` | Primary card surface (Level 3) |
 | `--rj-color-surface-input` | `#F8FAFD` | `#0D1420` | Form input field inset (Level 4) |
 | `--rj-color-surface-elevated` | `#FFFFFF` | `#1E2C42` | Popovers, elevated dropdowns (Level 5) |
-| `--rj-color-border-subtle` | `#BACAD9` | `#1E2C42` | Dividers, row borders (CR >= 3.0:1) |
-| `--rj-color-border-default` | `#879BB0` | `#2D3F59` | Card outlines, container borders |
-| `--rj-color-border-interactive` | `#6F8094` | `#49627D` | Form inputs, interactive borders (CR >= 3.0:1) |
-| `--rj-color-text-primary` | `#0B1A2C` | `#EDF2F7` | Headings, primary body text (CR >= 16.8:1) |
-| `--rj-color-text-secondary` | `#25394E` | `#BACAD9` | Secondary labels, descriptions (CR >= 10.4:1) |
-| `--rj-color-text-muted` | `#49627D` | `#879BB0` | Timestamps, metadata (CR >= 4.5:1) |
+| `--rj-color-border-subtle` | `#BACAD9` | `#1E2D42` | Dividers, row borders (CR >= 3.0:1) |
+| `--rj-color-border-interactive` | `#6F8094` | `#5B7083` | Form inputs, interactive borders (CR >= 3.0:1) |
+| `--rj-color-text-primary` | `#0B1A2C` | `#EDF2F7` | Headings, primary body text (CR >= 14.5:1) |
+| `--rj-color-text-secondary` | `#25394E` | `#CBD5E1` | Secondary labels, descriptions (CR >= 11.0:1) |
+| `--rj-color-text-muted` | `#475B70` | `#94A3B8` | Timestamps, metadata (CR >= 6.3:1) |
 
 ### 1.2 Brand Palette (Confident Royal Cobalt & Dedicated Brand Mark)
 
 | Token Name | Light Mode Value | Dark Mode Value | Usage / Semantic Role |
 |---|---|---|---|
-| `--rj-color-brand-primary` | `#0D55B8` | `#508CEE` | Primary buttons, brand anchors (CR >= 5.0:1) |
-| `--rj-color-brand-anchor` | `#0A4596` | `#70A5FA` | Hover/active states, header background |
-| `--rj-color-brand-subtle` | `#E1E8F2` | `rgba(80, 140, 238, 0.15)` | Selected row highlight, active navigation pill |
+| `--rj-color-brand-primary` | `#0D55B8` | `#508CEE` | Primary buttons, brand anchors (CR >= 4.9:1) |
+| `--rj-color-brand-primary-hover` | `#0A4596` | `#6EA2F4` | Hover/active states |
+| `--rj-color-brand-surface` | `#EBF2FC` | `rgba(80, 140, 238, 0.15)` | Selected row highlight, active navigation pill |
 | `--rj-brand-mark` | `#C8161D` | `#C8161D` | Official Brand Mark Logo Red (isolated asset) |
 
 ### 1.3 Accent Palette (Cyber Persimmon / Terracotta)
 
 | Token Name | Light Mode Value | Dark Mode Value | Usage / Semantic Role |
 |---|---|---|---|
-| `--rj-color-accent` | `#C8531D` | `#E66A35` | Match percentage highlight, verified badges |
-| `--rj-color-accent-hover` | `#A33F12` | `#F7A889` | Hover state for accent buttons |
-| `--rj-color-accent-subtle` | `#FFF6F0` | `rgba(230, 106, 53, 0.15)` | Badge background, warning notification chip |
+| `--rj-color-accent` | `#D9480F` | `#F08C65` | Match percentage highlight, verified badges |
+| `--rj-color-accent-hover` | `#BF3A0A` | `#F7A889` | Hover state for accent buttons |
 
 ### 1.4 Semantic Status Palette (Quarantined Danger & Clear Roles)
 
 | Token Name | Text / Icon Color | Background Surface | Border Color |
 |---|---|---|---|
-| Status Success (Forest Mint) | `#0E6251` (CR 6.63:1) | `#E8F8F0` | `#A3E4C8` |
+| Status Success (Forest Mint) | `#0E6251` (CR 6.63:1) | `#E8F8F5` | `#A2D9CE` |
 | Status Warning (Deep Amber) | `#7A4305` (CR 7.43:1) | `#FEF6E8` | `#FDE68A` |
 | Status Danger (Quarantined Red) | `#9B1C2A` (CR 8.10:1) | `#FDF2F4` | `#F1707A` |
 | Status Info (Deep Ocean) | `#134B5E` (CR 8.65:1) | `#EBF5FB` | `#AED6F1` |

@@ -1,7 +1,6 @@
 /* Company Profile Feature Styles — 100% Design Tokens (--rj-*) & WCAG 2.2 AA Compliant */
 
 .cp-page {
-  box-sizing: border-box;
   width: 100%;
   max-width: 100%;
   display: flex;
@@ -58,8 +57,7 @@
   gap: var(--rj-primitive-space-5);
 }
 
-.cp-page .cp-main-card,
-.cp-page .cp-aside-card {
+.cp-page .cp-card {
   max-width: 100%;
   width: 100%;
   padding: var(--rj-primitive-space-5);
@@ -67,6 +65,82 @@
   border: 1px solid var(--rj-color-border-subtle);
   border-radius: var(--rj-radius-lg);
   box-shadow: var(--rj-shadow-1);
+}
+
+/* Dense page entrance <= 400ms (plays once, micro interactions stay <= 150ms) */
+.cp-page.is-entering .cp-page-header {
+  animation: rj-enter-y var(--rj-duration-slow) var(--rj-ease-entrance) both;
+  --rj-enter-y: 6px;
+}
+
+.cp-content-ready {
+  animation: rj-enter-y 320ms var(--rj-ease-entrance) both;
+  --rj-enter-y: 6px;
+}
+
+.cp-page .cp-state-card {
+  animation: rj-enter-y var(--rj-duration-fast) var(--rj-ease-entrance) both;
+  --rj-enter-y: 4px;
+}
+
+/* Geometry-Matched Skeleton Loader (CLS = 0, reuses shared .rj-skeleton) */
+.cp-skeleton-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rj-primitive-space-4);
+}
+
+.cp-logo-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--rj-color-surface-elevated) 50%,
+    transparent 100%
+  );
+  opacity: 0.65;
+  transform: translateX(-100%);
+  animation: rj-shimmer 1.8s ease-in-out infinite;
+}
+
+.cp-skeleton-title {
+  width: 45%;
+  height: 24px;
+}
+
+.cp-skeleton-subtitle {
+  width: 75%;
+  height: 16px;
+}
+
+.cp-skeleton-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--rj-primitive-space-4);
+}
+
+.cp-skeleton-field {
+  height: 44px;
+}
+
+.cp-skeleton-textarea {
+  height: 132px;
+}
+
+.cp-skeleton-preview {
+  height: 196px;
+}
+
+.cp-skeleton-dropzone {
+  height: 76px;
+}
+
+.cp-skeleton-pill {
+  width: 38%;
+  height: 28px;
+  border-radius: var(--rj-radius-full);
 }
 
 .cp-card-header {
@@ -135,7 +209,6 @@
   width: 100%;
   height: 196px;
   padding: var(--rj-primitive-space-4);
-  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -158,21 +231,22 @@
 }
 
 .cp-logo-frame--error {
+  height: 196px;
   min-height: 196px;
-  height: auto;
   flex-direction: column;
-  gap: var(--rj-primitive-space-2);
+  gap: var(--rj-primitive-space-1);
+  padding: var(--rj-primitive-space-3);
   border-style: dashed;
   border-color: var(--rj-color-status-danger-text);
   background: var(--rj-color-status-danger-bg);
 }
 
-[data-theme='dark'] .cp-logo-frame--empty {
+[data-theme='dark'] :is(.cp-logo-frame--empty, .cp-image-retry-btn, .cp-logo-drop-zone) {
   border-color: var(--rj-color-text-muted);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) .cp-logo-frame--empty {
+  :root:not([data-theme='light']) :is(.cp-logo-frame--empty, .cp-image-retry-btn, .cp-logo-drop-zone) {
     border-color: var(--rj-color-text-muted);
   }
 }
@@ -215,30 +289,6 @@
   pointer-events: none;
 }
 
-.cp-logo-skeleton::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    var(--rj-color-surface-elevated) 50%,
-    transparent 100%
-  );
-  opacity: 0.7;
-  transform: translateX(-100%);
-  animation: cp-logo-shimmer 1.8s ease-in-out infinite;
-}
-
-@keyframes cp-logo-shimmer {
-  from {
-    transform: translateX(-100%);
-  }
-  to {
-    transform: translateX(100%);
-  }
-}
-
 .cp-logo-placeholder {
   display: flex;
   flex-direction: column;
@@ -272,16 +322,6 @@
 .cp-image-retry-btn {
   margin-top: var(--rj-primitive-space-1);
   min-height: var(--rj-density-button-height);
-}
-
-[data-theme='dark'] .cp-image-retry-btn {
-  border-color: var(--rj-color-text-muted);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) .cp-image-retry-btn {
-    border-color: var(--rj-color-text-muted);
-  }
 }
 
 .cp-logo-uploading-badge {
@@ -323,14 +363,12 @@
   width: 100%;
   min-height: 76px;
   padding: var(--rj-primitive-space-3) var(--rj-primitive-space-4);
-  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: var(--rj-primitive-space-1);
   text-align: center;
-  font-family: inherit;
   font-size: 0.9375rem;
   font-weight: 600;
   line-height: var(--rj-line-height-base);
@@ -341,20 +379,8 @@
   cursor: pointer;
   transform: translateZ(0);
   transition:
-    transform var(--rj-duration-fast) var(--rj-ease-entrance),
-    opacity var(--rj-duration-fast) var(--rj-ease-entrance),
-    border-color var(--rj-duration-fast) var(--rj-ease-entrance),
-    background-color var(--rj-duration-fast) var(--rj-ease-entrance);
-}
-
-[data-theme='dark'] .cp-logo-drop-zone {
-  border-color: var(--rj-color-text-muted);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) .cp-logo-drop-zone {
-    border-color: var(--rj-color-text-muted);
-  }
+    var(--rj-transition-hover),
+    box-shadow var(--rj-duration-fast) var(--rj-ease-hover);
 }
 
 .cp-logo-drop-zone > * {
@@ -368,16 +394,6 @@
   color: var(--rj-color-brand-primary);
 }
 
-[data-theme='dark'] .cp-logo-drop-zone-icon {
-  color: var(--rj-color-badge-brand-text);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) .cp-logo-drop-zone-icon {
-    color: var(--rj-color-badge-brand-text);
-  }
-}
-
 .cp-logo-drop-zone-title {
   font-size: 0.9375rem;
   font-weight: 600;
@@ -389,10 +405,13 @@
   color: var(--rj-color-text-muted);
 }
 
-.cp-logo-drop-zone:hover:not(:disabled) {
-  border-color: var(--rj-color-brand-primary);
-  background: var(--rj-color-brand-surface);
-  transform: translateY(-1px);
+@media (hover: hover) {
+  .cp-logo-drop-zone:hover:not(:disabled) {
+    border-color: var(--rj-color-brand-primary);
+    background: var(--rj-color-brand-surface);
+    transform: translateY(-1px);
+    box-shadow: var(--rj-shadow-1);
+  }
 }
 
 .cp-logo-drop-zone.is-drag-active:not(:disabled) {
@@ -417,11 +436,7 @@
 
 .cp-logo-drop-zone:active:not(:disabled) {
   transform: translateY(0) scale(0.99);
-}
-
-.cp-logo-drop-zone:focus-visible {
-  outline: 2px solid var(--rj-color-focus-ring);
-  outline-offset: 2px;
+  transition-duration: var(--rj-duration-micro);
 }
 
 .cp-logo-drop-zone:disabled {
@@ -485,7 +500,6 @@
   align-items: center;
   min-height: var(--rj-density-input-height);
   padding: var(--rj-primitive-space-2) var(--rj-primitive-space-3);
-  box-sizing: border-box;
   background: var(--rj-color-surface-subtle);
   border: 1px solid var(--rj-color-border-subtle);
   border-radius: var(--rj-radius-md);
@@ -564,15 +578,6 @@
   color: var(--rj-color-text-secondary);
 }
 
-/* Focus Visible */
-.cp-page a:focus-visible,
-.cp-page button:focus-visible,
-.cp-page input:focus-visible,
-.cp-page textarea:focus-visible {
-  outline: 2px solid var(--rj-color-focus-ring);
-  outline-offset: 2px;
-}
-
 /* Responsive Breakpoints: 375px, 768px, 1024px, 1440px */
 @media (max-width: 768px) {
   .cp-layout {
@@ -580,12 +585,12 @@
     gap: var(--rj-primitive-space-4);
   }
 
-  .cp-form-row {
+  .cp-form-row,
+  .cp-skeleton-row {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .cp-page .cp-main-card,
-  .cp-page .cp-aside-card {
+  .cp-page .cp-card {
     padding: var(--rj-primitive-space-4);
   }
 
@@ -628,8 +633,14 @@
   }
 
   .cp-logo-image,
-  .cp-logo-alert {
+  .cp-logo-alert,
+  .cp-content-ready,
+  .cp-page.is-entering .cp-page-header,
+  .cp-page .cp-state-card,
+  .cp-page .rj-alert,
+  .cp-page .rj-field-error {
     transform: none !important;
+    animation: rj-fade-in 100ms ease both !important;
     transition-property: opacity !important;
     transition-duration: 100ms !important;
     transition-timing-function: ease !important;
@@ -641,12 +652,7 @@
     transition-timing-function: ease !important;
   }
 
-  .cp-main-card,
-  .cp-aside-card,
-  .cp-submit-btn,
-  .cp-logo-drop-zone,
-  .cp-retry-btn,
-  .cp-image-retry-btn {
+  .cp-logo-drop-zone {
     transform: none !important;
     animation-duration: 0.001ms !important;
     transition-duration: 0.001ms !important;

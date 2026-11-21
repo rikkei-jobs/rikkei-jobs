@@ -11,7 +11,7 @@ public record EvaluationResponse(
         Long userId,
         Long mentorId,
         EvaluationContext context,
-        String batchId,
+        Long batchId,
         Long interviewRoundId,
         EvaluationStatus status,
         String overallComment,

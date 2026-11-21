@@ -55,9 +55,9 @@ describe('roleUtils', () => {
   });
 
   describe('routePolicies (SSOT)', () => {
-    it('covers all 12 protected routes (including /403) with exact allowedRoles', () => {
+    it('covers all 13 protected routes (including /403) with exact allowedRoles', () => {
       const policies = Object.values(PROTECTED_ROUTE_POLICIES);
-      expect(policies).toHaveLength(12);
+      expect(policies).toHaveLength(13);
       expect(policies.map((p) => [p.path, [...p.allowedRoles]])).toEqual([
         ['/candidate', ['CANDIDATE']],
         ['/candidate/skills', ['CANDIDATE']],
@@ -65,6 +65,7 @@ describe('roleUtils', () => {
         ['/candidate/jobs/:jobId', ['CANDIDATE']],
         ['/candidate/gap-analysis', ['CANDIDATE']],
         ['/candidate/evaluations', ['CANDIDATE']],
+        ['/candidate/internships', ['CANDIDATE']],
         ['/hr', ['HR']],
         ['/hr/company', ['HR']],
         ['/mentor', ['MENTOR']],
@@ -75,6 +76,7 @@ describe('roleUtils', () => {
     });
 
     it('matches static and dynamic :jobId routes and rejects nested extra or unknown routes', () => {
+      expect(getAllowedRolesForPathname('/candidate/internships')).toEqual(['CANDIDATE']);
       expect(getAllowedRolesForPathname('/candidate/jobs/42')).toEqual(['CANDIDATE']);
       expect(getAllowedRolesForPathname('/candidate/jobs/intern%20react')).toEqual(['CANDIDATE']);
       expect(getAllowedRolesForPathname('/candidate/jobs/42/extra')).toBeNull();
@@ -90,6 +92,8 @@ describe('roleUtils', () => {
     });
 
     it('enforces exact role matching in isPathAllowedForRole and fails closed on missing/unknown roles', () => {
+      expect(isPathAllowedForRole('/candidate/internships', 'CANDIDATE')).toBe(true);
+      expect(isPathAllowedForRole('/candidate/internships', 'HR')).toBe(false);
       expect(isPathAllowedForRole('/hr/company', 'HR')).toBe(true);
       expect(isPathAllowedForRole('/hr/company', 'CANDIDATE')).toBe(false);
       expect(isPathAllowedForRole('/hr/company', 'hr')).toBe(false);
@@ -145,6 +149,9 @@ describe('roleUtils', () => {
       expect(resolvePostLoginPath('/candidate/evaluations', 'CANDIDATE')).toBe(
         '/candidate/evaluations',
       );
+      expect(resolvePostLoginPath('/candidate/internships', 'CANDIDATE')).toBe(
+        '/candidate/internships',
+      );
       expect(resolvePostLoginPath('/mentor', 'MENTOR')).toBe('/mentor');
       expect(resolvePostLoginPath('/staff', 'STAFF')).toBe('/staff');
       expect(resolvePostLoginPath('/admin', 'ADMIN')).toBe('/admin');
@@ -157,6 +164,7 @@ describe('roleUtils', () => {
     });
 
     it('ignores cross-role and unknown routes and falls back to the user role home path', () => {
+      expect(resolvePostLoginPath('/candidate/internships', 'HR')).toBe('/hr');
       expect(resolvePostLoginPath('/staff', 'HR')).toBe('/hr');
       expect(resolvePostLoginPath('/hr/company', 'CANDIDATE')).toBe('/candidate');
       expect(resolvePostLoginPath('/admin', 'STAFF')).toBe('/staff');
