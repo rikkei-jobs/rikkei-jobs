@@ -65,7 +65,7 @@ public class CompanyMigrationIntegrationTest {
 
         @Test
         @DisplayName(
-                "Prod migrations (V1, V3, V5, V7, V9, V11, V13, V15) apply cleanly from empty DB with 0 companies and 0 users")
+                "Prod migrations (V1, V3, V5, V7, V9, V11, V13, V15, V17, V19) apply cleanly from empty DB with 0 companies and 0 users")
         void testProdMigrationsApplyCleanlyFromEmptyDatabase() {
             try (PostgreSQLContainer db = new PostgreSQLContainer(POSTGRES_IMAGE)) {
                 db.start();
@@ -82,7 +82,7 @@ public class CompanyMigrationIntegrationTest {
                         jdbc.queryForObject(
                                 "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                                 Integer.class);
-                assertEquals(Integer.valueOf(8), appliedCount);
+                assertEquals(Integer.valueOf(10), appliedCount);
 
                 Boolean hasV9 =
                         jdbc.queryForObject(
@@ -151,7 +151,7 @@ public class CompanyMigrationIntegrationTest {
 
         @Test
         @DisplayName(
-                "Dev migrations V1..V15 (including V9 and V10) apply cleanly from empty DB with 2 seeded companies, sequence >= 3 and 9 users")
+                "Dev migrations V1..V15, V17, V19, V20 (including V9 and V10) apply cleanly from empty DB with 2 seeded companies, sequence >= 3 and 9 users")
         void testDevMigrationsApplyCleanlyFromEmptyDatabase() {
             try (PostgreSQLContainer db = new PostgreSQLContainer(POSTGRES_IMAGE)) {
                 db.start();
@@ -168,7 +168,7 @@ public class CompanyMigrationIntegrationTest {
                         jdbc.queryForObject(
                                 "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                                 Integer.class);
-                assertEquals(Integer.valueOf(15), appliedCount);
+                assertEquals(Integer.valueOf(18), appliedCount);
                 assertEquals(
                         Integer.valueOf(2),
                         jdbc.queryForObject("SELECT count(*) FROM companies", Integer.class));
@@ -186,7 +186,7 @@ public class CompanyMigrationIntegrationTest {
         }
 
         @Test
-        @DisplayName("V9 through V15 upgrade cleanly on top of existing baseline V1..V8")
+        @DisplayName("V9 through V20 upgrade cleanly on top of existing baseline V1..V8")
         void testUpgradeOnTopOfDevelopBaselineV1ThroughV8() {
             try (PostgreSQLContainer db = new PostgreSQLContainer(POSTGRES_IMAGE)) {
                 db.start();
@@ -227,7 +227,7 @@ public class CompanyMigrationIntegrationTest {
                 latestFlyway.migrate();
 
                 assertEquals(
-                        Integer.valueOf(15),
+                        Integer.valueOf(18),
                         jdbc.queryForObject(
                                 "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                                 Integer.class));
@@ -306,7 +306,9 @@ public class CompanyMigrationIntegrationTest {
                 "CLOUDINARY_API_KEY=prod-cloudinary-key-123",
                 "CLOUDINARY_API_SECRET=prod-cloudinary-secret-xyz-987",
                 "CLOUDINARY_API_BASE_URL=https://api.cloudinary.com/v1_1",
-                "CLOUDINARY_DELIVERY_BASE_URL=https://res.cloudinary.com/prod-rikkei-cloud/image/upload"
+                "CLOUDINARY_DELIVERY_BASE_URL=https://res.cloudinary.com/prod-rikkei-cloud/image/upload",
+                "APP_FRONTEND_URL=https://rikkeijobs.com",
+                "APP_MAIL_FROM=no-reply@rikkeijobs.com"
             })
     @Testcontainers
     @ActiveProfiles("prod")

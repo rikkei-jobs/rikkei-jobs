@@ -58,7 +58,7 @@ public class FlywayMigrationIntegrationTest {
         Integer snapshotCount =
                 jdbcTemplate.queryForObject(
                         "SELECT count(*) FROM application_cv_snapshots", Integer.class);
-        assertEquals(5, snapshotCount);
+        assertEquals(7, snapshotCount);
 
         String pdfHeader =
                 jdbcTemplate.queryForObject(
@@ -66,6 +66,23 @@ public class FlywayMigrationIntegrationTest {
                                 + "FROM application_cv_snapshots WHERE application_id = 1",
                         String.class);
         assertEquals("255044462d", pdfHeader);
+
+        Long fileSize =
+                jdbcTemplate.queryForObject(
+                        "SELECT file_size FROM application_cv_snapshots WHERE application_id = 1",
+                        Long.class);
+        assertEquals(594L, fileSize);
+
+        String sha256 =
+                jdbcTemplate.queryForObject(
+                        "SELECT sha256 FROM application_cv_snapshots WHERE application_id = 1",
+                        String.class);
+        assertEquals("9b71184ae956dd96864598cc8abfffb29bcf23c9bff28aff431fd779ac564782", sha256);
+
+        Integer candidate2AppCount =
+                jdbcTemplate.queryForObject(
+                        "SELECT count(*) FROM applications WHERE user_id = 2", Integer.class);
+        assertEquals(0, candidate2AppCount);
     }
 
     @Test

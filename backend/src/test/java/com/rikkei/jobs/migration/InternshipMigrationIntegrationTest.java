@@ -65,7 +65,7 @@ public class InternshipMigrationIntegrationTest {
 
         @Test
         @DisplayName(
-                "Prod migrations (V1, V3, V5, V7, V9, V11, V13, V15) apply cleanly from empty DB")
+                "Prod migrations (V1, V3, V5, V7, V9, V11, V13, V15, V17, V19) apply cleanly from empty DB")
         void testProdMigrationsApplyCleanlyFromEmptyDatabase() {
             try (PostgreSQLContainer db = new PostgreSQLContainer(POSTGRES_IMAGE)) {
                 db.start();
@@ -82,7 +82,7 @@ public class InternshipMigrationIntegrationTest {
                         jdbc.queryForObject(
                                 "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                                 Integer.class);
-                assertEquals(Integer.valueOf(8), appliedCount);
+                assertEquals(Integer.valueOf(10), appliedCount);
 
                 Boolean hasV14 =
                         jdbc.queryForObject(
@@ -107,7 +107,8 @@ public class InternshipMigrationIntegrationTest {
         }
 
         @Test
-        @DisplayName("Dev migrations V1..V15 apply cleanly from empty DB with 0 internship rows")
+        @DisplayName(
+                "Dev migrations V1..V15, V17, V19, V20 apply cleanly from empty DB with 0 internship rows")
         void testDevMigrationsApplyCleanlyFromEmptyDatabase() {
             try (PostgreSQLContainer db = new PostgreSQLContainer(POSTGRES_IMAGE)) {
                 db.start();
@@ -124,7 +125,7 @@ public class InternshipMigrationIntegrationTest {
                         jdbc.queryForObject(
                                 "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                                 Integer.class);
-                assertEquals(Integer.valueOf(15), appliedCount);
+                assertEquals(Integer.valueOf(18), appliedCount);
 
                 Boolean hasV15 =
                         jdbc.queryForObject(
@@ -179,9 +180,9 @@ public class InternshipMigrationIntegrationTest {
                                 .load()
                                 .migrate()
                                 .migrationsExecuted;
-                assertEquals(1, prodExecuted);
+                assertEquals(3, prodExecuted);
                 assertEquals(
-                        Integer.valueOf(8),
+                        Integer.valueOf(10),
                         prodJdbc.queryForObject(
                                 "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                                 Integer.class));
@@ -223,9 +224,9 @@ public class InternshipMigrationIntegrationTest {
                                 .load()
                                 .migrate()
                                 .migrationsExecuted;
-                assertEquals(1, devExecuted);
+                assertEquals(4, devExecuted);
                 assertEquals(
-                        Integer.valueOf(15),
+                        Integer.valueOf(18),
                         devJdbc.queryForObject(
                                 "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                                 Integer.class));
