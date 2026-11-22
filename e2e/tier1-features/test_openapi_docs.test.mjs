@@ -1,6 +1,6 @@
 // Tier 1: Feature Coverage — OpenAPI /api/docs, Swagger UI Assets & Legacy Routes
 // Verifies /api/docs redirect and HTML rendering, Swagger UI CSS/JS/PNG/config assets on :8080 and :3000,
-// full OpenAPI 27-path / 29-operation contract, @Hidden exclusion of TestErrorController, and hr1 allow-list
+// full OpenAPI 35-path / 37-operation contract, @Hidden exclusion of TestErrorController, and hr1 allow-list
 
 import { describe, it, before } from 'node:test';
 import assert from 'node:assert/strict';
@@ -41,7 +41,15 @@ const EXPECTED_OPERATIONS = new Map([
   ['/api/v1/me/gap-analysis', ['get']],
   ['/api/v1/me/job-recommendations', ['get']],
   ['/api/v1/profiles/me/internships', ['get']],
-  ['/api/v1/profiles/{userId}/internships', ['get']]
+  ['/api/v1/profiles/{userId}/internships', ['get']],
+  ['/api/v1/jobs/{id}/apply', ['post']],
+  ['/api/v1/me/applications', ['get']],
+  ['/api/v1/me/applications/{id}', ['get']],
+  ['/api/v1/me/applications/{id}/withdraw', ['post']],
+  ['/api/v1/me/applications/{id}/cv-snapshot', ['get']],
+  ['/api/v1/hr/jobs/{jobId}/applications', ['get']],
+  ['/api/v1/hr/jobs/{jobId}/applications/{applicationId}', ['get']],
+  ['/api/v1/hr/jobs/{jobId}/applications/{applicationId}/cv-snapshot', ['get']]
 ]);
 
 const PUBLIC_OPERATIONS = new Set([
@@ -209,7 +217,7 @@ describe('Tier 1: OpenAPI /api/docs & Swagger UI Verification', () => {
     }
   });
 
-  it('TC-T1-DOCS-03: Should expose identical OpenAPI 3 contract with bearerAuth and all 27 paths / 29 operations across :8080 and :3000', async () => {
+  it('TC-T1-DOCS-03: Should expose identical OpenAPI 3 contract with bearerAuth and all 35 paths / 37 operations across :8080 and :3000', async () => {
     assert.ok(backendOnline, 'Backend service must be reachable');
     assert.ok(frontendOnline, 'Frontend Nginx proxy must be reachable');
 
@@ -240,7 +248,7 @@ describe('Tier 1: OpenAPI /api/docs & Swagger UI Verification', () => {
     const paths = backendApiRes.body.paths || {};
     const actualPathKeys = Object.keys(paths).sort();
     const expectedPathKeys = [...EXPECTED_OPERATIONS.keys()].sort();
-    assert.deepStrictEqual(actualPathKeys, expectedPathKeys, 'OpenAPI paths must match all 27 merged module endpoints');
+    assert.deepStrictEqual(actualPathKeys, expectedPathKeys, 'OpenAPI paths must match all 35 merged module endpoints');
 
     let totalOperations = 0;
     const rootSecurity = backendApiRes.body.security || [];
@@ -264,7 +272,7 @@ describe('Tier 1: OpenAPI /api/docs & Swagger UI Verification', () => {
       }
     }
 
-    assert.strictEqual(totalOperations, 29, `Expected 29 OpenAPI operations, got ${totalOperations}`);
+    assert.strictEqual(totalOperations, 37, `Expected 37 OpenAPI operations, got ${totalOperations}`);
 
     const getCompanyByIdOp = paths['/api/v1/companies/{id}']?.get;
     assert.ok(getCompanyByIdOp, 'GET /api/v1/companies/{id} must exist in OpenAPI');
@@ -298,6 +306,84 @@ describe('Tier 1: OpenAPI /api/docs & Swagger UI Verification', () => {
       const errContent = resp.content?.['application/json'] ?? resp.content?.['*/*'];
       assert.strictEqual(errContent?.schema?.$ref, '#/components/schemas/ErrorResponse');
     }
+
+    const assertErrorResponsesAnd403 = (operation, opLabel, expectedRole, errorCodes) => {
+      assert.ok(operation, `${opLabel} must exist in OpenAPI`);
+      for (const code of errorCodes) {
+        const resp = operation.responses?.[code];
+        assert.ok(resp, `${opLabel} must document ${code}`);
+        const errContent = resp.content?.['application/json'] ?? resp.content?.['*/*'];
+        assert.strictEqual(
+          errContent?.schema?.$ref,
+          '#/components/schemas/ErrorResponse',
+          `${opLabel} ${code} must reference ErrorResponse`
+        );
+      }
+      const desc403 = operation.responses?.['403']?.description || '';
+      assert.ok(desc403.includes(expectedRole), `${opLabel} 403 description must mention ${expectedRole}`);
+      assert.ok(
+        desc403.includes('MUST_CHANGE_PASSWORD'),
+        `${opLabel} 403 description must mention MUST_CHANGE_PASSWORD`
+      );
+    };
+
+    const applyPost = paths['/api/v1/jobs/{id}/apply']?.post;
+    assertErrorResponsesAnd403(applyPost, 'POST /api/v1/jobs/{id}/apply', 'CANDIDATE', ['400', '401', '403', '404', '409', '503']);
+    assert.ok(applyPost.responses?.['201'], 'POST /api/v1/jobs/{id}/apply must document 201');
+    const apply201Content = applyPost.responses['201'].content?.['application/json'] ?? applyPost.responses['201'].content?.['*/*'];
+    assert.strictEqual(apply201Content?.schema?.$ref, '#/components/schemas/ApplicationDetailResponse');
+
+    const myAppsGet = paths['/api/v1/me/applications']?.get;
+    assertErrorResponsesAnd403(myAppsGet, 'GET /api/v1/me/applications', 'CANDIDATE', ['400', '401', '403']);
+    assert.ok(myAppsGet.responses?.['200'], 'GET /api/v1/me/applications must document 200');
+
+    const myAppDetailGet = paths['/api/v1/me/applications/{id}']?.get;
+    assertErrorResponsesAnd403(myAppDetailGet, 'GET /api/v1/me/applications/{id}', 'CANDIDATE', ['400', '401', '403', '404']);
+    const myAppDetail200 = myAppDetailGet.responses?.['200']?.content?.['application/json'] ?? myAppDetailGet.responses?.['200']?.content?.['*/*'];
+    assert.strictEqual(myAppDetail200?.schema?.$ref, '#/components/schemas/ApplicationDetailResponse');
+
+    const withdrawPost = paths['/api/v1/me/applications/{id}/withdraw']?.post;
+    assertErrorResponsesAnd403(withdrawPost, 'POST /api/v1/me/applications/{id}/withdraw', 'CANDIDATE', ['400', '401', '403', '404', '409']);
+    const withdraw200 = withdrawPost.responses?.['200']?.content?.['application/json'] ?? withdrawPost.responses?.['200']?.content?.['*/*'];
+    assert.strictEqual(withdraw200?.schema?.$ref, '#/components/schemas/ApplicationDetailResponse');
+
+    const mySnapshotGet = paths['/api/v1/me/applications/{id}/cv-snapshot']?.get;
+    assertErrorResponsesAnd403(mySnapshotGet, 'GET /api/v1/me/applications/{id}/cv-snapshot', 'CANDIDATE', ['400', '401', '403', '404']);
+    assert.ok(mySnapshotGet.responses?.['200']?.content?.['application/pdf'], 'GET /api/v1/me/applications/{id}/cv-snapshot must document application/pdf');
+
+    const hrAppsGet = paths['/api/v1/hr/jobs/{jobId}/applications']?.get;
+    assertErrorResponsesAnd403(hrAppsGet, 'GET /api/v1/hr/jobs/{jobId}/applications', 'HR', ['400', '401', '403', '404']);
+    assert.ok(hrAppsGet.responses?.['200'], 'GET /api/v1/hr/jobs/{jobId}/applications must document 200');
+
+    const hrAppDetailGet = paths['/api/v1/hr/jobs/{jobId}/applications/{applicationId}']?.get;
+    assertErrorResponsesAnd403(hrAppDetailGet, 'GET /api/v1/hr/jobs/{jobId}/applications/{applicationId}', 'HR', ['400', '401', '403', '404']);
+    const hrAppDetail200 = hrAppDetailGet.responses?.['200']?.content?.['application/json'] ?? hrAppDetailGet.responses?.['200']?.content?.['*/*'];
+    assert.strictEqual(hrAppDetail200?.schema?.$ref, '#/components/schemas/ApplicationDetailResponse');
+
+    const hrSnapshotGet = paths['/api/v1/hr/jobs/{jobId}/applications/{applicationId}/cv-snapshot']?.get;
+    assertErrorResponsesAnd403(hrSnapshotGet, 'GET /api/v1/hr/jobs/{jobId}/applications/{applicationId}/cv-snapshot', 'HR', ['400', '401', '403', '404']);
+    assert.ok(hrSnapshotGet.responses?.['200']?.content?.['application/pdf'], 'GET /api/v1/hr/jobs/{jobId}/applications/{applicationId}/cv-snapshot must document application/pdf');
+
+    const schemas = backendApiRes.body?.components?.schemas || {};
+    for (const schemaName of [
+      'ApplicationDetailResponse',
+      'ApplicationSummaryResponse',
+      'HrApplicationSummaryResponse',
+      'ApplicationStatusHistoryResponse',
+      'ApplyJobRequest',
+      'WithdrawApplicationRequest'
+    ]) {
+      assert.ok(schemas[schemaName], `OpenAPI components.schemas must include ${schemaName}`);
+    }
+    assert.strictEqual(
+      schemas.ApplicationDetailResponse?.properties?.cvSnapshotUrl?.example,
+      '/api/v1/me/applications/1/cv-snapshot',
+      'ApplicationDetailResponse.cvSnapshotUrl.example must match /api/v1/me/applications/1/cv-snapshot'
+    );
+
+    // Out-of-scope UT-02 and HS-04 paths must stay absent
+    assert.strictEqual(paths['/api/v1/hr/jobs/{jobId}/applications/{applicationId}/status'], undefined, 'UT-02 PATCH status endpoint must not be exposed in UT-01');
+    assert.strictEqual(paths['/api/v1/me/cvs'], undefined, 'HS-04 /api/v1/me/cvs endpoint must not be exposed in UT-01');
   });
 
   it('TC-T1-DOCS-04: Should exclude @Hidden TestErrorController (/api/v1/test/*) and legacy controllers from OpenAPI spec', async () => {

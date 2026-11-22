@@ -41,7 +41,8 @@ const testTiers = [
       'test_evaluation_features.test.mjs',
       'test_company_features.test.mjs',
       'test_openapi_docs.test.mjs',
-      'test_internships.test.mjs'
+      'test_internships.test.mjs',
+      'test_applications.test.mjs'
     ]
   },
   {
