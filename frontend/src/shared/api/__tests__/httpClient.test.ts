@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   httpClient,
   request,
+  requestBlob,
   postFormData,
   setAuthToken,
   getAuthToken,
@@ -45,7 +46,7 @@ describe('Centralized HTTP Auth Client (httpClient)', () => {
 
   it('exports httpClient wrapper object matching functional interface', () => {
     expect(httpClient.request).toBe(request);
-    expect(`${'request'}Blob` in httpClient).toBe(false);
+    expect(httpClient.requestBlob).toBe(requestBlob);
     expect(httpClient.postFormData).toBe(postFormData);
     expect(httpClient.setAuthToken).toBe(setAuthToken);
     expect(httpClient.getAuthToken).toBe(getAuthToken);
@@ -409,6 +410,91 @@ describe('Centralized HTTP Auth Client (httpClient)', () => {
       code: 'UNKNOWN_ERROR',
       message: 'Không thể xử lý yêu cầu (mã lỗi 502). Vui lòng thử lại.',
     });
+  });
+
+  it('requestBlob attaches Bearer token, Accept application/pdf, and parses UTF-8 Content-Disposition filename', async () => {
+    setAuthToken('cand-jwt-blob');
+    const pdfBlob = new Blob(['%PDF-1.4'], { type: 'application/pdf' });
+    const fetchMock = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers({
+        'content-type': 'application/pdf',
+        'content-disposition': "attachment; filename=\"cv.pdf\"; filename*=UTF-8''h%E1%BB%93%20s%C6%A1-cv.pdf",
+      }),
+      blob: () => Promise.resolve(pdfBlob),
+    } as unknown as Response);
+    globalThis.fetch = fetchMock;
+
+    const result = await requestBlob('/api/v1/me/applications/5/cv-snapshot');
+    expect(result.blob).toBe(pdfBlob);
+    expect(result.filename).toBe('hồ sơ-cv.pdf');
+    expect(result.contentType).toBe('application/pdf');
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('/api/v1/me/applications/5/cv-snapshot');
+    const headers = new Headers(init.headers);
+    expect(headers.get('Authorization')).toBe('Bearer cand-jwt-blob');
+    expect(headers.get('Accept')).toBe('application/pdf');
+  });
+
+  it('requestBlob parses ASCII Content-Disposition filename and delegates errors through handleErrorResponse', async () => {
+    setAuthToken('cand-jwt-blob');
+    const pdfBlob = new Blob(['%PDF-1.4'], { type: 'application/pdf' });
+    const onUnauthorized = vi.fn();
+    setAuthSessionHandlers({ onUnauthorized });
+
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: new Headers({
+          'content-type': 'application/pdf',
+          'content-disposition': 'attachment; filename="resume-42.pdf"',
+        }),
+        blob: () => Promise.resolve(pdfBlob),
+      } as unknown as Response)
+      .mockResolvedValueOnce(
+        errorResponse(404, { code: 'NOT_FOUND', message: 'Không tìm thấy bản CV.' }),
+      )
+      .mockResolvedValueOnce(
+        errorResponse(401, { code: 'UNAUTHORIZED', message: 'Phiên đăng nhập đã hết hạn.' }),
+      );
+
+    const okResult = await requestBlob('/api/v1/me/applications/42/cv-snapshot');
+    expect(okResult.filename).toBe('resume-42.pdf');
+
+    await expect(requestBlob('/api/v1/me/applications/999/cv-snapshot')).rejects.toMatchObject({
+      name: 'ApiError',
+      status: 404,
+      code: 'NOT_FOUND',
+    });
+
+    await expect(requestBlob('/api/v1/me/applications/1/cv-snapshot')).rejects.toMatchObject({
+      name: 'ApiError',
+      status: 401,
+      code: 'UNAUTHORIZED',
+    });
+    expect(onUnauthorized).toHaveBeenCalledTimes(1);
+    expect(getAuthToken()).toBeNull();
+  });
+
+  it('requestBlob returns null filename when Content-Disposition has empty quoted filename=""', async () => {
+    setAuthToken('cand-jwt-blob');
+    const pdfBlob = new Blob(['%PDF-1.4'], { type: 'application/pdf' });
+    globalThis.fetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers({
+        'content-type': 'application/pdf',
+        'content-disposition': 'attachment; filename=""',
+      }),
+      blob: () => Promise.resolve(pdfBlob),
+    } as unknown as Response);
+
+    const result = await requestBlob('/api/v1/me/applications/7/cv-snapshot');
+    expect(result.filename).toBeNull();
   });
 
   it('statically scans frontend/src to confirm no manual Authorization headers outside httpClient', () => {

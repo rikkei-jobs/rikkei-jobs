@@ -8,6 +8,7 @@ import {
   Outlet,
   useLocation,
   useNavigate,
+  useParams,
 } from 'react-router-dom';
 import './App.css';
 import { Header } from './shared/components/Header';
@@ -73,6 +74,9 @@ const CandidateEvaluationsPage = lazyRoute(
 const CandidateInternshipsPage = lazyRoute(
   () => import('./features/internship/pages/CandidateInternshipsPage'),
 );
+const MyApplicationsPage = lazyRoute(
+  () => import('./features/recruitment/pages/MyApplicationsPage'),
+);
 const HrHomePage = lazyRoute(() => import('./features/identity/pages/role-homes/HrHomePage'));
 const CompanyProfilePage = lazyRoute(async () => {
   const m = await import('./features/company/pages/CompanyProfilePage');
@@ -127,6 +131,16 @@ registerRoutePreloader(
   PROTECTED_ROUTE_POLICIES.candidateInternships.path,
   CandidateInternshipsPage.preload,
   CandidateInternshipsPage.isLoaded,
+);
+registerRoutePreloader(
+  PROTECTED_ROUTE_POLICIES.candidateApplications.path,
+  MyApplicationsPage.preload,
+  MyApplicationsPage.isLoaded,
+);
+registerPrefixRoutePreloader(
+  '/candidate/applications/',
+  MyApplicationsPage.preload,
+  MyApplicationsPage.isLoaded,
 );
 registerRoutePreloader(
   PROTECTED_ROUTE_POLICIES.hrHome.path,
@@ -446,6 +460,14 @@ const PersistentAppShell: React.FC = () => {
   );
 };
 
+const CandidateApplicationDetailRedirect: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const target = id
+    ? `/candidate/applications?id=${encodeURIComponent(id)}`
+    : '/candidate/applications';
+  return <Navigate to={target} replace />;
+};
+
 export const AppRoutes: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -577,6 +599,26 @@ export const AppRoutes: React.FC = () => {
             element={
               <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.candidateInternships.allowedRoles}>
                 <CandidateInternshipsPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path={PROTECTED_ROUTE_POLICIES.candidateApplications.path}
+            element={
+              <RequireRole
+                allowedRoles={PROTECTED_ROUTE_POLICIES.candidateApplications.allowedRoles}
+              >
+                <MyApplicationsPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path={PROTECTED_ROUTE_POLICIES.candidateApplicationDetail.path}
+            element={
+              <RequireRole
+                allowedRoles={PROTECTED_ROUTE_POLICIES.candidateApplicationDetail.allowedRoles}
+              >
+                <CandidateApplicationDetailRedirect />
               </RequireRole>
             }
           />

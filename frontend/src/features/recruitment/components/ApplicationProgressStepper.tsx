@@ -1,224 +1,120 @@
-import React from 'react';
-import type { ApplicationStatus } from '../types';
+import React, { useEffect, useState } from 'react';
+import { Icon } from '../../../shared/components/Icon';
+import { hasPlayedMotionOnce, markMotionPlayed, prefersReducedMotion } from '../../../shared/utils/motion';
+import { getStatusMeta, MAIN_PIPELINE_STATUSES } from '../api/recruitmentApi';
+import type { ApplicationStatus, ApplicationStatusHistoryResponse } from '../types';
 
-interface ApplicationProgressStepperProps {
-  status: ApplicationStatus;
+export interface ApplicationProgressStepperProps {
+  readonly applicationId: number;
+  readonly status: ApplicationStatus;
+  readonly histories: readonly ApplicationStatusHistoryResponse[];
 }
 
-interface StepDef {
-  key: ApplicationStatus;
-  label: string;
+function getLastReachedMainStepIndex(
+  status: ApplicationStatus,
+  histories: readonly ApplicationStatusHistoryResponse[],
+): number {
+  const directIdx = MAIN_PIPELINE_STATUSES.indexOf(status);
+  if (directIdx >= 0) {
+    return directIdx;
+  }
+
+  // For REJECTED / WITHDRAWN, infer furthest main pipeline step from history
+  let maxIdx = 0;
+  for (const item of histories) {
+    if (item.fromStatus) {
+      const fromIdx = MAIN_PIPELINE_STATUSES.indexOf(item.fromStatus);
+      if (fromIdx > maxIdx) maxIdx = fromIdx;
+    }
+    const toIdx = MAIN_PIPELINE_STATUSES.indexOf(item.toStatus);
+    if (toIdx > maxIdx) maxIdx = toIdx;
+  }
+  return maxIdx;
 }
 
-const PIPELINE_STEPS: StepDef[] = [
-  { key: 'SUBMITTED', label: 'Đã gửi' },
-  { key: 'SCREENING', label: 'Sàng lọc' },
-  { key: 'INTERVIEW', label: 'Phỏng vấn' },
-  { key: 'OFFER', label: 'Đề nghị (Offer)' },
-  { key: 'HIRED', label: 'Nhận việc' },
-];
+export const ApplicationProgressStepper: React.FC<ApplicationProgressStepperProps> = ({
+  applicationId,
+  status,
+  histories,
+}) => {
+  const motionKey = `recruitment-stepper-${applicationId}`;
+  const [animateReveal] = useState<boolean>(
+    () => !prefersReducedMotion() && !hasPlayedMotionOnce(motionKey),
+  );
 
-const STEP_ORDER: Record<ApplicationStatus, number> = {
-  SUBMITTED: 1,
-  SCREENING: 2,
-  INTERVIEW: 3,
-  OFFER: 4,
-  HIRED: 5,
-  REJECTED: -1,
-  WITHDRAWN: -2,
-};
+  useEffect(() => {
+    markMotionPlayed(motionKey);
+  }, [motionKey]);
 
-export const ApplicationProgressStepper: React.FC<ApplicationProgressStepperProps> = ({ status }) => {
-  const currentStepNum = STEP_ORDER[status];
-  const isRejected = status === 'REJECTED';
-  const isWithdrawn = status === 'WITHDRAWN';
+  const isEndedBranch = status === 'REJECTED' || status === 'WITHDRAWN';
+  const isHired = status === 'HIRED';
+  const reachedIndex = getLastReachedMainStepIndex(status, histories);
+  const ratio = reachedIndex / (MAIN_PIPELINE_STATUSES.length - 1);
+
+  const stepperClass = [
+    'rec-stepper-wrap',
+    animateReveal ? 'is-animated' : '',
+    isHired ? 'rec-stepper--hired' : '',
+    isEndedBranch ? 'rec-stepper--ended' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  const statusMeta = getStatusMeta(status);
 
   return (
-    <nav aria-label="Tiến trình tuyển dụng" style={{ width: '100%', margin: '16px 0' }}>
-      <ol
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          listStyle: 'none',
-          padding: 0,
-          margin: 0,
-          position: 'relative',
-        }}
-      >
-        {PIPELINE_STEPS.map((step, idx) => {
-          const stepNumber = idx + 1;
-          const isPassed = !isRejected && !isWithdrawn && currentStepNum > stepNumber;
-          const isCurrent = !isRejected && !isWithdrawn && currentStepNum === stepNumber;
+    <div
+      className={stepperClass}
+      style={{ '--rec-stepper-ratio': String(ratio) } as React.CSSProperties}
+      aria-label="Tiến độ xử lý hồ sơ ứng tuyển"
+    >
+      <ol className="rec-stepper">
+        <li className="rec-stepper-track" aria-hidden="true">
+          <span className="rec-stepper-fill" />
+        </li>
 
-          let circleBg = '#e5e7eb';
-          let circleColor = '#4b5563';
-          let borderColor = '#d1d5db';
-          let textColor = '#6b7280';
-          let fontWeight = 500;
+        {MAIN_PIPELINE_STATUSES.map((stepStatus, index) => {
+          const stepMeta = getStatusMeta(stepStatus);
+          const isCurrentMain = !isEndedBranch && status === stepStatus;
+          const isDone = isEndedBranch ? index <= reachedIndex : index < reachedIndex;
+          const isStepHired = isHired && stepStatus === 'HIRED';
 
-          if (isPassed) {
-            circleBg = '#10b981';
-            circleColor = '#ffffff';
-            borderColor = '#059669';
-            textColor = '#065f46';
-            fontWeight = 600;
-          } else if (isCurrent) {
-            circleBg = '#1d4ed8';
-            circleColor = '#ffffff';
-            borderColor = '#1e40af';
-            textColor = '#1e3a8a';
-            fontWeight = 700;
-          }
+          const itemClasses = [
+            'rec-stepper-step',
+            isDone ? 'is-done' : '',
+            isCurrentMain && !isStepHired ? 'is-active' : '',
+            isStepHired ? 'is-hired' : '',
+          ]
+            .filter(Boolean)
+            .join(' ');
 
           return (
             <li
-              key={step.key}
-              style={{
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                position: 'relative',
-              }}
-              aria-current={isCurrent ? 'step' : undefined}
+              key={stepStatus}
+              className={itemClasses}
+              style={{ '--rec-step-index': String(index) } as React.CSSProperties}
+              aria-current={isCurrentMain ? 'step' : undefined}
             >
-              {idx > 0 && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: '16px',
-                    left: '-50%',
-                    width: '100%',
-                    height: '3px',
-                    backgroundColor: isPassed || isCurrent ? '#10b981' : '#e5e7eb',
-                    zIndex: 0,
-                  }}
-                  aria-hidden="true"
-                />
-              )}
-
-              <div
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  backgroundColor: circleBg,
-                  color: circleColor,
-                  border: `2px solid ${borderColor}`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '0.875rem',
-                  fontWeight: 700,
-                  zIndex: 1,
-                  transition: 'all 200ms ease-out',
-                }}
-              >
-                {isPassed ? (
-                  <svg
-                    style={{ width: '16px', height: '16px' }}
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M5 13l4 4L19 7" />
-                  </svg>
-                ) : (
-                  stepNumber
-                )}
-              </div>
-
-              <span
-                style={{
-                  marginTop: '8px',
-                  fontSize: '0.75rem',
-                  fontFamily: 'Be Vietnam Pro, sans-serif',
-                  fontWeight,
-                  color: textColor,
-                  textAlign: 'center',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {step.label}
+              <span className="rec-stepper-node" aria-hidden="true">
+                <Icon name={isDone || isStepHired ? 'check' : stepMeta.icon} size={16} />
               </span>
+              <span className="rec-stepper-label">{stepMeta.label}</span>
             </li>
           );
         })}
       </ol>
 
-      {isRejected && (
+      {isEndedBranch && (
         <div
-          role="alert"
-          style={{
-            marginTop: '12px',
-            padding: '8px 12px',
-            backgroundColor: '#fef2f2',
-            border: '1px solid #fecaca',
-            borderRadius: '6px',
-            color: '#991b1b',
-            fontSize: '0.8125rem',
-            fontFamily: 'Be Vietnam Pro, sans-serif',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-          }}
+          className={`rj-alert ${status === 'REJECTED' ? 'rj-alert-danger' : 'rj-alert-warning'} rec-stepper-branch`}
+          role="note"
         >
-          <svg
-            style={{ width: '18px', height: '18px', flexShrink: 0 }}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="8" x2="12" y2="12" />
-            <line x1="12" y1="16" x2="12.01" y2="16" />
-          </svg>
-          Đơn ứng tuyển chưa phù hợp ở giai đoạn này. Chúc bạn may mắn trong các cơ hội tiếp theo.
+          <Icon name={statusMeta.icon} size={18} />
+          <div>
+            <strong>{statusMeta.label}:</strong> {statusMeta.description}
+          </div>
         </div>
       )}
-
-      {isWithdrawn && (
-        <div
-          role="status"
-          style={{
-            marginTop: '12px',
-            padding: '8px 12px',
-            backgroundColor: '#f9fafb',
-            border: '1px solid #e5e7eb',
-            borderRadius: '6px',
-            color: '#4b5563',
-            fontSize: '0.8125rem',
-            fontFamily: 'Be Vietnam Pro, sans-serif',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-          }}
-        >
-          <svg
-            style={{ width: '18px', height: '18px', flexShrink: 0 }}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-          Ứng viên đã chủ động rút hồ sơ ứng tuyển này.
-        </div>
-      )}
-    </nav>
+    </div>
   );
 };

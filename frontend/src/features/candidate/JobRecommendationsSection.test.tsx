@@ -3,6 +3,7 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { JobRecommendationsSection } from './JobRecommendationsSection';
 import * as api from './api/jobRecommendations';
+import { recruitmentApi } from '../recruitment';
 import type { JobRecommendationsResponse } from './types';
 
 describe('JobRecommendationsSection Component', () => {
@@ -97,11 +98,36 @@ describe('JobRecommendationsSection Component', () => {
     expect(document.querySelector('.system-label')).toHaveTextContent('Gợi ý hệ thống');
     expect(screen.getByText(/Cập nhật trong ngày/i)).toBeInTheDocument();
     expect(screen.queryByText(/AI Provider/i)).not.toBeInTheDocument();
-    const applyButtons = screen.getAllByRole('button', { name: /Ứng tuyển \(Sắp ra mắt\)/i });
+    const applyButtons = screen.getAllByRole('button', { name: /^Ứng tuyển$/i });
     expect(applyButtons).toHaveLength(2);
     applyButtons.forEach((button) => {
-      expect(button).toBeDisabled();
+      expect(button).toBeEnabled();
     });
+  });
+
+  it('opens ApplyDialog when clicking "Ứng tuyển" on a job card', async () => {
+    vi.spyOn(api, 'fetchJobRecommendations').mockResolvedValueOnce(mockResponse);
+    vi.spyOn(recruitmentApi, 'fetchCandidateCvs').mockResolvedValueOnce({
+      availability: 'ready',
+      items: [{ id: 11, title: 'CV Java Backend', isDefault: true }],
+    });
+
+    renderSection();
+
+    await waitFor(() => {
+      expect(screen.getByText('Kỹ sư Java Backend')).toBeInTheDocument();
+    });
+
+    const applyButtons = screen.getAllByRole('button', { name: /^Ứng tuyển$/i });
+    fireEvent.click(applyButtons[0]);
+
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog).toHaveTextContent('Nộp hồ sơ ứng tuyển');
+    expect(dialog).toHaveTextContent('Kỹ sư Java Backend — Rikkeisoft');
+    expect(await screen.findByText('CV Java Backend')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Đóng hộp thoại ứng tuyển' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('does not expose a candidate selector anymore', async () => {

@@ -168,7 +168,7 @@
 
 .rj-select-listbox {
   position: fixed;
-  z-index: var(--rj-primitive-z-dropdown);
+  z-index: var(--rj-z-popover);
   margin: 0;
   padding: var(--rj-primitive-space-1);
   list-style: none;

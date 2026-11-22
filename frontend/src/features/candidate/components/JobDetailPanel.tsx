@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { fetchGapAnalysis, fetchJobDetail, setMyTarget } from '../api/gapAnalysis';
 import type { GapAnalysisResponse, JobDetail } from '../types';
 import { Icon } from '../../../shared/components/Icon';
+import { ApplyDialog } from '../../recruitment';
 import { GapSkillsTable } from './GapSkillsTable';
 import { describeGapError } from '../gapUtils';
 import { formatDate, formatScore } from '../skillLabels';
@@ -12,7 +13,7 @@ export interface JobDetailPanelProps {
   readonly jobId: number;
 }
 
-/** JD detail with the DT-01 "Phân tích so với JD này" action. */
+/** JD detail with the DT-01 "Phân tích so với JD này" action and UT-01 "Ứng tuyển". */
 export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({ jobId }) => {
   const [job, setJob] = useState<JobDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -20,6 +21,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({ jobId }) => {
   const [analysis, setAnalysis] = useState<GapAnalysisResponse | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [applyOpen, setApplyOpen] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -131,6 +133,14 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({ jobId }) => {
             <button
               type="button"
               className="rj-btn rj-btn-primary"
+              onClick={() => setApplyOpen(true)}
+            >
+              <Icon name="send" size={18} />
+              <span>Ứng tuyển</span>
+            </button>
+            <button
+              type="button"
+              className="rj-btn rj-btn-secondary"
               onClick={analyze}
               disabled={analyzing}
             >
@@ -138,6 +148,16 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({ jobId }) => {
               <span>{analyzing ? 'Đang phân tích...' : 'Phân tích so với JD này'}</span>
             </button>
           </div>
+
+          <ApplyDialog
+            isOpen={applyOpen}
+            job={{
+              jobId: job.id,
+              title: job.title,
+              companyName: job.companyName,
+            }}
+            onClose={() => setApplyOpen(false)}
+          />
 
           {analysisError && (
             <div className="gap-status gap-status-error" role="alert">

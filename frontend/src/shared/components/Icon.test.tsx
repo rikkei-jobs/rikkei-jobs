@@ -41,6 +41,9 @@ describe('Icon Component', () => {
     'pencil',
     'calendar',
     'log-out',
+    'download',
+    'send',
+    'file-text',
   ];
 
   it('renders all icons without crashing', () => {

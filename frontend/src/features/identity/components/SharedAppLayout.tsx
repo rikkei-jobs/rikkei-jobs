@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { BrandMark } from '../../../shared/components/BrandMark';
 import { Icon, type IconName } from '../../../shared/components/Icon';
 import { ThemeSwitch } from '../../../shared/components/ThemeSwitch';
+import { useScrollLock } from '../../../shared/hooks/useScrollLock';
 import { getRoleLabel } from '../../../shared/i18n/enumLabels';
 import {
   cancelRouteTransition,
@@ -202,16 +203,7 @@ export const SharedAppLayout: React.FC<SharedAppLayoutProps> = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  useEffect(() => {
-    if (!isMobileMenuOpen || typeof document === 'undefined') {
-      return undefined;
-    }
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [isMobileMenuOpen]);
+  useScrollLock(isMobileMenuOpen);
 
   useEffect(() => {
     if (isMobileMenuOpen && !wasDrawerOpenRef.current) {
@@ -230,6 +222,22 @@ export const SharedAppLayout: React.FC<SharedAppLayoutProps> = ({
       return undefined;
     }
     const handleDrawerKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) {
+        return;
+      }
+      if (event.key !== 'Escape' && event.key !== 'Tab') {
+        return;
+      }
+      // Yield Escape/Tab to any higher-layer modal dialog (e.g. portaled dialogs) open outside the drawer.
+      const hasExternalModalDialog = Array.from(
+        document.querySelectorAll<HTMLElement>('[role="dialog"][aria-modal="true"]'),
+      ).some(
+        (dialogEl) => dialogEl !== sidebarRef.current && !sidebarRef.current?.contains(dialogEl),
+      );
+      if (hasExternalModalDialog) {
+        return;
+      }
+
       if (event.key === 'Escape') {
         event.preventDefault();
         setOpenMenuLocationKey(null);

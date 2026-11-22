@@ -209,6 +209,57 @@ export async function request<T>(endpoint: string, options: RequestOptions = {})
   }
 }
 
+export interface BlobResponse {
+  readonly blob: Blob;
+  readonly filename: string | null;
+  readonly contentType: string;
+}
+
+function parseContentDispositionFilename(header: string | null): string | null {
+  if (!header) {
+    return null;
+  }
+  const utf8Match = /filename\*\s*=\s*UTF-8''([^;\r\n]+)/i.exec(header);
+  if (utf8Match?.[1]) {
+    const rawUtf8 = utf8Match[1].trim().replace(/^"|"$/g, '').trim();
+    if (!rawUtf8) {
+      return null;
+    }
+    try {
+      const decoded = decodeURIComponent(rawUtf8).trim();
+      return decoded || null;
+    } catch {
+      return rawUtf8 || null;
+    }
+  }
+  const asciiMatch = /filename\s*=\s*"([^"\r\n]*)"|filename\s*=\s*([^;\r\n]+)/i.exec(header);
+  const raw = asciiMatch?.[1] ?? asciiMatch?.[2];
+  if (raw === undefined) {
+    return null;
+  }
+  const trimmed = raw.trim().replace(/^"|"$/g, '').trim();
+  return trimmed || null;
+}
+
+/**
+ * Centralized binary download client reusing Bearer auth and error/session interceptors.
+ */
+export async function requestBlob(
+  endpoint: string,
+  options: RequestOptions = {},
+): Promise<BlobResponse> {
+  const response = await executeFetch(endpoint, options, 'application/pdf');
+
+  if (!response.ok) {
+    return handleErrorResponse(response, options);
+  }
+
+  const blob = await response.blob();
+  const filename = parseContentDispositionFilename(response.headers.get('Content-Disposition'));
+  const contentType = response.headers.get('Content-Type') ?? (blob.type || 'application/pdf');
+  return { blob, filename, contentType };
+}
+
 /**
  * Upload multipart FormData while letting the browser generate the multipart boundary.
  */
@@ -226,6 +277,7 @@ export async function postFormData<T>(
 
 export const httpClient = {
   request,
+  requestBlob,
   postFormData,
   setAuthToken,
   getAuthToken,

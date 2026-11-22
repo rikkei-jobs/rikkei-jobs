@@ -85,7 +85,11 @@ describe('Role Home Pages', () => {
       expect(screen.getByText(/Chưa có điểm kỹ năng xác thực để vẽ biểu đồ/i)).toBeInTheDocument();
     });
 
-    expect(screen.getByText('Hồ sơ ứng tuyển')).toBeInTheDocument();
+    expect(screen.queryByText('Hồ sơ ứng tuyển')).not.toBeInTheDocument();
+    expect(screen.getAllByText('Trợ lý AI').length).toBeGreaterThanOrEqual(2);
+    expect(
+      screen.getByText('Góp ý cải thiện CV và luyện phỏng vấn thử theo yêu cầu tin tuyển dụng.'),
+    ).toBeInTheDocument();
     expect(screen.getAllByText('Hồ sơ năng lực').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('Sắp ra mắt').length).toBeGreaterThanOrEqual(2);
     const skillsLinks = screen.getAllByRole('link', { name: /Xem hồ sơ năng lực/i });

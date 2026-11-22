@@ -55,9 +55,9 @@ describe('roleUtils', () => {
   });
 
   describe('routePolicies (SSOT)', () => {
-    it('covers all 13 protected routes (including /403) with exact allowedRoles', () => {
+    it('covers all 15 protected routes (including /403) with exact allowedRoles', () => {
       const policies = Object.values(PROTECTED_ROUTE_POLICIES);
-      expect(policies).toHaveLength(13);
+      expect(policies).toHaveLength(15);
       expect(policies.map((p) => [p.path, [...p.allowedRoles]])).toEqual([
         ['/candidate', ['CANDIDATE']],
         ['/candidate/skills', ['CANDIDATE']],
@@ -66,6 +66,8 @@ describe('roleUtils', () => {
         ['/candidate/gap-analysis', ['CANDIDATE']],
         ['/candidate/evaluations', ['CANDIDATE']],
         ['/candidate/internships', ['CANDIDATE']],
+        ['/candidate/applications', ['CANDIDATE']],
+        ['/candidate/applications/:id', ['CANDIDATE']],
         ['/hr', ['HR']],
         ['/hr/company', ['HR']],
         ['/mentor', ['MENTOR']],
@@ -75,8 +77,11 @@ describe('roleUtils', () => {
       ]);
     });
 
-    it('matches static and dynamic :jobId routes and rejects nested extra or unknown routes', () => {
+    it('matches static and dynamic :jobId / :id routes and rejects nested extra or unknown routes', () => {
       expect(getAllowedRolesForPathname('/candidate/internships')).toEqual(['CANDIDATE']);
+      expect(getAllowedRolesForPathname('/candidate/applications')).toEqual(['CANDIDATE']);
+      expect(getAllowedRolesForPathname('/candidate/applications/42')).toEqual(['CANDIDATE']);
+      expect(getAllowedRolesForPathname('/candidate/applications/42/extra')).toBeNull();
       expect(getAllowedRolesForPathname('/candidate/jobs/42')).toEqual(['CANDIDATE']);
       expect(getAllowedRolesForPathname('/candidate/jobs/intern%20react')).toEqual(['CANDIDATE']);
       expect(getAllowedRolesForPathname('/candidate/jobs/42/extra')).toBeNull();
@@ -94,6 +99,10 @@ describe('roleUtils', () => {
     it('enforces exact role matching in isPathAllowedForRole and fails closed on missing/unknown roles', () => {
       expect(isPathAllowedForRole('/candidate/internships', 'CANDIDATE')).toBe(true);
       expect(isPathAllowedForRole('/candidate/internships', 'HR')).toBe(false);
+      expect(isPathAllowedForRole('/candidate/applications', 'CANDIDATE')).toBe(true);
+      expect(isPathAllowedForRole('/candidate/applications/42', 'CANDIDATE')).toBe(true);
+      expect(isPathAllowedForRole('/candidate/applications', 'HR')).toBe(false);
+      expect(isPathAllowedForRole('/candidate/applications/42', 'STAFF')).toBe(false);
       expect(isPathAllowedForRole('/hr/company', 'HR')).toBe(true);
       expect(isPathAllowedForRole('/hr/company', 'CANDIDATE')).toBe(false);
       expect(isPathAllowedForRole('/hr/company', 'hr')).toBe(false);

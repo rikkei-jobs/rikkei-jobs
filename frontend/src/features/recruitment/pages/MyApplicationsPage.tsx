@@ -1,302 +1,382 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useId, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Icon } from '../../../shared/components/Icon';
+import { Select } from '../../../shared/components/Select';
 import {
-  downloadApplicationCv,
-  getMyApplicationDetail,
-  getMyApplications,
-} from '../api/applicationApi';
+  hasPlayedMotionOnce,
+  markMotionPlayed,
+  prefersReducedMotion,
+  useCountUp,
+} from '../../../shared/utils/motion';
+import { RoleHomeLayout } from '../../identity/pages/role-homes/RoleHomeLayout';
+import {
+  APPLICATION_STATUS_META,
+  APPLICATION_STATUS_ORDER,
+  isAbortError,
+  isOpenApplicationStatus,
+  mapRecruitmentError,
+  recruitmentApi,
+} from '../api/recruitmentApi';
 import { ApplicationCard } from '../components/ApplicationCard';
-import { ApplicationDetailDrawer } from '../components/ApplicationDetailDrawer';
-import { WithdrawModal } from '../components/WithdrawModal';
-import type { ApplicationDetail, ApplicationStatus, ApplicationSummary } from '../types';
+import { ApplicationDetailView } from '../components/ApplicationDetailView';
+import type {
+  ApplicationStatus,
+  ApplicationSummaryResponse,
+  PageResponse,
+} from '../types';
+import '../styles/recruitment.css';
 
-interface MyApplicationsPageProps {
-  onBackToJobs?: () => void;
+const APPLICATIONS_MOTION_KEY = 'candidate-applications-entrance';
+const PAGE_SIZE = 10;
+
+interface AnimatedMetricProps {
+  readonly value: number;
+  readonly active: boolean;
+  readonly animate: boolean;
 }
 
-const PAGE_SIZE = 20;
-
-const STATUS_FILTERS: { label: string; value?: ApplicationStatus }[] = [
-  { label: 'Tất cả đơn' },
-  { label: 'Đã gửi', value: 'SUBMITTED' },
-  { label: 'Sàng lọc', value: 'SCREENING' },
-  { label: 'Phỏng vấn', value: 'INTERVIEW' },
-  { label: 'Đề nghị (Offer)', value: 'OFFER' },
-  { label: 'Đã nhận việc', value: 'HIRED' },
-  { label: 'Đã rút đơn', value: 'WITHDRAWN' },
-  { label: 'Không đạt', value: 'REJECTED' },
-];
-
-export const MyApplicationsPage: React.FC<MyApplicationsPageProps> = ({ onBackToJobs }) => {
-  const [applications, setApplications] = useState<ApplicationSummary[]>([]);
-  const [selectedFilter, setSelectedFilter] = useState<ApplicationStatus | undefined>(undefined);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Drawer state
-  const [selectedDetail, setSelectedDetail] = useState<ApplicationDetail | null>(null);
-  const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
-  const [downloadError, setDownloadError] = useState<string | null>(null);
-
-  // Withdraw modal state
-  const [withdrawTarget, setWithdrawTarget] = useState<{ id: number; title: string } | null>(null);
-
-  const loadApplications = useCallback(
-    async (filter: ApplicationStatus | undefined, requestedPage: number) => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const data = await getMyApplications(filter, requestedPage, PAGE_SIZE);
-        setApplications(data.items);
-        setTotalPages(data.totalPages);
-      } catch {
-        setError('Không thể tải danh sách đơn ứng tuyển. Vui lòng thử lại sau.');
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [],
-  );
-
-  useEffect(() => {
-    void Promise.resolve().then(() => loadApplications(selectedFilter, page));
-  }, [loadApplications, selectedFilter, page]);
-
-  const selectFilter = (filter?: ApplicationStatus) => {
-    setPage(1);
-    setSelectedFilter(filter);
-  };
-
-  const handleOpenDetail = async (id: number) => {
-    try {
-      const detail = await getMyApplicationDetail(id);
-      setSelectedDetail(detail);
-      setIsDrawerOpen(true);
-    } catch {
-      alert('Không thể tải chi tiết đơn ứng tuyển.');
-    }
-  };
-
-  const handleOpenWithdraw = (app: ApplicationSummary | ApplicationDetail) => {
-    setWithdrawTarget({ id: app.id, title: app.jobTitle });
-  };
-
-  const handleDownloadCv = async (applicationId: number) => {
-    setDownloadError(null);
-    try {
-      const blob = await downloadApplicationCv(null, applicationId);
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.download = `application-${applicationId}-cv.pdf`;
-      anchor.click();
-      window.requestAnimationFrame(() => URL.revokeObjectURL(url));
-    } catch (downloadFailure) {
-      setDownloadError(
-        downloadFailure instanceof Error ? downloadFailure.message : 'Không thể tải bản CV đã nộp.',
-      );
-    }
-  };
-
-  const handleWithdrawSuccess = (updated: ApplicationDetail) => {
-    setWithdrawTarget(null);
-    if (selectedDetail && selectedDetail.id === updated.id) {
-      setSelectedDetail(updated);
-    }
-    void loadApplications(selectedFilter, page);
-  };
+const AnimatedMetric: React.FC<AnimatedMetricProps> = ({ value, active, animate }) => {
+  const counted = useCountUp(value, active && animate);
+  const display = animate ? counted : value;
 
   return (
-    <main
-      style={{
-        maxWidth: '1000px',
-        margin: '0 auto',
-        padding: '32px 20px',
-        fontFamily: 'Be Vietnam Pro, sans-serif',
-      }}
-    >
-      <header style={{ marginBottom: '28px' }}>
-        {onBackToJobs && (
-          <button type="button" onClick={onBackToJobs} style={{ marginBottom: 16 }}>
-            Quay lại danh sách việc làm
-          </button>
-        )}
-        <h1
-          style={{
-            margin: '0 0 8px',
-            fontSize: '1.75rem',
-            fontFamily: 'Plus Jakarta Sans, sans-serif',
-            fontWeight: 800,
-            color: '#0f172a',
-          }}
-        >
-          Ứng tuyển của tôi
-        </h1>
-        <p style={{ margin: 0, fontSize: '0.9375rem', color: '#64748b' }}>
-          Theo dõi tiến trình xét duyệt hồ sơ, lịch phỏng vấn và trạng thái tuyển dụng tại các doanh
-          nghiệp đối tác.
-        </p>
-      </header>
-
-      {/* Filter Tabs */}
-      <nav
-        aria-label="Lọc theo trạng thái ứng tuyển"
-        style={{
-          display: 'flex',
-          gap: '8px',
-          overflowX: 'auto',
-          paddingBottom: '8px',
-          marginBottom: '24px',
-        }}
-      >
-        {STATUS_FILTERS.map((f) => {
-          const isActive = selectedFilter === f.value;
-          return (
-            <button
-              key={f.label}
-              type="button"
-              onClick={() => selectFilter(f.value)}
-              style={{
-                padding: '8px 16px',
-                borderRadius: '9999px',
-                border: '1px solid',
-                borderColor: isActive ? '#1d4ed8' : '#e2e8f0',
-                backgroundColor: isActive ? '#eff6ff' : '#ffffff',
-                color: isActive ? '#1d4ed8' : '#475569',
-                fontSize: '0.8125rem',
-                fontWeight: isActive ? 700 : 500,
-                cursor: 'pointer',
-                fontFamily: 'Plus Jakarta Sans, sans-serif',
-                whiteSpace: 'nowrap',
-                transition: 'all 150ms ease-out',
-              }}
-            >
-              {f.label}
-            </button>
-          );
-        })}
-      </nav>
-
-      {/* Content Area */}
-      {isLoading ? (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: '#64748b' }}>
-          <p style={{ fontSize: '0.9375rem' }}>Đang tải danh sách hồ sơ ứng tuyển...</p>
-        </div>
-      ) : error ? (
-        <div
-          role="alert"
-          style={{
-            padding: '16px 20px',
-            backgroundColor: '#fef2f2',
-            border: '1px solid #fecaca',
-            borderRadius: '10px',
-            color: '#991b1b',
-            marginBottom: '24px',
-          }}
-        >
-          {error}
-        </div>
-      ) : applications.length === 0 ? (
-        <div
-          style={{
-            textAlign: 'center',
-            padding: '80px 20px',
-            backgroundColor: '#ffffff',
-            borderRadius: '12px',
-            border: '1px dashed #cbd5e1',
-          }}
-        >
-          <svg
-            style={{ width: '48px', height: '48px', color: '#94a3b8', margin: '0 auto 16px' }}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-            <polyline points="14 2 14 8 20 8" />
-            <line x1="12" y1="18" x2="12" y2="12" />
-            <line x1="9" y1="15" x2="15" y2="15" />
-          </svg>
-          <h2
-            style={{
-              margin: '0 0 8px',
-              fontSize: '1.125rem',
-              fontFamily: 'Plus Jakarta Sans, sans-serif',
-              fontWeight: 700,
-              color: '#1e293b',
-            }}
-          >
-            Chưa có hồ sơ ứng tuyển nào
-          </h2>
-          <p style={{ margin: 0, fontSize: '0.875rem', color: '#64748b' }}>
-            {selectedFilter
-              ? 'Không có đơn ứng tuyển nào ở trạng thái này.'
-              : 'Hãy khám phá các vị trí tuyển dụng trên hệ thống và nộp hồ sơ bằng CV của bạn.'}
-          </p>
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {applications.map((app) => (
-            <ApplicationCard
-              key={app.id}
-              application={app}
-              onViewDetail={handleOpenDetail}
-              onWithdraw={handleOpenWithdraw}
-            />
-          ))}
-        </div>
-      )}
-
-      {!isLoading && !error && totalPages > 1 && (
-        <nav
-          aria-label="Phân trang đơn ứng tuyển"
-          style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 20 }}
-        >
-          <button
-            type="button"
-            disabled={page <= 1}
-            onClick={() => setPage((current) => current - 1)}
-          >
-            Trang trước
-          </button>
-          <span aria-live="polite">
-            Trang {page} / {totalPages}
-          </span>
-          <button
-            type="button"
-            disabled={page >= totalPages}
-            onClick={() => setPage((current) => current + 1)}
-          >
-            Trang sau
-          </button>
-        </nav>
-      )}
-      {downloadError && <p role="alert">{downloadError}</p>}
-
-      {/* Detail Drawer */}
-      <ApplicationDetailDrawer
-        application={selectedDetail}
-        isOpen={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
-        onWithdrawClick={handleOpenWithdraw}
-        onDownloadCv={handleDownloadCv}
-      />
-
-      {/* Withdraw Modal */}
-      {withdrawTarget && (
-        <WithdrawModal
-          applicationId={withdrawTarget.id}
-          jobTitle={withdrawTarget.title}
-          isOpen={true}
-          onClose={() => setWithdrawTarget(null)}
-          onSuccess={handleWithdrawSuccess}
-        />
-      )}
-    </main>
+    <span className="rj-metric-slot rj-tabular-nums">
+      <span className="rj-metric-slot-reserve" aria-hidden="true">
+        {value}
+      </span>
+      <span className="rj-metric-slot-live">{display}</span>
+    </span>
   );
 };
+
+export const MyApplicationsPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const detailIdRaw = searchParams.get('id');
+
+  const filterId = useId();
+  const [playEntrance, setPlayEntrance] = useState<boolean>(
+    () => !prefersReducedMotion() && !hasPlayedMotionOnce(APPLICATIONS_MOTION_KEY),
+  );
+
+  const [statusFilter, setStatusFilter] = useState<ApplicationStatus | ''>('');
+  const [page, setPage] = useState<number>(1);
+  const [retryCount, setRetryCount] = useState<number>(0);
+
+  const [pageData, setPageData] = useState<PageResponse<ApplicationSummaryResponse> | null>(null);
+  const [loading, setLoading] = useState<boolean>(() => detailIdRaw === null);
+  const [error, setError] = useState<string | null>(null);
+
+  const isListReady = detailIdRaw === null && !loading && !error && pageData !== null;
+
+  useEffect(() => {
+    if (isListReady) {
+      markMotionPlayed(APPLICATIONS_MOTION_KEY);
+    }
+  }, [isListReady]);
+
+  // Reset entrance once the user leaves the rendered list for a detail view so returning renders final values immediately
+  if (detailIdRaw !== null && playEntrance && hasPlayedMotionOnce(APPLICATIONS_MOTION_KEY)) {
+    setPlayEntrance(false);
+  }
+
+  useEffect(() => {
+    if (detailIdRaw !== null) {
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const loadApplications = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const result = await recruitmentApi.listMyApplications(
+          {
+            status: statusFilter,
+            page,
+            size: PAGE_SIZE,
+          },
+          controller.signal,
+        );
+        if (!controller.signal.aborted) {
+          setPageData(result);
+        }
+      } catch (err: unknown) {
+        if (controller.signal.aborted || isAbortError(err)) {
+          return;
+        }
+        setError(mapRecruitmentError(err, 'list'));
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadApplications();
+
+    return () => controller.abort();
+  }, [detailIdRaw, statusFilter, page, retryCount]);
+
+  let pageBody: React.ReactNode;
+
+  if (detailIdRaw !== null) {
+    const parsedId = Number(detailIdRaw);
+    if (!Number.isInteger(parsedId) || parsedId <= 0) {
+      pageBody = (
+        <section className="rj-stack-lg rec-page" aria-labelledby="rec-invalid-id">
+          <Link to="/candidate/applications" className="rj-btn rj-btn-ghost rec-back-btn">
+            <Icon name="arrow-left" size={16} />
+            <span>Quay lại danh sách ứng tuyển</span>
+          </Link>
+          <div className="rj-alert rj-alert-danger" role="alert">
+            <Icon name="alert-circle" size={20} />
+            <div>
+              <h1 id="rec-invalid-id" className="rec-detail-title rec-alert-heading">
+                Mã hồ sơ không hợp lệ
+              </h1>
+              <p>Không thể mở chi tiết hồ sơ ứng tuyển với đường dẫn hiện tại.</p>
+            </div>
+          </div>
+        </section>
+      );
+    } else {
+      pageBody = <ApplicationDetailView applicationId={parsedId} />;
+    }
+  } else {
+    const items = pageData?.items ?? [];
+    const totalItems = pageData?.totalItems ?? 0;
+    const totalPages = Math.max(pageData?.totalPages ?? 1, 1);
+    const activeCount = items.filter((item) => isOpenApplicationStatus(item.status)).length;
+    const closedCount = items.filter((item) => !isOpenApplicationStatus(item.status)).length;
+    // Prevent 1-frame empty-state flash when returning from ?id= before useEffect sets loading=true
+    const isListLoading = loading || (detailIdRaw === null && pageData === null && !error);
+    const isReady = !isListLoading && !error && pageData !== null;
+    const isPaginated = totalPages > 1 || items.length < totalItems;
+    const totalLabel = statusFilter !== '' ? 'Đơn phù hợp bộ lọc' : 'Tổng đơn đã nộp';
+    const activeLabel = isPaginated ? 'Đang xử lý (trang này)' : 'Đang xử lý';
+    const closedLabel = isPaginated ? 'Đã kết thúc (trang này)' : 'Đã kết thúc';
+
+    pageBody = (
+      <section className="rj-stack-lg rec-page" aria-labelledby="rec-page-heading">
+        <header className="rj-page-header">
+          <h1 id="rec-page-heading" className="rj-page-title">
+            Ứng tuyển của tôi
+          </h1>
+          <p className="rj-page-subtitle">
+            Theo dõi hồ sơ đã nộp, tiến độ tuyển dụng từng bước và lịch sử cập nhật từ doanh
+            nghiệp.
+          </p>
+        </header>
+
+        {isReady && (
+          <div className="rec-metrics-strip" aria-label="Thống kê hồ sơ ứng tuyển">
+            <div className="rj-cand-tile rj-stack-xs">
+              <span className="rj-cand-kicker">{totalLabel}</span>
+              <strong className="rj-cand-metric-val rec-metric-val rj-tabular-nums">
+                <AnimatedMetric value={totalItems} active={isReady} animate={playEntrance} />
+              </strong>
+            </div>
+
+            <div className="rj-cand-tile rj-stack-xs">
+              <span className="rj-cand-kicker">{activeLabel}</span>
+              <strong className="rj-cand-metric-val rec-metric-val rj-tabular-nums">
+                <AnimatedMetric value={activeCount} active={isReady} animate={playEntrance} />
+              </strong>
+            </div>
+
+            <div className="rj-cand-tile rj-stack-xs">
+              <span className="rj-cand-kicker">{closedLabel}</span>
+              <strong className="rj-cand-metric-val rec-metric-val rj-tabular-nums">
+                <AnimatedMetric value={closedCount} active={isReady} animate={playEntrance} />
+              </strong>
+            </div>
+          </div>
+        )}
+
+        <div className="rec-toolbar">
+          <div className="rec-filter-control">
+            <Select
+              id={filterId}
+              label="Lọc theo trạng thái"
+              value={statusFilter}
+              onChange={(event) => {
+                setPlayEntrance(false);
+                setStatusFilter(event.target.value as ApplicationStatus | '');
+                setPage(1);
+              }}
+            >
+              <option value="">Tất cả trạng thái</option>
+              {APPLICATION_STATUS_ORDER.map((status) => (
+                <option key={status} value={status}>
+                  {APPLICATION_STATUS_META[status].label}
+                </option>
+              ))}
+            </Select>
+          </div>
+
+          {isReady && (
+            <p className="rec-total-summary rj-tabular-nums">
+              Hiển thị {items.length} / {totalItems} hồ sơ
+            </p>
+          )}
+        </div>
+
+        {isListLoading && (
+          <div
+            className="rj-stack-md"
+            role="status"
+            aria-live="polite"
+            aria-label="Đang tải danh sách đơn ứng tuyển"
+          >
+            <span className="rj-sr-only">Đang tải danh sách đơn ứng tuyển...</span>
+            <div className="rec-metrics-strip" aria-hidden="true">
+              <div className="rj-cand-tile rj-stack-xs">
+                <span className="rj-skeleton rec-skeleton-kicker" />
+                <strong className="rj-cand-metric-val rec-metric-val">
+                  <span className="rj-skeleton rj-skeleton-inline" />
+                </strong>
+              </div>
+              <div className="rj-cand-tile rj-stack-xs">
+                <span className="rj-skeleton rec-skeleton-kicker" />
+                <strong className="rj-cand-metric-val rec-metric-val">
+                  <span className="rj-skeleton rj-skeleton-inline" />
+                </strong>
+              </div>
+              <div className="rj-cand-tile rj-stack-xs">
+                <span className="rj-skeleton rec-skeleton-kicker" />
+                <strong className="rj-cand-metric-val rec-metric-val">
+                  <span className="rj-skeleton rj-skeleton-inline" />
+                </strong>
+              </div>
+            </div>
+            <div className="rj-surface-card rj-stack-sm" aria-hidden="true">
+              <div className="rj-skeleton rj-skeleton-title" />
+              <div className="rj-skeleton rj-skeleton-text" />
+            </div>
+            <div className="rj-surface-card rj-stack-sm" aria-hidden="true">
+              <div className="rj-skeleton rj-skeleton-title" />
+              <div className="rj-skeleton rj-skeleton-text" />
+            </div>
+          </div>
+        )}
+
+        {!isListLoading && error && (
+          <div className="rj-alert rj-alert-danger" role="alert">
+            <Icon name="alert-circle" size={20} />
+            <div className="rj-stack-xs">
+              <strong>Không thể tải danh sách ứng tuyển</strong>
+              <p>{error}</p>
+              <button
+                type="button"
+                className="rj-btn rj-btn-primary"
+                onClick={() => setRetryCount((count) => count + 1)}
+              >
+                <Icon name="refresh" size={16} />
+                <span>Thử lại</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!isListLoading && !error && items.length === 0 && (
+          <div className="rj-empty-state">
+            <Icon name="file-check" size={24} />
+            {statusFilter ? (
+              <>
+                <h2 className="rj-role-card-title">Không có đơn ở trạng thái này</h2>
+                <p>Thử chọn trạng thái khác để xem các hồ sơ ứng tuyển của bạn.</p>
+                <button
+                  type="button"
+                  className="rj-btn rj-btn-secondary"
+                  onClick={() => {
+                    setPlayEntrance(false);
+                    setStatusFilter('');
+                    setPage(1);
+                  }}
+                >
+                  Xem tất cả trạng thái
+                </button>
+              </>
+            ) : (
+              <>
+                <h2 className="rj-role-card-title">Bạn chưa nộp đơn ứng tuyển nào</h2>
+                <p>
+                  Khám phá các vị trí việc làm gợi ý phù hợp với hồ sơ năng lực của bạn để bắt đầu
+                  ứng tuyển.
+                </p>
+                <Link to="/candidate/jobs" className="rj-btn rj-btn-primary">
+                  <span>Xem việc làm gợi ý</span>
+                  <Icon name="arrow-right" size={16} />
+                </Link>
+              </>
+            )}
+          </div>
+        )}
+
+        {!isListLoading && !error && items.length > 0 && (
+          <>
+            <div className="rj-stack-md">
+              {items.map((application, index) => (
+                <ApplicationCard
+                  key={application.id}
+                  application={application}
+                  index={index}
+                  animateEntrance={playEntrance}
+                />
+              ))}
+            </div>
+
+            {totalPages > 1 && (
+              <nav className="rec-pagination" aria-label="Phân trang đơn ứng tuyển">
+                <span className="rec-page-indicator rj-tabular-nums">
+                  Trang {page} / {totalPages}
+                </span>
+                <div className="rec-pagination-controls">
+                  <button
+                    type="button"
+                    className="rj-btn rj-btn-secondary"
+                    disabled={page <= 1}
+                    onClick={() => {
+                      setPlayEntrance(false);
+                      setPage((current) => Math.max(1, current - 1));
+                    }}
+                  >
+                    <Icon name="arrow-left" size={16} />
+                    <span>Trang trước</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="rj-btn rj-btn-secondary"
+                    disabled={page >= totalPages}
+                    onClick={() => {
+                      setPlayEntrance(false);
+                      setPage((current) => Math.min(totalPages, current + 1));
+                    }}
+                  >
+                    <span>Trang sau</span>
+                    <Icon name="arrow-right" size={16} />
+                  </button>
+                </div>
+              </nav>
+            )}
+          </>
+        )}
+      </section>
+    );
+  }
+
+  return (
+    <RoleHomeLayout
+      roleTitle="Ứng viên"
+      roleBadgeClass="rj-role-candidate"
+      roleIcon="user"
+      description="Theo dõi hồ sơ ứng tuyển đã nộp, tiến độ tuyển dụng từng bước và lịch sử cập nhật từ doanh nghiệp."
+      hideAccountCard
+    >
+      {pageBody}
+    </RoleHomeLayout>
+  );
+};
+
+export default MyApplicationsPage;
