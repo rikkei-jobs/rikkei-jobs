@@ -6,14 +6,7 @@ import java.time.OffsetDateTime;
 public record JobSummaryDto(
         Long id,
         String title,
+        Long companyId,
         String companyName,
-        String status, // e.g., "APPROVED", "DRAFT", "CLOSED"
-        OffsetDateTime deadline,
-        String hrEmail) {
-
-    public boolean isApprovedAndNotExpired() {
-        boolean isApproved = "APPROVED".equalsIgnoreCase(status);
-        boolean notExpired = deadline == null || deadline.isAfter(OffsetDateTime.now());
-        return isApproved && notExpired;
-    }
-}
+        String status,
+        OffsetDateTime deadline) {}

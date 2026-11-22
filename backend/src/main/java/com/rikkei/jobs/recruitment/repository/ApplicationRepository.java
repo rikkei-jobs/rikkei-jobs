@@ -20,11 +20,11 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
     /** Checks whether the candidate has ever applied to this job. */
     boolean existsByJobIdAndUserId(Long jobId, Long userId);
 
-    /** Retrieves all applications belonging to a candidate, ordered newest first. */
-    Page<Application> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
+    /** Retrieves paginated applications belonging to a candidate. */
+    Page<Application> findByUserId(Long userId, Pageable pageable);
 
-    /** Retrieves applications belonging to a candidate filtered by status, ordered newest first. */
-    Page<Application> findByUserIdAndStatusOrderByCreatedAtDesc(
+    /** Retrieves paginated applications belonging to a candidate filtered by status. */
+    Page<Application> findByUserIdAndStatus(
             Long userId, ApplicationStatus status, Pageable pageable);
 
     /**
@@ -33,7 +33,11 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
      */
     Optional<Application> findByIdAndUserId(Long id, Long userId);
 
-    Page<Application> findByJobIdOrderByCreatedAtDesc(Long jobId, Pageable pageable);
+    /** Retrieves paginated applications for a job (HR read-only view). */
+    Page<Application> findByJobId(Long jobId, Pageable pageable);
+
+    /** Retrieves paginated applications for a job filtered by status (HR read-only view). */
+    Page<Application> findByJobIdAndStatus(Long jobId, ApplicationStatus status, Pageable pageable);
 
     Optional<Application> findByIdAndJobId(Long id, Long jobId);
 }

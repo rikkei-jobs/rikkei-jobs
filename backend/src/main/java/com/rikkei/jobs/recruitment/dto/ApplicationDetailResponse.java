@@ -19,7 +19,7 @@ public record ApplicationDetailResponse(
         @Schema(description = "ID CV ứng viên đã chọn nộp", example = "1") Long cvId,
         @Schema(
                         description = "URL bản PDF đóng băng tại thời điểm nộp",
-                        example = "/snapshots/cv_1_snapshot_1700000000.pdf")
+                        example = "/api/v1/me/applications/1/cv-snapshot")
                 String cvSnapshotUrl,
         @Schema(description = "Thư giới thiệu") String coverLetter,
         @Schema(description = "Trạng thái ứng tuyển hiện tại", example = "SUBMITTED")

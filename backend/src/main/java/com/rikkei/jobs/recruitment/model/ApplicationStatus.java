@@ -12,7 +12,8 @@ public enum ApplicationStatus {
 
     /**
      * An application is open/active if it has not reached a terminal decision (HIRED, REJECTED,
-     * WITHDRAWN).
+     * WITHDRAWN). Re-applying to the same JD is blocked only while an open application exists;
+     * candidates may re-apply after any terminal status (WITHDRAWN, REJECTED, or HIRED).
      */
     public boolean isOpen() {
         return this == SUBMITTED || this == SCREENING || this == INTERVIEW || this == OFFER;

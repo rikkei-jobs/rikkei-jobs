@@ -5,6 +5,6 @@ public record ApplicationSubmittedEvent(
         Long applicationId,
         Long jobId,
         String jobTitle,
+        Long companyId,
         String companyName,
-        Long candidateUserId,
-        String hrEmail) {}
+        Long candidateUserId) {}

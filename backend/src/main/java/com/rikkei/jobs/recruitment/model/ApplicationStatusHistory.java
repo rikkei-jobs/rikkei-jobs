@@ -48,11 +48,22 @@ public class ApplicationStatusHistory {
             ApplicationStatus toStatus,
             Long actorId,
             String note) {
+        this(applicationId, fromStatus, toStatus, actorId, note, null);
+    }
+
+    public ApplicationStatusHistory(
+            Long applicationId,
+            ApplicationStatus fromStatus,
+            ApplicationStatus toStatus,
+            Long actorId,
+            String note,
+            OffsetDateTime createdAt) {
         this.applicationId = applicationId;
         this.fromStatus = fromStatus;
         this.toStatus = toStatus;
         this.actorId = actorId;
         this.note = note;
+        this.createdAt = createdAt;
     }
 
     @PrePersist

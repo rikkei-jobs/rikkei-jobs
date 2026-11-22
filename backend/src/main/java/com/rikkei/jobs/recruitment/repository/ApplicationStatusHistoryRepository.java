@@ -11,5 +11,5 @@ public interface ApplicationStatusHistoryRepository
         extends JpaRepository<ApplicationStatusHistory, Long> {
 
     /** Retrieves all history transitions for an application in ascending chronological order. */
-    List<ApplicationStatusHistory> findByApplicationIdOrderByCreatedAtAsc(Long applicationId);
+    List<ApplicationStatusHistory> findByApplicationIdOrderByCreatedAtAscIdAsc(Long applicationId);
 }
