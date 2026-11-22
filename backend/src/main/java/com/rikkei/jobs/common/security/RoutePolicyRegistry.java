@@ -336,7 +336,58 @@ public class RoutePolicyRegistry {
                             false,
                             "HR reads own company (404 on mismatch), STAFF reads any (methodScoped=false preserves 405 on PUT)",
                             OwnershipGuard.ROLE_HR,
-                            OwnershipGuard.ROLE_STAFF));
+                            OwnershipGuard.ROLE_STAFF),
+
+                    // 8. Recruitment Applications (UT-01: Candidate
+                    // apply/list/detail/withdraw/snapshot & HR read-only)
+                    RoutePolicy.roles(
+                            HttpMethod.POST,
+                            "/api/v1/jobs/{id}/apply",
+                            true,
+                            "Candidate submits CV application to an eligible job",
+                            OwnershipGuard.ROLE_CANDIDATE),
+                    RoutePolicy.roles(
+                            HttpMethod.GET,
+                            "/api/v1/me/applications",
+                            true,
+                            "Candidate lists own applications",
+                            OwnershipGuard.ROLE_CANDIDATE),
+                    RoutePolicy.roles(
+                            HttpMethod.GET,
+                            "/api/v1/me/applications/{id}",
+                            true,
+                            "Candidate views own application detail and history",
+                            OwnershipGuard.ROLE_CANDIDATE),
+                    RoutePolicy.roles(
+                            HttpMethod.POST,
+                            "/api/v1/me/applications/{id}/withdraw",
+                            true,
+                            "Candidate withdraws own application before OFFER",
+                            OwnershipGuard.ROLE_CANDIDATE),
+                    RoutePolicy.roles(
+                            HttpMethod.GET,
+                            "/api/v1/me/applications/{id}/cv-snapshot",
+                            true,
+                            "Candidate downloads own submitted CV PDF snapshot",
+                            OwnershipGuard.ROLE_CANDIDATE),
+                    RoutePolicy.roles(
+                            HttpMethod.GET,
+                            "/api/v1/hr/jobs/{jobId}/applications",
+                            true,
+                            "HR lists applications for own company job",
+                            OwnershipGuard.ROLE_HR),
+                    RoutePolicy.roles(
+                            HttpMethod.GET,
+                            "/api/v1/hr/jobs/{jobId}/applications/{applicationId}",
+                            true,
+                            "HR views application detail for own company job",
+                            OwnershipGuard.ROLE_HR),
+                    RoutePolicy.roles(
+                            HttpMethod.GET,
+                            "/api/v1/hr/jobs/{jobId}/applications/{applicationId}/cv-snapshot",
+                            true,
+                            "HR downloads submitted CV PDF snapshot for own company job",
+                            OwnershipGuard.ROLE_HR));
 
     private static final PathPatternParser PATTERN_PARSER = new PathPatternParser();
 

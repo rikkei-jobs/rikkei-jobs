@@ -1,5 +1,7 @@
 package com.rikkei.jobs.common.config;
 
+import jakarta.mail.internet.AddressException;
+import jakarta.mail.internet.InternetAddress;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -39,7 +41,9 @@ public class ProdEnvironmentValidator implements ApplicationListener<Application
                     "CLOUDINARY_API_KEY",
                     "CLOUDINARY_API_SECRET",
                     "CLOUDINARY_API_BASE_URL",
-                    "CLOUDINARY_DELIVERY_BASE_URL");
+                    "CLOUDINARY_DELIVERY_BASE_URL",
+                    "APP_FRONTEND_URL",
+                    "APP_MAIL_FROM");
 
     private static final Set<String> INSECURE_DEFAULT_VALUES =
             Set.of(
@@ -52,6 +56,7 @@ public class ProdEnvironmentValidator implements ApplicationListener<Application
                     "your-cloud-name",
                     "your-api-key",
                     "your-api-secret",
+                    "no-reply@rikkeijobs.local",
                     "change-me",
                     "change_me",
                     "changeme",
@@ -129,7 +134,15 @@ public class ProdEnvironmentValidator implements ApplicationListener<Application
 
             if ("CLOUDINARY_API_BASE_URL".equals(varName)
                     || "CLOUDINARY_DELIVERY_BASE_URL".equals(varName)) {
-                validateCloudinaryUrl(varName, trimmedValue);
+                validateHttpsExternalUrl(varName, trimmedValue, true);
+            }
+
+            if ("APP_FRONTEND_URL".equals(varName)) {
+                validateHttpsExternalUrl(varName, trimmedValue, false);
+            }
+
+            if ("APP_MAIL_FROM".equals(varName)) {
+                validateMailFromAddress(varName, trimmedValue);
             }
 
             if ("JWT_SECRET".equals(varName)) {
@@ -168,7 +181,8 @@ public class ProdEnvironmentValidator implements ApplicationListener<Application
                 "Cấu hình môi trường Production đã được xác thực an toàn (fail-fast check PASSED).");
     }
 
-    private static void validateCloudinaryUrl(String varName, String trimmedValue) {
+    private static void validateHttpsExternalUrl(
+            String varName, String trimmedValue, boolean rejectNonCloudinaryPath) {
         URI uri;
         try {
             uri = URI.create(trimmedValue);
@@ -193,22 +207,59 @@ public class ProdEnvironmentValidator implements ApplicationListener<Application
         String rawPath = uri.getRawPath();
         String lowerPath = rawPath != null ? rawPath.toLowerCase(Locale.ROOT) : "";
         boolean isLoopbackOrMock =
-                "localhost".equals(lowerHost)
-                        || "127.0.0.1".equals(lowerHost)
-                        || "0.0.0.0".equals(lowerHost)
-                        || "::1".equals(lowerHost)
-                        || "[::1]".equals(lowerHost)
-                        || "mock".equals(lowerHost)
-                        || lowerHost.startsWith("mock.")
-                        || lowerHost.endsWith(".mock")
-                        || lowerHost.endsWith(".local")
-                        || (!lowerHost.endsWith("cloudinary.com")
+                isLoopbackOrMockHost(lowerHost)
+                        || (rejectNonCloudinaryPath
+                                && !lowerHost.endsWith("cloudinary.com")
                                 && lowerPath.startsWith("/cloudinary"));
         if (isLoopbackOrMock) {
             throw new IllegalStateException(
                     "CẤU HÌNH PRODUCTION THẤT BẠI: Biến môi trường bắt buộc bị thiếu hoặc không an toàn: "
                             + varName
                             + " không được trỏ tới máy chủ mock hoặc địa chỉ nội bộ");
+        }
+    }
+
+    private static boolean isLoopbackOrMockHost(String lowerHost) {
+        return "localhost".equals(lowerHost)
+                || "127.0.0.1".equals(lowerHost)
+                || "0.0.0.0".equals(lowerHost)
+                || "::1".equals(lowerHost)
+                || "[::1]".equals(lowerHost)
+                || "mock".equals(lowerHost)
+                || lowerHost.startsWith("mock.")
+                || lowerHost.endsWith(".mock")
+                || lowerHost.endsWith(".local");
+    }
+
+    private static void validateMailFromAddress(String varName, String trimmedValue) {
+        try {
+            InternetAddress[] parsed = InternetAddress.parse(trimmedValue, true);
+            if (parsed.length != 1) {
+                throw new AddressException("Expected exactly one sender address");
+            }
+            InternetAddress address = parsed[0];
+            address.validate();
+            String plainAddress = address.getAddress();
+            if (plainAddress == null || !plainAddress.equals(trimmedValue)) {
+                throw new AddressException("Address must be a plain email without display name");
+            }
+            int atIndex = plainAddress.indexOf('@');
+            if (atIndex <= 0 || atIndex >= plainAddress.length() - 1) {
+                throw new AddressException("Missing email local-part or domain");
+            }
+            String domain = plainAddress.substring(atIndex + 1).toLowerCase(Locale.ROOT);
+            if (!domain.contains(".")
+                    || domain.startsWith(".")
+                    || domain.endsWith(".")
+                    || isLoopbackOrMockHost(domain)) {
+                throw new AddressException("Invalid or local-only sender email domain");
+            }
+        } catch (AddressException ex) {
+            throw new IllegalStateException(
+                    "CẤU HÌNH PRODUCTION THẤT BẠI: Biến môi trường bắt buộc bị thiếu hoặc không an toàn: "
+                            + varName
+                            + " không phải địa chỉ email hợp lệ",
+                    ex);
         }
     }
 
@@ -257,6 +308,8 @@ public class ProdEnvironmentValidator implements ApplicationListener<Application
             case "CLOUDINARY_API_BASE_URL" -> environment.getProperty("cloudinary.api-base-url");
             case "CLOUDINARY_DELIVERY_BASE_URL" ->
                     environment.getProperty("cloudinary.delivery-base-url");
+            case "APP_FRONTEND_URL" -> environment.getProperty("app.frontend-url");
+            case "APP_MAIL_FROM" -> environment.getProperty("app.mail.from");
             default -> null;
         };
     }

@@ -32,6 +32,8 @@ public class ProdEnvironmentValidatorTest {
         env.setProperty(
                 "CLOUDINARY_DELIVERY_BASE_URL",
                 "https://res.cloudinary.com/prod-rikkei-cloud/image/upload");
+        env.setProperty("APP_FRONTEND_URL", "https://rikkeijobs.com");
+        env.setProperty("APP_MAIL_FROM", "no-reply@rikkeijobs.com");
         return env;
     }
 
@@ -64,6 +66,8 @@ public class ProdEnvironmentValidatorTest {
         env.setProperty(
                 "cloudinary.delivery-base-url",
                 "https://res.cloudinary.com/prod-rikkei-cloud/image/upload");
+        env.setProperty("app.frontend-url", "https://rikkeijobs.com");
+        env.setProperty("app.mail.from", "no-reply@rikkeijobs.com");
 
         ProdEnvironmentValidator validator = new ProdEnvironmentValidator(env);
         assertDoesNotThrow(validator::validateEnvironment);
@@ -143,7 +147,9 @@ public class ProdEnvironmentValidatorTest {
                 "CLOUDINARY_API_KEY",
                 "CLOUDINARY_API_SECRET",
                 "CLOUDINARY_API_BASE_URL",
-                "CLOUDINARY_DELIVERY_BASE_URL"
+                "CLOUDINARY_DELIVERY_BASE_URL",
+                "APP_FRONTEND_URL",
+                "APP_MAIL_FROM"
             })
     @DisplayName("Fail-fast: Startup rejected when any mandatory variable is missing")
     void testFailFastWhenVariableMissing(String missingVar) {
@@ -293,5 +299,59 @@ public class ProdEnvironmentValidatorTest {
         IllegalStateException deliveryEx =
                 assertThrows(IllegalStateException.class, deliveryValidator::validateEnvironment);
         assertTrue(deliveryEx.getMessage().contains("CLOUDINARY_DELIVERY_BASE_URL"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(
+            strings = {
+                "http://rikkeijobs.com",
+                "http://localhost:3000",
+                "https://localhost:3000",
+                "https://127.0.0.1:3000",
+                "https://0.0.0.0:3000",
+                "https://[::1]:3000",
+                "https://mock:3000",
+                "https://mock.internal",
+                "https://jobs.mock",
+                "https://jobs.local",
+                "not a valid url"
+            })
+    @DisplayName(
+            "Fail-fast: Startup rejected when APP_FRONTEND_URL is non-https, invalid, or loopback/mock")
+    void testFailFastWhenFrontendUrlIsInvalid(String badFrontendUrl) {
+        MockEnvironment env = createValidEnvironment();
+        env.setProperty("APP_FRONTEND_URL", badFrontendUrl);
+
+        ProdEnvironmentValidator validator = new ProdEnvironmentValidator(env);
+        IllegalStateException ex =
+                assertThrows(IllegalStateException.class, validator::validateEnvironment);
+        assertTrue(ex.getMessage().contains("CẤU HÌNH PRODUCTION THẤT BẠI"));
+        assertTrue(ex.getMessage().contains("APP_FRONTEND_URL"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(
+            strings = {
+                "no-reply@rikkeijobs.local",
+                "NO-REPLY@RIKKEIJOBS.LOCAL",
+                "not-an-email",
+                "admin@localhost",
+                "hr@rikkei.local",
+                "hr@rikkei.mock",
+                "HR <hr@rikkeijobs.com>",
+                "one@a.com,two@b.com",
+                "user@example"
+            })
+    @DisplayName(
+            "Fail-fast: Startup rejected when APP_MAIL_FROM is dev placeholder or invalid email address")
+    void testFailFastWhenMailFromIsInvalid(String badMailFrom) {
+        MockEnvironment env = createValidEnvironment();
+        env.setProperty("APP_MAIL_FROM", badMailFrom);
+
+        ProdEnvironmentValidator validator = new ProdEnvironmentValidator(env);
+        IllegalStateException ex =
+                assertThrows(IllegalStateException.class, validator::validateEnvironment);
+        assertTrue(ex.getMessage().contains("CẤU HÌNH PRODUCTION THẤT BẠI"));
+        assertTrue(ex.getMessage().contains("APP_MAIL_FROM"));
     }
 }
