@@ -69,6 +69,8 @@ export SPRING_DATASOURCE_USERNAME="rikkei_app"
 export SPRING_DATASOURCE_PASSWORD="rikkei_secret"
 export EXTERNAL_BASE_URL="http://localhost:9000"
 export EXTERNAL_SERVICE_KEY="dev-key"
+export APP_FRONTEND_URL="http://localhost:3000"
+export APP_MAIL_FROM="no-reply@rikkeijobs.local"
 
 # Run with the dev profile to enable seed data and Swagger UI
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
@@ -192,6 +194,8 @@ export SPRING_DATASOURCE_USERNAME="rikkei_app"
 export SPRING_DATASOURCE_PASSWORD="rikkei_secret"
 export EXTERNAL_BASE_URL="http://localhost:9000"
 export EXTERNAL_SERVICE_KEY="dev-key"
+export APP_FRONTEND_URL="http://localhost:3000"
+export APP_MAIL_FROM="no-reply@rikkeijobs.local"
 
 # Chạy với profile dev để tự động nạp dữ liệu mẫu seed và bật OpenAPI Swagger UI
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev

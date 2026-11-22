@@ -35,7 +35,7 @@ The system is partitioned into **7 business modules** plus the foundational **Id
 | **Internship IOC** | `internship` | `features/internship` | IOC internship sync from `lms-pm`, batch/topic tracking, accepted task scores (future allocation tables: `internship_batches`, `internship_members`) | `internships`, `internship_tasks` |
 | **Assessment** | `assessment` | `features/assessment` | Mentor evaluations, self-assessments, 20-skills catalogue | `skills`, `assessment_templates`, `assessment_forms`, `skill_badges` |
 | **Supplementary Training** | `learning` | `features/learning` | JD skill-gap analysis, LMS course recommendations, enrollments | `skill_gaps`, `learning_recommendations`, `course_enrollments` |
-| **Recruitment** | `recruitment` | `features/recruitment` | Job applications, candidate screening, interview scheduling | `applications`, `interview_rounds`, `interview_rooms`, `job_offers` |
+| **Recruitment** | `recruitment` | `features/recruitment` | Job applications, immutable CV PDF snapshots, status tracking, HR read-only views (future UT-02/interview tables: `interview_rounds`, `interview_rooms`, `job_offers`) | `applications`, `application_status_history`, `application_cv_snapshots` |
 | **AI Career Assistant**| `ai` | `features/ai` | Gemini-powered CV review, job matching, interview rehearsal | Stateless (no persistent tables; interacts via DTOs) |
 
 ---
@@ -55,12 +55,21 @@ The system is partitioned into **7 business modules** plus the foundational **Id
 5. **Centralized External API Client**:
    - Outbound calls to external systems (LMS, Exam, PM, Meet) must route exclusively through `ExternalApiClient`. Direct ad-hoc HTTP calls from business domains are forbidden.
 
-### 4. Active Cross-Module Contracts (`TT-01` Internship Sync)
+### 4. Active Cross-Module Contracts (`TT-01` & `UT-01`)
+
+#### 4.1. `TT-01` Internship Sync
 
 - **`internship` -> `identity`**: Consumes `IdentityPublicService#existsById(Long userId)` and `IdentityPublicService#findLmsUserIdByUserId(Long userId)` (`Optional<String>`). The `internships.user_id` column is a plain scalar `BIGINT` with no physical foreign key to `users`.
 - **`internship` -> `candidate`**: Consumes `CandidatePublicService#isProfilePublic(Long candidateUserId)` and `CandidatePublicService#recordPmInternshipResults(Long candidateUserId, List<PmInternshipResultCommand> results)` using the immutable record `PmInternshipResultCommand(String batchId, String topicName, BigDecimal finalScore)`.
 - **`candidate` Exclusive Skill Ownership**: The `candidate` module retains exclusive ownership of `external_records`, `skill_mappings`, `skill_evidences`, and `skill_scores`, performing an idempotent upsert on `(candidateUserId, ExternalSource.PM, batchId)` (`finalScore * 10`, `RoundingMode.HALF_UP` to 2 decimals, clamped to `[0.00, 100.00]`, skipping null `finalScore` or blank `topicName`) and invoking `SkillRecomputeService#recomputeSkills`.
 - **Non-Transactional Fast-Fail HTTP & Bean Separation**: `InternshipSyncServiceImpl` invokes `ExternalApiClient#getStudentInternshipsFastFail` (`<= 2.5 s`, `0` retries) outside `@Transactional`, then delegates short database writes to a separate proxied bean (`InternshipPersistenceService`) using `@Transactional(rollbackFor = Exception.class)`.
+
+#### 4.2. `UT-01` Candidate CV Application & Status Tracking
+
+- **`recruitment` -> `identity`**: Consumes `IdentityPublicService#findActiveHrRecipientsByCompanyId(Long companyId)` returning `List<HrRecipientDto(Long userId, String email, String fullName)>` (no raw `User` entity exposed). Scalar columns `applications.user_id` and `application_status_history.actor_id` carry no physical foreign keys to `users`.
+- **`recruitment` -> `company`**: Consumes `JobQueryService#findJobForApplication(Long jobId)`, `findJobSummariesByIds(Set<Long> jobIds)`, and `isJobOwnedByCompany(Long jobId, Long companyId)` returning immutable `JobApplicationInfoDto` records over the existing `jobs` table (`V11`). `applications.job_id` is a plain scalar `BIGINT`.
+- **`recruitment` <-> `candidate` (`CvPort`)**: `recruitment` owns the `CvPort` interface (`getOwnedCvForApplication(Long cvId, Long candidateUserId)` -> `CvSnapshotPayload`). Until `HS-04` merges into `develop`, a `@ConditionalOnMissingBean(CvPort.class)` placeholder throws `CvServiceUnavailableException` (`503 CV_SERVICE_UNAVAILABLE`). Once `HS-04` lands, `candidate` provides the Spring adapter without modifying `recruitment`.
+- **Transaction Split & Post-Commit Async Mail**: `ApplicationServiceImpl` performs JD eligibility checks, duplicate pre-checks, and `CvPort` PDF snapshot capture outside any transaction, then delegates to `ApplicationPersistenceTxService` (`@Transactional(rollbackFor = Exception.class)`) for single-insert `applications` (sequence-allocated `id`), `application_cv_snapshots`, initial `application_status_history`, and `ApplicationSubmittedEvent` publication. `HrNotificationListener` dispatches HR emails via Spring Mail only at `TransactionPhase.AFTER_COMMIT` on a bounded `ThreadPoolTaskExecutor` (`notificationTaskExecutor`).
 
 ---
 
@@ -97,7 +106,7 @@ Hệ thống được chia thành **7 module nghiệp vụ** cùng module nền 
 | **Internship IOC** | `internship` | `features/internship` | Đồng bộ thực tập IOC từ `lms-pm`, theo dõi đợt/đề tài và điểm task đã nghiệm thu (bảng ghép đợt dự kiến giai đoạn sau: `internship_batches`, `internship_members`) | `internships`, `internship_tasks` |
 | **Assessment** | `assessment` | `features/assessment` | Phiếu đánh giá của Mentor, tự đánh giá, danh mục 20 kỹ năng | `skills`, `assessment_templates`, `assessment_forms`, `skill_badges` |
 | **Supplementary Training** | `learning` | `features/learning` | Phân tích khoảng thiếu hụt so với JD, gợi ý môn học LMS, ghi danh | `skill_gaps`, `learning_recommendations`, `course_enrollments` |
-| **Recruitment** | `recruitment` | `features/recruitment` | Ứng tuyển bằng CV, sàng lọc, lên lịch phỏng vấn (Rikkei Meet) | `applications`, `interview_rounds`, `interview_rooms`, `job_offers` |
+| **Recruitment** | `recruitment` | `features/recruitment` | Ứng tuyển bằng CV, đóng băng bản PDF snapshot, theo dõi trạng thái, HR xem chỉ đọc (bảng dự kiến `UT-02`/phỏng vấn: `interview_rounds`, `interview_rooms`, `job_offers`) | `applications`, `application_status_history`, `application_cv_snapshots` |
 | **AI Career Assistant**| `ai` | `features/ai` | Trợ lý Gemini tối ưu CV, gợi ý việc làm, luyện phỏng vấn | Không lưu bảng riêng (giao tiếp qua DTO) |
 
 ---
@@ -117,9 +126,18 @@ Hệ thống được chia thành **7 module nghiệp vụ** cùng module nền 
 5. **Thành phần Tích hợp Hệ thống Ngoài Tập trung**:
    - Toàn bộ giao tiếp ra hệ thống ngoài (LMS, Khảo thí, IOC PM, Meet) bắt buộc phải đi qua `ExternalApiClient` dùng chung. Nghiêm cấm các domain module tự tạo HTTP client riêng lẻ.
 
-### 4. Hợp đồng Giao tiếp Liên Module Hiện hành (`TT-01` Đồng bộ Thực tập IOC)
+### 4. Hợp đồng Giao tiếp Liên Module Hiện hành (`TT-01` & `UT-01`)
+
+#### 4.1. Đồng bộ Thực tập IOC (`TT-01`)
 
 - **`internship` -> `identity`**: Gọi `IdentityPublicService#existsById(Long userId)` và `IdentityPublicService#findLmsUserIdByUserId(Long userId)` (`Optional<String>`). Cột `internships.user_id` là `BIGINT` vô hướng, không tạo khóa ngoại vật lý tới `users`.
 - **`internship` -> `candidate`**: Gọi `CandidatePublicService#isProfilePublic(Long candidateUserId)` và `CandidatePublicService#recordPmInternshipResults(Long candidateUserId, List<PmInternshipResultCommand> results)` qua bản ghi bất biến `PmInternshipResultCommand(String batchId, String topicName, BigDecimal finalScore)`.
 - **Quyền sở hữu độc quyền dữ liệu kỹ năng của `candidate`**: Module `candidate` toàn quyền quản lý `external_records`, `skill_mappings`, `skill_evidences` và `skill_scores`, thực hiện upsert bất biến theo khóa `(candidateUserId, ExternalSource.PM, batchId)` (`finalScore * 10`, làm tròn `RoundingMode.HALF_UP` 2 chữ số, kẹp trong khoảng `[0.00, 100.00]`, bỏ qua khi `finalScore` null hoặc `topicName` rỗng) rồi kích hoạt `SkillRecomputeService#recomputeSkills`.
 - **Tách HTTP Fast-Fail khỏi `@Transactional`**: `InternshipSyncServiceImpl` gọi `ExternalApiClient#getStudentInternshipsFastFail` (`<= 2.5 giây`, `0` retry) bên ngoài giao dịch DB, sau đó ủy quyền ghi DB ngắn qua bean riêng có proxy (`InternshipPersistenceService`) với `@Transactional(rollbackFor = Exception.class)`.
+
+#### 4.2. Ứng tuyển bằng CV & Theo dõi Trạng thái (`UT-01`)
+
+- **`recruitment` -> `identity`**: Gọi `IdentityPublicService#findActiveHrRecipientsByCompanyId(Long companyId)` trả về `List<HrRecipientDto(Long userId, String email, String fullName)>` (không lộ entity `User`). Các cột `applications.user_id` và `application_status_history.actor_id` là `BIGINT` vô hướng không khóa ngoại tới `users`.
+- **`recruitment` -> `company`**: Gọi `JobQueryService#findJobForApplication(Long jobId)`, `findJobSummariesByIds(Set<Long> jobIds)` và `isJobOwnedByCompany(Long jobId, Long companyId)` trả về bản ghi bất biến `JobApplicationInfoDto` trên bảng `jobs` (`V11`). Cột `applications.job_id` là `BIGINT` vô hướng.
+- **`recruitment` <-> `candidate` (`CvPort`)**: Module `recruitment` sở hữu interface `CvPort` (`getOwnedCvForApplication(Long cvId, Long candidateUserId)` -> `CvSnapshotPayload`). Trong khi chờ `HS-04` hợp nhất vào `develop`, bean `@ConditionalOnMissingBean(CvPort.class)` trả lỗi `CvServiceUnavailableException` (`503 CV_SERVICE_UNAVAILABLE`). Khi `HS-04` sẵn sàng, `candidate` cung cấp adapter thật mà không cần sửa `recruitment`.
+- **Tách ranh giới giao dịch & Gửi email sau commit**: `ApplicationServiceImpl` kiểm tra điều kiện JD, kiểm tra trùng đơn mở và tải byte PDF qua `CvPort` bên ngoài `@Transactional`, sau đó ủy quyền cho `ApplicationPersistenceTxService` (`@Transactional(rollbackFor = Exception.class)`) chèn đơn `applications` trong một lệnh `INSERT` duy nhất (cấp `id` từ sequence), lưu `application_cv_snapshots`, ghi mốc `application_status_history` đầu tiên và phát `ApplicationSubmittedEvent`. `HrNotificationListener` gửi email qua Spring Mail ở pha `TransactionPhase.AFTER_COMMIT` trên `ThreadPoolTaskExecutor` giới hạn (`notificationTaskExecutor`).
