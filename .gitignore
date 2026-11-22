@@ -41,6 +41,10 @@ hs_err_pid*
 replay_pid*
 .attach_pid*
 
+# Gradle Build Artifacts
+.gradle/
+**/.gradle/
+
 # Node / NPM / Vite / Frontend & Mock Artifacts
 node_modules/
 **/node_modules/
@@ -101,6 +105,7 @@ docs/dn01/pr-screenshots/
 docs/nt02/pr-screenshots/
 docs/uiux/pr-screenshots/
 docs/tt01/pr-screenshots/
+docs/ut01/pr-screenshots/
 
 # ==============================================================================
 # AI Coding Agent Configuration (.claude & .gemini mirrors)
