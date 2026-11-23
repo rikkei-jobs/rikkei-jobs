@@ -172,6 +172,14 @@ All error responses strictly comply with the project error format specified in `
    - `self_score` reflects the score of the most recent `SELF` source evidence.
 6. **Future Extensibility**:
    - Subsequent milestone DG-03 will enhance the scoring formula with configurable source weights via `SkillScoreCalculator`.
+7. **PM Sync Skip & Skill Recomputation Invariant**:
+   - `CandidatePublicServiceImpl#recordPmInternshipResults` skips both the `external_records` update and `SkillRecomputeService#recomputeSkills` when a single existing PM record already matches the incoming normalized `title` and scaled `score`.
+   - This skip is safe under the current architecture because:
+     - `skill_mappings` has no runtime mutation endpoint, service, or scheduler (seeded only by `V4__dev_skill_profile_seed.sql`).
+     - `SkillScoreCalculator` is pure and stateless (`RECENT_FACTOR = 1.0`, `OLD_FACTOR = 0.5`, 1-year cutoff).
+     - Mentor evaluations (`EvaluationServiceImpl#submitEvaluation`) immediately invoke `CandidatePublicService#recomputeCandidateSkills`.
+     - Preserving `recorded_at` when a PM record is unchanged prevents resetting evidence age relative to the 1-year `timeFactor` threshold, while `POST /api/v1/profiles/me/skills/recompute` remains available for explicit recalculation across the 1-year boundary.
+   - Any future feature that mutates `skill_mappings` or scoring parameters at runtime must explicitly trigger `recomputeSkills` for affected candidates.
 
 ---
 
@@ -342,3 +350,11 @@ Tất cả các phản hồi lỗi đều tuân thủ cấu trúc đồng nhất
    - `self_score` lấy giá trị điểm của bằng chứng tự khai (nguồn `SELF`) gần nhất.
 6. **Kế Hoạch Nâng Cấp Tương Lai**:
    - Tính năng DG-03 trong tương lai sẽ thay thế công thức tính toán đơn giản bằng công thức trọng số nguồn nâng cao, đóng gói trong `SkillScoreCalculator`.
+7. **Bất Biến Bỏ Qua Khi Kết Quả PM Không Đổi (PM Sync Skip Invariant)**:
+   - `CandidatePublicServiceImpl#recordPmInternshipResults` bỏ qua việc ghi đè `external_records` và bỏ qua `SkillRecomputeService#recomputeSkills` khi bản ghi PM duy nhất hiện có đã trùng khớp hoàn toàn cả `title` chuẩn hóa lẫn `score` quy đổi.
+   - Bất biến này an toàn trong kiến trúc hiện tại vì:
+     - Bảng `skill_mappings` không có endpoint, service hay tác vụ định kỳ nào chỉnh sửa ở runtime (chỉ seed qua `V4__dev_skill_profile_seed.sql`).
+     - `SkillScoreCalculator` là hàm thuần không trạng thái (`RECENT_FACTOR = 1.0`, `OLD_FACTOR = 0.5`, mốc 1 năm).
+     - Khi mentor gửi đánh giá (`EvaluationServiceImpl#submitEvaluation`), hệ thống gọi ngay `CandidatePublicService#recomputeCandidateSkills`.
+     - Việc giữ nguyên `recorded_at` khi bản ghi PM không đổi giúp không làm mới tuổi của bằng chứng trước mốc 1 năm `timeFactor`, đồng thời endpoint `POST /api/v1/profiles/me/skills/recompute` vẫn sẵn sàng để ứng viên tính lại khi vượt qua mốc 1 năm.
+   - Mọi tính năng tương lai nếu bổ sung đường dẫn cập nhật `skill_mappings` hoặc tham số tính điểm ở runtime bắt buộc phải kích hoạt lại `recomputeSkills` cho các ứng viên bị ảnh hưởng.

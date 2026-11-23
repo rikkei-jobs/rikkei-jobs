@@ -48,6 +48,12 @@ The security of Rikkei Jobs is built on the strict enforcement of the **Zero Rea
   - `STAFF`: Approves candidate profiles, approves enterprise JDs, unlocks contact info.
   - `ADMIN`: System configuration, audit logs, 20 skills catalogue management.
 
+#### JWT Validation Rules & Deployment Rollout Note
+
+- **Enforced Claims & Verification**: `JwtService` signs access tokens with `HS256` (`alg`) and strictly enforces HMAC-SHA256 signature verification, token expiration/not-before (`exp`/`nbf`) against the server clock, required issuer `iss="rikkei-jobs"`, and required audience `aud="rikkei-jobs-api"`.
+- **Purpose of `jti` Claim**: Each issued token includes a random UUID `jti` solely as a unique per-token correlation and audit identifier; `jti` is **not** checked for revocation or replay. Stateful token revocation (such as `token_version` on `users`) remains **Proposed, not applied**.
+- **Deployment Rollout Note**: Because `iss` (`rikkei-jobs`) and `aud` (`rikkei-jobs-api`) are strictly required by `JwtService#extractAllClaims`, any JWT issued prior to deploying this change without those exact claims will be rejected with HTTP `401 Unauthorized`. Active users will be forced to re-login once after rollout (maximum impact window: up to the 8-hour token TTL).
+
 ---
 
 ### 4. Data Privacy, PII Protection & Audit Immutability
@@ -108,6 +114,12 @@ An ninh của nền tảng Rikkei Jobs được xây dựng dựa trên nguyên 
   - `MENTOR`: Điền phiếu đánh giá năng lực, chấm điểm chuyên môn phỏng vấn.
   - `STAFF`: Xét duyệt hồ sơ năng lực, phê duyệt JD của doanh nghiệp, mở thông tin liên hệ.
   - `ADMIN`: Quản trị hệ thống, danh mục 20 kỹ năng, xem nhật ký kiểm toán (audit log).
+
+#### Quy tắc Xác thực JWT & Lưu ý Triển khai (Rollout)
+
+- **Các trường được kiểm chứng thực tế**: `JwtService` ký access token bằng `HS256` (`alg`) và bắt buộc kiểm tra chữ ký HMAC-SHA256, thời hạn `exp`/`nbf` theo đồng hồ máy chủ, trường định danh nhà phát hành `iss="rikkei-jobs"`, và đối tượng tiếp nhận `aud="rikkei-jobs-api"`.
+- **Mục đích của `jti`**: Mỗi token được cấp kèm một UUID ngẫu nhiên ở trường `jti` chỉ nhằm làm mã định danh duy nhất phục vụ đối chiếu log/audit cho từng token; `jti` **không** được kiểm tra để thu hồi hay chống phát lại. Cơ chế thu hồi token có trạng thái (như `token_version` trên bảng `users`) vẫn giữ ở trạng thái **Đề xuất, chưa áp dụng** (Proposed, not applied).
+- **Lưu ý khi triển khai (Deployment Note)**: Do `JwtService#extractAllClaims` bắt buộc yêu cầu `iss` (`rikkei-jobs`) và `aud` (`rikkei-jobs-api`), mọi token JWT được phát hành trước thời điểm triển khai phiên bản mới sẽ bị từ chối với HTTP `401 Unauthorized`. Người dùng đang đăng nhập sẽ phải đăng nhập lại một lần sau khi triển khai (thời gian ảnh hưởng tối đa bằng thời hạn sống TTL 8 giờ của token).
 
 ---
 
