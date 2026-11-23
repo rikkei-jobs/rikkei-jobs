@@ -52,6 +52,7 @@ public class GapAnalysisService {
     private final PositionSkillRepository positionSkillRepository;
     private final CandidateTargetRepository candidateTargetRepository;
     private final GapResultRepository gapResultRepository;
+    private final GapResultPersistenceService gapResultPersistenceService;
     private final SkillScoreRepository skillScoreRepository;
     private final SkillCatalogService skillCatalogService;
     private final JobQueryService jobQueryService;
@@ -63,6 +64,7 @@ public class GapAnalysisService {
             PositionSkillRepository positionSkillRepository,
             CandidateTargetRepository candidateTargetRepository,
             GapResultRepository gapResultRepository,
+            GapResultPersistenceService gapResultPersistenceService,
             SkillScoreRepository skillScoreRepository,
             SkillCatalogService skillCatalogService,
             JobQueryService jobQueryService,
@@ -72,6 +74,7 @@ public class GapAnalysisService {
         this.positionSkillRepository = positionSkillRepository;
         this.candidateTargetRepository = candidateTargetRepository;
         this.gapResultRepository = gapResultRepository;
+        this.gapResultPersistenceService = gapResultPersistenceService;
         this.skillScoreRepository = skillScoreRepository;
         this.skillCatalogService = skillCatalogService;
         this.jobQueryService = jobQueryService;
@@ -129,11 +132,26 @@ public class GapAnalysisService {
 
     /**
      * Computes the gap against {@code jobIdOverride} when present, otherwise against the saved
-     * target. Deficits are persisted in gap_results; satisfied skills are omitted from the items.
+     * target. Warm reads run read-only without advisory locks and persist only when persisted
+     * deficits differ.
      */
-    @Transactional
     public GapAnalysisResponse analyze(Long userId, Long jobIdOverride) {
-        lockCandidate(userId);
+        GapResultPersistenceService.PersistTargetSnapshot snapshot =
+                gapResultPersistenceService.readOnly(() -> computeSnapshot(userId, jobIdOverride));
+
+        if (!snapshot.matchesExisting()) {
+            snapshot =
+                    gapResultPersistenceService.persistDeficits(
+                            userId, () -> computeSnapshot(userId, jobIdOverride));
+        }
+
+        List<GapItemDto> items =
+                snapshot.missingSkills().stream().map(GapAnalysisService::toItemDto).toList();
+        return new GapAnalysisResponse(snapshot.targetDto(), snapshot.readiness(), items);
+    }
+
+    private GapResultPersistenceService.PersistTargetSnapshot computeSnapshot(
+            Long userId, Long jobIdOverride) {
         ResolvedTarget target =
                 jobIdOverride != null
                         ? jobTarget(jobQueryService.getOpenJob(jobIdOverride))
@@ -150,29 +168,43 @@ public class GapAnalysisService {
 
         GapAnalysisCalculator.Outcome outcome =
                 GapAnalysisCalculator.analyze(target.requirements(), verifiedScores);
+        List<GapResult> existing =
+                gapResultRepository.findByUserIdAndTargetTypeAndTargetId(
+                        userId, target.type(), target.id());
+        boolean matches = matchesExisting(existing, outcome.missingSkills());
+        return new GapResultPersistenceService.PersistTargetSnapshot(
+                target.dto(),
+                target.type(),
+                target.id(),
+                outcome.readiness(),
+                outcome.missingSkills(),
+                matches);
+    }
 
-        OffsetDateTime now = OffsetDateTime.now(clock);
-        gapResultRepository.deleteByTarget(userId, target.type(), target.id());
-        if (!outcome.missingSkills().isEmpty()) {
-            gapResultRepository.saveAll(
-                    outcome.missingSkills().stream()
-                            .map(
-                                    missing ->
-                                            new GapResult(
-                                                    userId,
-                                                    target.type(),
-                                                    target.id(),
-                                                    missing.skillId(),
-                                                    missing.required(),
-                                                    missing.current(),
-                                                    missing.gap(),
-                                                    now))
-                            .toList());
+    private static boolean matchesExisting(
+            List<GapResult> existing, List<GapAnalysisCalculator.MissingSkill> missingSkills) {
+        if (existing.size() != missingSkills.size()) {
+            return false;
         }
-
-        List<GapItemDto> items =
-                outcome.missingSkills().stream().map(GapAnalysisService::toItemDto).toList();
-        return new GapAnalysisResponse(target.dto(), outcome.readiness(), items);
+        if (existing.isEmpty()) {
+            return true;
+        }
+        Map<Integer, GapResult> bySkillId = new LinkedHashMap<>(existing.size());
+        for (GapResult row : existing) {
+            if (bySkillId.put(row.getSkillId(), row) != null) {
+                return false;
+            }
+        }
+        for (GapAnalysisCalculator.MissingSkill missing : missingSkills) {
+            GapResult row = bySkillId.get(missing.skillId());
+            if (row == null
+                    || row.getRequired().compareTo(missing.required()) != 0
+                    || row.getCurrent().compareTo(missing.current()) != 0
+                    || row.getGap().compareTo(missing.gap()) != 0) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private ResolvedTarget resolveSavedTarget(Long userId) {
