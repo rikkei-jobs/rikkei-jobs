@@ -332,7 +332,7 @@ A task, feature, or pull request achieves "Done" status when:
 
 For detailed AI coding agent specifications, architectural rules, and design guidelines, consult:
 
-- [AI Agent Configuration Guide](agent-config/README.md) — Architectural principles, 16 enterprise rules, 28 task-triggered skills in `agent-config/` mirrored to `.claude/` and `.gemini/`.
+- [AI Agent Configuration Guide](agent-config/README.md) — Architectural principles, 16 enterprise rules, 29 task-triggered skills in `agent-config/` mirrored to `.claude/` and `.gemini/`.
 - [Frontend Design System](design/DESIGN_SYSTEM.md) — Comprehensive design tokens, calculated WCAG 2.2 AA contrast matrix, Vietnamese typography rules, and anti-AI design bar (Rule 09).
 - [Third-Party Attribution](agent-config/THIRD_PARTY_NOTICES.md) — Open-source MIT licenses and adaptation details for referenced upstream repositories.
 - [Authoritative Sources Inventory](agent-config/SOURCES.md) — Complete catalogue of external specifications, standards, verified URLs, and access dates.

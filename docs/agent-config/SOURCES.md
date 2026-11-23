@@ -1,6 +1,6 @@
 # Inventory of Authoritative Sources, Specifications & Standards (T022DB0)
 
-This document catalogs all external specifications, official vendor documentation URLs, and verified technical references that substantiate the Rikkei Jobs Enterprise Rules (Rules 01–16), Task-Triggered Skills (28 skills), Design System (`docs/design/DESIGN_SYSTEM.md`), and Dual-Agent Tooling (`TOOL_COMPATIBILITY.md`).
+This document catalogs all external specifications, official vendor documentation URLs, and verified technical references that substantiate the Rikkei Jobs Enterprise Rules (Rules 01–16), Task-Triggered Skills (29 skills), Design System (`docs/design/DESIGN_SYSTEM.md`), and Dual-Agent Tooling (`TOOL_COMPATIBILITY.md`).
 
 - **Audit Date**: 2026-11-12
 - **Task Reference**: T022DB0 (Round 2B Review Remediation)
@@ -47,6 +47,7 @@ This document catalogs all external specifications, official vendor documentatio
 | 33 | Architecture | Spring Modulith Reference Documentation | <https://spring.io/projects/spring-modulith> | 2026-11-11 | Modular monolith boundary verification (`ApplicationModules.of(...).verify()`). | Rule 14, `backend-module-boundaries` |
 | 34 | API Standards | IETF RFC 9457 & RFC 3986 (URI Generic Syntax) | <https://datatracker.ietf.org/doc/html/rfc9457> | 2026-11-11 | RFC 9457 Problem Details and RFC 3986 §3.2.2 IPv6 bracketed host URI construction (`java.net.URI`). | Rule 05, `ExternalApiClientIntegrationTest.java` |
 | 35 | Open Source | `obra/superpowers` & `nextlevelbuilder/ui-ux-pro-max-skill` | <https://github.com/obra/superpowers> | 2026-11-11 | Trigger-only skill discipline and `ui-ux-pro-max` 6-step anti-AI design method (MIT License). | 12 Process Skills, Rule 09, `DESIGN_SYSTEM.md` |
+| 36 | Open Source | `Leonxlnx/taste-skill` (`v2.5.1`, commit `f6b76575f949707b4e3c37cd86cb44b0b98643e8`, `2026-11-07T12:33:21Z`) | <https://github.com/leonxlnx/taste-skill> | 2026-11-22 | MIT-licensed anti-slop frontend craft adapted as instructions-only (excluding hooks, scripts, network fetchers, and marketing palette dealers) with explicit project-rule precedence. | `frontend-taste-anti-slop`, `THIRD_PARTY_NOTICES.md` |
 
 ### 1.1. Shipped Self-Hosted Font Artifacts & Empirical Verification
 
@@ -97,3 +98,4 @@ Toàn bộ các khẳng định về định dạng và cơ chế nạp cấu h�
 - **Gemini CLI (`raw.githubusercontent.com/google-gemini/gemini-cli/main/*`)**: Xác thực cơ chế `@./.gemini/rules/*.md` của Memory Import Processor (`memport.md`), khám phá `.gemini/skills/`, lệnh `.gemini/commands/*.toml`, tệp `.geminiignore`, đối sánh tiền tố lệnh trong `tools.exclude` / `tools.confirmationRequired`, cảnh báo `.gemini/policies` cấp workspace đang bị vô hiệu hóa upstream (`issue #18186`), và lược đồ `schemas/settings.schema.json`.
 - **Antigravity (`antigravity.google/docs/*` & `agy-customizations`)**: Xác thực cơ chế nạp phân cấp `GEMINI.md` / `AGENTS.md` (trần 24 KB/tệp) và cấu trúc `references/` theo nguyên lý progressive disclosure.
 - **Toán học Độ tương phản & Phông chữ**: Toàn bộ `66` cặp màu trong `docs/design/DESIGN_SYSTEM.md` được tính bằng công thức độ chói tương đối CIE 1931 của W3C WCAG 2.2; 3 bộ phông `Plus Jakarta Sans`, `Be Vietnam Pro` và `JetBrains Mono` đều mang giấy phép mở SIL OFL 1.1, tự lưu trữ (self-hosted WOFF2).
+- **Kế thừa Anti-Slop Frontend (`Leonxlnx/taste-skill`)**: Đã đối chiếu trực tiếp kho mã nguồn `Leonxlnx/taste-skill` (`v2.5.1`, commit `f6b76575f949707b4e3c37cd86cb44b0b98643e8`, ngày `2026-11-07T12:33:21Z`, giấy phép MIT) ngày `2026-11-22` để chuyển hóa chỉ phần hướng dẫn phù hợp thành kỹ năng thứ 29 `frontend-taste-anti-slop` (loại bỏ hoàn toàn hooks, script thực thi, và tải tài nguyên mạng).
