@@ -7,6 +7,8 @@ export interface EvaluationCardProps {
   readonly evaluation: CandidateEvaluation;
   readonly expanded: boolean;
   readonly onToggle: (evaluationId: number) => void;
+  /** Parent section heading level (1 for standalone page, 2 when embedded); keeps h1->h2->h3->h4 or h2->h3->h4->h5 sequential. */
+  readonly baseHeadingLevel?: 1 | 2;
 }
 
 const formatDate = (dateString: string): string => {
@@ -40,17 +42,21 @@ export const EvaluationCard: React.FC<EvaluationCardProps> = ({
   evaluation,
   expanded,
   onToggle,
+  baseHeadingLevel = 2,
 }) => {
   const isInterview = evaluation.context === 'INTERVIEW';
   const detailsId = `evaluation-details-${evaluation.id}`;
+  const CardHeadingTag = baseHeadingLevel === 1 ? 'h2' : 'h3';
+  const SubHeadingTag = baseHeadingLevel === 1 ? 'h3' : 'h4';
+  const scoreHeadingLevel = baseHeadingLevel === 1 ? 4 : 5;
 
   return (
     <article className="ce-card" aria-labelledby={`eval-title-${evaluation.id}`}>
       <div className="ce-card-head">
         <div className="ce-card-info">
-          <h3 id={`eval-title-${evaluation.id}`} className="ce-card-title">
+          <CardHeadingTag id={`eval-title-${evaluation.id}`} className="ce-card-title">
             Đánh giá từ {evaluation.mentor.name}
-          </h3>
+          </CardHeadingTag>
 
           <div className="ce-meta">
             <span className="ce-meta-item" title="Mentor đánh giá">
@@ -103,7 +109,7 @@ export const EvaluationCard: React.FC<EvaluationCardProps> = ({
 
       {expanded && (
         <div className="ce-details" id={detailsId}>
-          <h4 className="ce-details-title">Kết quả theo từng tiêu chí</h4>
+          <SubHeadingTag className="ce-details-title">Kết quả theo từng tiêu chí</SubHeadingTag>
 
           {evaluation.scores.length > 0 ? (
             <div className="ce-score-list" role="list">
@@ -111,6 +117,7 @@ export const EvaluationCard: React.FC<EvaluationCardProps> = ({
                 <EvaluationScoreItem
                   key={score.criterionId}
                   score={score}
+                  headingLevel={scoreHeadingLevel}
                 />
               ))}
             </div>
@@ -122,7 +129,7 @@ export const EvaluationCard: React.FC<EvaluationCardProps> = ({
 
           {evaluation.overallComment && (
             <div className="ce-overall">
-              <h4 className="ce-overall-title">Nhận xét tổng quan</h4>
+              <SubHeadingTag className="ce-overall-title">Nhận xét tổng quan</SubHeadingTag>
               <p className="ce-overall-content">
                 {evaluation.overallComment}
               </p>

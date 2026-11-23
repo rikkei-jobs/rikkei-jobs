@@ -58,4 +58,48 @@ describe('ResetPasswordPage', () => {
       expect(screen.getByRole('button', { name: /Đi đến trang đăng nhập/i })).toBeInTheDocument();
     });
   });
+
+  it('does not render the disabled token/password form when token param is missing', () => {
+    render(
+      <AuthProvider>
+        <MemoryRouter initialEntries={['/reset-password']}>
+          <Routes>
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+          </Routes>
+        </MemoryRouter>
+      </AuthProvider>,
+    );
+
+    const alert = screen.getByRole('alert');
+    expect(alert).toHaveTextContent(/Không tìm thấy mã đặt lại mật khẩu/i);
+    expect(screen.getByRole('link', { name: /Yêu cầu liên kết mới/i })).toHaveAttribute(
+      'href',
+      '/forgot-password',
+    );
+    expect(screen.getByRole('link', { name: /Quay lại trang đăng nhập/i })).toHaveAttribute(
+      'href',
+      '/login',
+    );
+    expect(screen.queryByLabelText(/Mã đặt lại mật khẩu/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/^Mật khẩu mới$/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Lưu mật khẩu mới/i })).not.toBeInTheDocument();
+  });
+
+  it('treats whitespace-only query token as missing and hides the reset form', () => {
+    render(
+      <AuthProvider>
+        <MemoryRouter initialEntries={['/reset-password?token=%20%20%20']}>
+          <Routes>
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+          </Routes>
+        </MemoryRouter>
+      </AuthProvider>,
+    );
+
+    const alert = screen.getByRole('alert');
+    expect(alert).toHaveTextContent(/Không tìm thấy mã đặt lại mật khẩu/i);
+    expect(document.getElementById('reset-token')).toBeNull();
+    expect(screen.queryByLabelText(/^Mật khẩu mới$/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Lưu mật khẩu mới/i })).not.toBeInTheDocument();
+  });
 });

@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { AuthProvider } from '../../identity/context/AuthContext';
 import { CandidateEvaluations } from '../components/CandidateEvaluations';
+import { CandidateEvaluationsPage } from '../pages/CandidateEvaluationsPage';
 import type { CandidateEvaluationsData } from '../types';
 import {
   setAuthSessionHandlers,
@@ -260,5 +263,129 @@ describe('CandidateEvaluations Component', () => {
     expect(progressBars[0]).toHaveAttribute('aria-valuenow', '85');
     expect(progressBars[0]).toHaveAttribute('aria-valuemin', '0');
     expect(progressBars[0]).toHaveAttribute('aria-valuemax', '100');
+  });
+
+  it('renders sequential h1 -> h2 -> h3 -> h4 heading hierarchy on standalone CandidateEvaluationsPage without skipping levels', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(okResponse(MOCK_EVALUATIONS_DATA));
+
+    const { container } = render(
+      <AuthProvider
+        initialToken="token"
+        initialUser={{
+          id: 10,
+          email: 'candidate1@rikkeijobs.test',
+          fullName: 'Nguyễn Văn An',
+          role: 'CANDIDATE',
+          companyId: null,
+          lmsUserId: 'lms-sv-001',
+          status: 'ACTIVE',
+          mustChangePassword: false,
+        }}
+      >
+        <MemoryRouter>
+          <CandidateEvaluationsPage />
+        </MemoryRouter>
+      </AuthProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Đánh giá từ Nguyễn Văn Mentor')).toBeInTheDocument();
+    });
+
+    const toggleButtons = screen.getAllByRole('button', { name: /Xem chi tiết/i });
+    fireEvent.click(toggleButtons[0]);
+
+    const h1s = screen.getAllByRole('heading', { level: 1 });
+    expect(h1s).toHaveLength(1);
+    expect(h1s[0]).toHaveTextContent('Đánh giá từ mentor');
+
+    const headings = Array.from(container.querySelectorAll('h1, h2, h3, h4, h5, h6'));
+    const levels = headings.map((el) => Number(el.tagName.slice(1)));
+    expect(levels).toContain(1);
+    expect(levels).toContain(2);
+    expect(levels).toContain(3);
+    expect(levels).toContain(4);
+    for (let i = 1; i < levels.length; i += 1) {
+      expect(levels[i]! - levels[i - 1]!).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('ignores stale response when userId changes before an earlier request resolves', async () => {
+    let resolveFirst!: (value: Response) => void;
+    let resolveSecond!: (value: Response) => void;
+
+    const dataFor20: CandidateEvaluationsData = {
+      userId: 20,
+      evaluations: [
+        {
+          id: 202,
+          mentor: {
+            id: 302,
+            name: 'Mentor Của Ứng Viên 20',
+            email: 'mentor20@rikkeisoft.com',
+          },
+          templateId: 1,
+          context: 'INTERNSHIP',
+          submittedAt: '2026-11-18T10:00:00Z',
+          overallComment: 'Đánh giá mới nhất cho user 20.',
+          scores: [],
+        },
+      ],
+    };
+
+    const dataFor10: CandidateEvaluationsData = {
+      userId: 10,
+      evaluations: [
+        {
+          id: 101,
+          mentor: {
+            id: 201,
+            name: 'Mentor Cũ Của Ứng Viên 10',
+            email: 'mentor10@rikkeisoft.com',
+          },
+          templateId: 1,
+          context: 'INTERNSHIP',
+          submittedAt: '2026-11-15T14:30:00Z',
+          overallComment: 'Đánh giá cũ cho user 10.',
+          scores: [],
+        },
+      ],
+    };
+
+    const fetchMock = vi
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise<Response>((resolve) => {
+            resolveFirst = resolve;
+          }),
+      )
+      .mockImplementationOnce(
+        () =>
+          new Promise<Response>((resolve) => {
+            resolveSecond = resolve;
+          }),
+      );
+    globalThis.fetch = fetchMock;
+
+    const { rerender } = render(<CandidateEvaluations userId={10} />);
+
+    rerender(<CandidateEvaluations userId={20} />);
+
+    const firstInit = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined;
+    expect(firstInit?.signal?.aborted).toBe(true);
+
+    await act(async () => {
+      resolveSecond(okResponse(dataFor20));
+    });
+
+    expect(screen.getByText('Đánh giá từ Mentor Của Ứng Viên 20')).toBeInTheDocument();
+
+    await act(async () => {
+      resolveFirst(okResponse(dataFor10));
+    });
+
+    expect(screen.getByText('Đánh giá từ Mentor Của Ứng Viên 20')).toBeInTheDocument();
+    expect(screen.queryByText('Đánh giá từ Mentor Cũ Của Ứng Viên 10')).not.toBeInTheDocument();
   });
 });
