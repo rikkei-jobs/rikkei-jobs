@@ -44,11 +44,19 @@ public class ExternalApiClient {
         this.properties = properties;
         this.objectMapper = objectMapper;
         Duration defaultTimeout = Duration.ofSeconds(Math.max(1, properties.getTimeoutSeconds()));
-        this.httpClient = HttpClient.newBuilder().connectTimeout(defaultTimeout).build();
+        this.httpClient =
+                HttpClient.newBuilder()
+                        .connectTimeout(defaultTimeout)
+                        .followRedirects(HttpClient.Redirect.NEVER)
+                        .build();
         long configuredMillis = Math.max(1L, properties.getTimeoutSeconds()) * 1000L;
         this.fastFailTimeout =
                 Duration.ofMillis(Math.min(FAST_FAIL_TIMEOUT_MILLIS, configuredMillis));
-        this.fastFailHttpClient = HttpClient.newBuilder().connectTimeout(fastFailTimeout).build();
+        this.fastFailHttpClient =
+                HttpClient.newBuilder()
+                        .connectTimeout(fastFailTimeout)
+                        .followRedirects(HttpClient.Redirect.NEVER)
+                        .build();
     }
 
     /**
@@ -60,7 +68,9 @@ public class ExternalApiClient {
             String jsonPayload = objectMapper.writeValueAsString(Map.of("ticket", ticket));
             return executeRequest("POST", "/lms/sso/verify", jsonPayload, null);
         } catch (JsonProcessingException e) {
-            log.warn("Failed to serialize SSO ticket payload: {}", e.getMessage());
+            log.warn(
+                    "Failed to serialize SSO ticket payload: {}",
+                    sanitizeControlChars(e.getMessage()));
             throw new ValidationException("Định dạng vé xác thực SSO không hợp lệ");
         }
     }
@@ -114,7 +124,7 @@ public class ExternalApiClient {
             if (status >= 200 && status < 300) {
                 return response.body();
             }
-            log.warn("External POST {} returned HTTP {}", absoluteUrl, status);
+            log.warn("External POST {} returned HTTP {}", sanitizeUrlForLog(absoluteUrl), status);
             throw new ExternalUnavailableException("Hệ thống ngoài phản hồi HTTP " + status);
         } catch (IOException e) {
             throw new ExternalUnavailableException("Không thể kết nối tới hệ thống ngoài", e);
@@ -295,38 +305,35 @@ public class ExternalApiClient {
                         client.send(request, HttpResponse.BodyHandlers.ofString());
                 int status = response.statusCode();
 
-                log.debug("ExternalApiClient {} {} returned HTTP {}", method, fullUrl, status);
+                String sanitizedUrl = sanitizeUrlForLog(fullUrl);
+                log.debug("ExternalApiClient {} {} returned HTTP {}", method, sanitizedUrl, status);
 
                 if (status >= 200 && status < 300) {
                     return response.body();
                 }
 
                 if (status == 404) {
-                    log.warn("External API 404 Not Found at {}: {}", fullUrl, response.body());
+                    log.warn("External API 404 Not Found at {}", sanitizedUrl);
                     throw new ExternalResourceNotFoundException(
                             "Tài nguyên không tìm thấy trên hệ thống ngoài");
                 }
                 if (status == 401) {
-                    log.warn("External API 401 Unauthorized at {}: {}", fullUrl, response.body());
+                    log.warn("External API 401 Unauthorized at {}", sanitizedUrl);
                     throw new InvalidServiceKeyException(
                             "Khóa dịch vụ hệ thống ngoài không hợp lệ");
                 }
                 if (status == 409) {
-                    log.warn("External API 409 Conflict at {}: {}", fullUrl, response.body());
+                    log.warn("External API 409 Conflict at {}", sanitizedUrl);
                     throw new ConflictException(
                             "CONFLICT", "Dữ liệu bị xung đột trên hệ thống ngoài");
                 }
                 if (status == 400) {
-                    log.warn("External API 400 Bad Request at {}: {}", fullUrl, response.body());
+                    log.warn("External API 400 Bad Request at {}", sanitizedUrl);
                     throw new ValidationException(
                             "Dữ liệu yêu cầu không hợp lệ trên hệ thống ngoài");
                 }
 
-                log.warn(
-                        "External API unexpected status HTTP {} at {}: {}",
-                        status,
-                        fullUrl,
-                        response.body());
+                log.warn("External API unexpected status HTTP {} at {}", status, sanitizedUrl);
                 throw new ExternalUnavailableException(
                         "Hệ thống ngoài phản hồi mã lỗi không mong đợi HTTP " + status);
 
@@ -335,14 +342,10 @@ public class ExternalApiClient {
                         "Network error during external call (attempt {}/{}): {}",
                         attempt,
                         maxRetries + 1,
-                        e.getMessage());
+                        sanitizeControlChars(e.getMessage()));
                 if (attempt > maxRetries) {
                     throw new ExternalUnavailableException(
-                            "Không thể kết nối tới hệ thống ngoài sau "
-                                    + attempt
-                                    + " lần thử: "
-                                    + e.getMessage(),
-                            e);
+                            "Không thể kết nối tới hệ thống ngoài sau " + attempt + " lần thử", e);
                 }
                 try {
                     Thread.sleep(150L * attempt);
@@ -387,5 +390,32 @@ public class ExternalApiClient {
         String path = "/pm/students/" + encodedLmsUserId + "/internships";
 
         return executeRequest(fastFailHttpClient, "GET", path, null, null, fastFailTimeout, 0);
+    }
+
+    /**
+     * Strips query parameters, fragments, and control characters so URLs logged on failures never
+     * expose sensitive query values or allow CWE-117 log forging.
+     */
+    private static String sanitizeUrlForLog(String url) {
+        if (url == null || url.isBlank()) {
+            return "";
+        }
+        String sanitized = url;
+        int fragmentIndex = sanitized.indexOf('#');
+        if (fragmentIndex >= 0) {
+            sanitized = sanitized.substring(0, fragmentIndex);
+        }
+        int queryIndex = sanitized.indexOf('?');
+        if (queryIndex >= 0) {
+            sanitized = sanitized.substring(0, queryIndex);
+        }
+        return sanitizeControlChars(sanitized);
+    }
+
+    private static String sanitizeControlChars(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.replaceAll("[\\r\\n\\t\\p{Cntrl}]", "");
     }
 }

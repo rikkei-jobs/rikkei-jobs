@@ -28,6 +28,7 @@ import java.io.OutputStream;
 import java.lang.reflect.Proxy;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
@@ -36,9 +37,11 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Duration;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.sql.DataSource;
@@ -627,6 +630,208 @@ public class ExternalApiClientRobustnessTest {
                 clientLogger.setLevel(prevLevel);
                 formServer.stop(0);
             }
+        }
+    }
+
+    // =========================================================================
+    // 6. Log Sanitization & Explicit Redirect.NEVER Tests (SEC-04)
+    // =========================================================================
+    @Nested
+    @DisplayName("6. ExternalApiClient Log Sanitization & No-Redirect Tests")
+    class LogSanitizationAndRedirectTests {
+
+        @Test
+        @DisplayName(
+                "executeRequest & postJson omit response bodies, strip URL query/fragments, strip CRLF, and never follow redirects")
+        void testErrorLogsOmitBodiesQueriesCrlfAndNeverFollowRedirects() throws Exception {
+            HttpServer server =
+                    HttpServer.create(
+                            new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
+            int port = server.getAddress().getPort();
+            AtomicBoolean secretTargetHit = new AtomicBoolean(false);
+
+            Logger clientLogger = (Logger) LoggerFactory.getLogger(ExternalApiClient.class);
+            Level prevLevel = clientLogger.getLevel();
+            clientLogger.setLevel(Level.DEBUG);
+            ListAppender<ILoggingEvent> appender = new ListAppender<>();
+            appender.start();
+            clientLogger.addAppender(appender);
+
+            try {
+                server.createContext(
+                        "/err",
+                        exchange -> {
+                            String query = exchange.getRequestURI().getQuery();
+                            int status = 500;
+                            if (query != null && query.contains("status=")) {
+                                String raw = query.split("status=")[1].split("&")[0];
+                                status = Integer.parseInt(raw);
+                            }
+                            exchange.getRequestBody().readAllBytes();
+                            byte[] body =
+                                    "{\"secret\":\"LEAKED_SECRET_BODY\",\"trace\":\"LEAKED_STACKTRACE\r\nFAKE_LOG_LINE\"}"
+                                            .getBytes(StandardCharsets.UTF_8);
+                            exchange.sendResponseHeaders(status, body.length);
+                            try (OutputStream os = exchange.getResponseBody()) {
+                                os.write(body);
+                            }
+                        });
+
+                server.createContext(
+                        "/redirect",
+                        exchange -> {
+                            exchange.getRequestBody().readAllBytes();
+                            exchange.getResponseHeaders()
+                                    .set("Location", "http://127.0.0.1:" + port + "/secret-target");
+                            exchange.sendResponseHeaders(302, -1);
+                        });
+
+                server.createContext(
+                        "/secret-target",
+                        exchange -> {
+                            secretTargetHit.set(true);
+                            exchange.getRequestBody().readAllBytes();
+                            byte[] ok = "{\"ok\":true}".getBytes(StandardCharsets.UTF_8);
+                            exchange.sendResponseHeaders(200, ok.length);
+                            try (OutputStream os = exchange.getResponseBody()) {
+                                os.write(ok);
+                            }
+                        });
+
+                server.start();
+
+                ExternalApiProperties props = new ExternalApiProperties();
+                props.setBaseUrl("http://127.0.0.1:" + port);
+                props.setServiceKey("test-key");
+                props.setTimeoutSeconds(2);
+                props.setMaxRetries(0);
+                ExternalApiClient client = new ExternalApiClient(props, OBJECT_MAPPER);
+
+                assertThrows(
+                        ValidationException.class,
+                        () ->
+                                client.executeRequest(
+                                        "GET",
+                                        "/err?status=400&secret=SENSITIVE_QUERY_VAL",
+                                        null,
+                                        null));
+                assertThrows(
+                        InvalidServiceKeyException.class,
+                        () ->
+                                client.executeRequest(
+                                        "GET",
+                                        "/err?status=401&secret=SENSITIVE_QUERY_VAL",
+                                        null,
+                                        null));
+                assertThrows(
+                        ExternalResourceNotFoundException.class,
+                        () ->
+                                client.executeRequest(
+                                        "GET",
+                                        "/err?status=404&secret=SENSITIVE_QUERY_VAL",
+                                        null,
+                                        null));
+                assertThrows(
+                        ConflictException.class,
+                        () ->
+                                client.executeRequest(
+                                        "GET",
+                                        "/err?status=409&secret=SENSITIVE_QUERY_VAL",
+                                        null,
+                                        null));
+                assertThrows(
+                        ExternalUnavailableException.class,
+                        () ->
+                                client.executeRequest(
+                                        "GET",
+                                        "/err?status=500&secret=SENSITIVE_QUERY_VAL",
+                                        null,
+                                        null));
+                assertThrows(
+                        ExternalUnavailableException.class,
+                        () ->
+                                client.postJson(
+                                        "http://127.0.0.1:"
+                                                + port
+                                                + "/err?status=500&apiKey=SECRET_POST_KEY",
+                                        Map.of("prompt", "hi"),
+                                        Map.of(),
+                                        Duration.ofSeconds(2)));
+                assertThrows(
+                        ExternalUnavailableException.class,
+                        () -> client.executeRequest("GET", "/redirect", null, null));
+
+                assertFalse(
+                        secretTargetHit.get(),
+                        "ExternalApiClient must NEVER follow HTTP 302 redirects");
+                assertFalse(appender.list.isEmpty(), "Expected error/debug log events");
+
+                for (ILoggingEvent event : appender.list) {
+                    String msg = event.getFormattedMessage();
+                    assertFalse(
+                            msg.contains("LEAKED_SECRET_BODY"),
+                            "Logs must never contain upstream response body secrets: " + msg);
+                    assertFalse(
+                            msg.contains("LEAKED_STACKTRACE"),
+                            "Logs must never contain upstream response body stacktraces: " + msg);
+                    assertFalse(
+                            msg.contains("FAKE_LOG_LINE"),
+                            "Logs must never contain upstream CRLF forged lines: " + msg);
+                    assertFalse(
+                            msg.contains("SENSITIVE_QUERY_VAL"),
+                            "Logs must strip URL query parameters: " + msg);
+                    assertFalse(
+                            msg.contains("SECRET_POST_KEY"),
+                            "postJson logs must strip URL query parameters: " + msg);
+                    assertFalse(
+                            msg.contains("\r") || msg.contains("\n"),
+                            "Logs must strip CR/LF control characters: " + msg);
+                }
+            } finally {
+                clientLogger.detachAppender(appender);
+                appender.stop();
+                clientLogger.setLevel(prevLevel);
+                server.stop(0);
+            }
+        }
+
+        @Test
+        @DisplayName(
+                "executeRequest IOException on closed port retains cause without leaking host/port/network message")
+        void testExecuteRequestIoExceptionDoesNotLeakHostOrConnectionError() throws Exception {
+            int unusedPort;
+            try (ServerSocket socket = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+                unusedPort = socket.getLocalPort();
+            }
+
+            ExternalApiProperties props = new ExternalApiProperties();
+            props.setBaseUrl("http://127.0.0.1:" + unusedPort);
+            props.setServiceKey("test-key");
+            props.setTimeoutSeconds(2);
+            props.setMaxRetries(0);
+            ExternalApiClient client = new ExternalApiClient(props, OBJECT_MAPPER);
+
+            ExternalUnavailableException ex =
+                    assertThrows(
+                            ExternalUnavailableException.class,
+                            () -> client.executeRequest("GET", "/lms/courses", null, null));
+
+            assertNotNull(
+                    ex.getCause(), "ExternalUnavailableException must retain IOException cause");
+            assertTrue(ex.getCause() instanceof IOException, "Cause must be IOException");
+            assertEquals(
+                    "Không thể kết nối tới hệ thống ngoài sau 1 lần thử",
+                    ex.getMessage(),
+                    "Exception message must match sanitized fixed message without raw IOException details");
+            assertFalse(
+                    ex.getMessage().contains("127.0.0.1"),
+                    "Exception message must not leak internal host IP: " + ex.getMessage());
+            assertFalse(
+                    ex.getMessage().contains(String.valueOf(unusedPort)),
+                    "Exception message must not leak internal port: " + ex.getMessage());
+            assertFalse(
+                    ex.getMessage().toLowerCase(Locale.ROOT).contains("connection refused"),
+                    "Exception message must not leak raw network error: " + ex.getMessage());
         }
     }
 }
