@@ -26,10 +26,14 @@ CREATE TABLE IF NOT EXISTS ai_logs (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_ai_logs_created_at_id ON ai_logs (created_at DESC, id DESC);
-CREATE INDEX IF NOT EXISTS idx_ai_logs_user_id_created_at ON ai_logs (user_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_ai_logs_feature_created_at ON ai_logs (feature, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_ai_logs_status_created_at ON ai_logs (status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ai_logs_created_at_id
+    ON ai_logs (created_at DESC, id DESC)
+    INCLUDE (feature, status, tokens_in, tokens_out);
+CREATE INDEX IF NOT EXISTS idx_ai_logs_user_id_created_at_id
+    ON ai_logs (user_id, created_at DESC, id DESC);
+CREATE INDEX IF NOT EXISTS idx_ai_logs_non_ok_status
+    ON ai_logs (status, created_at DESC, id DESC)
+    WHERE status <> 'OK';
 
 CREATE TABLE IF NOT EXISTS ai_usage (
     user_id BIGINT NOT NULL,
@@ -38,4 +42,5 @@ CREATE TABLE IF NOT EXISTS ai_usage (
     PRIMARY KEY (user_id, date)
 );
 
-CREATE INDEX IF NOT EXISTS idx_ai_usage_date ON ai_usage (date);
+ALTER TABLE job_recommendations
+ADD COLUMN IF NOT EXISTS quota_degraded BOOLEAN NOT NULL DEFAULT FALSE;

@@ -29,4 +29,19 @@ public class AiUsageRepository {
                         limit)
                 .isEmpty();
     }
+
+    /** Read-only quota check for cache revalidation without consuming a slot. */
+    public boolean hasQuotaAvailable(long userId, LocalDate date, int limit) {
+        if (limit <= 0) {
+            return false;
+        }
+        Boolean available =
+                jdbc.queryForObject(
+                        "SELECT COALESCE((SELECT count FROM ai_usage WHERE user_id = ? AND date = CAST(? AS DATE)), 0) < ?",
+                        Boolean.class,
+                        userId,
+                        date,
+                        limit);
+        return Boolean.TRUE.equals(available);
+    }
 }

@@ -143,6 +143,36 @@ class AiServiceTest {
         verify(audit, times(1)).record(any());
     }
 
+    @Test
+    void maskerFailureFailsClosedBeforeProviderCallOrAuditWrite() {
+        PiiMasker failingMasker = mock(PiiMasker.class);
+        when(failingMasker.mask(anyString()))
+                .thenThrow(new IllegalStateException("masker failure"));
+        AiService guarded = new AiService(configs, audit, failingMasker, clock, List.of(client));
+        assertThrows(
+                IllegalStateException.class,
+                () -> guarded.generate(1, AiFeature.CHAT, "a@b.com", "fallback"));
+        verify(audit, never()).reserve(anyLong(), any(), anyInt());
+        verify(client, never()).generate(anyString(), any());
+        verify(audit, never()).record(any());
+    }
+
+    @Test
+    void maskerFailureOnResponseFailsClosedBeforeAuditWrite() {
+        PiiMasker partialMasker = mock(PiiMasker.class);
+        when(partialMasker.mask("safe")).thenReturn("safe");
+        when(partialMasker.mask("raw-response"))
+                .thenThrow(new IllegalStateException("masker response failure"));
+        when(audit.reserve(anyLong(), any(), anyInt())).thenReturn(true);
+        when(client.generate(anyString(), any()))
+                .thenReturn(new AiGenerationResult("raw-response", 1, 1));
+        AiService guarded = new AiService(configs, audit, partialMasker, clock, List.of(client));
+        assertThrows(
+                IllegalStateException.class,
+                () -> guarded.generate(1, AiFeature.CHAT, "safe", "fallback"));
+        verify(audit, never()).record(any());
+    }
+
     private AiLogDto recorded() {
         ArgumentCaptor<AiLogDto> log = ArgumentCaptor.forClass(AiLogDto.class);
         verify(audit).record(log.capture());

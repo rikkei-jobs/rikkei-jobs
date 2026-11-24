@@ -26,6 +26,10 @@ public class AiAuditService {
         return usage.reserve(userId, day, limit);
     }
 
+    public boolean hasQuotaAvailable(long userId, LocalDate day, int limit) {
+        return usage.hasQuotaAvailable(userId, day, limit);
+    }
+
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void record(AiLogDto log) {
         logs.insert(

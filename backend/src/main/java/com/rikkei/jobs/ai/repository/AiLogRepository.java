@@ -18,9 +18,13 @@ import java.util.Map;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-/** All queries stay within AI-owned tables; audit has no update/delete contract. */
+/**
+ * All queries stay within AI-owned tables; audit logs are immutable except for bounded retention
+ * purges.
+ */
 @Repository
 public class AiLogRepository {
+    public static final long COUNT_CAP = 10_000L;
     private static final String METRICS =
             """
             COUNT(*) FILTER (WHERE status <> 'BLOCKED') AS calls,
@@ -84,8 +88,17 @@ public class AiLogRepository {
             where.append(" AND status = :status");
             params.put("status", status.name());
         }
-        Long total =
-                jdbc.queryForObject("SELECT COUNT(*) FROM ai_logs" + where, params, Long.class);
+        params.put("countLimit", COUNT_CAP + 1);
+        Long rawCount =
+                jdbc.queryForObject(
+                        "SELECT COUNT(*) FROM (SELECT 1 FROM ai_logs"
+                                + where
+                                + " ORDER BY created_at DESC, id DESC LIMIT :countLimit) AS bounded",
+                        params,
+                        Long.class);
+        long raw = rawCount == null ? 0L : rawCount;
+        boolean totalCapped = raw > COUNT_CAP;
+        long total = Math.min(raw, COUNT_CAP);
         params.put("limit", size);
         params.put("offset", (long) page * size);
         List<AiLogDto> rows =
@@ -95,7 +108,27 @@ public class AiLogRepository {
                                 + " ORDER BY created_at DESC, id DESC LIMIT :limit OFFSET :offset",
                         params,
                         AiLogRepository::map);
-        return new AiLogPage(rows, total == null ? 0 : total, page, size);
+        return new AiLogPage(rows, total, page, size, totalCapped);
+    }
+
+    public int deleteOldestBatch(OffsetDateTime cutoff, int batchSize) {
+        if (batchSize < 1) {
+            throw new IllegalArgumentException("batchSize must be >= 1");
+        }
+        Map<String, Object> params = new HashMap<>();
+        params.put("cutoff", cutoff);
+        params.put("batchSize", batchSize);
+        return jdbc.update(
+                """
+                DELETE FROM ai_logs
+                WHERE id IN (
+                    SELECT id FROM ai_logs
+                    WHERE created_at < :cutoff
+                    ORDER BY created_at ASC, id ASC
+                    LIMIT :batchSize
+                )
+                """,
+                params);
     }
 
     public AiUsageSummary summary(LocalDate from, LocalDate to) {

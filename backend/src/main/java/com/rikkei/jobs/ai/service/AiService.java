@@ -57,6 +57,18 @@ public class AiService {
         return configService.get().enabled();
     }
 
+    public boolean hasQuotaAvailable(long userId) {
+        if (userId <= 0) {
+            return false;
+        }
+        AiConfigDto config = configService.get();
+        return config.dailyLimitPerUser() > 0
+                && audit.hasQuotaAvailable(
+                        userId,
+                        LocalDate.now(clock.withZone(ZoneOffset.UTC)),
+                        config.dailyLimitPerUser());
+    }
+
     public AiExplanation generateJobExplanation(long userId, String prompt, String fallback) {
         AiExplanation result = generate(userId, AiFeature.RECOMMEND, prompt, fallback);
         return new AiExplanation(enforceWordLimit(result.text(), 60), result.aiGenerated());

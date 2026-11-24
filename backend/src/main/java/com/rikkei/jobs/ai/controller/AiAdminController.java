@@ -77,7 +77,8 @@ public class AiAdminController {
             summary = "Search masked AI logs, newest first",
             description =
                     "Dates are inclusive UTC days (ISO yyyy-MM-dd), default last 30 days, "
-                            + "maximum 366 days. Page is zero-based; size is 1–100 (default 20).")
+                            + "maximum 366 days. Page is zero-based; size is 1–100 (default 20). "
+                            + "Total count is bounded at 10,000 (totalCapped=true when exceeded).")
     public AiLogPage logs(
             @RequestParam(required = false) AiFeature feature,
             @RequestParam(required = false) Long userId,

@@ -5,6 +5,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import com.rikkei.jobs.ai.config.AiProperties;
 import com.rikkei.jobs.ai.dto.AiConfigDto;
 import com.rikkei.jobs.ai.dto.UpdateAiConfigRequest;
 import com.rikkei.jobs.ai.model.AiFeature;
@@ -61,6 +62,7 @@ class AiGovernanceIntegrationTest {
     @Autowired private AiService gateway;
     @Autowired private AiAuditService audit;
     @Autowired private AiConfigService config;
+    @Autowired private AiProperties aiProperties;
     @Autowired private PlatformTransactionManager transactionManager;
     private MockMvc mvc;
 
@@ -80,6 +82,9 @@ class AiGovernanceIntegrationTest {
         }
         registry.add("ai.provider", () -> "mock");
         registry.add("ai.openai.api-key", () -> "");
+        registry.add("ai.openai.base-url", () -> "http://127.0.0.1:1/v1");
+        registry.add("ai.gemini.api-key", () -> "");
+        registry.add("ai.claude.api-key", () -> "");
     }
 
     @AfterAll
@@ -94,6 +99,7 @@ class AiGovernanceIntegrationTest {
         jdbc.update("DELETE FROM ai_usage");
         jdbc.update("DELETE FROM ai_config");
         jdbc.update("DELETE FROM job_recommendations");
+        config.evictCache();
         mvc =
                 MockMvcBuilders.webAppContextSetup(context)
                         .apply(SecurityMockMvcConfigurers.springSecurity())
@@ -127,6 +133,7 @@ class AiGovernanceIntegrationTest {
                                 .with(user(ADMIN)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.totalCapped").value(false))
                 .andExpect(jsonPath("$.items[0].promptMasked").value("[EMAIL], [PHONE]"));
         mvc.perform(
                         get("/api/v1/admin/ai-usage/summary?from=2026-11-22&to=2026-11-22")
@@ -148,15 +155,31 @@ class AiGovernanceIntegrationTest {
                     "AI đang tạm tắt",
                     gateway.generate(1, feature, "0912345678", "fallback").text());
         }
-        mvc.perform(get("/api/v1/me/job-recommendations").with(user(principal("CANDIDATE"))))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("AI đang tạm tắt"))
-                .andExpect(jsonPath("$.items").isEmpty());
+        for (int i = 0; i < 10; i++) {
+            mvc.perform(get("/api/v1/me/job-recommendations").with(user(principal("CANDIDATE"))))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.message").value("AI đang tạm tắt"))
+                    .andExpect(jsonPath("$.items").isEmpty());
+        }
         assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM ai_usage", Integer.class));
         assertEquals(
-                5,
+                4,
                 jdbc.queryForObject(
                         "SELECT COUNT(*) FROM ai_logs WHERE status='BLOCKED'", Integer.class));
+    }
+
+    @Test
+    void disabledRecommendationsWriteZeroAuditLogsAcrossTenViews() throws Exception {
+        authenticateAdmin();
+        config.update(settings(config.get(), false, 10), ADMIN.getId());
+        for (int i = 0; i < 10; i++) {
+            mvc.perform(get("/api/v1/me/job-recommendations").with(user(principal("CANDIDATE"))))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.message").value(AiService.DISABLED_MESSAGE))
+                    .andExpect(jsonPath("$.items").isEmpty());
+        }
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM ai_logs", Integer.class));
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM ai_usage", Integer.class));
     }
 
     @ParameterizedTest
@@ -244,6 +267,73 @@ class AiGovernanceIntegrationTest {
     }
 
     @Test
+    void concurrentGatewayGenerate50ThreadsEnforcesLimit10AndLogsExactCounts() throws Exception {
+        authenticateAdmin();
+        config.update(settings(config.get(), true, 10), ADMIN.getId());
+        int totalThreads = 50;
+        CountDownLatch ready = new CountDownLatch(totalThreads);
+        CountDownLatch start = new CountDownLatch(1);
+        try (var executor = Executors.newFixedThreadPool(totalThreads)) {
+            var results = new ArrayList<Future<Boolean>>(totalThreads);
+            for (int i = 0; i < totalThreads; i++) {
+                results.add(
+                        executor.submit(
+                                () -> {
+                                    ready.countDown();
+                                    start.await();
+                                    try {
+                                        AiService.AiExplanation explanation =
+                                                gateway.generate(
+                                                        1,
+                                                        AiFeature.CHAT,
+                                                        "a@b.com, 0912345678",
+                                                        "fallback");
+                                        assertEquals(
+                                                aiProperties.getMock().getExplanation(),
+                                                explanation.text());
+                                        assertFalse(explanation.aiGenerated());
+                                        return true;
+                                    } catch (RateLimitException ignored) {
+                                        return false;
+                                    }
+                                }));
+            }
+            ready.await();
+            start.countDown();
+            int okCount = 0;
+            int blockedCount = 0;
+            for (Future<Boolean> result : results) {
+                if (result.get()) {
+                    okCount++;
+                } else {
+                    blockedCount++;
+                }
+            }
+            assertEquals(10, okCount);
+            assertEquals(40, blockedCount);
+        }
+        assertEquals(
+                10,
+                jdbc.queryForObject(
+                        "SELECT count FROM ai_usage WHERE user_id = 1 AND date = DATE '2026-11-22'",
+                        Integer.class));
+        assertEquals(
+                10,
+                jdbc.queryForObject(
+                        "SELECT COUNT(*) FROM ai_logs WHERE status = 'OK'", Integer.class));
+        assertEquals(
+                40,
+                jdbc.queryForObject(
+                        "SELECT COUNT(*) FROM ai_logs WHERE status = 'BLOCKED'", Integer.class));
+        assertEquals(50, jdbc.queryForObject("SELECT COUNT(*) FROM ai_logs", Integer.class));
+        assertEquals(
+                0,
+                jdbc.queryForObject(
+                        "SELECT COUNT(*) FROM ai_logs WHERE prompt_masked LIKE '%a@b.com%' OR prompt_masked LIKE '%0912345678%'",
+                        Integer.class));
+    }
+
+    @Test
     void outerRollbackCannotEraseAuditOrUsage() {
         TransactionTemplate transaction = new TransactionTemplate(transactionManager);
         assertThrows(
@@ -261,14 +351,34 @@ class AiGovernanceIntegrationTest {
     }
 
     @Test
-    void exhaustedQuotaReturns429FromTheExistingFeatureEndpoint() throws Exception {
+    void exhaustedQuotaDegradesRecommendationsGracefullyWhileGatewayStillReturns429()
+            throws Exception {
         authenticateAdmin();
-        config.update(settings(config.get(), true, 0), ADMIN.getId());
+        config.update(settings(config.get(), true, 2), ADMIN.getId());
         mvc.perform(get("/api/v1/me/job-recommendations").with(user(principal("CANDIDATE"))))
-                .andExpect(status().isTooManyRequests())
-                .andExpect(jsonPath("$.code").value("RATE_LIMITED"));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items").isNotEmpty())
+                .andExpect(
+                        jsonPath("$.message")
+                                .value(JobRecommendationService.QUOTA_REACHED_MESSAGE));
         assertEquals(
                 1,
+                jdbc.queryForObject(
+                        "SELECT COUNT(*) FROM ai_logs WHERE status='BLOCKED'", Integer.class));
+        assertTrue(
+                jdbc.queryForObject(
+                                "SELECT COUNT(*) FROM job_recommendations WHERE user_id = 1 AND quota_degraded = true",
+                                Integer.class)
+                        > 0);
+
+        // Bare AiService.generate still throws 429 and logs BLOCKED when limit is exhausted.
+        authenticateAdmin();
+        config.update(settings(config.get(), true, 0), ADMIN.getId());
+        assertThrows(
+                RateLimitException.class,
+                () -> gateway.generate(1, AiFeature.CHAT, "a@b.com", "fallback"));
+        assertEquals(
+                2,
                 jdbc.queryForObject(
                         "SELECT COUNT(*) FROM ai_logs WHERE status='BLOCKED'", Integer.class));
     }
@@ -276,24 +386,112 @@ class AiGovernanceIntegrationTest {
     @Test
     void providerErrorIsPersistedWithoutLeakingTheException() {
         authenticateAdmin();
-        AiConfigDto previous = config.get();
-        config.update(
-                new UpdateAiConfigRequest(
-                        AiProvider.OPENAI,
-                        "test-model",
-                        new BigDecimal("0.30"),
-                        150,
-                        2,
-                        true,
-                        previous.version()),
-                ADMIN.getId());
-        assertEquals("fallback", gateway.generate(1, AiFeature.CHAT, "a@b.com", "fallback").text());
-        assertEquals("ERROR", jdbc.queryForObject("SELECT status FROM ai_logs", String.class));
-        assertEquals(
-                "[EMAIL]", jdbc.queryForObject("SELECT prompt_masked FROM ai_logs", String.class));
-        assertEquals(
-                "Không thể nhận phản hồi từ dịch vụ AI.",
-                jdbc.queryForObject("SELECT response FROM ai_logs", String.class));
+        aiProperties.getOpenai().setApiKey("synthetic-test-key");
+        try {
+            AiConfigDto previous = config.get();
+            config.update(
+                    new UpdateAiConfigRequest(
+                            AiProvider.OPENAI,
+                            "test-model",
+                            new BigDecimal("0.30"),
+                            150,
+                            2,
+                            true,
+                            previous.version()),
+                    ADMIN.getId());
+            assertEquals(
+                    "fallback", gateway.generate(1, AiFeature.CHAT, "a@b.com", "fallback").text());
+            assertEquals("ERROR", jdbc.queryForObject("SELECT status FROM ai_logs", String.class));
+            assertEquals(
+                    "[EMAIL]",
+                    jdbc.queryForObject("SELECT prompt_masked FROM ai_logs", String.class));
+            assertEquals(
+                    "Không thể nhận phản hồi từ dịch vụ AI.",
+                    jdbc.queryForObject("SELECT response FROM ai_logs", String.class));
+        } finally {
+            aiProperties.getOpenai().setApiKey("");
+            config.evictCache();
+        }
+    }
+
+    @Test
+    void putConfigRejectsBlankProviderKeysAndUnsafeModelNames() throws Exception {
+        config.get();
+        for (String provider : new String[] {"OPENAI", "GEMINI", "CLAUDE"}) {
+            String body =
+                    "{\"provider\":\""
+                            + provider
+                            + "\",\"model\":\"valid-model\",\"temperature\":0.3,\"maxTokens\":150,"
+                            + "\"dailyLimitPerUser\":10,\"enabled\":true,\"version\":0}";
+            mvc.perform(
+                            put("/api/v1/admin/ai-config")
+                                    .with(user(ADMIN))
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(body))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                    .andExpect(
+                            jsonPath("$.message")
+                                    .value("Chưa cấu hình khóa API cho nhà cung cấp này"));
+        }
+
+        aiProperties.getGemini().setApiKey("synthetic-gemini-key");
+        try {
+            for (String badModel :
+                    new String[] {
+                        "gemini-1.5-flash:batchGenerateContent",
+                        "gemini..pro",
+                        "models/gemini",
+                        "gemini?a=1",
+                        "gemini#frag",
+                        "gemini pro"
+                    }) {
+                String body =
+                        "{\"provider\":\"GEMINI\",\"model\":\""
+                                + badModel
+                                + "\",\"temperature\":0.3,\"maxTokens\":150,"
+                                + "\"dailyLimitPerUser\":10,\"enabled\":true,\"version\":0}";
+                mvc.perform(
+                                put("/api/v1/admin/ai-config")
+                                        .with(user(ADMIN))
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(body))
+                        .andExpect(status().isBadRequest())
+                        .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+            }
+        } finally {
+            aiProperties.getGemini().setApiKey("");
+        }
+    }
+
+    @Test
+    void configConcurrentInitializationIsRaceFreeAndUpdateInvalidatesCache() throws Exception {
+        CountDownLatch start = new CountDownLatch(1);
+        try (var executor = Executors.newFixedThreadPool(16)) {
+            List<Future<AiConfigDto>> results = new ArrayList<>();
+            for (int i = 0; i < 16; i++) {
+                results.add(
+                        executor.submit(
+                                () -> {
+                                    start.await();
+                                    return config.get();
+                                }));
+            }
+            start.countDown();
+            for (Future<AiConfigDto> result : results) {
+                assertEquals(AiProvider.MOCK, result.get().provider());
+            }
+        }
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM ai_config", Integer.class));
+
+        // Direct DB modification stays invisible inside fixed-clock TTL, then PUT invalidates at
+        // once.
+        jdbc.update("UPDATE ai_config SET daily_limit_per_user = 77 WHERE id = 1");
+        assertEquals(100, config.get().dailyLimitPerUser());
+
+        authenticateAdmin();
+        config.update(settings(config.get(), true, 33), ADMIN.getId());
+        assertEquals(33, config.get().dailyLimitPerUser());
     }
 
     @Test
