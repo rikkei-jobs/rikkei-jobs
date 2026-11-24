@@ -271,7 +271,13 @@
     "domcontentloaded",
     "unhandledrejection",
     "clippath",
-    "autostop"
+    "autostop",
+    "nfkc",
+    "schemaname",
+    "pkey",
+    "indexdef",
+    "cccd",
+    "unconfigured"
   ],
   "ignorePaths": [
     "**/node_modules/**",
