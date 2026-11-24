@@ -298,6 +298,12 @@ public class RoutePolicyRegistry {
                             true,
                             "Mentor queries active evaluation templates",
                             OwnershipGuard.ROLE_MENTOR),
+                RoutePolicy.roles(
+                    HttpMethod.GET,
+                    "/api/v1/mentor/evaluation-tasks",
+                    true,
+                    "Mentor retrieves internship and interview evaluation tasks",
+                    OwnershipGuard.ROLE_MENTOR),
 
                     // 7. Staff & Company (literal /me and /me/logo BEFORE parameterized /{id})
                     RoutePolicy.roles(

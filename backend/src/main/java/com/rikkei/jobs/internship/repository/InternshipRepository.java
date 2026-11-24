@@ -16,12 +16,13 @@ public interface InternshipRepository extends JpaRepository<Internship, Long> {
 
 
     // Lấy danh sách thực tập sinh do Mentor phụ trách
-    @EntityGraph(attributePaths = "user")
     List<Internship> findAllByMentorEmailIgnoreCase(String mentorEmail);
 
     // Lấy danh sách thực tập sinh do Mentor phụ trách trong batch
-    @EntityGraph(attributePaths = "user")
-    List<Internship> findAllByMentorEmailIgnoreCaseAndBatchId(String mentorEmail, String batchId);
+    List<Internship> findAllByMentorEmailIgnoreCaseAndBatchId(
+        String mentorEmail,
+        String batchId
+    );
 
     List<Internship> findAllByUserIdOrderBySyncedAtDesc(Long userId);
 }

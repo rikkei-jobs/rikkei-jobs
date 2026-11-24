@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.*;
         bearerFormat = "JWT",
         description = "JWT Bearer access token")
 @RestController
-@RequestMapping("/api/v1/mentor/")
+@RequestMapping("/api/v1/mentor")
 @Tag(name = "Assessment", description = "Các API quản lý và đánh giá năng lực ứng viên từ Mentor")
 @RequiredArgsConstructor
 public class MentorEvaluationController {
@@ -56,7 +56,7 @@ public class MentorEvaluationController {
             description = "Không có quyền Mentor: FORBIDDEN",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @PreAuthorize("hasRole('MENTOR')")
-    @PostMapping
+    @GetMapping("/evaluation-tasks")
     public ResponseEntity<MentorEvaluationTasksResponse> getEvaluationTasks(
             @Parameter(description = "Context đánh giá") @RequestParam EvaluationContext context,
             @Parameter(description = "ID đợt thực tập, chỉ áp dụng cho INTERNSHIP")
