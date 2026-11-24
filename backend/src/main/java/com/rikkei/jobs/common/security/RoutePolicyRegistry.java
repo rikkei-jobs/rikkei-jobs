@@ -189,6 +189,32 @@ public class RoutePolicyRegistry {
                             false,
                             "Dev-only external mock test probe"),
 
+                    // AI-05 administration
+                    RoutePolicy.roles(
+                            HttpMethod.GET,
+                            "/api/v1/admin/ai-config",
+                            true,
+                            "Read AI settings",
+                            "ADMIN"),
+                    RoutePolicy.roles(
+                            HttpMethod.PUT,
+                            "/api/v1/admin/ai-config",
+                            true,
+                            "Update AI settings",
+                            "ADMIN"),
+                    RoutePolicy.roles(
+                            HttpMethod.GET,
+                            "/api/v1/admin/ai-logs",
+                            true,
+                            "Read masked AI audit",
+                            "ADMIN"),
+                    RoutePolicy.roles(
+                            HttpMethod.GET,
+                            "/api/v1/admin/ai-usage/summary",
+                            true,
+                            "Read AI usage",
+                            "ADMIN"),
+
                     // 4. Authenticated Any (all 5 roles)
                     RoutePolicy.authenticatedAny(
                             HttpMethod.POST,

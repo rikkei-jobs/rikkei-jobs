@@ -24,6 +24,7 @@ import java.time.OffsetDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -96,8 +97,19 @@ public class CandidatePublicServiceImpl implements CandidatePublicService {
 
     /**
      * Records PM external records idempotently by {@code (candidateUserId, ExternalSource.PM,
-     * batchId)} and recomputes verified skills. Previously synced batches omitted from {@code
-     * results} are retained locally rather than deleted.
+     * batchId)} and recomputes verified skills when the record is inserted, updated, or
+     * deduplicated. Previously synced batches omitted from {@code results} are retained locally
+     * rather than deleted.
+     *
+     * <p><b>Skip invariant:</b> When a single matching {@link ExternalRecord} already exists with
+     * identical normalized {@code title} and scaled {@code score}, both the {@code
+     * external_records} write and {@link SkillRecomputeService#recomputeSkills} are skipped. This
+     * is safe because: (1) {@code skill_mappings} has no runtime mutation path (Flyway dev seed
+     * only), (2) {@code SkillScoreCalculator} is pure and immutable, (3) mentor evaluations trigger
+     * {@link #recomputeCandidateSkills} directly upon submission, and (4) preserving {@code
+     * recordedAt} avoids resetting evidence age relative to the 1-year {@code timeFactor}
+     * threshold; {@code POST /api/v1/profiles/me/skills/recompute} remains available for explicit
+     * recalculation across the 1-year boundary.
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -164,15 +176,24 @@ public class CandidatePublicServiceImpl implements CandidatePublicService {
                                 scaledScore,
                                 now,
                                 candidateUserId));
+                changed = true;
             } else {
                 ExternalRecord primary = matches.getFirst();
-                primary.updateResult(normalizedTitle, scaledScore, now);
-                externalRecordRepository.save(primary);
+                boolean titleChanged = !Objects.equals(primary.getTitle(), normalizedTitle);
+                boolean scoreChanged =
+                        primary.getScore() == null
+                                || primary.getScore().compareTo(scaledScore) != 0;
+                // Skip write and full skill recompute when PM result is unchanged and single.
+                if (titleChanged || scoreChanged) {
+                    primary.updateResult(normalizedTitle, scaledScore, now);
+                    externalRecordRepository.save(primary);
+                    changed = true;
+                }
                 if (matches.size() > 1) {
                     externalRecordRepository.deleteAll(matches.subList(1, matches.size()));
+                    changed = true;
                 }
             }
-            changed = true;
         }
 
         if (changed) {

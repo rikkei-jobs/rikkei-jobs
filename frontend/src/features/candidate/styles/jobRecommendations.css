@@ -43,6 +43,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  min-height: var(--rj-density-button-height, 44px);
   background-color: var(--rj-color-brand-primary);
   color: var(--rj-color-text-inverse);
   border: none;
@@ -56,9 +57,11 @@
     transform var(--rj-duration-micro) var(--rj-ease-hover);
 }
 
-.refresh-button:hover:not(:disabled) {
-  background-color: var(--rj-color-brand-primary-hover);
-  transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+  .refresh-button:hover:not(:disabled) {
+    background-color: var(--rj-color-brand-primary-hover);
+    transform: translateY(-1px);
+  }
 }
 
 .refresh-button:disabled {
@@ -124,6 +127,21 @@
   color: var(--rj-color-status-info-text);
 }
 
+.recommendations-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  background: var(--rj-color-status-warning-bg);
+  color: var(--rj-color-status-warning-text);
+  border: 1px solid var(--rj-color-status-warning-border);
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
 .jobs-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(360px, 100%), 1fr));
@@ -144,9 +162,11 @@
   position: relative;
 }
 
-.job-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--rj-shadow-3);
+@media (hover: hover) and (pointer: fine) {
+  .job-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--rj-shadow-3);
+  }
 }
 
 .job-card-header {
@@ -329,8 +349,10 @@
   transition: background-color var(--rj-duration-fast) var(--rj-ease-hover);
 }
 
-.apply-button:hover:not(:disabled) {
-  background: var(--rj-color-text-secondary);
+@media (hover: hover) and (pointer: fine) {
+  .apply-button:hover:not(:disabled) {
+    background: var(--rj-color-text-secondary);
+  }
 }
 
 .apply-button:disabled {
@@ -357,8 +379,10 @@
   transition: background-color var(--rj-duration-fast) var(--rj-ease-hover);
 }
 
-.details-button:hover {
-  background: var(--rj-color-badge-brand-bg);
+@media (hover: hover) and (pointer: fine) {
+  .details-button:hover {
+    background: var(--rj-color-badge-brand-bg);
+  }
 }
 
 .recommendations-loading,

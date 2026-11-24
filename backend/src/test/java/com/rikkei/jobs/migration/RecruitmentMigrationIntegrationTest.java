@@ -32,7 +32,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
-@DisplayName("V17, V19 & V20 Recruitment Applications Migration, Constraints & Seed Tests")
+@DisplayName("V19, V21 & V22 Recruitment Applications Migration, Constraints & Seed Tests")
 public class RecruitmentMigrationIntegrationTest {
 
     private static final String POSTGRES_IMAGE = "postgres:18.6-alpine";
@@ -40,7 +40,7 @@ public class RecruitmentMigrationIntegrationTest {
             "9b71184ae956dd96864598cc8abfffb29bcf23c9bff28aff431fd779ac564782";
 
     @Nested
-    @DisplayName("Clean Empty DB, V1..V15 Baseline Upgrade & Direct SQL Idempotency")
+    @DisplayName("Clean Empty DB, V1..V17 Baseline Upgrade & Direct SQL Idempotency")
     class LifecycleAndUpgradeTests {
 
         private DataSource createDataSource(PostgreSQLContainer db) {
@@ -65,7 +65,7 @@ public class RecruitmentMigrationIntegrationTest {
         }
 
         @Test
-        @DisplayName("Prod migrations V17 and V19 apply cleanly from empty DB with 0 rows")
+        @DisplayName("Prod migrations V19 and V21 apply cleanly from empty DB with 0 rows")
         void testProdMigrationsApplyCleanlyFromEmptyDatabase() {
             try (PostgreSQLContainer db = new PostgreSQLContainer(POSTGRES_IMAGE)) {
                 db.start();
@@ -79,7 +79,7 @@ public class RecruitmentMigrationIntegrationTest {
 
                 JdbcTemplate jdbc = new JdbcTemplate(dataSource);
                 assertEquals(
-                        Integer.valueOf(10),
+                        Integer.valueOf(11),
                         jdbc.queryForObject(
                                 "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                                 Integer.class));
@@ -98,7 +98,7 @@ public class RecruitmentMigrationIntegrationTest {
         }
 
         @Test
-        @DisplayName("Dev migrations apply 18 scripts, 7 applications, and advance sequences")
+        @DisplayName("Dev migrations apply 19 scripts, 7 applications, and advance sequences")
         void testDevMigrationsApplyCleanlyFromEmptyDatabase() {
             try (PostgreSQLContainer db = new PostgreSQLContainer(POSTGRES_IMAGE)) {
                 db.start();
@@ -112,7 +112,7 @@ public class RecruitmentMigrationIntegrationTest {
 
                 JdbcTemplate jdbc = new JdbcTemplate(dataSource);
                 assertEquals(
-                        Integer.valueOf(18),
+                        Integer.valueOf(19),
                         jdbc.queryForObject(
                                 "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                                 Integer.class));
@@ -135,7 +135,7 @@ public class RecruitmentMigrationIntegrationTest {
         }
 
         @Test
-        @DisplayName("V17, V19, and V20 upgrade cleanly on top of origin/develop V1..V15 baseline")
+        @DisplayName("V19, V21, and V22 upgrade cleanly on top of origin/develop V1..V17 baseline")
         void testUpgradesCleanlyOnTopOfOriginDevelopBaseline() {
             try (PostgreSQLContainer prodDb = new PostgreSQLContainer(POSTGRES_IMAGE)) {
                 prodDb.start();
@@ -143,7 +143,7 @@ public class RecruitmentMigrationIntegrationTest {
                 Flyway.configure()
                         .dataSource(prodDataSource)
                         .locations("classpath:db/migration")
-                        .target("15")
+                        .target("17")
                         .validateOnMigrate(true)
                         .load()
                         .migrate();
@@ -160,7 +160,7 @@ public class RecruitmentMigrationIntegrationTest {
 
                 JdbcTemplate prodJdbc = new JdbcTemplate(prodDataSource);
                 assertEquals(
-                        Integer.valueOf(10),
+                        Integer.valueOf(11),
                         prodJdbc.queryForObject(
                                 "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                                 Integer.class));
@@ -172,7 +172,7 @@ public class RecruitmentMigrationIntegrationTest {
                 Flyway.configure()
                         .dataSource(devDataSource)
                         .locations("classpath:db/migration", "classpath:db/migration-dev")
-                        .target("15")
+                        .target("17")
                         .validateOnMigrate(true)
                         .load()
                         .migrate();
@@ -189,7 +189,7 @@ public class RecruitmentMigrationIntegrationTest {
 
                 JdbcTemplate devJdbc = new JdbcTemplate(devDataSource);
                 assertEquals(
-                        Integer.valueOf(18),
+                        Integer.valueOf(19),
                         devJdbc.queryForObject(
                                 "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                                 Integer.class));
@@ -200,7 +200,7 @@ public class RecruitmentMigrationIntegrationTest {
         }
 
         @Test
-        @DisplayName("Re-running V17, V19, and V20 SQL directly is idempotent and keeps sequences")
+        @DisplayName("Re-running V19, V21, and V22 SQL directly is idempotent and keeps sequences")
         void testDirectSqlRerunIdempotency() throws SQLException {
             try (PostgreSQLContainer db = new PostgreSQLContainer(POSTGRES_IMAGE)) {
                 db.start();
@@ -222,11 +222,11 @@ public class RecruitmentMigrationIntegrationTest {
                 assertEquals(Long.valueOf(8L), beforeRerunId);
 
                 executeMigrationScriptDirectly(
-                        dataSource, "db/migration/V17__create_recruitment_applications.sql");
+                        dataSource, "db/migration/V19__create_recruitment_applications.sql");
                 executeMigrationScriptDirectly(
-                        dataSource, "db/migration/V19__create_application_cv_snapshots.sql");
+                        dataSource, "db/migration/V21__create_application_cv_snapshots.sql");
                 executeMigrationScriptDirectly(
-                        dataSource, "db/migration-dev/V20__dev_recruitment_seed.sql");
+                        dataSource, "db/migration-dev/V22__dev_recruitment_seed.sql");
 
                 flyway.validate();
                 assertEquals(0, flyway.migrate().migrationsExecuted);
@@ -248,7 +248,7 @@ public class RecruitmentMigrationIntegrationTest {
     @SpringBootTest
     @Testcontainers
     @ActiveProfiles("dev")
-    @DisplayName("Dev Profile: V17/V19/V20 Schema Boundaries, Constraints & Seed Verification")
+    @DisplayName("Dev Profile: V19/V21/V22 Schema Boundaries, Constraints & Seed Verification")
     class SchemaConstraintsAndSeedTests {
 
         @Container

@@ -131,7 +131,7 @@ describe('ApplyDialog', () => {
     [404, 'NOT_FOUND', 'Not found'],
     [503, 'CV_SERVICE_UNAVAILABLE', 'Service unavailable'],
   ] as const)(
-    'shows clean unavailable copy with zero permission-denied text when /api/v1/me/cvs returns %i',
+    'shows clean unavailable copy with zero raw error codes and restores focus + scroll lock on close when /api/v1/me/cvs returns %i',
     async (status, code, message) => {
       globalThis.fetch = vi.fn().mockResolvedValueOnce({
         ok: false,
@@ -141,7 +141,15 @@ describe('ApplyDialog', () => {
         json: () => Promise.resolve({ code, message }),
       } as unknown as Response);
 
-      render(<DialogHarness initialOpen />);
+      render(<DialogHarness />);
+
+      const trigger = screen.getByRole('button', { name: 'Mở ứng tuyển' });
+      trigger.focus();
+      fireEvent.click(trigger);
+
+      const dialog = await screen.findByRole('dialog');
+      expect(document.documentElement.getAttribute('data-scroll-locked')).toBe('true');
+      expect(document.body.style.overflow).toBe('');
 
       const alert = await screen.findByRole('alert');
       expect(alert).toHaveTextContent(/Dịch vụ quản lý CV hiện chưa sẵn sàng/i);
@@ -150,7 +158,16 @@ describe('ApplyDialog', () => {
       );
       expect(alert.textContent?.match(/Dịch vụ quản lý CV hiện chưa sẵn sàng/gi)).toHaveLength(1);
       expect(alert.textContent).not.toMatch(/không có quyền/i);
+      expect(dialog.textContent).not.toMatch(/CV_SERVICE_UNAVAILABLE|FORBIDDEN|NOT_FOUND|\b(403|404|500|503)\b/);
       expect(screen.getByRole('button', { name: /Gửi hồ sơ ứng tuyển/i })).toBeDisabled();
+
+      fireEvent.keyDown(document, { key: 'Escape' });
+      await waitFor(() => {
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      });
+      expect(document.documentElement.getAttribute('data-scroll-locked')).toBeNull();
+      expect(document.body.style.overflow).toBe('');
+      expect(trigger).toHaveFocus();
     },
   );
 

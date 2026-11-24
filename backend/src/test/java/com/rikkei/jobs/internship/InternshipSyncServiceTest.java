@@ -346,8 +346,6 @@ class InternshipSyncServiceTest {
             when(externalApiClient.getStudentInternshipsFastFail("lms-sv-001")).thenReturn(json);
             when(internshipRepository.findByUserIdAndBatchId(1L, "IOC-JB-2026-09"))
                     .thenReturn(Optional.empty());
-            when(internshipTaskRepository.findByInternshipIdAndTitle(any(), any()))
-                    .thenReturn(Optional.empty());
 
             int count = syncService.syncInternships(1L, "lms-sv-001");
 
@@ -426,10 +424,8 @@ class InternshipSyncServiceTest {
             when(externalApiClient.getStudentInternshipsFastFail("lms-sv-001")).thenReturn(json);
             when(internshipRepository.findByUserIdAndBatchId(1L, "IOC-JB-2026-09"))
                     .thenReturn(Optional.of(existingBatch));
-            when(internshipTaskRepository.findByInternshipIdAndTitle(42L, "API đặt phòng"))
-                    .thenReturn(Optional.of(existingTask));
-            when(internshipTaskRepository.findByInternshipIdAndTitle(42L, "Task mới"))
-                    .thenReturn(Optional.empty());
+            when(internshipTaskRepository.findByInternshipId(42L))
+                    .thenReturn(List.of(existingTask));
 
             int count = syncService.syncInternships(1L, "lms-sv-001");
 
@@ -469,8 +465,6 @@ class InternshipSyncServiceTest {
             when(externalApiClient.getStudentInternshipsFastFail("lms-sv-001")).thenReturn(json);
             when(internshipRepository.findByUserIdAndBatchId(1L, "IOC-JB-2026-09"))
                     .thenReturn(Optional.empty());
-            when(internshipTaskRepository.findByInternshipIdAndTitle(any(), eq("API 1")))
-                    .thenReturn(Optional.empty());
 
             syncService.syncInternships(1L, "lms-sv-001");
 
@@ -479,6 +473,55 @@ class InternshipSyncServiceTest {
             verify(internshipTaskRepository, times(1)).save(taskCaptor.capture());
             assertEquals("API 1", taskCaptor.getValue().getTitle());
             assertEquals(new BigDecimal("9.5"), taskCaptor.getValue().getAcceptedScore());
+        }
+
+        @Test
+        @DisplayName(
+                "Unchanged tasks skip redundant task writes while batch syncedAt still updates")
+        void unchangedTasksSkipRedundantSavesWhileBatchSyncedAtUpdates() {
+            Internship existingBatch = new Internship();
+            ReflectionTestUtils.setField(existingBatch, "id", 42L);
+            existingBatch.setUserId(1L);
+            existingBatch.setBatchId("IOC-JB-2026-09");
+            existingBatch.setFinalScore(new BigDecimal("8.50"));
+
+            InternshipTask existingTask = new InternshipTask();
+            ReflectionTestUtils.setField(existingTask, "id", 420L);
+            existingTask.setInternship(existingBatch);
+            existingTask.setTitle("API đặt phòng");
+            existingTask.setAcceptedScore(new BigDecimal("9.00"));
+            existingTask.setAcceptedAt(OffsetDateTime.parse("2026-09-25T10:00:00Z"));
+
+            String json =
+                    """
+                    [
+                      {
+                        "batchId": "IOC-JB-2026-09",
+                        "topicName": "Hệ thống đặt lịch phòng họp",
+                        "finalScore": 8.5,
+                        "tasks": [
+                          {
+                            "title": "API đặt phòng",
+                            "acceptedScore": 9.0,
+                            "acceptedAt": "2026-09-25T17:00:00+07:00"
+                          }
+                        ]
+                      }
+                    ]
+                    """;
+            when(externalApiClient.getStudentInternshipsFastFail("lms-sv-001")).thenReturn(json);
+            when(internshipRepository.findByUserIdAndBatchId(1L, "IOC-JB-2026-09"))
+                    .thenReturn(Optional.of(existingBatch));
+            when(internshipTaskRepository.findByInternshipId(42L))
+                    .thenReturn(List.of(existingTask));
+
+            int count = syncService.syncInternships(1L, "lms-sv-001");
+
+            assertEquals(1, count);
+            verify(internshipRepository, times(1)).save(sameEntity(existingBatch));
+            assertEquals(OffsetDateTime.now(FIXED_CLOCK), existingBatch.getSyncedAt());
+            verify(internshipTaskRepository, times(1)).findByInternshipId(42L);
+            verify(internshipTaskRepository, never()).save(any());
         }
 
         @Test

@@ -12,7 +12,7 @@ export const CandidateEvaluationsPage: React.FC = () => {
       description="Theo dõi các phiếu đánh giá từ mentor, xem điểm số từng tiêu chí và nhận xét về quá trình phỏng vấn, thực tập của bạn"
       hideAccountCard
     >
-      <CandidateEvaluations />
+      <CandidateEvaluations headingLevel={1} />
     </RoleHomeLayout>
   );
 };

@@ -78,6 +78,8 @@ export const PROTECTED_ROUTE_POLICIES = {
     path: '/admin',
     allowedRoles: ['ADMIN'],
   },
+  adminAiConfig: { id: 'adminAiConfig', path: '/admin/ai-config', allowedRoles: ['ADMIN'] },
+  adminAiLogs: { id: 'adminAiLogs', path: '/admin/ai-logs', allowedRoles: ['ADMIN'] },
   forbidden: {
     id: 'forbidden',
     path: '/403',

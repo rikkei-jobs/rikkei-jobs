@@ -196,4 +196,58 @@ describe('JobRecommendationsSection Component', () => {
       expect(screen.getByText('Kỹ sư Java Backend')).toBeInTheDocument();
     });
   });
+
+  it('displays notice banner together with fallback recommendations when meta.message is present (A2)', async () => {
+    const quotaNotice =
+      'Bạn đã dùng hết lượt AI trong ngày. Đang hiển thị gợi ý dựa trên điểm kỹ năng.';
+    vi.spyOn(api, 'fetchJobRecommendations').mockResolvedValueOnce({
+      ...mockResponse,
+      items: [mockResponse.items[1]],
+      total: 1,
+      message: quotaNotice,
+    });
+    vi.spyOn(recruitmentApi, 'fetchCandidateCvs').mockResolvedValueOnce({
+      availability: 'unavailable',
+      items: [],
+      reason: 'Tính năng chọn và tải lên CV đang được hoàn thiện. Bạn vui lòng thử lại sau.',
+    });
+
+    renderSection();
+
+    await waitFor(() => {
+      expect(screen.getByText('Fresher Java Developer')).toBeInTheDocument();
+    });
+
+    expect(screen.getByRole('status')).toHaveTextContent(quotaNotice);
+    const applyButton = screen.getByRole('button', { name: /^Ứng tuyển$/i });
+    expect(applyButton).toBeEnabled();
+
+    fireEvent.click(applyButton);
+
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog).toHaveTextContent('Nộp hồ sơ ứng tuyển');
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      /Dịch vụ quản lý CV hiện chưa sẵn sàng/i,
+    );
+    expect(screen.getByRole('status')).toHaveTextContent(quotaNotice);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Đóng hộp thoại ứng tuyển' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('displays disabled notice when recommendations list is empty and meta.message is present (A3)', async () => {
+    const disabledNotice = 'AI đang tạm tắt';
+    vi.spyOn(api, 'fetchJobRecommendations').mockResolvedValueOnce({
+      ...mockResponse,
+      items: [],
+      total: 0,
+      message: disabledNotice,
+    });
+
+    renderSection();
+
+    await waitFor(() => {
+      expect(screen.getByRole('status')).toHaveTextContent(disabledNotice);
+    });
+  });
 });

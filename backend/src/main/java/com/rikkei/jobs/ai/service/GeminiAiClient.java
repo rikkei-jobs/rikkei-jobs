@@ -3,6 +3,8 @@ package com.rikkei.jobs.ai.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rikkei.jobs.ai.config.AiProperties;
+import com.rikkei.jobs.ai.dto.AiConfigDto;
+import com.rikkei.jobs.ai.dto.AiGenerationResult;
 import com.rikkei.jobs.common.client.ExternalApiClient;
 import java.time.Duration;
 import java.util.List;
@@ -35,7 +37,7 @@ public class GeminiAiClient implements AiClient {
     }
 
     @Override
-    public String generateExplanation(String prompt) {
+    public AiGenerationResult generate(String prompt, AiConfigDto config) {
         String apiKey = aiProperties.getGemini().getApiKey();
         if (apiKey == null || apiKey.trim().isEmpty()) {
             throw new IllegalStateException("Gemini API key is not configured");
@@ -44,11 +46,19 @@ public class GeminiAiClient implements AiClient {
         String url =
                 aiProperties.getGemini().getBaseUrl().replaceAll("/+$", "")
                         + "/models/"
-                        + aiProperties.getGemini().getModel()
+                        + config.model()
                         + ":generateContent";
 
         Map<String, Object> body =
-                Map.of("contents", List.of(Map.of("parts", List.of(Map.of("text", prompt)))));
+                Map.of(
+                        "contents",
+                        List.of(Map.of("parts", List.of(Map.of("text", prompt)))),
+                        "generationConfig",
+                        Map.of(
+                                "temperature",
+                                config.temperature(),
+                                "maxOutputTokens",
+                                config.maxTokens()));
 
         String responseBody =
                 externalApiClient.postJson(
@@ -59,11 +69,23 @@ public class GeminiAiClient implements AiClient {
 
         try {
             JsonNode root = objectMapper.readTree(responseBody);
-            JsonNode candidate = root.path("candidates").get(0);
-            return candidate.path("content").path("parts").get(0).path("text").asText().trim();
+            StringBuilder text = new StringBuilder();
+            for (JsonNode part : root.path("candidates").path(0).path("content").path("parts")) {
+                if (!part.path("thought").asBoolean(false)) {
+                    text.append(part.path("text").asText(""));
+                }
+            }
+            return new AiGenerationResult(
+                    text.toString().trim(),
+                    tokenCount(root.path("usageMetadata").path("promptTokenCount")),
+                    tokenCount(root.path("usageMetadata").path("candidatesTokenCount")));
         } catch (Exception e) {
             log.error("Failed to parse Gemini response: {}", e.getClass().getSimpleName());
             throw new RuntimeException("Failed to parse Gemini response", e);
         }
+    }
+
+    private static Integer tokenCount(JsonNode node) {
+        return node.canConvertToInt() && node.asInt() >= 0 ? node.asInt() : null;
     }
 }

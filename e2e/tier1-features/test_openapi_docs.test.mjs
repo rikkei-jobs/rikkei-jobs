@@ -1,6 +1,6 @@
 // Tier 1: Feature Coverage — OpenAPI /api/docs, Swagger UI Assets & Legacy Routes
 // Verifies /api/docs redirect and HTML rendering, Swagger UI CSS/JS/PNG/config assets on :8080 and :3000,
-// full OpenAPI 35-path / 37-operation contract, @Hidden exclusion of TestErrorController, and hr1 allow-list
+// full OpenAPI 38-path / 41-operation contract, @Hidden exclusion of TestErrorController, and hr1 allow-list
 
 import { describe, it, before } from 'node:test';
 import assert from 'node:assert/strict';
@@ -15,6 +15,9 @@ import {
 } from '../helpers/company-fixtures.mjs';
 
 const EXPECTED_OPERATIONS = new Map([
+  ['/api/v1/admin/ai-config', ['get', 'put']],
+  ['/api/v1/admin/ai-logs', ['get']],
+  ['/api/v1/admin/ai-usage/summary', ['get']],
   ['/api/v1/auth/sso', ['post']],
   ['/api/v1/auth/login', ['post']],
   ['/api/v1/auth/change-password', ['post']],
@@ -217,7 +220,7 @@ describe('Tier 1: OpenAPI /api/docs & Swagger UI Verification', () => {
     }
   });
 
-  it('TC-T1-DOCS-03: Should expose identical OpenAPI 3 contract with bearerAuth and all 35 paths / 37 operations across :8080 and :3000', async () => {
+  it('TC-T1-DOCS-03: Should expose identical OpenAPI 3 contract with bearerAuth and all 38 paths / 41 operations across :8080 and :3000', async () => {
     assert.ok(backendOnline, 'Backend service must be reachable');
     assert.ok(frontendOnline, 'Frontend Nginx proxy must be reachable');
 
@@ -248,7 +251,7 @@ describe('Tier 1: OpenAPI /api/docs & Swagger UI Verification', () => {
     const paths = backendApiRes.body.paths || {};
     const actualPathKeys = Object.keys(paths).sort();
     const expectedPathKeys = [...EXPECTED_OPERATIONS.keys()].sort();
-    assert.deepStrictEqual(actualPathKeys, expectedPathKeys, 'OpenAPI paths must match all 35 merged module endpoints');
+    assert.deepStrictEqual(actualPathKeys, expectedPathKeys, 'OpenAPI paths must match all 38 merged module endpoints');
 
     let totalOperations = 0;
     const rootSecurity = backendApiRes.body.security || [];
@@ -268,11 +271,14 @@ describe('Tier 1: OpenAPI /api/docs & Swagger UI Verification', () => {
           const hasOpBearer = hasRootBearer || opSecurity.some((item) => Object.prototype.hasOwnProperty.call(item, 'bearerAuth'));
           assert.ok(hasOpBearer, `Protected operation ${opKey} must declare bearerAuth security`);
           assert.ok(op.responses?.['401'], `Protected operation ${opKey} must document 401 response`);
+          if (pathKey.startsWith('/api/v1/admin/ai-')) {
+            assert.ok(op.responses?.['403'], `ADMIN operation ${opKey} must document 403 response`);
+          }
         }
       }
     }
 
-    assert.strictEqual(totalOperations, 37, `Expected 37 OpenAPI operations, got ${totalOperations}`);
+    assert.strictEqual(totalOperations, 41, `Expected 41 OpenAPI operations, got ${totalOperations}`);
 
     const getCompanyByIdOp = paths['/api/v1/companies/{id}']?.get;
     assert.ok(getCompanyByIdOp, 'GET /api/v1/companies/{id} must exist in OpenAPI');

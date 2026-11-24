@@ -157,6 +157,26 @@ class RoutePolicyRegistryTest {
     }
 
     @Test
+    @DisplayName("AI-05 admin route policies enforce ADMIN RBAC boundaries")
+    void aiAdminPoliciesAreDeclared() {
+        List<String> adminRoutes =
+                List.of(
+                        "GET /api/v1/admin/ai-config",
+                        "PUT /api/v1/admin/ai-config",
+                        "GET /api/v1/admin/ai-logs",
+                        "GET /api/v1/admin/ai-usage/summary");
+        for (String route : adminRoutes) {
+            String[] parts = route.split(" ");
+            RoutePolicy policy =
+                    registry.findExactPolicy(HttpMethod.valueOf(parts[0]), parts[1]).orElseThrow();
+            assertEquals(PolicyAccessType.ROLES, policy.accessType());
+            assertEquals(Set.of("ADMIN"), policy.allowedRoles());
+            assertTrue(policy.methodScoped());
+            assertTrue(!policy.devOnly());
+        }
+    }
+
+    @Test
     @DisplayName("RoutePolicy constructor rejects invalid role configurations")
     void rejectsInvalidRolePolicies() {
         assertThrows(

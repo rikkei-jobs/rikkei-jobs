@@ -5,11 +5,14 @@ import { LEVEL_LABELS, SOURCE_LABELS, formatDate, formatScore } from '../skillLa
 
 interface SkillItemProps {
   readonly item: SkillProfileItem;
+  /** Heading level for the evidence subheading; defaults to 4 when parent section is h3. */
+  readonly headingLevel?: 3 | 4;
 }
 
-export const SkillItem: React.FC<SkillItemProps> = ({ item }) => {
+export const SkillItem: React.FC<SkillItemProps> = ({ item, headingLevel = 4 }) => {
   const [open, setOpen] = useState(false);
   const panelId = useId();
+  const EvidenceHeadingTag = headingLevel === 3 ? 'h3' : 'h4';
   const { skill, verifiedScore, selfScore, level, evidences } = item;
   const isVerified = verifiedScore !== null;
   const shownScore = isVerified ? verifiedScore : selfScore;
@@ -74,7 +77,9 @@ export const SkillItem: React.FC<SkillItemProps> = ({ item }) => {
       </button>
 
       <div id={panelId} className="sp-evidences" hidden={!open}>
-        <h4 className="sp-evidences-title">Bằng chứng ({evidences.length})</h4>
+        <EvidenceHeadingTag className="sp-evidences-title">
+          Bằng chứng ({evidences.length})
+        </EvidenceHeadingTag>
         <ul className="sp-evidence-list">
           {evidences.map((evidence, index) => (
             <li key={`${evidence.source}-${evidence.recordedAt}-${index}`} className="sp-evidence">

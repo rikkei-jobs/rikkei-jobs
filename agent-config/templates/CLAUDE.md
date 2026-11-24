@@ -32,7 +32,7 @@ Rikkei Jobs is an enterprise education and recruitment platform engineered as a 
   - 09-frontend-design-bar, 10-testing-strategy, 11-docs-and-bilingual, 12-ci-and-quality-gates
   - 13-backend-data-access-performance, 14-backend-module-boundaries
   - 15-backend-observability-ops, 16-backend-integrations
-- Skills Location: .claude/skills/<skill-name>/SKILL.md (28 task-triggered skills).
+- Skills Location: .claude/skills/<skill-name>/SKILL.md (29 task-triggered skills, including `frontend-taste-anti-slop` for frontend anti-slop copy, restraint, and polish).
   - Trigger Pattern: Every skill description starts with an explicit trigger phrase ("Use when ...").
   - Mandatory Workflow: Always review using-rikkei-skills before undertaking complex or multi-step tasks.
 - Frontend Design Bar (Rule 09): Zero emoji in UI, custom 24px icon system (<Icon name=... />), WCAG 2.2 AA contrast (>= 4.5:1), purposeful motion tokens with mandatory prefers-reduced-motion.

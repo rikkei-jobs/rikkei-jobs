@@ -45,7 +45,7 @@ Rikkei Jobs is an enterprise education and recruitment platform engineered as a 
 @./.gemini/rules/15-backend-observability-ops.md
 @./.gemini/rules/16-backend-integrations.md
 
-- Skills Location: .gemini/skills/<skill-name>/SKILL.md (28 task-triggered skills).
+- Skills Location: .gemini/skills/<skill-name>/SKILL.md (29 task-triggered skills, including `frontend-taste-anti-slop` for frontend anti-slop copy, restraint, and polish).
   - Trigger Pattern: Every skill description starts with an explicit trigger phrase ("Use when ...").
   - Mandatory Workflow: Always review using-rikkei-skills before undertaking complex or multi-step tasks.
 - Command Fallbacks: .gemini/commands/*.toml provide direct command definitions for environments without automatic skill indexing.

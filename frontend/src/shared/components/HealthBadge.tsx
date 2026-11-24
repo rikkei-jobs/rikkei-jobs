@@ -29,7 +29,7 @@ export const HealthBadge: React.FC<HealthBadgeProps> = ({
   return (
     <div className="health-card" data-testid="health-card">
       <div className="health-header">
-        <span className="health-label">Trạng thái kết nối Backend:</span>
+        <span className="health-label">Trạng thái kết nối hệ thống:</span>
         <span
           className={getBadgeClass(status)}
           data-testid="backend-status-badge"
@@ -45,7 +45,7 @@ export const HealthBadge: React.FC<HealthBadgeProps> = ({
           onClick={onRefresh}
           disabled={isLoading}
           className="refresh-btn"
-          aria-label="Kiểm tra lại trạng thái Backend"
+          aria-label="Kiểm tra lại trạng thái hệ thống"
         >
           {isLoading ? 'Đang kiểm tra...' : 'Kiểm tra lại'}
         </button>

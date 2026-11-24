@@ -11,7 +11,7 @@ export const CandidateGapAnalysisPage: React.FC = () => {
       description="Phân tích khoảng thiếu hụt năng lực theo vị trí mục tiêu hoặc JD"
       hideAccountCard
     >
-      <GapAnalysisSection />
+      <GapAnalysisSection headingLevel={1} />
     </RoleHomeLayout>
   );
 };

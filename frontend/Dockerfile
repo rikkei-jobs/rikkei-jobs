@@ -20,8 +20,13 @@ RUN rm -rf /etc/nginx/conf.d/* /usr/share/nginx/html/*
 # Copy built SPA assets from builder
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copy unprivileged Nginx configuration
+# Copy unprivileged Nginx configuration and envsubst template (dev CSP overrides)
+ENV NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx \
+    NGINX_ENVSUBST_FILTER=^CSP_ \
+    CSP_DEV_IMG_SRC="" \
+    CSP_DEV_CONNECT_SRC=""
 COPY nginx.conf /etc/nginx/nginx.conf
+COPY nginx.conf.template /etc/nginx/templates/nginx.conf.template
 
 # Setup required directories and non-root permissions for user nginx (UID 101)
 RUN mkdir -p /tmp/client_temp /tmp/proxy_temp /tmp/fastcgi_temp /tmp/uwsgi_temp /tmp/scgi_temp \

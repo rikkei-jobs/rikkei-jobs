@@ -266,7 +266,7 @@ public class ApplicationIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.status").value("SUBMITTED"));
 
-        // 2. Re-apply after REJECTED (candidate1 job 5 is REJECTED in V20) and HIRED (job 4 in V20)
+        // 2. Re-apply after REJECTED (candidate1 job 5 is REJECTED in V22) and HIRED (job 4 in V22)
         cvPortDouble.registerCv(53L, 1L, "c1.pdf", "application/pdf", PDF_V1);
         mockMvc.perform(
                         post("/api/v1/jobs/5/apply")

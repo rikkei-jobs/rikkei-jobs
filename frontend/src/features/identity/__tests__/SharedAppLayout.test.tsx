@@ -205,6 +205,8 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
       ]);
 
       expect(getRoleMenuItems('ADMIN').map((i) => ({ label: i.label, disabled: Boolean(i.disabled) }))).toEqual([
+        { label: 'Cấu hình AI', disabled: false },
+        { label: 'Nhật ký AI', disabled: false },
         { label: 'Quản trị', disabled: true },
       ]);
 
@@ -257,7 +259,7 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
         density: 'dense',
         badgeClass: 'rj-role-admin',
         icon: 'shield' as const,
-        expectedItems: ['Quản trị'],
+        expectedItems: ['Cấu hình AI', 'Nhật ký AI', 'Quản trị'],
         forbiddenItems: ['Hồ sơ', 'Thực tập IOC', 'Công ty', 'Duyệt hồ sơ', 'Cần đánh giá'],
       },
     ];

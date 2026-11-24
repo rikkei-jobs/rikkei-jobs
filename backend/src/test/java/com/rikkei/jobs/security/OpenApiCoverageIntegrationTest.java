@@ -389,7 +389,9 @@ class OpenApiCoverageIntegrationTest {
                 "CLOUDINARY_API_BASE_URL=https://api.cloudinary.com/v1_1",
                 "CLOUDINARY_DELIVERY_BASE_URL=https://res.cloudinary.com/prod-rikkei-cloud/image/upload",
                 "APP_FRONTEND_URL=https://rikkeijobs.com",
-                "APP_MAIL_FROM=no-reply@rikkeijobs.com"
+                "APP_MAIL_FROM=no-reply@rikkeijobs.com",
+                "APP_SECURITY_RATE_LIMIT_TRUST_PROXY_HEADERS=true",
+                "APP_SECURITY_RATE_LIMIT_TRUSTED_PROXIES=127.0.0.1"
             })
     @Testcontainers
     @ActiveProfiles("prod")

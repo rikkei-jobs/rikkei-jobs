@@ -49,11 +49,6 @@ spring:
 jwt:
   secret: ${JWT_SECRET:}
 
-app:
-  frontend-url: ${APP_FRONTEND_URL:http://localhost:3000}
-  mail:
-    from: ${APP_MAIL_FROM:no-reply@rikkeijobs.local}
-
 external:
   api:
     base-url: ${EXTERNAL_BASE_URL:http://localhost:9000}
@@ -86,6 +81,28 @@ ai:
     api-key: ${CLAUDE_API_KEY:}
     model: ${CLAUDE_MODEL:claude-3-5-sonnet-20241022}
     base-url: ${CLAUDE_BASE_URL:https://api.anthropic.com/v1}
+
+app:
+  frontend-url: ${APP_FRONTEND_URL:http://localhost:3000}
+  mail:
+    from: ${APP_MAIL_FROM:no-reply@rikkeijobs.local}
+  ai:
+    config-cache-ttl-ms: ${AI_CONFIG_CACHE_TTL_MS:5000}
+    log-retention-days: ${AI_LOG_RETENTION_DAYS:90}
+    log-retention-batch-size: ${AI_LOG_RETENTION_BATCH_SIZE:5000}
+    log-retention-time-budget-ms: ${AI_LOG_RETENTION_TIME_BUDGET_MS:10000}
+    log-retention-cron: ${AI_LOG_RETENTION_CRON:0 15 2 * * *}
+    log-retention-max-batches: ${AI_LOG_RETENTION_MAX_BATCHES:1000}
+  server:
+    tomcat:
+      # Must stay > nginx upstream keepalive_timeout (60s in frontend/nginx.conf) so nginx closes
+      # idle pooled sockets first, preventing 502 races on non-idempotent POST requests.
+      keep-alive-timeout-ms: ${APP_SERVER_TOMCAT_KEEP_ALIVE_TIMEOUT_MS:65000}
+      # Socket read timeout per chunk (disableUploadTimeout=true; nginx buffers 3m uploads).
+      connection-timeout-ms: ${APP_SERVER_TOMCAT_CONNECTION_TIMEOUT_MS:5000}
+    persistence:
+      # Protective JPA query ceiling (vs < 1 ms measured core queries in BASELINE.md section 2.4).
+      query-timeout-ms: ${APP_JPA_QUERY_TIMEOUT_MS:5000}
 
 springdoc:
   api-docs:

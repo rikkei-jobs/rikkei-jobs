@@ -254,3 +254,114 @@ Mandatory Working Method (verbatim from `D:\GitHub\Rikkei\.agents\PROMPT_BASE_RU
 - **T5 (Documentation)**: Append round records to `docs/ut01/{PHASE0_ACK, README, PR_DESCRIPTION, BROWSER_OBSERVATIONS}.md` (listing round files against existing UT-01 commit groups without re-splitting old commits) and document the z-index scale, portal layering, and root scroll-lock contract in `docs/design/DESIGN_SYSTEM.md`; verify `markdownlint-cli2` (`0` issues) and `cspell` (`0` issues, `0` inline ignores).
 - **Live `/browser` Blocks A–D**: Execute via `[BROWSER_VERIFICATION_REQUEST]` to Parent using fresh 60s LMS SSO tickets (`lms-sv-001`): Block A BEFORE reproduction at `/candidate/jobs` (`scrollY >= 800`, light mode, `elementFromPoint`, header/sidebar boxes, `clientWidth`); Block B AFTER across `/candidate/jobs` (`ApplyDialog`), `/candidate/applications` (`WithdrawDialog`), and `375px` mobile drawer (`top`/`middle`/`bottom`, Light/Dark, `1440/1024/768/375`, `elementFromPoint` at 4 corners + center of sidebar/header, identical boxes/width, blocked scroll, real keyboard Tab/Enter focus return, Escape, focus trap, dual-overlay lock ordering, `Select` stacking if applicable, right/double click, Back/Forward/Reload no lock leak, route/theme transitions, `CLS = 0`, `0` console errors, `scrollWidth <= requestedWidth`); Block C screenshots in git-ignored `docs/ut01/pr-screenshots/` + `ORDER.txt`; Block D honest sandbox disclosure.
 - **Final Repo & Docker E2E Gates**: Verify `git branch --show-current == feature/T023552-candidate-application`, `git diff --cached --name-only` empty, unchanged `backend/pom.xml`, `docker-compose.yml`, `frontend/package.json`, `mock/package.json`, and `db/migration*` SHA-256 vs `origin/develop`; pass frontend `lint`, `typecheck`, `test`, `build` (Entry JS gzip `<= 128.81 kB`, Entry CSS `<= 14.04 kB + 0.3 kB`, exact delta reported), `compute-contrast.mjs` (`120/120`), `sync-agent-config --check`, `validate-agent-config` (`10/10`), `check-gate-sync`, `check-version-drift`, `markdownlint-cli2`, `cspell`, secret scan, `./check.sh` and `.\check.ps1` (`26/26`); and run fresh `docker compose up -d --build --wait` -> `node e2e/run-all.mjs` (`28` suites / `344` cases / `2153` assertions, `1` skip) -> `docker compose down -v` (`0` `rikkei` leftovers).
+
+---
+
+## 8. Phase 0 Acknowledgement — Round UT-01-merge (`T023552`)
+
+- **Branch & Merge State**: `feature/T023552-candidate-application` in mid-merge (`git merge origin/develop --no-commit --no-ff`), strictly READ-ONLY git policy (never run `git add`, `commit`, `merge`, `abort`, `reset`, `checkout`, `stash`, `switch`, `restore`, `rebase`, `tag`, `push`, or `git mv`; rename UT-01 migrations via filesystem `Move-Item` only and leave all changes uncommitted).
+- **Starting Git State**:
+  - `git branch --show-current`: `feature/T023552-candidate-application`
+  - `git rev-parse HEAD`: `ecdd7d496cf90feb30240794d3a0640ab315928c`
+  - `git rev-parse MERGE_HEAD`: `a9fde1ffa027d0635054b7cf5ae50600567a2200`
+  - `git status --porcelain -uall`: `186` entries total (`11` `UU` unmerged files + `175` auto-merged staged entries).
+  - `git diff --name-only --diff-filter=U` (`11` `UU` files): `.env.example`, `.gitignore`, `backend/src/test/java/com/rikkei/jobs/migration/CompanyMigrationIntegrationTest.java`, `backend/src/test/java/com/rikkei/jobs/migration/DefaultProfileIntegrationTest.java`, `backend/src/test/java/com/rikkei/jobs/migration/InternshipMigrationIntegrationTest.java`, `backend/src/test/java/com/rikkei/jobs/migration/ProfileSeparationIntegrationTest.java`, `backend/src/test/java/com/rikkei/jobs/security/CompanyOpenApiProfileIntegrationTest.java`, `backend/src/test/java/com/rikkei/jobs/security/OpenApiCoverageIntegrationTest.java`, `backend/src/test/java/com/rikkei/jobs/security/SecurityHardeningIntegrationTest.java`, `e2e/tier1-features/test_openapi_docs.test.mjs`, `frontend/src/features/candidate/JobRecommendationsSection.tsx`.
+- **Task Code & Prefix**: `T023552` (commit proposals in English prefixed with `T023552: <type>(<scope>): <summary>`).
+- **Mandatory Working Method (R1 verbatim)**:
+
+> "Hãy check thật kỹ tìm hiểu và nghiên cứu thật kỹ chuyên sâu nhất từng bước rồi search, nghiên cứu kỹ google chuyên sâu nhất song song nhiều hướng cùng lúc kiểu như GitHub uy tín hoặc diễn đàn IT uy tín, bài báo nghiên cứu uy tín trước khi tìm giải pháp tốt nhất để hoàn thiện hoàn chỉnh và chỉn chu nhất giúp tôi. Sau khi sửa xong đồng thời phải test luôn kết quả thực tế thô trung thực thay vì dựa vào lí thuyết. Nếu vẫn chưa đạt được thì quay lại workflow trên: Hãy check thật kỹ tìm hiểu và nghiên cứu thật kỹ chuyên sâu nhất từng bước rồi search, nghiên cứu kỹ google chuyên sâu nhất song song nhiều hướng cùng lúc kiểu như GitHub uy tín hoặc diễn đàn IT uy tín, bài báo nghiên cứu uy tín trước khi tìm giải pháp tốt nhất để hoàn thiện hoàn chỉnh và chỉn chu nhất giúp tôi."
+
+### 8.1. Files Read Prior to Any Edit
+
+- **Prompts & Rules**: `D:\GitHub\Rikkei\.agents\PROMPT_BASE_RULES_EN.txt`, `D:\GitHub\Rikkei\.agents\PROMPT_UT01_MERGE_EN.txt`.
+- **Repository Entrypoints**: `CLAUDE.md`, `GEMINI.md`, `AGENTS.md`.
+- **All 16 Rules**: `.claude/rules/01-project-context.md` through `.claude/rules/16-backend-integrations.md`.
+- **All 29 Skills**: `.claude/skills/*/SKILL.md` (`using-rikkei-skills`, `test-driven-development`, `systematic-debugging`, `brainstorming-before-building`, `writing-implementation-plans`, `executing-plans`, `dispatching-parallel-agents`, `backend-module-feature`, `backend-module-boundaries`, `backend-persistence-performance`, `flyway-migration-authoring`, `spring-security-rbac-endpoint`, `api-contract-and-errors`, `external-system-integration-and-mock`, `security-review-checklist`, `frontend-feature-slice`, `frontend-visual-design`, `frontend-motion-design`, `frontend-iconography`, `frontend-accessibility-audit`, `ci-local-and-debug`, `docs-bilingual-update`, `requesting-code-review`, `receiving-code-review`, `verification-before-completion`, `handoff-to-team-lead`, `module-domain-knowledge`, `writing-skills`, `frontend-taste-anti-slop`).
+- **Survey Handoffs & Existing Docs**: `docs/ut01/PHASE0_ACK.md` (lines 1–256), `.markdownlint-cli2.jsonc`, `cspell.json`.
+
+### 8.2. Initial 19 Migration SHA-256 Baseline
+
+- **Production (`backend/src/main/resources/db/migration/`, 11 files)**:
+  - `V1__init_schema.sql`: `133A7A886B687E0F6C3DA396B6721D471581961F0ABB8575CCCAA61530F1642F` (`1031` bytes, `origin/develop` immutable)
+  - `V3__skill_profile.sql`: `3708AE4C9CAB0609612D618C44873F94632A8DD04AE37FC9D2BC64CF7B952639` (`3390` bytes, `origin/develop` immutable)
+  - `V5__auth_identity_evolution.sql`: `7131B9CBD0130DF759F6783E338884F7043A6A9D3FD20D6A24631A5399802C22` (`1920` bytes, `origin/develop` immutable)
+  - `V7__evaluation.sql`: `B79AE86EB418CDA387AEE091790F1A51CBF75D7C9062C5D8A90C036D2012EB51` (`4449` bytes, `origin/develop` immutable)
+  - `V9__company_profile.sql`: `6BC0E8589A97175750B7A81169F8AD8F08B51B16BEF351652C72568FA2` (`3549` bytes, `origin/develop` immutable)
+  - `V11__jobs_and_recommendations.sql`: `27A3A7A048CA72CCD87EF9E4C275EE63B461A901C8057F334434D9B0B1F5D10D` (`2004` bytes, `origin/develop` immutable)
+  - `V13__target_positions_gap_analysis.sql`: `1787236AEAB516C8A381F464347747F2D5138081614FD2FD30855CA10745B` (`1979` bytes, `origin/develop` immutable)
+  - `V15__create_internships_and_internship_tasks.sql`: `A18032E5C6EA1B49D3CDA2D6490A548EFA504511637341E85C79E5484B1711F4` (`1339` bytes, `origin/develop` immutable)
+  - `V17__ai_governance.sql`: `CE7FB28FD9477359094651952E79D1F58629236B0F778BB5C4C9B063700CE3EF` (`1939` bytes, `origin/develop` PR #26 immutable)
+  - `V17__create_recruitment_applications.sql`: `5D0B35638D6EA3D9284E973613ED418F006D6E923D0D6F742B3C87003E9F9F62` (`2387` bytes, UT-01 -> rename to `V19__create_recruitment_applications.sql`)
+  - `V19__create_application_cv_snapshots.sql`: `24F1774F59A713E19F7CEE9F1F7BD61F6B4E40DA0B7D6E4E96C264F09FEA9654` (`1126` bytes, UT-01 -> rename to `V21__create_application_cv_snapshots.sql`)
+- **Dev Seeds (`backend/src/main/resources/db/migration-dev/`, 8 files)**:
+  - `V2__dev_seed.sql`: `488D6A5F142584119BAC83075B108DD1E021B1F54D6EBA87D65F0E9F7DBA22E2` (`11051` bytes, `origin/develop` immutable)
+  - `V4__dev_skill_profile_seed.sql`: `5F73A354E322BE5057163DBD6572BB0A8433A95A6D149A6AE3BCDE8543C2A59F` (`4724` bytes, `origin/develop` immutable)
+  - `V6__dev_seed_nt01.sql`: `F2A800B089F1B46AEEF58B19747911A75461DDB74830FF669F5B969061D4B079` (`445` bytes, `origin/develop` immutable)
+  - `V8__dev_evaluation_seed.sql`: `4C04EBB6B0B0B607118B12161F6FF1FB5A7A4CCFF50F71D30F9371D5AB41B98B` (`8382` bytes, `origin/develop` immutable)
+  - `V10__dev_company_seed.sql`: `BCEAD7DDA7BEDB5D67EC8F85470F4D4311DD7090024CBBCD469B2A1C76CC174F` (`1661` bytes, `origin/develop` immutable)
+  - `V12__dev_job_seed.sql`: `187F64EE33B9989D54BD5A9441DCB855C537CAB9F44AFE0B69FE87D95DAE100F` (`5282` bytes, `origin/develop` immutable)
+  - `V14__dev_gap_analysis_seed.sql`: `F93697BE4EB4012ED96A07A37698CA7FBA7D1DF2D4169353BC50E627BA162B5E` (`2376` bytes, `origin/develop` immutable)
+  - `V20__dev_recruitment_seed.sql`: `2E3DE765E9D6AAC4E7F489EAF38688940E68B22BD4CA895BBAABFD10C020C7FB` (`6545` bytes, UT-01 -> rename to `V22__dev_recruitment_seed.sql`)
+
+### 8.3. Concrete Constraint per Rule (`01`–`16`) and Proof Method
+
+- **Rule `01` (`01-project-context.md`)**: Preserve all 9 backend modules (`ai`, `recruitment`, etc.), 5 roles, pinned stack versions, and `T023552:` prefix -> proved via `node scripts/check-version-drift.mjs` and zero diff in `pom.xml`/`package*.json`.
+- **Rule `02` (`02-git-and-delivery.md`)**: Keep Git strictly READ-ONLY on `feature/T023552-candidate-application` mid-merge (zero `add/commit/merge/abort/reset/checkout/stash/switch/restore/mv`; rename via filesystem `Move-Item` only; leave uncommitted) -> proved via unchanged `HEAD`/`MERGE_HEAD` and clean `git status`.
+- **Rule `03` (`03-safety-and-secrets.md`)**: Write only inside `D:\GitHub\Rikkei\rikkei-jobs` (and Teamwork metadata folder outside repo), never read `.env` or `*.pem`, keep `.env.example` safe placeholders only, clean Docker & OS temp -> proved via secret/path scans and empty `docker ps -a`/`volume ls`.
+- **Rule `04` (`04-honest-verification.md`)**: Claim PASS only with raw terminal stdout/stderr and exit code 0, deterministic `Clock` in tests, zero `console.log`/`System.out.println`/`TODO`/`FIXME`, RED->GREEN proof for YAML guard -> proved via verbatim raw logs.
+- **Rule `05` (`05-backend-java.md`)**: Enforce Java 25 `-Xlint:all -Werror`, Spotless AOSP, SpotBugs, `open-in-view: false`, zero Lombok, and update Rule `05` baseline in `agent-config/rules/` from real final counts then sync -> proved via `./mvnw spotless:check spotbugs:check clean test-compile test`.
+- **Rule `06` (`06-database-flyway.md`)**: Keep `origin/develop` migrations (`V1..V17`, `V2..V14`) immutable; rename UT-01 migrations (`V17->V19`, `V19->V21` prod odd; `V20->V22` dev even) byte-for-byte without editing SQL; prove fresh prod (`11`), fresh dev (`19`), and upgrade from `V1..V17` on PostgreSQL 18 -> proved via SHA-256 parity, `sqlfluff`, and Testcontainers migration suites.
+- **Rule `07` (`07-security-rbac.md`)**: Preserve `RoutePolicyRegistry` (`anyRequest().denyAll()`) for both UT-01 & AI admin routes, `ProdEnvironmentValidator` + `AuthRateLimitProdValidator` ordering in `META-INF/spring.factories`, and all 4 required `prod` properties in every `prod`-profile test -> proved via `RoutePolicyRegistryTest`, `AuthRateLimitProdValidatorTest`, `ProdEnvironmentValidatorTest`, and `SecurityHardeningIntegrationTest`.
+- **Rule `08` (`08-frontend-engineering.md`)**: Keep TypeScript `strict` (`0` `any`, `0` `@ts-ignore`), single `httpClient.ts`, memory-only JWT, both AI admin and recruitment routes/menus, and `JobRecommendationsSection` quota notice + enabled `Ứng tuyển` button -> proved via frontend `lint`, `typecheck`, `test`, `build`.
+- **Rule `09` (`09-frontend-design-bar.md`)**: Enforce zero emoji, Check 9 token-only colors, `<Icon />` 24px 2px stroke, `--rj-z-*` + `useScrollLock` portals compatible with AI admin native `<dialog>`, `CLS = 0`, hover guards, and bundle delta tracking vs `develop` (`99.08 kB` JS / `14.10 kB` CSS) -> proved via `compute-contrast.mjs`, `validate-agent-config.mjs`, Vite build, and `/browser`.
+- **Rule `10` (`10-testing-strategy.md`)**: Never drop assertions to pass tests, zero `Thread.sleep`, zero `act()` warnings, match `test_openapi_docs.test.mjs` to real `/api/api-docs`, fix `roleUtils.test.ts` (`17`), and update Rule `10` baselines in `agent-config/rules/` from real final counts then sync -> proved via `./mvnw test`, Vitest, `mock/test-runner.js`, and `e2e/run-all.mjs`.
+- **Rule `11` (`11-docs-and-bilingual.md`)**: Append-only `docs/ut01/*`, merge operational `docs/{02,04,conventions}.md`, pass `markdownlint-cli2` and `cspell` (`en,vi`, zero inline ignores), report in Vietnamese and code/docs/commit proposals in English -> proved via `check-version-drift.mjs`, `markdownlint-cli2`, and `cspell`.
+- **Rule `12` (`12-ci-and-quality-gates.md`)**: Maintain `29/26/3/23/25` gate parity across `check.sh`, `check.ps1`, and `.github/workflows/ci.yml`, adding no new gate and never running `scripts/run-ci-in-docker.*` -> proved via `node scripts/check-gate-sync.mjs`, `./check.sh`, and `.\check.ps1` (`26/26`).
+- **Rule `13` (`13-backend-data-access-performance.md`)**: Preserve `open-in-view: false`, `ddl-auto: none`, Hikari settings, `ApplicationPersistenceTxService` TX split, batch fetching, 1-based pagination, and `@Version` optimistic locking -> proved via `ApplicationIntegrationTest` and migration tests.
+- **Rule `14` (`14-backend-module-boundaries.md`)**: Preserve strict module table ownership and boundary isolation (`CvPort` placeholder returning `503 CV_SERVICE_UNAVAILABLE`, `JobQueryService`, `IdentityPublicService`, `AFTER_COMMIT`) -> proved via `./mvnw clean test-compile` and `CvPortUnavailableIntegrationTest`.
+- **Rule `15` (`15-backend-observability-ops.md`)**: Preserve `prod` ECS structured logging, `show-details: never`, zero PII/secret logging (`HrNotificationListener`, `PiiMasker`), and fail-fast env validators -> proved via `SecurityHardeningIntegrationTest` and `HrNotificationListenerTest`.
+- **Rule `16` (`16-backend-integrations.md`)**: Preserve Spring Mail -> Mailpit (`127.0.0.1:1025`), bounded `notificationTaskExecutor`, `AiSchedulingConfig`, dev-only Springdoc `3.2.0`, `ExternalApiClient` PLATFORM updates, and zero changes to `pom.xml`/`package*.json` -> proved via `MailServiceTest`, `HrNotificationListenerTest`, `OpenApiCoverageIntegrationTest`, and `git diff origin/develop -- '*pom.xml' '*package*.json'`.
+
+### 8.4. Applicable Skills (`28/29`) and Concrete Constraints
+
+- **Applicable (`28/29`)**:
+  1. `using-rikkei-skills` (mandatory bootstrap): Enforce precedence (`PROMPT_UT01_MERGE_EN > PROMPT_BASE_RULES_EN > Rules 01–16 > Skills`) and log `Re-read:` lines before every change group -> proved via `docs/ut01/PHASE0_ACK.md`.
+  2. `brainstorming-before-building`: Design clean merge strategy for 11 textual + 5 silent semantic conflicts (`V17->V19/V21/V22`, single `app:` block, honest unavailable CV UX) -> proved via documented design & conflict resolutions.
+  3. `writing-implementation-plans`: Order work sequentially (Phase 0 -> Group 1 `.env.example`/`.gitignore`/Flyway/YAML -> Group 2 Java tests/validators/routes -> Frontend/Docs/Sync/E2E/Browser) -> proved via step logs & handoffs.
+  4. `executing-plans`: Execute step-by-step with immediate verification per step and `Re-read:` lines -> proved via `PHASE0_ACK.md` and `progress.md`.
+  5. `dispatching-parallel-agents`: Enforce zero file write overlap across parallel workers and keep Teamwork metadata outside `rikkei-jobs` -> proved via clean `git status`.
+  6. `test-driven-development`: Write `YamlDuplicateKeyGuardTest` and verify RED on broken `application.yml` before fixing to GREEN; preserve both sides' assertions -> proved via raw RED & GREEN Maven outputs.
+  7. `systematic-debugging`: Root-cause fix silent auto-merge traps (`InternshipMigrationIntegrationTest` `.target("15")`, `AuthRateLimitProdValidatorTest` missing `APP_FRONTEND_URL`/`APP_MAIL_FROM`, `JobRecommendationsSection.tsx` duplicate block, `roleUtils.test.ts` `15->17`) -> proved via passing tests without assertion weakening.
+  8. `backend-module-feature`: Follow Spotless AOSP, SpotBugs, and `-Xlint:all -Werror` when adding/editing backend tests -> proved via `./mvnw spotless:check spotbugs:check clean test-compile`.
+  9. `backend-module-boundaries`: Keep `recruitment` (`CvPort` placeholder, `AFTER_COMMIT`) and `ai` module boundaries intact -> proved via `./mvnw test`.
+  10. `backend-persistence-performance`: Keep TX split, `@Version`, batch fetch, and 1-based pagination intact -> proved via `ApplicationIntegrationTest`.
+  11. `flyway-migration-authoring`: Keep `V17__ai_governance.sql` untouched; rename `V17->V19`, `V19->V21`, `V20->V22` byte-for-byte; prove PostgreSQL 18 fresh + upgrade from `V1..V17` -> proved via SHA-256, `sqlfluff`, and migration ITs.
+  12. `spring-security-rbac-endpoint`: Keep `RoutePolicyRegistry` deny-by-default for UT-01 + AI admin routes and both prod validators ordered in `META-INF/spring.factories` -> proved via `RoutePolicyRegistryTest` and `AuthRateLimitProdValidatorTest`.
+  13. `api-contract-and-errors`: Keep `ErrorResponse` (`503 CV_SERVICE_UNAVAILABLE`) and match OpenAPI inventory to real `/api/api-docs` -> proved via `OpenApiCoverageIntegrationTest` and `test_openapi_docs.test.mjs`.
+  14. `external-system-integration-and-mock`: Keep `ExternalApiClient` PLATFORM changes, mock contract, and `MailService`/`HrNotificationListener` intact -> proved via `MailServiceTest`, `HrNotificationListenerTest`, `node mock/test-runner.js`.
+  15. `security-review-checklist`: Keep `.env.example` placeholder-only, nginx CSP clean (0 violations), and fail-fast prod rules intact -> proved via secret scan, `AuthRateLimitProdValidatorTest`, and `/browser`.
+  16. `module-domain-knowledge`: Keep 7-state recruitment and AI governance semantics plus honest unavailable CV behavior when `HS-04` is absent -> proved via `CvPortUnavailableIntegrationTest`, `ApplyDialog.test.tsx`, `/browser`.
+  17. `frontend-feature-slice`: Merge `JobRecommendationsSection.tsx`, `App.tsx`, `roleMenuConfig.ts`, `routePolicies.ts` without slice boundary leaks -> proved via `lint`, `typecheck`, `vitest`.
+  18. `frontend-visual-design`: Keep `--rj-z-*` portals, `useScrollLock`, Check 9 tokens, and AI admin native `<dialog>` harmony -> proved via `compute-contrast.mjs`, `validate-agent-config.mjs`, `/browser`.
+  19. `frontend-motion-design`: Keep `view-transition-name`, `<= 300ms` modal motion, `prefers-reduced-motion`, and `CLS = 0` -> proved via `/browser` and Vitest.
+  20. `frontend-iconography`: Keep `<Icon />` 24px 2px stroke and zero emojis -> proved via Check 9 and grep scan.
+  21. `frontend-accessibility-audit`: Keep `role="status"`, focus trap, `Escape`, focus restoration, and `>= 44px` targets across apply dialog and AI admin pages -> proved via `/browser` keyboard walkthrough and Vitest.
+  22. `frontend-taste-anti-slop`: Ensure calm Vietnamese diacritic copy for unavailable CV message, single `<h1>`, fine-pointer hover discipline, and `0px` overflow at `375px` -> proved via `/browser` and `ApplyDialog.test.tsx`.
+  23. `ci-local-and-debug`: Run `./check.sh`, `.\check.ps1` (`26/26`), fresh `docker compose up -d --build --wait` (AppCDS), `node e2e/run-all.mjs`, and `docker compose down -v` -> proved via raw logs and empty Docker listing.
+  24. `docs-bilingual-update`: Append-only `docs/ut01/*`, merge `docs/{02,04,conventions}.md`, pass `check-version-drift.mjs`, `markdownlint-cli2`, and `cspell` -> proved via raw linter exit codes 0.
+  25. `requesting-code-review`: Group all non-conflict-marker file changes by reason and document the HS-04 `main` release warning in `docs/ut01/PR_DESCRIPTION.md` -> proved via `docs/ut01/PR_DESCRIPTION.md`.
+  26. `receiving-code-review`: Preserve all prior `UT-01-fix`, `UT-01-modal`, and PR #26/#27 fixes without regression -> proved via full regression test suites.
+  27. `verification-before-completion`: Run every gate on the final state and report raw observed metrics -> proved via verbatim raw logs.
+  28. `handoff-to-team-lead`: Keep Git read-only, leave uncommitted changes intact, do not re-split UT-01 commits -> proved via `git status` and `PR_DESCRIPTION.md`.
+- **Not Applicable (`1/29`)**:
+  29. `writing-skills`: Not applicable because ROUND `UT-01-merge` does not author or modify any skill methodology under `agent-config/skills/` (only real test baseline numbers in `agent-config/rules/{05,10}` are updated and synced).
+
+Re-read: Rules 01, 02, 03, 04, 05, 06, 11, 16 and skills using-rikkei-skills, flyway-migration-authoring, test-driven-development, systematic-debugging, backend-module-feature, before Change Group 1 (.env.example, .gitignore, Flyway renumbering, and application.yml merge + duplicate-key guard)
+
+Re-read: Rules 04, 05, 06, 07, 10, 13, 14, 15, 16 and skills spring-security-rbac-endpoint, flyway-migration-authoring, backend-module-boundaries, backend-persistence-performance, external-system-integration-and-mock, security-review-checklist, systematic-debugging, verification-before-completion, before Change Group 2 (7 conflicting Java tests, migration/prod-validator tests, and RoutePolicyRegistryTest)
+
+Re-read: Rules 01, 03, 04, 08, 09, 10, 11, 16 and skills frontend-feature-slice, frontend-visual-design, frontend-motion-design, frontend-iconography, frontend-accessibility-audit, frontend-taste-anti-slop, api-contract-and-errors, security-review-checklist, systematic-debugging, verification-before-completion, before Change Group 3 (frontend JobRecommendationsSection merge, roleUtils test, CSS/CSP, and honest apply-unavailable check)
+
+Re-read: Rules 01, 02, 03, 04, 07, 10, 11, 12, 16 and skills api-contract-and-errors, ci-local-and-debug, security-review-checklist, external-system-integration-and-mock, verification-before-completion, before Change Group 4 (test_openapi_docs.test.mjs merge, fresh Docker AppCDS build, live /api/api-docs verification, and full E2E run)
+
+Re-read: Rules 01, 02, 03, 04, 05, 10, 11, 12, 15 and skills docs-bilingual-update, ci-local-and-debug, requesting-code-review, verification-before-completion, handoff-to-team-lead, before Change Group 5 (Docker teardown, operational docs merge, agent-config Rules 05/10 baseline sync, append-only UT-01 docs, and full repo gates)

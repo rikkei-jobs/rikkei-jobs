@@ -10,9 +10,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.rikkei.jobs.identity.model.Role;
 import com.rikkei.jobs.identity.model.User;
 import com.rikkei.jobs.identity.security.JwtService;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Base64;
+import java.util.Date;
+import javax.crypto.SecretKey;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -159,5 +169,139 @@ public class JwtServiceTest {
         assertFalse(jwtService.isTokenValid("not.a.valid.jwt.token"));
         assertFalse(jwtService.isTokenValid(""));
         assertFalse(jwtService.isTokenValid(null));
+    }
+
+    @Test
+    @DisplayName("Generated token includes expected issuer, audience, and non-blank jti")
+    void testGeneratedTokenIncludesIssuerAudienceAndJti() {
+        User user =
+                new User(
+                        "candidate1@rikkeijobs.test",
+                        null,
+                        "Nguyễn Văn An",
+                        "lms-sv-001",
+                        new Role("CANDIDATE", "Candidate"),
+                        null);
+        user.setId(101L);
+
+        String token = jwtService.generateToken(user);
+        Claims claims = jwtService.extractAllClaims(token);
+
+        assertEquals("rikkei-jobs", claims.getIssuer());
+        assertNotNull(claims.getAudience());
+        assertTrue(claims.getAudience().contains("rikkei-jobs-api"));
+        assertNotNull(claims.getId());
+        assertFalse(claims.getId().isBlank());
+    }
+
+    @Test
+    @DisplayName("Tokens signed with same secret but missing or wrong iss/aud are rejected")
+    void testTokensWithMissingOrWrongIssuerOrAudienceAreRejected() {
+        SecretKey key = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
+        Date issuedAt = Date.from(clock.instant());
+        Date expiresAt = Date.from(clock.instant().plus(Duration.ofHours(1)));
+
+        String missingClaimsToken =
+                Jwts.builder()
+                        .subject("candidate1@rikkeijobs.test")
+                        .claim("userId", 101L)
+                        .claim("role", "CANDIDATE")
+                        .issuedAt(issuedAt)
+                        .expiration(expiresAt)
+                        .signWith(key, Jwts.SIG.HS256)
+                        .compact();
+
+        String wrongIssuerToken =
+                Jwts.builder()
+                        .issuer("other-app")
+                        .audience()
+                        .add("rikkei-jobs-api")
+                        .and()
+                        .subject("candidate1@rikkeijobs.test")
+                        .issuedAt(issuedAt)
+                        .expiration(expiresAt)
+                        .signWith(key, Jwts.SIG.HS256)
+                        .compact();
+
+        String wrongAudienceToken =
+                Jwts.builder()
+                        .issuer("rikkei-jobs")
+                        .audience()
+                        .add("other-api")
+                        .and()
+                        .subject("candidate1@rikkeijobs.test")
+                        .issuedAt(issuedAt)
+                        .expiration(expiresAt)
+                        .signWith(key, Jwts.SIG.HS256)
+                        .compact();
+
+        assertFalse(
+                jwtService.isTokenValid(missingClaimsToken),
+                "Token missing iss/aud must be rejected");
+        assertFalse(
+                jwtService.isTokenValid(wrongIssuerToken), "Token with wrong iss must be rejected");
+        assertFalse(
+                jwtService.isTokenValid(wrongAudienceToken),
+                "Token with wrong aud must be rejected");
+
+        assertThrows(JwtException.class, () -> jwtService.extractAllClaims(missingClaimsToken));
+        assertThrows(JwtException.class, () -> jwtService.extractAllClaims(wrongIssuerToken));
+        assertThrows(JwtException.class, () -> jwtService.extractAllClaims(wrongAudienceToken));
+    }
+
+    @Test
+    @DisplayName("Unsigned alg=none JWT is strictly rejected")
+    void testUnsignedAlgNoneJwtRejected() {
+        long issuedAt = clock.instant().getEpochSecond();
+        long expiresAt = clock.instant().plus(Duration.ofHours(1)).getEpochSecond();
+        String headerJson = "{\"alg\":\"none\",\"typ\":\"JWT\"}";
+        String payloadJson =
+                "{\"iss\":\"rikkei-jobs\",\"aud\":\"rikkei-jobs-api\",\"sub\":\"candidate1@rikkeijobs.test\","
+                        + "\"userId\":101,\"role\":\"CANDIDATE\",\"iat\":"
+                        + issuedAt
+                        + ",\"exp\":"
+                        + expiresAt
+                        + "}";
+
+        Base64.Encoder urlEncoder = Base64.getUrlEncoder().withoutPadding();
+        String algNoneToken =
+                urlEncoder.encodeToString(headerJson.getBytes(StandardCharsets.UTF_8))
+                        + "."
+                        + urlEncoder.encodeToString(payloadJson.getBytes(StandardCharsets.UTF_8))
+                        + ".";
+
+        assertFalse(
+                jwtService.isTokenValid(algNoneToken),
+                "Unsigned alg=none JWT must strictly be rejected");
+        assertThrows(JwtException.class, () -> jwtService.extractAllClaims(algNoneToken));
+    }
+
+    @Test
+    @DisplayName("Asymmetric RS256 signed JWT is strictly rejected")
+    void testAsymmetricRs256JwtRejected() throws Exception {
+        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+        keyPairGenerator.initialize(2048);
+        KeyPair rsaKeyPair = keyPairGenerator.generateKeyPair();
+
+        Date issuedAt = Date.from(clock.instant());
+        Date expiresAt = Date.from(clock.instant().plus(Duration.ofHours(1)));
+        String rs256Token =
+                Jwts.builder()
+                        .issuer("rikkei-jobs")
+                        .audience()
+                        .add("rikkei-jobs-api")
+                        .and()
+                        .subject("candidate1@rikkeijobs.test")
+                        .claim("userId", 101L)
+                        .claim("role", "CANDIDATE")
+                        .issuedAt(issuedAt)
+                        .expiration(expiresAt)
+                        .signWith(rsaKeyPair.getPrivate(), Jwts.SIG.RS256)
+                        .compact();
+
+        assertFalse(
+                jwtService.isTokenValid(rs256Token),
+                "Asymmetric RS256 JWT must strictly be rejected by HMAC verifier");
+        assertThrows(JwtException.class, () -> jwtService.extractAllClaims(rs256Token));
     }
 }

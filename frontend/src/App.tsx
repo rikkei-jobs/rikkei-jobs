@@ -91,6 +91,14 @@ const StaffHomePage = lazyRoute(
 const AdminHomePage = lazyRoute(
   () => import('./features/identity/pages/role-homes/AdminHomePage'),
 );
+const AiConfigPage = lazyRoute(async () => {
+  const m = await import('./features/ai');
+  return { default: m.AiConfigPage };
+});
+const AiLogsPage = lazyRoute(async () => {
+  const m = await import('./features/ai');
+  return { default: m.AiLogsPage };
+});
 
 registerRoutePreloader('/sso-callback', SsoCallbackPage.preload, SsoCallbackPage.isLoaded);
 registerRoutePreloader('/change-password', ChangePasswordPage.preload, ChangePasswordPage.isLoaded);
@@ -167,6 +175,8 @@ registerRoutePreloader(
   AdminHomePage.preload,
   AdminHomePage.isLoaded,
 );
+registerRoutePreloader('/admin/ai-config', AiConfigPage.preload, AiConfigPage.isLoaded);
+registerRoutePreloader('/admin/ai-logs', AiLogsPage.preload, AiLogsPage.isLoaded);
 
 export const APP_NAME = 'Rikkei Jobs - Nền tảng kết nối việc làm theo năng lực đã xác thực';
 export const APP_SUBTITLE =
@@ -669,6 +679,23 @@ export const AppRoutes: React.FC = () => {
             element={
               <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.adminHome.allowedRoles}>
                 <AdminHomePage />
+              </RequireRole>
+            }
+          />
+
+          <Route
+            path={PROTECTED_ROUTE_POLICIES.adminAiConfig.path}
+            element={
+              <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.adminAiConfig.allowedRoles}>
+                <AiConfigPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path={PROTECTED_ROUTE_POLICIES.adminAiLogs.path}
+            element={
+              <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.adminAiLogs.allowedRoles}>
+                <AiLogsPage />
               </RequireRole>
             }
           />

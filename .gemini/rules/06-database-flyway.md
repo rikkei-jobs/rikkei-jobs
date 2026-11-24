@@ -21,12 +21,12 @@ Enforce PostgreSQL 18.6-alpine standards as defined in docker-compose.yml and do
 Maintain strict folder separation and version numbering discipline for Flyway scripts:
 
 - Production Migrations: backend/src/main/resources/db/migration/
-  - Contains production schema definitions (DDL only).
-  - Version numbering: Strictly ODD version numbers (`V1__init_schema.sql`, `V3__skill_profile.sql`, `V5__auth_identity_evolution.sql`, `V7__evaluation.sql`, `V9__company_profile.sql`, `V11__jobs_and_recommendations.sql`, `V13__target_positions_gap_analysis.sql`).
+  - Contains production schema definitions (DDL only; 11 migrations total).
+  - Version numbering: Strictly ODD version numbers (`V1__init_schema.sql`, `V3__skill_profile.sql`, `V5__auth_identity_evolution.sql`, `V7__evaluation.sql`, `V9__company_profile.sql`, `V11__jobs_and_recommendations.sql`, `V13__target_positions_gap_analysis.sql`, `V15__create_internships_and_internship_tasks.sql`, `V17__ai_governance.sql`, `V19__create_recruitment_applications.sql`, `V21__create_application_cv_snapshots.sql`).
   - Never place test users, mock data, or development seed accounts in this directory.
 - Development Seed Data: backend/src/main/resources/db/migration-dev/
-  - Contains test data, 5 system roles, 20 skills catalogue, and sample accounts/companies (DML only).
-  - Version numbering: Strictly EVEN version numbers (`V2__dev_seed.sql`, `V4__dev_skill_profile_seed.sql`, `V6__dev_seed_nt01.sql`, `V8__dev_evaluation_seed.sql`, `V10__dev_company_seed.sql`, `V12__dev_job_seed.sql`, `V14__dev_gap_analysis_seed.sql`).
+  - Contains test data, 5 system roles, 20 skills catalogue, and sample accounts/companies (DML only; 8 migrations total, 19 combined in dev).
+  - Version numbering: Strictly EVEN version numbers (`V2__dev_seed.sql`, `V4__dev_skill_profile_seed.sql`, `V6__dev_seed_nt01.sql`, `V8__dev_evaluation_seed.sql`, `V10__dev_company_seed.sql`, `V12__dev_job_seed.sql`, `V14__dev_gap_analysis_seed.sql`, `V22__dev_recruitment_seed.sql`).
   - Loaded exclusively when the dev profile is active via spring.flyway.locations.
 - Unique Versioning Invariant: Version numbers must be globally UNIQUE across both directories. Because the development profile loads both locations (`classpath:db/migration,classpath:db/migration-dev`), any duplicate version number triggers a fatal Flyway duplicate version exception on startup.
 

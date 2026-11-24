@@ -568,7 +568,7 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
       await waitFor(
         () => {
           expect(screen.getByTestId('current-pathname')).toHaveTextContent('/candidate/skills');
-          expect(screen.getByRole('heading', { level: 2, name: /Hồ sơ năng lực/i })).toBeInTheDocument();
+          expect(screen.getByRole('heading', { level: 1, name: /Hồ sơ năng lực/i })).toBeInTheDocument();
         },
         { timeout: 8000 },
       );
@@ -988,7 +988,7 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
       await waitFor(
         () => {
           expect(screen.getByTestId('current-pathname')).toHaveTextContent('/candidate/skills');
-          expect(screen.getByRole('heading', { level: 2, name: /Hồ sơ năng lực/i })).toBeInTheDocument();
+          expect(screen.getByRole('heading', { level: 1, name: /Hồ sơ năng lực/i })).toBeInTheDocument();
         },
         { timeout: 8000 },
       );

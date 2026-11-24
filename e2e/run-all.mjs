@@ -56,7 +56,8 @@ const testTiers = [
       'test_round_b_boundaries.test.mjs',
       'test_evaluation_boundaries.test.mjs',
       'test_company_boundaries.test.mjs',
-      'test_rbac_matrix_boundaries.test.mjs'
+      'test_rbac_matrix_boundaries.test.mjs',
+      'test_ai_governance_admin.test.mjs'
     ]
   },
   {

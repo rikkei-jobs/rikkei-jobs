@@ -485,3 +485,101 @@ Vòng `UT-01-modal` (`T023552`) khắc phục tận gốc hai nguyên nhân lỗ
 - **Hai nguyên nhân gốc & Số liệu Block A -> Block B Pass 2**: (1) `ApplyDialog`/`WithdrawDialog` render trong `<main>` có `view-transition-name: rj-main-content` nên bị giam stacking context dưới header/sidebar (`1100`), làm header nhảy `0 -> -900 px`, sidebar nhảy `56 -> -843.20 px` (`797`: `56 -> -740 px`), và hit-test bấm xuyên vào sidebar/header (`HIT_THROUGH_TO_SIDEBAR` / `HIT_THROUGH_TO_HEADER`); (2) `document.body.style.overflow = 'hidden'` dưới `overflow-x: clip` biến `body` thành scroll container riêng và làm lệch bề rộng `1425 -> 1440 px`. Sau khi sửa, `main.locator('[role="dialog"]').count() === 0`, **`10/10` điểm** header/aside bị `div.rec-dialog-backdrop` chặn đúng trên cả hai dialog, tọa độ đóng/mở/sau-đóng đồng nhất 100% (`delta = 0`), `mouse.wheel` +/- bị khóa (`delta html.y = 0`) trên `1440/1024/768/375` Sáng/Tối & mobile drawer `375px`, `clientWidth` bất biến (`1424.8 px`, `deltaW = 0`), `Escape` trả tiêu điểm chính xác về nút mở bằng bàn phím thật và khôi phục cuộn, Back/Forward/Reload không rò rỉ khóa.
 - **Giải pháp kỹ thuật (`T1`–`T3`), Option 1A/2B & Tệp thay đổi**: Portal hai dialog ra `document.body` (từ chối `<dialog>.showModal()` vì `jsdom@31.0.0` thiếu `showModal` và Top Layer che mất `Select`), chuẩn hóa thang `--rj-z-*` (`1000..1601`) nâng `Select` lên `--rj-z-popover` (`1500`), tạo `scrollLock.ts` + `useScrollLock.ts` đếm tham chiếu trên `html[data-scroll-locked="true"]` kèm `scrollbar-gutter: stable` và listener `{ passive: false }`, kiểm toán toàn bộ overlay `frontend/src`, bổ sung guard Option 1A ở `SharedAppLayout.tsx`, ghi nhận follow-up Option 2B của `Select.tsx` và quan sát ngoài phạm vi (`origin/develop` `@keyframes rj-drawer-slide-in` `opacity: 0 -> 1` và focus nút `×`), phân bổ rõ danh mục tệp vào các nhóm commit `UT-01` hiện có (`shared design tokens`, `shell`, `recruitment frontend`, `docs/skills`).
 - **Tổng hợp Gate**: Vitest **`44/44` file / `497/497` test** (`0` `act()`), Entry CSS `14.17 kB` (`+0.13 kB`), Entry JS + chunk `102.12 kB`, `compute-contrast` `120/120`, `validate-agent-config` `10/10`, `.\check.ps1` & `./check.sh` **`26/26`**, Docker E2E **`28/28` suites / `344` cases / `2153` assertions** (`1` skip), `docker compose down -v` sạch `0` tài nguyên, live `/browser` Pass 2 **`0` lỗi**.
+
+---
+
+## 9. Round UT-01-merge (`T023552`) — Merge `origin/develop` (PR #26 AI-05 & PR #27 PLATFORM)
+
+### 9.1. English
+
+Round `UT-01-merge` (`T023552`) resolves the merge of `origin/develop` (`a9fde1f`, bringing PR #26 `AI-05` and PR #27 `PLATFORM`) into `feature/T023552-candidate-application` (`ecdd7d4`) in strict Git read-only mode (leaving all resolved files uncommitted for the Team Lead's merge commit plus at most one small follow-up commit, without re-splitting old UT-01 commits `1`–`8`).
+
+#### 9.1.1. All 11 Textual Merge Conflicts Resolved (Part 1)
+
+1. `.env.example`: Preserved UT-01's `APP_FRONTEND_URL` and `APP_MAIL_FROM` placeholders alongside `origin/develop`'s `APP_SECURITY_RATE_LIMIT_TRUST_PROXY_HEADERS` and `APP_SECURITY_RATE_LIMIT_TRUSTED_PROXIES` placeholders (safe dev placeholders only).
+2. `.gitignore`: Kept ignored screenshot paths from both sides (`docs/ut01/pr-screenshots/`, `docs/platform1/pr-screenshots/`, `docs/ai05/pr-screenshots/`).
+3. `e2e/tier1-features/test_openapi_docs.test.mjs`: Resolved all 4 conflict blocks preserving `origin/develop`'s AI admin `/api/v1/admin/ai-*` 403 assertions and UT-01's recruitment paths, DTO schemas, `ErrorResponse`, and out-of-scope checks; verified exact 1:1 parity against live `/api/api-docs` (`38` paths / `41` operations, `6` tests / `95` assertions PASS).
+4. `frontend/src/features/candidate/JobRecommendationsSection.tsx`: Removed duplicated `HEAD` skills block, kept `origin/develop`'s AI-05 quota notice banner (`meta?.message`, `role="status"`, `.recommendations-notice`) together with UT-01's enabled `"Ứng tuyển"` button and portaled `<ApplyDialog />`.
+5. **7 Migration & Security Java Integration Tests**:
+   - `CompanyMigrationIntegrationTest`, `DefaultProfileIntegrationTest`, `InternshipMigrationIntegrationTest`, `ProfileSeparationIntegrationTest`, `CompanyOpenApiProfileIntegrationTest`, `OpenApiCoverageIntegrationTest`, `SecurityHardeningIntegrationTest`: aligned Flyway expectations to `11` prod (`V1..V21`) / `19` dev (`V1..V22`), fixed auto-merge traps (`hasV20` -> `hasV21`/`hasV22`, `.target("15")` -> `prodExecuted=1` total `8` / `devExecuted=1` total `15`), and supplied all 4 required `prod` properties (`APP_FRONTEND_URL`, `APP_MAIL_FROM`, `APP_SECURITY_RATE_LIMIT_TRUST_PROXY_HEADERS=true`, `APP_SECURITY_RATE_LIMIT_TRUSTED_PROXIES`).
+
+#### 9.1.2. All 5 Silent Semantic Conflicts & Empirical Proofs (Part 2 A–E)
+
+- **Part 2A — Flyway V17 Collision (`V17->V19`, `V19->V21`, `V20->V22`)**:
+  - Kept all `origin/develop` migrations (`V1..V17` prod including `V17__ai_governance.sql`, `V2..V14` dev) 100% byte-identical; renamed UT-01's 3 migrations in dependency order via filesystem `Move-Item` with zero SQL byte changes:
+
+  | Old Path | New Path | Pre-Rename SHA-256 | Post-Rename SHA-256 | Bytes | Origin |
+  |---|---|---|---|---|---|
+  | `db/migration/V17__ai_governance.sql` | *(unchanged)* | `CE7FB28FD9477359094651952E79D1F58629236B0F778BB5C4C9B063700CE3EF` | `CE7FB28FD9477359094651952E79D1F58629236B0F778BB5C4C9B063700CE3EF` | 1939 | `origin/develop` |
+  | `db/migration/V17__create_recruitment_applications.sql` | `db/migration/V19__create_recruitment_applications.sql` | `5D0B35638D6EA3D9284E973613ED418F006D6E923D0D6F742B3C87003E9F9F62` | `5D0B35638D6EA3D9284E973613ED418F006D6E923D0D6F742B3C87003E9F9F62` | 2387 | UT-01 renamed |
+  | `db/migration/V19__create_application_cv_snapshots.sql` | `db/migration/V21__create_application_cv_snapshots.sql` | `24F1774F59A713E19F7CEE9F1F7BD61F6B4E40DA0B7D6E4E96C264F09FEA9654` | `24F1774F59A713E19F7CEE9F1F7BD61F6B4E40DA0B7D6E4E96C264F09FEA9654` | 1126 | UT-01 renamed |
+  | `db/migration-dev/V20__dev_recruitment_seed.sql` | `db/migration-dev/V22__dev_recruitment_seed.sql` | `2E3DE765E9D6AAC4E7F489EAF38688940E68B22BD4CA895BBAABFD10C020C7FB` | `2E3DE765E9D6AAC4E7F489EAF38688940E68B22BD4CA895BBAABFD10C020C7FB` | 6545 | UT-01 renamed |
+
+  - **Proof**: Updated 15 references in `RecruitmentMigrationIntegrationTest`, `ApplicationIntegrationTest`, and `AiGovernanceIntegrationTest` (`[1..17]` -> `[1..17, 19, 21, 22]` dev / `[1..15, 17, 19, 21]` prod, `$.paths.length()` `30` -> `38`). `RecruitmentMigrationIntegrationTest` (`8/8`), `CompanyMigrationIntegrationTest` (`18/18`), `InternshipMigrationIntegrationTest` (`8/8`), `ProfileSeparationIntegrationTest` (`7/7`), `DefaultProfileIntegrationTest` (`3/3`), and `FlywayMigrationIntegrationTest` (`4/4`) all passed on real PostgreSQL `18.6-alpine` (fresh prod `11`, fresh dev `19`, and upgrade from `V1..V17` executing `2` prod / `3` dev); `sqlfluff 4.5.0` exited `0`; live Docker `flyway_schema_history` verified all `19` rows `success = t`.
+
+- **Part 2B — Duplicate Top-Level `app:` Key in `application.yml`**:
+  - Merged the two top-level `app:` blocks into a single `app:` block (`frontend-url`, `mail.from`, `ai.*`, `server.*`) preserving all comments and verified `application-dev.yml`, `application-prod.yml`, and `docker-compose.yml` contain zero duplicate keys.
+  - Added `YamlDuplicateKeyGuardTest` (SnakeYAML `LoaderOptions.setAllowDuplicateKeys(false)` checking all `application*.yml` and `docker-compose.yml`, plus synthetic top-level & nested duplicate-key failure proofs).
+  - **Proof**: Deliberate break RED on unmerged `application.yml` (`Duplicate YAML key detected in src\main\resources\application.yml ... found duplicate key app` at line 90, exit `1`) -> GREEN after merge (`3/3` pass, exit `0`) -> Docker `backend/Dockerfile` AppCDS training (`#46 DONE 15.1s`, `27` JPA repositories initialized).
+
+- **Part 2C — `AuthRateLimitProdValidator` & `ProdEnvironmentValidator` in Prod Tests**:
+  - Updated `AuthRateLimitProdValidatorTest.testSpringBootstrapFailsBeforeDbConnectionAndAfterProdEnvValidator` (adding `APP_FRONTEND_URL` + `APP_MAIL_FROM` so it passes `ProdEnvironmentValidator` and fails deterministically at `AuthRateLimitProdValidator`) and all `@ActiveProfiles("prod")` tests across the suite to declare all 4 required vars (`APP_FRONTEND_URL`, `APP_MAIL_FROM`, `APP_SECURITY_RATE_LIMIT_TRUST_PROXY_HEADERS=true`, `APP_SECURITY_RATE_LIMIT_TRUSTED_PROXIES`).
+  - **Proof**: `ProdEnvironmentValidatorOrderingTest` (`2/2`), `ProdEnvironmentValidatorTest` (`68/68`), `AuthRateLimitProdValidatorTest` (`21/21`), and `SecurityHardeningIntegrationTest` (`25/25`) all PASS.
+
+- **Part 2D — Auto-Merged Interactions**:
+  1. `RoutePolicyRegistry`: Extended `RoutePolicyRegistryTest` (`7/7`) with `aiAdminPoliciesAreDeclared` proving all 4 AI admin routes (`ADMIN`, `methodScoped=true`, `!devOnly`) alongside UT-01's 8 routes and deny-by-default.
+  2. Frontend routing & menus (`App.tsx`, `roleMenuConfig.ts`, `routePolicies.ts`, `SharedAppLayout`): `0` duplicate imports/IDs; updated `roleUtils.test.ts` (`17` protected routes) and `SharedAppLayout.test.tsx` (`ADMIN` menu items `Cấu hình AI`, `Nhật ký AI`, `Quản trị`).
+  3. CSS & Dialogs: `design-tokens.css` `--rj-z-*` (`1000..1601`) and `html[data-scroll-locked="true"]` coexist cleanly with `AiLogDetail.tsx` native `<dialog>.showModal()` (Top Layer); wrapped 4 `:hover` rules in `jobRecommendations.css` inside `@media (hover: hover) and (pointer: fine)`.
+  4. Nginx CSP: `nginx.conf` / `nginx.conf.template` checked statically (`0` inline scripts/styles, same-origin `/api/v1/...`) and live via `/browser` (`0` CSP violations).
+  5. `MailService` & `HrNotificationListener`: `MailServiceTest` (`2/2`) and `HrNotificationListenerTest` (`5/5`) pass; live Mailpit (`GET http://127.0.0.1:8025/api/v1/messages`) recorded `9` emails proving `MailService` SMTP->Mailpit delivery (UT-01 apply emails are not emitted in Phase 1 because `POST /api/v1/jobs/{id}/apply` returns `503 CV_SERVICE_UNAVAILABLE` pre-HS-04, as expected and explicitly asserted by `TC-T1-UT01-11`).
+  6. Operational Docs & Agent-Config Baselines: Updated `docs/02-local-development-troubleshooting.md` (all 4 `prod` vars), `docs/04-security-secrets-policy.md` (`ProdEnvironmentValidator` + `AuthRateLimitProdValidator`), `docs/conventions.md` (`CV_SERVICE_UNAVAILABLE` in `503`, `recruitment` tables `applications, application_status_history, application_cv_snapshots`), and `agent-config/rules/{05-backend-java,06-database-flyway,10-testing-strategy}.md` synced via `node scripts/sync-agent-config.mjs` (`175/175` files, `validate-agent-config.mjs` `10/10`).
+  7. AI-05 Banner & UT-01 Apply Coexistence: Verified in `JobRecommendationsSection.test.tsx` (`A2` extended) and live `/browser` (`20 px` vertical gap between `.recommendations-notice` and first job card at `1440x900` and `375x812`, keyboard `Tab`/`Enter`/`Escape` clean).
+
+- **Part 2E — Honest "Apply Is Unavailable" Behaviour & Explicit Release Warning**:
+  - With placeholder `RecruitmentCvPortConfig` returning `503 CV_SERVICE_UNAVAILABLE`, clicking `"Ứng tuyển"` opens `ApplyDialog` with calm Vietnamese copy (`"Dịch vụ quản lý CV hiện chưa sẵn sàng"` / `"Tính năng chọn và tải lên CV đang được hoàn thiện. Bạn vui lòng thử lại sau."`), `0` raw error codes or statuses leaked, submit button `disabled`, retry safe, `Escape`/close restores focus and `data-scroll-locked`, and `/candidate/applications` renders its empty state cleanly. Proven by `CvPortUnavailableIntegrationTest` (`1/1`), `ApplyDialog.test.tsx`, `MyApplicationsPage.test.tsx`, and live `/browser` Pass 1 & Pass 2 (`0` defects).
+  - **CRITICAL RELEASE WARNING**: **`develop` MUST NOT be released to `main` until HS-04 provides a real `CvPort` adapter replacing the placeholder in `backend/src/main/java/com/rikkei/jobs/recruitment/integration/RecruitmentCvPortConfig.java`.**
+
+#### 9.1.3. Final Real Test, Bundle & Quality Gate Counts
+
+- **Backend**: `spotless:check` (`393` files clean), `spotbugs:check` (`0` bugs), `clean test-compile` (`-Xlint:all -Werror`, `303` main + `90` test), `sqlfluff 4.5.0` (`exit 0`), `./mvnw -B test` **`87 classes / 1279 tests`** (`0` failures, `0` errors, `0` skipped).
+- **Frontend**: `npm run lint` (`0`), `npm run typecheck` (`0`), Vitest **`46 files / 527 tests`** (`0` `act()` warnings), Vite build Entry JS **`87.22 kB`** gzip (`-11.86 kB` vs `99.08 kB` on `develop`, with `15.14 kB` shared chunk) & Entry CSS **`14.23 kB`** gzip (`+0.13 kB` vs `14.10 kB` on `develop`).
+- **Mock, E2E & Live `/browser`**: `mock/test-runner.js` **`8/8`**, `node e2e/run-all.mjs` **`29/29` suites / `349` cases / `2211` assertions** (`TC-T1-UT01-15` skipped awaiting HS-04), `docker compose down -v` (`0` `rikkei` containers/volumes/networks remaining), live `/browser` Pass 1 & Pass 2 **`0` console errors / `0` CSP violations / `0` defects**.
+- **Repo Gates & Integrity**: `compute-contrast.mjs` (`120/120`), `sync-agent-config.mjs --check` (`175/175`), `validate-agent-config.mjs` (`10/10`), `check-gate-sync.mjs` (`29/26/3/23/25`), `check-version-drift.mjs`, `.\check.ps1` **`26/26` PASS**, `./check.sh` **`26/26` PASS**, `0` conflict markers repo-wide, `0` diff in `pom.xml`/`package*.json` vs `origin/develop`.
+
+#### 9.1.4. Files Changed Beyond the 11 Conflict-Marker Files (Grouped by Reason)
+
+*(Note: Old UT-01 commits `1`–`8` are NOT re-split; the Team Lead creates one merge commit plus at most one small follow-up commit.)*
+
+1. **Flyway Migration Renames (3 deleted + 3 new SQL files, identical SHA-256)**:
+   - `backend/src/main/resources/db/migration/V17__create_recruitment_applications.sql` -> `V19__create_recruitment_applications.sql`
+   - `backend/src/main/resources/db/migration/V19__create_application_cv_snapshots.sql` -> `V21__create_application_cv_snapshots.sql`
+   - `backend/src/main/resources/db/migration-dev/V20__dev_recruitment_seed.sql` -> `V22__dev_recruitment_seed.sql`
+2. **YAML Merge & Permanent Duplicate-Key Guard (`2` files)**:
+   - `backend/src/main/resources/application.yml` (merged two `app:` blocks into one)
+   - `backend/src/test/java/com/rikkei/jobs/config/YamlDuplicateKeyGuardTest.java` (new unit test guard)
+3. **Silent Semantic Conflict Fixes in Backend Tests (`5` files)**:
+   - `backend/src/test/java/com/rikkei/jobs/migration/RecruitmentMigrationIntegrationTest.java` (`V19`/`V21`/`V22` + `V1..V17` upgrade test)
+   - `backend/src/test/java/com/rikkei/jobs/recruitment/controller/ApplicationIntegrationTest.java` (comment `V20` -> `V22`)
+   - `backend/src/test/java/com/rikkei/jobs/config/AuthRateLimitProdValidatorTest.java` (added `APP_FRONTEND_URL` & `APP_MAIL_FROM` in bootstrap test)
+   - `backend/src/test/java/com/rikkei/jobs/common/security/RoutePolicyRegistryTest.java` (added `aiAdminPoliciesAreDeclared`)
+   - `backend/src/test/java/com/rikkei/jobs/ai/AiGovernanceIntegrationTest.java` (updated `develop` migration & OpenAPI count assertions)
+4. **Silent Semantic Conflict Fixes & CSS/Test Hardening in Frontend (`5` files)**:
+   - `frontend/src/features/candidate/JobRecommendationsSection.test.tsx` (extended `A2` coexistence + `ApplyDialog` checks)
+   - `frontend/src/features/candidate/styles/jobRecommendations.css` (fine-pointer hover guards)
+   - `frontend/src/features/identity/__tests__/roleUtils.test.ts` (`15` -> `17` protected routes)
+   - `frontend/src/features/identity/__tests__/SharedAppLayout.test.tsx` (`ADMIN` menu items updated)
+   - `frontend/src/features/recruitment/__tests__/ApplyDialog.test.tsx` (no raw error code leak + focus/scroll-lock checks)
+5. **Operational Docs, Agent-Config Baselines & Synced Mirrors (`12` files)**:
+   - `docs/02-local-development-troubleshooting.md`, `docs/04-security-secrets-policy.md`, `docs/conventions.md`
+   - `agent-config/rules/05-backend-java.md`, `agent-config/rules/06-database-flyway.md`, `agent-config/rules/10-testing-strategy.md`
+   - `.claude/rules/{05-backend-java,06-database-flyway,10-testing-strategy}.md` & `.gemini/rules/{05-backend-java,06-database-flyway,10-testing-strategy}.md`
+6. **Append-Only UT-01 Documentation (`4` files)**:
+   - `docs/ut01/PHASE0_ACK.md`, `docs/ut01/README.md`, `docs/ut01/PR_DESCRIPTION.md`, `docs/ut01/BROWSER_OBSERVATIONS.md`
+
+### 9.2. Tiếng Việt
+
+Vòng `UT-01-merge` (`T023552`) hợp nhất `origin/develop` (`a9fde1f`, gồm PR #26 `AI-05` và PR #27 `PLATFORM`) vào `feature/T023552-candidate-application` (`ecdd7d4`) trong chế độ Git read-only tuyệt đối (giữ toàn bộ thay đổi uncommitted cho một merge commit + tối đa một follow-up commit nhỏ của Team Lead, không tách lại các commit UT-01 cũ):
+
+- **11 xung đột văn bản (Part 1)**: Đã giải quyết sạch `.env.example`, `.gitignore`, `e2e/tier1-features/test_openapi_docs.test.mjs` (`38` paths / `41` operations), `JobRecommendationsSection.tsx`, và 7 tệp test migration/security Java (giữ đủ 4 biến `prod`, `11` prod / `19` dev migrations).
+- **5 xung đột ngữ nghĩa thầm lặng (Part 2 A–E)**: (A) Đổi tên `V17->V19`, `V19->V21`, `V20->V22` giữ nguyên 100% SHA-256 từng byte SQL và chứng minh nâng cấp `V1..V17` trên PostgreSQL 18 thật; (B) Gộp 2 khối `app:` trong `application.yml` kèm `YamlDuplicateKeyGuardTest` (RED -> GREEN) và Docker AppCDS build xanh; (C) Đồng bộ đủ 4 biến `prod` trên mọi test `@ActiveProfiles("prod")` và sửa `AuthRateLimitProdValidatorTest`; (D) Kiểm chứng `RoutePolicyRegistry` (`7/7`), route/menu frontend (`17` route), `<dialog>` + `--rj-z-*`, CSP `0` lỗi, `MailService`/`HrNotificationListener` + Mailpit, cập nhật `docs/02`, `docs/04`, `docs/conventions.md`, `agent-config/rules/{05,06,10}` + `sync-agent-config.mjs`, và banner AI-05 cùng tồn tại sạch với nút `"Ứng tuyển"`; (E) Chứng minh hành vi trung thực `"Dịch vụ quản lý CV hiện chưa sẵn sàng"` (không lộ mã lỗi thô hay HTTP 500, giữ focus & khóa cuộn gốc, empty state `/candidate/applications`) kèm **CẢNH BÁO PHÁT HÀNH**: **KHÔNG ĐƯỢC** phát hành `develop` lên `main` cho tới khi **HS-04** cung cấp adapter `CvPort` thật thay placeholder tại `RecruitmentCvPortConfig.java`.
+- **Số liệu cuối cùng & Danh mục tệp**: Backend **`87 lớp / 1279 tests`**, Frontend **`46 file / 527 tests`** (`0` `act()`, `87.22 kB` JS `-11.86 kB`, `14.23 kB` CSS `+0.13 kB`), Mock **`8/8`**, E2E **`29/29` suites / `349` cases / `2211` assertions** (`TC-T1-UT01-15` skip chờ HS-04), `docker compose down -v` (`0` tài nguyên `rikkei`), live `/browser` Pass 1 & Pass 2 **`0` lỗi console / `0` vi phạm CSP**, và `.\check.ps1` / `./check.sh` **`26/26` PASS**; đã liệt kê đầy đủ các tệp thay đổi ngoài 11 tệp conflict theo từng nhóm lý do ở mục `9.1.4`.

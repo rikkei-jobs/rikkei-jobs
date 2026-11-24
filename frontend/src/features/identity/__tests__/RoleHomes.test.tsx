@@ -403,7 +403,8 @@ describe('Role Home Pages', () => {
 
     expect(screen.getByText(/Chào mừng, Admin User!/i)).toBeInTheDocument();
     expect(screen.getByText('Danh mục kỹ năng & trọng số')).toBeInTheDocument();
-    expect(screen.getByText('Công cụ quản trị đang được xây dựng')).toBeInTheDocument();
+    expect(screen.getByText('Kiểm soát trợ lý AI')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Mở cấu hình AI' })).toHaveAttribute('href', '/admin/ai-config');
     expect(container.textContent).not.toMatch(/trạng thái kết nối backend|LMS SSO/i);
     expect(container.querySelectorAll('a[href="/change-password"]')).toHaveLength(0);
     expect(screen.queryByRole('link', { name: /Đổi mật khẩu/i })).not.toBeInTheDocument();
@@ -493,11 +494,53 @@ describe('Role Home Pages', () => {
       const main = screen.getByRole('main');
       expect(main).toHaveClass('rj-dashboard-content');
 
-      // Verify Candidate Skills content inside the container
-      expect(await screen.findByRole('heading', { name: 'Hồ sơ năng lực' })).toBeInTheDocument();
+      // Verify Candidate Skills content inside the container with single h1
+      const h1s = await screen.findAllByRole('heading', { level: 1 });
+      expect(h1s).toHaveLength(1);
+      expect(h1s[0]).toHaveTextContent('Hồ sơ năng lực');
       expect(screen.getByText(/Chỉ số 0 - 100 theo từng kỹ năng/i)).toBeInTheDocument();
     } finally {
       globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('renders "Mã học viên LMS" for CANDIDATE and "Mã tài khoản LMS" for non-candidate LMS roles', () => {
+    const candidateLms: UserDto = {
+      ...createUser('CANDIDATE', 'Ứng viên LMS'),
+      lmsUserId: 'lms-sv-001',
+    };
+    const { unmount } = render(
+      <AuthProvider initialToken="token" initialUser={candidateLms}>
+        <MemoryRouter>
+          <RoleHomeLayout
+            roleBadgeClass="rj-role-candidate"
+            roleIcon="user"
+          />
+        </MemoryRouter>
+      </AuthProvider>,
+    );
+    expect(screen.getByText('Mã học viên LMS')).toBeInTheDocument();
+    expect(screen.queryByText('Mã tài khoản LMS')).not.toBeInTheDocument();
+    unmount();
+
+    for (const role of ['MENTOR', 'STAFF', 'ADMIN'] as const) {
+      const nonCandidateLms: UserDto = {
+        ...createUser(role, `${role} LMS`),
+        lmsUserId: `lms-${role.toLowerCase()}-001`,
+      };
+      const { unmount: unmountRole } = render(
+        <AuthProvider initialToken="token" initialUser={nonCandidateLms}>
+          <MemoryRouter>
+            <RoleHomeLayout
+              roleBadgeClass={`rj-role-${role.toLowerCase()}`}
+              roleIcon="shield"
+            />
+          </MemoryRouter>
+        </AuthProvider>,
+      );
+      expect(screen.getByText('Mã tài khoản LMS')).toBeInTheDocument();
+      expect(screen.queryByText('Mã học viên LMS')).not.toBeInTheDocument();
+      unmountRole();
     }
   });
 
