@@ -19,3 +19,6 @@ export const aiModuleConfig = {
   roleTarget: formatRoleList(['CANDIDATE', 'HR']),
   badge: 'Module 7',
 };
+
+export { AiConfigPage } from './admin/AiConfigPage';
+export { AiLogsPage } from './admin/AiLogsPage';

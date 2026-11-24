@@ -18,8 +18,8 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
  * Verifies that the default profile (no active profiles specified) executes ONLY prod schema
- * migrations (V1, V3, V5, V7, V9, V11, V13 and V15) and does NOT seed any sample users or dev data
- * (neither V2, V4, V6, V8, V10, V12 nor V14).
+ * migrations (V1, V3, V5, V7, V9, V11, V13, V15 and V17) and does NOT seed any sample users or dev
+ * data (neither V2, V4, V6, V8, V10, V12 nor V14).
  */
 @SpringBootTest
 @Testcontainers
@@ -52,17 +52,17 @@ public class DefaultProfileIntegrationTest {
 
     @Test
     @DisplayName(
-            "Default profile must apply only V1, V3, V5, V7, V9, V11, V13 and V15 schema migrations, not dev seeds")
+            "Default profile must apply only V1, V3, V5, V7, V9, V11, V13, V15 and V17 schema migrations, not dev seeds")
     void testDefaultProfileAppliesOnlyV1Schema() {
         Integer migrationCount =
                 jdbcTemplate.queryForObject(
                         "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                         Integer.class);
         assertEquals(
-                8,
+                9,
                 migrationCount,
                 "Default profile must only apply schema migrations V1, V3, V5, V7, V9, V11, V13 and"
-                        + " V15, count must be 8");
+                        + " V15 and V17, count must be 9");
 
         Boolean hasV2 =
                 jdbcTemplate.queryForObject(

@@ -170,4 +170,39 @@ describe('JobRecommendationsSection Component', () => {
       expect(screen.getByText('Kỹ sư Java Backend')).toBeInTheDocument();
     });
   });
+
+  it('displays notice banner together with fallback recommendations when meta.message is present (A2)', async () => {
+    const quotaNotice =
+      'Bạn đã dùng hết lượt AI trong ngày. Đang hiển thị gợi ý dựa trên điểm kỹ năng.';
+    vi.spyOn(api, 'fetchJobRecommendations').mockResolvedValueOnce({
+      ...mockResponse,
+      items: [mockResponse.items[1]],
+      total: 1,
+      message: quotaNotice,
+    });
+
+    renderSection();
+
+    await waitFor(() => {
+      expect(screen.getByText('Fresher Java Developer')).toBeInTheDocument();
+    });
+
+    expect(screen.getByRole('status')).toHaveTextContent(quotaNotice);
+  });
+
+  it('displays disabled notice when recommendations list is empty and meta.message is present (A3)', async () => {
+    const disabledNotice = 'AI đang tạm tắt';
+    vi.spyOn(api, 'fetchJobRecommendations').mockResolvedValueOnce({
+      ...mockResponse,
+      items: [],
+      total: 0,
+      message: disabledNotice,
+    });
+
+    renderSection();
+
+    await waitFor(() => {
+      expect(screen.getByRole('status')).toHaveTextContent(disabledNotice);
+    });
+  });
 });

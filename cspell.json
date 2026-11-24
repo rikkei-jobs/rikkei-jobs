@@ -301,7 +301,13 @@
     "buildkit",
     "dblclick",
     "djwt",
-    "trunc"
+    "trunc",
+    "nfkc",
+    "schemaname",
+    "pkey",
+    "indexdef",
+    "cccd",
+    "unconfigured"
   ],
   "ignorePaths": [
     "**/node_modules/**",

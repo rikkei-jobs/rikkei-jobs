@@ -3,6 +3,8 @@ package com.rikkei.jobs.ai.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rikkei.jobs.ai.config.AiProperties;
+import com.rikkei.jobs.ai.dto.AiConfigDto;
+import com.rikkei.jobs.ai.dto.AiGenerationResult;
 import com.rikkei.jobs.common.client.ExternalApiClient;
 import java.time.Duration;
 import java.util.List;
@@ -35,7 +37,7 @@ public class OpenAiClient implements AiClient {
     }
 
     @Override
-    public String generateExplanation(String prompt) {
+    public AiGenerationResult generate(String prompt, AiConfigDto config) {
         String apiKey = aiProperties.getOpenai().getApiKey();
         if (apiKey == null || apiKey.trim().isEmpty()) {
             throw new IllegalStateException("OpenAI API key is not configured");
@@ -46,16 +48,17 @@ public class OpenAiClient implements AiClient {
 
         Map<String, Object> body =
                 Map.of(
-                        "model", aiProperties.getOpenai().getModel(),
+                        "model", config.model(),
                         "messages",
                                 List.of(
                                         Map.of(
                                                 "role",
                                                 "system",
                                                 "content",
-                                                "Bạn là chuyên gia tư vấn tuyển dụng. Viết nhận xét ngắn gọn, súc tích (dưới 60 từ) bằng tiếng Việt."),
+                                                "Bạn là trợ lý nghề nghiệp. Trả lời bằng tiếng Việt và tuân theo yêu cầu trong prompt."),
                                         Map.of("role", "user", "content", prompt)),
-                        "max_tokens", 150);
+                        "max_tokens", config.maxTokens(),
+                        "temperature", config.temperature());
 
         String responseBody =
                 externalApiClient.postJson(
@@ -66,10 +69,17 @@ public class OpenAiClient implements AiClient {
 
         try {
             JsonNode root = objectMapper.readTree(responseBody);
-            return root.path("choices").get(0).path("message").path("content").asText().trim();
+            return new AiGenerationResult(
+                    root.path("choices").path(0).path("message").path("content").asText().trim(),
+                    tokenCount(root.path("usage").path("prompt_tokens")),
+                    tokenCount(root.path("usage").path("completion_tokens")));
         } catch (Exception e) {
             log.error("Failed to parse OpenAI response: {}", e.getClass().getSimpleName());
             throw new RuntimeException("Failed to parse OpenAI response", e);
         }
+    }
+
+    private static Integer tokenCount(JsonNode node) {
+        return node.canConvertToInt() && node.asInt() >= 0 ? node.asInt() : null;
     }
 }
