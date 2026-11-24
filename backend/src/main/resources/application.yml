@@ -83,6 +83,9 @@ ai:
     base-url: ${CLAUDE_BASE_URL:https://api.anthropic.com/v1}
 
 app:
+  frontend-url: ${APP_FRONTEND_URL:http://localhost:3000}
+  mail:
+    from: ${APP_MAIL_FROM:no-reply@rikkeijobs.local}
   ai:
     config-cache-ttl-ms: ${AI_CONFIG_CACHE_TTL_MS:5000}
     log-retention-days: ${AI_LOG_RETENTION_DAYS:90}

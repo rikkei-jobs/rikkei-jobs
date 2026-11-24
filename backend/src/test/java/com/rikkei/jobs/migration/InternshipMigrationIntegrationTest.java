@@ -65,7 +65,7 @@ public class InternshipMigrationIntegrationTest {
 
         @Test
         @DisplayName(
-                "Prod migrations (V1, V3, V5, V7, V9, V11, V13, V15, V17) apply cleanly from empty DB")
+                "Prod migrations (V1, V3, V5, V7, V9, V11, V13, V15, V17, V19, V21) apply cleanly from empty DB")
         void testProdMigrationsApplyCleanlyFromEmptyDatabase() {
             try (PostgreSQLContainer db = new PostgreSQLContainer(POSTGRES_IMAGE)) {
                 db.start();
@@ -82,7 +82,7 @@ public class InternshipMigrationIntegrationTest {
                         jdbc.queryForObject(
                                 "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                                 Integer.class);
-                assertEquals(Integer.valueOf(9), appliedCount);
+                assertEquals(Integer.valueOf(11), appliedCount);
 
                 Boolean hasV14 =
                         jdbc.queryForObject(
@@ -108,7 +108,7 @@ public class InternshipMigrationIntegrationTest {
 
         @Test
         @DisplayName(
-                "Dev migrations V1..V15 plus V17 apply cleanly from empty DB with 0 internship rows")
+                "Dev migrations V1..V15, V17, V19, V21, V22 apply cleanly from empty DB with 0 internship rows")
         void testDevMigrationsApplyCleanlyFromEmptyDatabase() {
             try (PostgreSQLContainer db = new PostgreSQLContainer(POSTGRES_IMAGE)) {
                 db.start();
@@ -125,7 +125,7 @@ public class InternshipMigrationIntegrationTest {
                         jdbc.queryForObject(
                                 "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                                 Integer.class);
-                assertEquals(Integer.valueOf(16), appliedCount);
+                assertEquals(Integer.valueOf(19), appliedCount);
 
                 Boolean hasV15 =
                         jdbc.queryForObject(

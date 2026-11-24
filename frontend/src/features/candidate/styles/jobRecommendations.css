@@ -57,9 +57,11 @@
     transform var(--rj-duration-micro) var(--rj-ease-hover);
 }
 
-.refresh-button:hover:not(:disabled) {
-  background-color: var(--rj-color-brand-primary-hover);
-  transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+  .refresh-button:hover:not(:disabled) {
+    background-color: var(--rj-color-brand-primary-hover);
+    transform: translateY(-1px);
+  }
 }
 
 .refresh-button:disabled {
@@ -160,9 +162,11 @@
   position: relative;
 }
 
-.job-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--rj-shadow-3);
+@media (hover: hover) and (pointer: fine) {
+  .job-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--rj-shadow-3);
+  }
 }
 
 .job-card-header {
@@ -345,8 +349,10 @@
   transition: background-color var(--rj-duration-fast) var(--rj-ease-hover);
 }
 
-.apply-button:hover:not(:disabled) {
-  background: var(--rj-color-text-secondary);
+@media (hover: hover) and (pointer: fine) {
+  .apply-button:hover:not(:disabled) {
+    background: var(--rj-color-text-secondary);
+  }
 }
 
 .apply-button:disabled {
@@ -373,8 +379,10 @@
   transition: background-color var(--rj-duration-fast) var(--rj-ease-hover);
 }
 
-.details-button:hover {
-  background: var(--rj-color-badge-brand-bg);
+@media (hover: hover) and (pointer: fine) {
+  .details-button:hover {
+    background: var(--rj-color-badge-brand-bg);
+  }
 }
 
 .recommendations-loading,

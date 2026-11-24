@@ -1339,7 +1339,7 @@
   position: fixed;
   top: var(--rj-primitive-space-2);
   left: var(--rj-primitive-space-2);
-  z-index: calc(var(--rj-primitive-z-toast) + 1);
+  z-index: var(--rj-z-skip-link);
   display: inline-flex;
   align-items: center;
   min-height: 44px;
@@ -1370,7 +1370,7 @@
 .rj-dashboard-nav {
   position: sticky;
   top: 0;
-  z-index: var(--rj-primitive-z-sticky);
+  z-index: var(--rj-z-sticky);
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -1460,7 +1460,7 @@
   padding: var(--rj-primitive-space-3);
   background: var(--rj-color-sidebar-bg);
   border-right: 1px solid var(--rj-color-sidebar-border);
-  z-index: var(--rj-primitive-z-sticky);
+  z-index: var(--rj-z-sticky);
   transition:
     width var(--rj-sidebar-transition-width) var(--rj-ease-spring-gentle),
     flex-basis var(--rj-sidebar-transition-width) var(--rj-ease-spring-gentle);
@@ -1725,7 +1725,7 @@ a.rj-role-nav-link[aria-current='page'] .rj-icon {
 .rj-sidebar-tooltip,
 .rj-control-tooltip {
   position: absolute;
-  z-index: var(--rj-primitive-z-popover);
+  z-index: var(--rj-z-popover);
   padding: var(--rj-primitive-space-1) var(--rj-primitive-space-3);
   background: var(--rj-color-sidebar-tooltip-bg);
   color: var(--rj-color-sidebar-tooltip-text);
@@ -2160,8 +2160,10 @@ a.rj-role-nav-link[aria-current='page'] .rj-icon {
     display: block;
     position: fixed;
     inset: 0;
-    z-index: var(--rj-primitive-z-backdrop);
+    z-index: var(--rj-z-drawer-backdrop);
     background: var(--rj-color-surface-overlay);
+    overscroll-behavior: contain;
+    touch-action: none;
     animation: rj-fade-in var(--rj-duration-normal) var(--rj-ease-entrance) both;
   }
 
@@ -2171,12 +2173,13 @@ a.rj-role-nav-link[aria-current='page'] .rj-icon {
     left: 0;
     bottom: 0;
     min-height: 100vh;
-    z-index: var(--rj-primitive-z-modal);
+    z-index: var(--rj-z-drawer);
     width: var(--rj-sidebar-drawer-width);
     max-width: calc(100vw - var(--rj-primitive-space-12));
     padding: var(--rj-primitive-space-4) var(--rj-primitive-space-3);
     box-shadow: var(--rj-shadow-4);
     overflow-y: auto;
+    overscroll-behavior: contain;
     transition: none;
   }
 

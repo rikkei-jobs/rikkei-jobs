@@ -101,6 +101,8 @@ public class Milestone2AdversarialStressTest {
         env.setProperty(
                 "CLOUDINARY_DELIVERY_BASE_URL",
                 "https://res.cloudinary.com/prod-rikkei-cloud/image/upload");
+        env.setProperty("APP_FRONTEND_URL", "https://rikkeijobs.com");
+        env.setProperty("APP_MAIL_FROM", "no-reply@rikkeijobs.com");
         return env;
     }
 
@@ -285,7 +287,9 @@ public class Milestone2AdversarialStressTest {
                                         "CLOUDINARY_API_KEY=prod-cloudinary-key-123",
                                         "CLOUDINARY_API_SECRET=prod-cloudinary-secret-xyz-987",
                                         "CLOUDINARY_API_BASE_URL=https://api.cloudinary.com/v1_1",
-                                        "CLOUDINARY_DELIVERY_BASE_URL=https://res.cloudinary.com/prod-rikkei-cloud/image/upload"
+                                        "CLOUDINARY_DELIVERY_BASE_URL=https://res.cloudinary.com/prod-rikkei-cloud/image/upload",
+                                        "APP_FRONTEND_URL=https://rikkeijobs.com",
+                                        "APP_MAIL_FROM=no-reply@rikkeijobs.com"
                                         // JWT_SECRET intentionally omitted!
                                         );
 

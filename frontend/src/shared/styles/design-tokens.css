@@ -215,7 +215,7 @@
   --rj-shadow-3: 0 12px 20px -4px rgba(11, 26, 44, 0.11), 0 4px 8px -2px rgba(11, 26, 44, 0.05);
   --rj-shadow-4: 0 20px 28px -6px rgba(11, 26, 44, 0.14), 0 8px 12px -4px rgba(11, 26, 44, 0.06);
 
-  /* Z-Index Hierarchy */
+  /* Z-Index Hierarchy (Tier 1 Primitive + Tier 2 Ordered Semantic Overlay Scale) */
   --rj-primitive-z-hide:     -1;
   --rj-primitive-z-base:     0;
   --rj-primitive-z-dropdown: 1000;
@@ -225,6 +225,16 @@
   --rj-primitive-z-modal:    1400;
   --rj-primitive-z-popover:  1500;
   --rj-primitive-z-toast:    1600;
+
+  --rj-z-dropdown:        var(--rj-primitive-z-dropdown); /* 1000 - Local non-portaled dropdowns */
+  --rj-z-sticky:          var(--rj-primitive-z-sticky);   /* 1100 - Sticky header & desktop sidebar */
+  --rj-z-drawer-backdrop: var(--rj-primitive-z-fixed);    /* 1200 - Mobile off-canvas drawer backdrop */
+  --rj-z-drawer:          1250;                           /* 1250 - Mobile off-canvas drawer surface */
+  --rj-z-modal-backdrop:  var(--rj-primitive-z-backdrop); /* 1300 - Modal dialog backdrop */
+  --rj-z-modal:           var(--rj-primitive-z-modal);    /* 1400 - Modal dialog surface */
+  --rj-z-popover:         var(--rj-primitive-z-popover);  /* 1500 - Portaled Select listbox & tooltips */
+  --rj-z-toast:           var(--rj-primitive-z-toast);    /* 1600 - Global toast notifications */
+  --rj-z-skip-link:       1601;                           /* 1601 - Keyboard skip link above all layers */
 
   /* Typography Font Stacks */
   --rj-font-body: 'Be Vietnam Pro', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -675,6 +685,17 @@
 /* ==========================================================================
    GLOBAL BASELINE & ACCESSIBILITY (WCAG 2.2 AA)
    ========================================================================== */
+
+/* Keep root scrollbar gutter stable so locking root scroll never shifts layout width */
+html {
+  scrollbar-gutter: stable;
+}
+
+/* Root scroll lock keeps viewport as the scroll container so position: sticky stays anchored */
+html[data-scroll-locked="true"] {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
 
 /* Focus Visible Requirement with Crisp Entrance (<= 150ms) */
 :focus-visible {

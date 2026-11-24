@@ -47,7 +47,7 @@ All HTTP error responses (HTTP status codes 4xx and 5xx) must return a consisten
 | **405 Method Not Allowed** | HTTP method is not supported on the target URI path (e.g., `POST` to a `GET`-only route, or `PUT /api/v1/companies/{id}` now that `GET /api/v1/companies/{id}` is mapped). | `METHOD_NOT_ALLOWED` | `"Phương thức HTTP không được hỗ trợ"` |
 | **409 Conflict** | Business rule conflict, e.g., duplicate enrollment, user already exists in batch. | `CONFLICT`, `ALREADY_ENROLLED`, `ALREADY_MEMBER` | `"Sinh viên đã ghi danh khoá học này"` |
 | **429 Too Many Requests** | Rate limit exceeded (e.g., AI queries or password reset requests). | `RATE_LIMITED` | `"Bạn đã vượt quá giới hạn yêu cầu trong ngày"` |
-| **503 Service Unavailable** | Downstream dependency (LMS, Exam, PM, Meet mock) is down, unreachable, or times out (>5s). | `EXTERNAL_UNAVAILABLE` | `"Hệ thống bên ngoài tạm thời không khả dụng"` |
+| **503 Service Unavailable** | Downstream dependency (LMS, Exam, PM, Meet mock) is down, unreachable, or times out (>5s), or the CV service integration (`CvPort`, awaiting HS-04) is not yet available. | `EXTERNAL_UNAVAILABLE`, `CV_SERVICE_UNAVAILABLE` | `"Hệ thống bên ngoài tạm thời không khả dụng"` |
 
 #### Concrete JSON Error Examples
 
@@ -299,7 +299,7 @@ To preserve architectural integrity across sprints, the following rules are non-
    - `internship`: `internship_batches`, `internship_members`, `internship_tasks`
    - `assessment`: `skills` (the 20 catalogue codes), `assessments`, `evaluation_sheets`
    - `learning`: `course_recommendations`, `study_progress`
-   - `recruitment`: `applications`, `interviews`, `offers`
+   - `recruitment`: `applications`, `application_status_history`, `application_cv_snapshots`
    - `ai`: Stateless assistant sessions, no persistent domain tables.
 
 ### 6.2 No Cross-Module Foreign Keys or SQL Joins

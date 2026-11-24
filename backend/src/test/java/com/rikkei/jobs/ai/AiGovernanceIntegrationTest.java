@@ -499,7 +499,7 @@ class AiGovernanceIntegrationTest {
         assertEquals(
                 List.of(
                         "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14",
-                        "15", "17"),
+                        "15", "17", "19", "21", "22"),
                 jdbc.queryForList(
                         "SELECT version FROM public.flyway_schema_history WHERE success = true AND version IS NOT NULL ORDER BY installed_rank",
                         String.class));
@@ -516,7 +516,8 @@ class AiGovernanceIntegrationTest {
                 configuration.load().migrate();
                 List<String> expected =
                         latest
-                                ? List.of("1", "3", "5", "7", "9", "11", "13", "15", "17")
+                                ? List.of(
+                                        "1", "3", "5", "7", "9", "11", "13", "15", "17", "19", "21")
                                 : List.of("1", "3", "5", "7", "9", "11", "13", "15");
                 assertEquals(
                         expected,
@@ -545,7 +546,7 @@ class AiGovernanceIntegrationTest {
     void openApiContainsNewAdminContracts() throws Exception {
         mvc.perform(get("/api/api-docs"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.paths.length()").value(30))
+                .andExpect(jsonPath("$.paths.length()").value(38))
                 .andExpect(jsonPath("$.paths['/api/v1/admin/ai-config'].get").exists())
                 .andExpect(
                         jsonPath("$.paths['/api/v1/admin/ai-config'].put.responses['409']")

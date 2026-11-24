@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Icon } from '../../shared/components/Icon';
+import { ApplyDialog, type JobApplyTarget } from '../recruitment';
 import type { JobRecommendation, JobRecommendationsResponse } from './types';
 import { fetchJobRecommendations } from './api/jobRecommendations';
 import './styles/jobRecommendations.css';
@@ -11,6 +12,7 @@ export const JobRecommendationsSection: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [applyTarget, setApplyTarget] = useState<JobApplyTarget | null>(null);
 
   useEffect(() => {
     let ignore = false;
@@ -253,10 +255,15 @@ export const JobRecommendationsSection: React.FC = () => {
                   <button
                     type="button"
                     className="apply-button"
-                    disabled
-                    title="Tính năng nộp hồ sơ trực tiếp sắp ra mắt"
+                    onClick={() =>
+                      setApplyTarget({
+                        jobId: job.jobId,
+                        title: job.title,
+                        companyName: job.companyName,
+                      })
+                    }
                   >
-                    Ứng tuyển (Sắp ra mắt)
+                    Ứng tuyển
                   </button>
                   <Link to={`/candidate/jobs/${job.jobId}`} className="details-button">
                     Chi tiết JD
@@ -267,6 +274,12 @@ export const JobRecommendationsSection: React.FC = () => {
           </div>
         </>
       )}
+
+      <ApplyDialog
+        isOpen={applyTarget !== null}
+        job={applyTarget}
+        onClose={() => setApplyTarget(null)}
+      />
     </section>
   );
 };

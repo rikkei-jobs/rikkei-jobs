@@ -12,6 +12,13 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class PiiMaskerTest {
+    /**
+     * Wall-clock ceiling for 1 MB hostile inputs. Healthy runs take well under 200 ms; a quadratic
+     * (ReDoS) regression takes tens of seconds, so 5 s still catches it while staying stable on a
+     * loaded CI machine (a 1000 ms limit failed intermittently at 1026 ms).
+     */
+    private static final long HOSTILE_INPUT_LIMIT_MS = 5000L;
+
     private final PiiMasker masker = new PiiMasker();
 
     @ParameterizedTest
@@ -278,8 +285,14 @@ class PiiMaskerTest {
         String output = masker.mask(input);
         long elapsedMs = (System.nanoTime() - startNs) / 1_000_000L;
         assertTrue(
-                elapsedMs < 1000L,
-                label + " took " + elapsedMs + " ms (limit 1000 ms), outLen=" + output.length());
+                elapsedMs < HOSTILE_INPUT_LIMIT_MS,
+                label
+                        + " took "
+                        + elapsedMs
+                        + " ms (limit "
+                        + HOSTILE_INPUT_LIMIT_MS
+                        + " ms), outLen="
+                        + output.length());
         assertEquals(output, masker.mask(output), label + " must be idempotent");
     }
 
@@ -317,7 +330,9 @@ class PiiMaskerTest {
         long startNs = System.nanoTime();
         String actual = masker.mask(input);
         long elapsedMs = (System.nanoTime() - startNs) / 1_000_000L;
-        assertTrue(elapsedMs < 1000L, "1M_email_phone_hyphen_chain took " + elapsedMs + " ms");
+        assertTrue(
+                elapsedMs < HOSTILE_INPUT_LIMIT_MS,
+                "1M_email_phone_hyphen_chain took " + elapsedMs + " ms");
         assertEquals(expected, actual);
         assertEquals(expected, masker.mask(actual));
     }

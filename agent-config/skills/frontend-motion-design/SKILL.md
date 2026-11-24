@@ -136,6 +136,10 @@ To guarantee smooth rendering and eliminate jank, the browser main thread must n
   }
   ```
 
+### `view-transition-name` Stacking Context Discipline
+
+- Elements with `view-transition-name` (`rj-shell-header`, `rj-shell-sidebar`, `rj-main-content`) establish a CSS stacking context. Render fixed modal dialogs and popovers via `createPortal(..., document.body)` outside `view-transition-name` ancestors so backdrops dim sticky chrome without removing route or circular theme View Transitions.
+
 ---
 
 ## 7. Accessibility & Vestibular Protection

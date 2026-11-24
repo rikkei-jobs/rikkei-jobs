@@ -43,6 +43,16 @@ export const PROTECTED_ROUTE_POLICIES = {
     path: '/candidate/internships',
     allowedRoles: ['CANDIDATE'],
   },
+  candidateApplications: {
+    id: 'candidateApplications',
+    path: '/candidate/applications',
+    allowedRoles: ['CANDIDATE'],
+  },
+  candidateApplicationDetail: {
+    id: 'candidateApplicationDetail',
+    path: '/candidate/applications/:id',
+    allowedRoles: ['CANDIDATE'],
+  },
   hrHome: {
     id: 'hrHome',
     path: '/hr',

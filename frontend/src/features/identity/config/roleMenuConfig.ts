@@ -27,9 +27,8 @@ export const ROLE_MENU_CONFIG: Readonly<Record<UserRole, readonly RoleMenuItem[]
     {
       id: 'candidate-applications',
       label: 'Ứng tuyển',
+      path: '/candidate/applications',
       icon: 'file-check',
-      disabled: true,
-      comingSoonLabel: 'Sắp ra mắt',
     },
     {
       id: 'candidate-gap',

@@ -9,6 +9,11 @@ spring:
 jwt:
   secret: ${JWT_SECRET:}
 
+app:
+  frontend-url: ${APP_FRONTEND_URL:}
+  mail:
+    from: ${APP_MAIL_FROM:}
+
 springdoc:
   swagger-ui:
     enabled: false

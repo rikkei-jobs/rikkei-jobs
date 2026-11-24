@@ -69,6 +69,8 @@ export SPRING_DATASOURCE_USERNAME="rikkei_app"
 export SPRING_DATASOURCE_PASSWORD="rikkei_secret"
 export EXTERNAL_BASE_URL="http://localhost:9000"
 export EXTERNAL_SERVICE_KEY="dev-key"
+export APP_FRONTEND_URL="http://localhost:3000"
+export APP_MAIL_FROM="no-reply@rikkeijobs.local"
 
 # Run with the dev profile to enable seed data and Swagger UI
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
@@ -77,7 +79,7 @@ export EXTERNAL_SERVICE_KEY="dev-key"
 ```
 
 **Backend Integration Tests (`@ActiveProfiles("prod")`)**:
-When authoring or running backend integration tests with `@ActiveProfiles("prod")`, `AuthRateLimitProdValidator` enforces fail-fast rate-limit proxy validation at `prod` startup whenever `app.security.rate-limit.enabled=true` (the default). Every `@ActiveProfiles("prod")` test class must explicitly declare `APP_SECURITY_RATE_LIMIT_TRUST_PROXY_HEADERS=true` and `APP_SECURITY_RATE_LIMIT_TRUSTED_PROXIES` (for example, `127.0.0.1`) inside `@SpringBootTest(properties = {...})`; otherwise `ApplicationContext` startup will fail fast with an `IllegalStateException`.
+When authoring or running backend integration tests with `@ActiveProfiles("prod")`, both `ProdEnvironmentValidator` and `AuthRateLimitProdValidator` enforce fail-fast configuration validation at `prod` startup (the latter whenever `app.security.rate-limit.enabled=true`, the default). Every `@ActiveProfiles("prod")` test class must explicitly declare all 4 required `prod` properties inside `@SpringBootTest(properties = {...})`: `APP_FRONTEND_URL` (e.g., `https://jobs.rikkei.edu.vn`), `APP_MAIL_FROM` (e.g., `noreply@rikkei.edu.vn`), `APP_SECURITY_RATE_LIMIT_TRUST_PROXY_HEADERS=true`, and `APP_SECURITY_RATE_LIMIT_TRUSTED_PROXIES` (e.g., `127.0.0.1`); otherwise `ApplicationContext` startup will fail fast with an `IllegalStateException`.
 
 #### Step 4: Run the React Frontend
 
@@ -196,6 +198,8 @@ export SPRING_DATASOURCE_USERNAME="rikkei_app"
 export SPRING_DATASOURCE_PASSWORD="rikkei_secret"
 export EXTERNAL_BASE_URL="http://localhost:9000"
 export EXTERNAL_SERVICE_KEY="dev-key"
+export APP_FRONTEND_URL="http://localhost:3000"
+export APP_MAIL_FROM="no-reply@rikkeijobs.local"
 
 # Chạy với profile dev để tự động nạp dữ liệu mẫu seed và bật OpenAPI Swagger UI
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
@@ -204,7 +208,7 @@ export EXTERNAL_SERVICE_KEY="dev-key"
 ```
 
 **Kiểm thử Tích hợp Backend (`@ActiveProfiles("prod")`)**:
-Khi viết hoặc chạy các bài kiểm thử tích hợp backend dùng `@ActiveProfiles("prod")`, bộ kiểm tra `AuthRateLimitProdValidator` sẽ thực thi kiểm định fail-fast cấu hình proxy cho rate-limit lúc khởi động profile `prod` khi `app.security.rate-limit.enabled=true` (mặc định). Mọi lớp kiểm thử `@ActiveProfiles("prod")` bắt buộc phải khai báo tường minh `APP_SECURITY_RATE_LIMIT_TRUST_PROXY_HEADERS=true` và `APP_SECURITY_RATE_LIMIT_TRUSTED_PROXIES` (ví dụ `127.0.0.1`) trong `@SpringBootTest(properties = {...})`; nếu thiếu, quá trình khởi tạo `ApplicationContext` sẽ fail-fast với lỗi `IllegalStateException`.
+Khi viết hoặc chạy các bài kiểm thử tích hợp backend dùng `@ActiveProfiles("prod")`, cả `ProdEnvironmentValidator` và `AuthRateLimitProdValidator` đều thực thi kiểm định fail-fast lúc khởi động profile `prod` (với validator sau khi `app.security.rate-limit.enabled=true`, giá trị mặc định). Mọi lớp kiểm thử `@ActiveProfiles("prod")` bắt buộc phải khai báo tường minh đủ 4 biến `prod` trong `@SpringBootTest(properties = {...})`: `APP_FRONTEND_URL` (ví dụ `https://jobs.rikkei.edu.vn`), `APP_MAIL_FROM` (ví dụ `noreply@rikkei.edu.vn`), `APP_SECURITY_RATE_LIMIT_TRUST_PROXY_HEADERS=true` và `APP_SECURITY_RATE_LIMIT_TRUSTED_PROXIES` (ví dụ `127.0.0.1`); nếu thiếu, quá trình khởi tạo `ApplicationContext` sẽ fail-fast với lỗi `IllegalStateException`.
 
 #### Bước 4: Chạy Frontend React
 

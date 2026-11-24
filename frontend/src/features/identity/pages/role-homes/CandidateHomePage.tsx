@@ -827,9 +827,9 @@ export const CandidateHomePage: React.FC = () => {
               <ul className="rj-cand-list rj-stack-sm">
                 <li className="rj-cand-tile rj-row-between">
                   <div>
-                    <strong className="rj-cand-skill">Hồ sơ ứng tuyển</strong>
+                    <strong className="rj-cand-skill">Trợ lý AI</strong>
                     <p className="rj-cand-meta">
-                      Quản lý CV, theo dõi trạng thái hồ sơ đã nộp và lịch phỏng vấn.
+                      Góp ý cải thiện CV và luyện phỏng vấn thử theo yêu cầu tin tuyển dụng.
                     </p>
                   </div>
                   <span className="rj-card-soon-badge">Sắp ra mắt</span>

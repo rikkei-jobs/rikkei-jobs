@@ -212,7 +212,9 @@ public class AuthRateLimitProdValidatorTest {
                                     "CLOUDINARY_API_KEY=prod-cloudinary-key-123",
                                     "CLOUDINARY_API_SECRET=prod-cloudinary-secret-xyz-987",
                                     "CLOUDINARY_API_BASE_URL=https://api.cloudinary.com/v1_1",
-                                    "CLOUDINARY_DELIVERY_BASE_URL=https://res.cloudinary.com/prod-rikkei-cloud/image/upload"
+                                    "CLOUDINARY_DELIVERY_BASE_URL=https://res.cloudinary.com/prod-rikkei-cloud/image/upload",
+                                    "APP_FRONTEND_URL=https://rikkeijobs.com",
+                                    "APP_MAIL_FROM=no-reply@rikkeijobs.com"
                                     // Missing APP_SECURITY_RATE_LIMIT_TRUST_PROXY_HEADERS /
                                     // TRUSTED_PROXIES
                                     );

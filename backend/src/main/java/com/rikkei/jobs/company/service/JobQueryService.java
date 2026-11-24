@@ -3,6 +3,7 @@ package com.rikkei.jobs.company.service;
 import com.rikkei.jobs.assessment.dto.SkillDto;
 import com.rikkei.jobs.assessment.service.SkillCatalogService;
 import com.rikkei.jobs.common.exception.ResourceNotFoundException;
+import com.rikkei.jobs.company.dto.JobApplicationInfoDto;
 import com.rikkei.jobs.company.dto.JobDetailDto;
 import com.rikkei.jobs.company.dto.JobSkillRequirementDto;
 import com.rikkei.jobs.company.dto.OpenJobDto;
@@ -15,6 +16,8 @@ import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
@@ -115,6 +118,49 @@ public class JobQueryService {
     @Transactional(readOnly = true)
     public OffsetDateTime getLatestUpdateAt() {
         return jobRepository.findLatestUpdatedAt().orElse(null);
+    }
+
+    /** Returns job summary and eligibility info for recruitment application checks. */
+    @Transactional(readOnly = true)
+    public Optional<JobApplicationInfoDto> findJobForApplication(Long jobId) {
+        if (jobId == null || jobId <= 0) {
+            return Optional.empty();
+        }
+        return jobRepository.findById(jobId).map(JobQueryService::toApplicationInfo);
+    }
+
+    /** Batch-fetches job summaries for a page of applications (prevents N+1 queries). */
+    @Transactional(readOnly = true)
+    public Map<Long, JobApplicationInfoDto> findJobSummariesByIds(Set<Long> jobIds) {
+        if (jobIds == null || jobIds.isEmpty()) {
+            return Map.of();
+        }
+        return jobRepository.findApplicationInfoByIds(jobIds).stream()
+                .collect(
+                        Collectors.toMap(
+                                JobApplicationInfoDto::id, dto -> dto, (first, second) -> first));
+    }
+
+    /** Checks whether the given job belongs to the specified company. */
+    @Transactional(readOnly = true)
+    public boolean isJobOwnedByCompany(Long jobId, Long companyId) {
+        if (jobId == null || jobId <= 0 || companyId == null || companyId <= 0) {
+            return false;
+        }
+        return jobRepository
+                .findById(jobId)
+                .map(job -> Objects.equals(companyId, job.getCompanyId()))
+                .orElse(false);
+    }
+
+    private static JobApplicationInfoDto toApplicationInfo(Job job) {
+        return new JobApplicationInfoDto(
+                job.getId(),
+                job.getTitle(),
+                job.getCompanyId(),
+                job.getCompanyName(),
+                job.getStatus(),
+                job.getDeadline());
     }
 
     private static List<JobSkillRequirementDto> toRequirements(
