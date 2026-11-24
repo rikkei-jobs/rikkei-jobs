@@ -42,7 +42,7 @@ export const SsoCallbackPage: React.FC = () => {
       return {
         id: 101,
         email: 'candidate@rikkei.vn',
-        fullName: 'Nguyen Van Sinh Vien',
+        fullName: 'Nguyễn Văn An',
         role: 'CANDIDATE',
         companyId: null,
         lmsUserId: 'lms-sv-001',

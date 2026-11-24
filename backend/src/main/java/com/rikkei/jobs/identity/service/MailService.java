@@ -37,6 +37,8 @@ public class MailService {
     public void sendPasswordResetEmail(String toEmail, String rawToken) {
         try {
             String resetLink = frontendUrl + "/reset-password/" + rawToken;
+            String escapedEmail = HtmlUtils.htmlEscape(toEmail);
+            String escapedResetLink = HtmlUtils.htmlEscape(resetLink);
 
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
@@ -44,29 +46,39 @@ public class MailService {
             helper.setTo(toEmail);
             helper.setSubject("Yêu cầu đặt lại mật khẩu - Rikkei Jobs");
 
+            String plainText =
+                    "Xin chào,\n\n"
+                            + "Hệ thống nhận được yêu cầu đặt lại mật khẩu cho tài khoản "
+                            + toEmail
+                            + ".\n\n"
+                            + "Vui lòng truy cập đường dẫn dưới đây để thực hiện đổi mật khẩu (liên kết có hiệu lực trong vòng 30 phút):\n"
+                            + resetLink
+                            + "\n\n"
+                            + "Nếu bạn không yêu cầu hành động này, vui lòng bỏ qua email.";
+
             String htmlBody =
                     "<div style=\"font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;\">"
                             + "<h2 style=\"color: #1a56db;\">Rikkei Jobs - Đặt lại mật khẩu</h2>"
                             + "<p>Xin chào,</p>"
                             + "<p>Hệ thống nhận được yêu cầu đặt lại mật khẩu cho tài khoản <strong>"
-                            + toEmail
+                            + escapedEmail
                             + "</strong>.</p>"
                             + "<p>Vui lòng nhấn vào liên kết dưới đây để thực hiện đổi mật khẩu (liên kết có hiệu lực trong vòng 30 phút):</p>"
                             + "<p style=\"margin: 24px 0;\">"
                             + "<a href=\""
-                            + resetLink
+                            + escapedResetLink
                             + "\" style=\"background-color: #1a56db; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;\">Đặt lại mật khẩu</a>"
                             + "</p>"
                             + "<p>Hoặc truy cập trực tiếp đường dẫn:</p>"
                             + "<p><a href=\""
-                            + resetLink
+                            + escapedResetLink
                             + "\">"
-                            + resetLink
+                            + escapedResetLink
                             + "</a></p>"
                             + "<p style=\"color: #6b7280; font-size: 14px;\">Nếu bạn không yêu cầu hành động này, vui lòng bỏ qua email.</p>"
                             + "</div>";
 
-            helper.setText(htmlBody, true);
+            helper.setText(plainText, htmlBody);
             mailSender.send(message);
             log.info("Password reset email sent successfully");
 

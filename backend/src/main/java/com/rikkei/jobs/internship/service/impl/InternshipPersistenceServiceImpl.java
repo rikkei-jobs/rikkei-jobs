@@ -12,12 +12,14 @@ import com.rikkei.jobs.internship.model.InternshipTask;
 import com.rikkei.jobs.internship.repository.InternshipRepository;
 import com.rikkei.jobs.internship.repository.InternshipTaskRepository;
 import com.rikkei.jobs.internship.service.InternshipPersistenceService;
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -77,6 +79,7 @@ public class InternshipPersistenceServiceImpl implements InternshipPersistenceSe
                     internshipRepository
                             .findByUserIdAndBatchId(userId, batchId)
                             .orElseGet(Internship::new);
+            boolean isNewInternship = internship.getId() == null;
 
             internship.setUserId(userId);
             internship.setBatchId(batchId);
@@ -99,22 +102,41 @@ public class InternshipPersistenceServiceImpl implements InternshipPersistenceSe
                 deduplicatedTasks.put(taskData.title().trim(), taskData);
             }
 
-            for (Map.Entry<String, PMInternshipTaskResponse> taskEntry :
-                    deduplicatedTasks.entrySet()) {
-                String taskTitle = taskEntry.getKey();
-                PMInternshipTaskResponse taskData = taskEntry.getValue();
+            if (!deduplicatedTasks.isEmpty()) {
+                // Batch-load existing tasks once per existing batch to avoid N per-task SELECTs.
+                Map<String, InternshipTask> existingTasksByTitle =
+                        isNewInternship
+                                ? Map.of()
+                                : internshipTaskRepository
+                                        .findByInternshipId(internship.getId())
+                                        .stream()
+                                        .collect(
+                                                Collectors.toMap(
+                                                        InternshipTask::getTitle,
+                                                        task -> task,
+                                                        (first, second) -> first));
 
-                InternshipTask task =
-                        internshipTaskRepository
-                                .findByInternshipIdAndTitle(internship.getId(), taskTitle)
-                                .orElseGet(InternshipTask::new);
+                for (Map.Entry<String, PMInternshipTaskResponse> taskEntry :
+                        deduplicatedTasks.entrySet()) {
+                    String taskTitle = taskEntry.getKey();
+                    PMInternshipTaskResponse taskData = taskEntry.getValue();
 
-                task.setInternship(internship);
-                task.setTitle(taskTitle);
-                task.setAcceptedScore(taskData.acceptedScore());
-                task.setAcceptedAt(taskData.acceptedAt());
+                    InternshipTask existingTask = existingTasksByTitle.get(taskTitle);
+                    if (existingTask != null
+                            && sameScore(existingTask.getAcceptedScore(), taskData.acceptedScore())
+                            && sameInstant(existingTask.getAcceptedAt(), taskData.acceptedAt())) {
+                        continue;
+                    }
 
-                internshipTaskRepository.save(task);
+                    InternshipTask task =
+                            existingTask != null ? existingTask : new InternshipTask();
+                    task.setInternship(internship);
+                    task.setTitle(taskTitle);
+                    task.setAcceptedScore(taskData.acceptedScore());
+                    task.setAcceptedAt(taskData.acceptedAt());
+
+                    internshipTaskRepository.save(task);
+                }
             }
 
             commands.add(
@@ -125,6 +147,22 @@ public class InternshipPersistenceServiceImpl implements InternshipPersistenceSe
 
         candidatePublicService.recordPmInternshipResults(userId, commands);
         return syncedCount;
+    }
+
+    private static boolean sameScore(BigDecimal existing, BigDecimal incoming) {
+        if (existing == null && incoming == null) {
+            return true;
+        }
+        return existing != null && incoming != null && existing.compareTo(incoming) == 0;
+    }
+
+    private static boolean sameInstant(OffsetDateTime existing, OffsetDateTime incoming) {
+        if (existing == null && incoming == null) {
+            return true;
+        }
+        return existing != null
+                && incoming != null
+                && existing.toInstant().equals(incoming.toInstant());
     }
 
     @Override

@@ -324,6 +324,74 @@ class CandidatePublicServiceInternshipTest {
             verify(skillRecomputeService, times(1)).recomputeSkills(10L);
             verify(externalRecordRepository, never()).deleteAll(anyList());
         }
+
+        @Test
+        @DisplayName(
+                "Unchanged single PM record skips redundant save, preserves recordedAt, and skips"
+                        + " skillRecomputeService")
+        void unchangedSingleRecordSkipsSaveAndRecompute() {
+            OffsetDateTime originalRecordedAt = OffsetDateTime.now(clock).minusMinutes(5);
+            ExternalRecord existing =
+                    new ExternalRecord(
+                            ExternalSource.PM,
+                            "IOC-JB-2026-09",
+                            "Hệ thống đặt lịch phòng họp",
+                            new BigDecimal("85.00"),
+                            originalRecordedAt,
+                            10L);
+
+            when(externalRecordRepository.findByUserIdAndSourceAndSourceCodeOrderByRecordedAtDesc(
+                            10L, ExternalSource.PM, "IOC-JB-2026-09"))
+                    .thenReturn(List.of(existing));
+
+            clock.fastForward(Duration.ofDays(1));
+            service.recordPmInternshipResults(
+                    10L,
+                    List.of(
+                            new PmInternshipResultCommand(
+                                    "IOC-JB-2026-09",
+                                    "Hệ thống đặt lịch phòng họp",
+                                    new BigDecimal("8.5"))));
+
+            assertEquals(originalRecordedAt, existing.getRecordedAt());
+            verify(externalRecordRepository, never()).save(any());
+            verify(externalRecordRepository, never()).deleteAll(anyList());
+            verifyNoInteractions(skillRecomputeService);
+        }
+
+        @Test
+        @DisplayName(
+                "Changing only PM topic title (same score) triggers save, updates recordedAt, and"
+                        + " recomputes skills")
+        void titleOnlyChangeTriggersSaveAndRecompute() {
+            OffsetDateTime originalRecordedAt = OffsetDateTime.now(clock).minusDays(3);
+            ExternalRecord existing =
+                    new ExternalRecord(
+                            ExternalSource.PM,
+                            "IOC-JB-2026-09",
+                            "Old Topic Title",
+                            new BigDecimal("85.00"),
+                            originalRecordedAt,
+                            10L);
+
+            when(externalRecordRepository.findByUserIdAndSourceAndSourceCodeOrderByRecordedAtDesc(
+                            10L, ExternalSource.PM, "IOC-JB-2026-09"))
+                    .thenReturn(List.of(existing));
+
+            clock.fastForward(Duration.ofHours(2));
+            service.recordPmInternshipResults(
+                    10L,
+                    List.of(
+                            new PmInternshipResultCommand(
+                                    "IOC-JB-2026-09",
+                                    "Updated Topic Title",
+                                    new BigDecimal("8.5"))));
+
+            assertEquals("Updated Topic Title", existing.getTitle());
+            assertEquals(OffsetDateTime.now(clock), existing.getRecordedAt());
+            verify(externalRecordRepository).save(existing);
+            verify(skillRecomputeService, times(1)).recomputeSkills(10L);
+        }
     }
 
     @Nested
@@ -553,6 +621,82 @@ class CandidatePublicServiceInternshipTest {
                                 Integer.class);
                 assertEquals(1, originalBatchCount);
                 assertEquals(4, originalEvidences);
+            } finally {
+                restoreUser1Seed();
+            }
+        }
+
+        @Test
+        @DisplayName(
+                "Skip invariant: unchanged PM sync preserves recorded_at and evidence IDs, while"
+                        + " title/score changes or explicit recompute rebuild evidences")
+        void unchangedPmSyncPreservesRecordedAtAndEvidencesWhileChangesTriggerRecompute() {
+            try {
+                List<PmInternshipResultCommand> baselineSync =
+                        List.of(
+                                new PmInternshipResultCommand(
+                                        "IOC-JB-2026-09",
+                                        "Hệ thống đặt lịch phòng họp",
+                                        new BigDecimal("8.5")));
+                candidatePublicService.recordPmInternshipResults(1L, baselineSync);
+
+                OffsetDateTime recordedAtAfterSync =
+                        jdbcTemplate.queryForObject(
+                                "SELECT recorded_at FROM external_records WHERE user_id = 1 AND"
+                                        + " source = 'PM' AND source_code = 'IOC-JB-2026-09'",
+                                OffsetDateTime.class);
+                List<Long> evidenceIdsAfterSync =
+                        jdbcTemplate.queryForList(
+                                "SELECT id FROM skill_evidences WHERE user_id = 1 AND source ="
+                                        + " 'INTERNSHIP' AND source_ref = 'IOC-JB-2026-09' ORDER"
+                                        + " BY id",
+                                Long.class);
+                assertEquals(4, evidenceIdsAfterSync.size());
+
+                // Second identical sync must skip both external_records update and skill recompute.
+                candidatePublicService.recordPmInternshipResults(1L, baselineSync);
+
+                OffsetDateTime recordedAtAfterNoop =
+                        jdbcTemplate.queryForObject(
+                                "SELECT recorded_at FROM external_records WHERE user_id = 1 AND"
+                                        + " source = 'PM' AND source_code = 'IOC-JB-2026-09'",
+                                OffsetDateTime.class);
+                List<Long> evidenceIdsAfterNoop =
+                        jdbcTemplate.queryForList(
+                                "SELECT id FROM skill_evidences WHERE user_id = 1 AND source ="
+                                        + " 'INTERNSHIP' AND source_ref = 'IOC-JB-2026-09' ORDER"
+                                        + " BY id",
+                                Long.class);
+                assertEquals(recordedAtAfterSync, recordedAtAfterNoop);
+                assertEquals(evidenceIdsAfterSync, evidenceIdsAfterNoop);
+
+                // Changing title or score must trigger write and evidence recomputation.
+                candidatePublicService.recordPmInternshipResults(
+                        1L,
+                        List.of(
+                                new PmInternshipResultCommand(
+                                        "IOC-JB-2026-09",
+                                        "Hệ thống đặt lịch phòng họp v2",
+                                        new BigDecimal("9.0"))));
+                List<Long> evidenceIdsAfterChange =
+                        jdbcTemplate.queryForList(
+                                "SELECT id FROM skill_evidences WHERE user_id = 1 AND source ="
+                                        + " 'INTERNSHIP' AND source_ref = 'IOC-JB-2026-09' ORDER"
+                                        + " BY id",
+                                Long.class);
+                assertEquals(4, evidenceIdsAfterChange.size());
+                assertFalse(evidenceIdsAfterSync.equals(evidenceIdsAfterChange));
+
+                // Explicit recompute endpoint path rebuilds evidences even without PM change.
+                candidatePublicService.recomputeCandidateSkills(1L);
+                List<Long> evidenceIdsAfterExplicitRecompute =
+                        jdbcTemplate.queryForList(
+                                "SELECT id FROM skill_evidences WHERE user_id = 1 AND source ="
+                                        + " 'INTERNSHIP' AND source_ref = 'IOC-JB-2026-09' ORDER"
+                                        + " BY id",
+                                Long.class);
+                assertEquals(4, evidenceIdsAfterExplicitRecompute.size());
+                assertFalse(evidenceIdsAfterChange.equals(evidenceIdsAfterExplicitRecompute));
             } finally {
                 restoreUser1Seed();
             }

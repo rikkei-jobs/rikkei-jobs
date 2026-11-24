@@ -3,6 +3,8 @@ import type { EvaluationScoreDto } from '../types';
 
 export interface EvaluationScoreItemProps {
   readonly score: EvaluationScoreDto;
+  /** Heading level matching parent EvaluationCard hierarchy; defaults to 5 for embedded view. */
+  readonly headingLevel?: 4 | 5;
 }
 
 const getScoreBadge = (val: number): { label: string; className: string } => {
@@ -18,15 +20,19 @@ const getScoreBadge = (val: number): { label: string; className: string } => {
   return { label: 'Cần cải thiện', className: 'ce-score-badge ce-badge-needs-work' };
 };
 
-export const EvaluationScoreItem: React.FC<EvaluationScoreItemProps> = ({ score }) => {
+export const EvaluationScoreItem: React.FC<EvaluationScoreItemProps> = ({
+  score,
+  headingLevel = 5,
+}) => {
   const percentage = Math.min(100, Math.max(0, score.score));
   const badge = getScoreBadge(score.score);
+  const HeadingTag = headingLevel === 4 ? 'h4' : 'h5';
 
   return (
     <div className="ce-score-item" role="listitem">
       <div className="ce-score-info">
         <div className="ce-score-header">
-          <h5 className="ce-score-name">{score.criterionDescription}</h5>
+          <HeadingTag className="ce-score-name">{score.criterionDescription}</HeadingTag>
           {score.skillCode && (
             <span className="ce-skill-code" title="Mã kỹ năng">
               {score.skillCode}

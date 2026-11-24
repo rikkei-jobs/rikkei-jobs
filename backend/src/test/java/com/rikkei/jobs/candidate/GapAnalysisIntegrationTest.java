@@ -4,6 +4,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -14,6 +15,18 @@ import com.rikkei.jobs.candidate.repository.TargetPositionRepository;
 import com.rikkei.jobs.identity.model.User;
 import com.rikkei.jobs.identity.repository.UserRepository;
 import com.rikkei.jobs.identity.security.JwtService;
+import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -49,6 +62,7 @@ class GapAnalysisIntegrationTest {
     }
 
     @Autowired private WebApplicationContext context;
+    @Autowired private DataSource dataSource;
     @Autowired private JdbcTemplate jdbcTemplate;
     @Autowired private UserRepository userRepository;
     @Autowired private JwtService jwtService;
@@ -159,6 +173,172 @@ class GapAnalysisIntegrationTest {
                 jdbcTemplate.queryForObject(
                         "SELECT count(*) FROM gap_results WHERE user_id = 1 AND gap = 60.00",
                         Integer.class));
+    }
+
+    @Test
+    @DisplayName(
+            "Warm gap analysis skips redundant delete/insert and updates DB when scores change")
+    void warmReadSkipsRewriteAndUpdatesWhenScoresChange() throws Exception {
+        long position = positionId("JAVA_BACKEND_FRESHER");
+        choosePosition(1, "JAVA_BACKEND_FRESHER");
+
+        mockMvc.perform(get("/api/v1/me/gap-analysis").with(candidate(1)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.readiness").value(71))
+                .andExpect(jsonPath("$.items", hasSize(2)));
+
+        OffsetDateTime firstComputedAt =
+                jdbcTemplate.queryForObject(
+                        "SELECT MIN(computed_at) FROM gap_results WHERE user_id = 1 AND target_type"
+                                + " = 'POSITION' AND target_id = ?",
+                        OffsetDateTime.class,
+                        position);
+
+        mockMvc.perform(get("/api/v1/me/gap-analysis").with(candidate(1)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.readiness").value(71))
+                .andExpect(jsonPath("$.items", hasSize(2)));
+
+        OffsetDateTime secondComputedAt =
+                jdbcTemplate.queryForObject(
+                        "SELECT MIN(computed_at) FROM gap_results WHERE user_id = 1 AND target_type"
+                                + " = 'POSITION' AND target_id = ?",
+                        OffsetDateTime.class,
+                        position);
+        assertEquals(firstComputedAt.toInstant(), secondComputedAt.toInstant());
+
+        try {
+            jdbcTemplate.update(
+                    "INSERT INTO skill_scores (user_id, skill_id, verified_score, updated_at)"
+                            + " SELECT 1, id, 80.00, NOW() FROM skills WHERE code = 'DOCKER'"
+                            + " ON CONFLICT (user_id, skill_id) DO UPDATE SET verified_score ="
+                            + " 80.00");
+
+            mockMvc.perform(get("/api/v1/me/gap-analysis").with(candidate(1)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.readiness").value(86))
+                    .andExpect(jsonPath("$.items", hasSize(1)))
+                    .andExpect(jsonPath("$.items[0].skillCode").value("CLEAN_CODE"));
+
+            Integer updatedRows =
+                    jdbcTemplate.queryForObject(
+                            "SELECT count(*) FROM gap_results WHERE user_id = 1 AND target_type ="
+                                    + " 'POSITION' AND target_id = ?",
+                            Integer.class,
+                            position);
+            assertEquals(1, updatedRows);
+            BigDecimal remainingGap =
+                    jdbcTemplate.queryForObject(
+                            "SELECT gap FROM gap_results WHERE user_id = 1 AND target_type ="
+                                    + " 'POSITION' AND target_id = ?",
+                            BigDecimal.class,
+                            position);
+            assertEquals(new BigDecimal("60.00"), remainingGap);
+        } finally {
+            jdbcTemplate.update(
+                    "DELETE FROM skill_scores WHERE user_id = 1 AND skill_id = (SELECT id FROM"
+                            + " skills WHERE code = 'DOCKER')");
+        }
+    }
+
+    @Test
+    @DisplayName(
+            "Concurrent skill_scores update between Tx1 and Tx2 cannot leave stale gap_results")
+    void concurrentSkillScoresUpdateDuringStalledTx1CannotLeaveStaleGapResults() throws Exception {
+        long position = positionId("JAVA_BACKEND_FRESHER");
+        choosePosition(1, "JAVA_BACKEND_FRESHER");
+
+        CountDownLatch workerStarted = new CountDownLatch(1);
+        CountDownLatch workerDone = new CountDownLatch(1);
+
+        try (Connection lockConn = dataSource.getConnection();
+                ExecutorService executor = Executors.newSingleThreadExecutor()) {
+            lockConn.setAutoCommit(true);
+            try (PreparedStatement lockStmt =
+                    lockConn.prepareStatement("SELECT pg_advisory_lock(1)")) {
+                lockStmt.execute();
+            }
+
+            try {
+                Future<Void> requestFuture =
+                        executor.submit(
+                                () -> {
+                                    workerStarted.countDown();
+                                    try {
+                                        mockMvc.perform(
+                                                        get("/api/v1/me/gap-analysis")
+                                                                .with(candidate(1)))
+                                                .andExpect(status().isOk());
+                                        return null;
+                                    } finally {
+                                        workerDone.countDown();
+                                    }
+                                });
+
+                assertTrue(workerStarted.await(5, TimeUnit.SECONDS));
+
+                // Wait until R1 finishes readOnly Tx1 (stale snapshot) and blocks on
+                // pg_advisory_xact_lock(1) at Tx2 entry.
+                Instant deadline = Instant.now().plusSeconds(10);
+                int waitingLocks = 0;
+                while (Instant.now().isBefore(deadline)) {
+                    Integer count =
+                            jdbcTemplate.queryForObject(
+                                    "SELECT count(*) FROM pg_locks WHERE locktype = 'advisory'"
+                                            + " AND classid = 0 AND objid = 1 AND objsubid = 1"
+                                            + " AND NOT granted",
+                                    Integer.class);
+                    if (count != null && count >= 1) {
+                        waitingLocks = count;
+                        break;
+                    }
+                    LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(10));
+                }
+                assertEquals(
+                        1, waitingLocks, "Worker must block on pg_advisory_xact_lock(1) after Tx1");
+
+                jdbcTemplate.update(
+                        "INSERT INTO skill_scores (user_id, skill_id, verified_score, updated_at)"
+                                + " SELECT 1, id, 80.00, NOW() FROM skills WHERE code = 'DOCKER'"
+                                + " ON CONFLICT (user_id, skill_id) DO UPDATE SET verified_score ="
+                                + " 80.00");
+
+                try (PreparedStatement unlockStmt =
+                        lockConn.prepareStatement("SELECT pg_advisory_unlock(1)")) {
+                    unlockStmt.execute();
+                }
+
+                assertTrue(workerDone.await(10, TimeUnit.SECONDS));
+                requestFuture.get();
+            } finally {
+                try (PreparedStatement unlockStmt =
+                        lockConn.prepareStatement("SELECT pg_advisory_unlock_all()")) {
+                    unlockStmt.execute();
+                }
+                jdbcTemplate.update(
+                        "DELETE FROM skill_scores WHERE user_id = 1 AND skill_id = (SELECT id FROM"
+                                + " skills WHERE code = 'DOCKER')");
+            }
+        }
+
+        Integer persistedCount =
+                jdbcTemplate.queryForObject(
+                        "SELECT count(*) FROM gap_results WHERE user_id = 1 AND target_type ="
+                                + " 'POSITION' AND target_id = ?",
+                        Integer.class,
+                        position);
+        assertEquals(
+                1,
+                persistedCount,
+                "Stale Tx1 must not overwrite newer skill_scores into gap_results");
+        String persistedSkillCode =
+                jdbcTemplate.queryForObject(
+                        "SELECT s.code FROM gap_results g JOIN skills s ON s.id = g.skill_id WHERE"
+                                + " g.user_id = 1 AND g.target_type = 'POSITION' AND g.target_id ="
+                                + " ?",
+                        String.class,
+                        position);
+        assertEquals("CLEAN_CODE", persistedSkillCode);
     }
 
     @Test

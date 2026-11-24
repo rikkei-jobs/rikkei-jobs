@@ -15,7 +15,7 @@ Modern software development with AI agents requires strict guardrails, unambiguo
 1. **Non-Negotiable Git Read-Only Constraint**: AI agents operate in a strict read-only mode regarding Git history. Agents must never execute `git commit`, `git push`, `git checkout -b`, or `git stash`. All proposed changes remain uncommitted on disk for human review.
 2. **Deterministic Parity (Option A)**: 100% cryptographic byte-identical parity across Claude Code (`.claude/`) and Gemini CLI (`.gemini/`) without relying on brittle Windows filesystem symbolic links.
 3. **Comprehensive Enterprise Rules**: 16 single-topic rules governing architecture, security, performance, data access, and testing.
-4. **Task-Triggered Skills**: 28 structured workflows loaded on-demand via trigger-only descriptions starting with `"Use when ..."`.
+4. **Task-Triggered Skills**: 29 structured workflows loaded on-demand via trigger-only descriptions starting with `"Use when ..."`.
 5. **Automated Mechanical Verification**: Quality Gate 25 executes an 8-tier automated validator covering YAML frontmatter schemas, line caps and LF encoding, extended-scope forbidden patterns (zero emojis, zero hardcoded secrets, zero git mutations, zero lingering TODOs), markdown relative links and anchors, 100% SHA-256 mirror parity, repository asset and command citations, skill supporting files (`references/*`) validity, and dual-agent `settings.json` security policy enforcement.
 
 ---
@@ -28,7 +28,7 @@ Operating an enterprise monorepo across mixed operating systems (Windows worksta
                ┌────────────────────────────────────────────────────────┐
                │           Canonical Source: agent-config/              │
                │   ├── rules/ (01 to 16)                                │
-               │   ├── skills/ (28 task workflows)                      │
+               │   ├── skills/ (29 task workflows)                      │
                │   └── templates/ (entrypoints & slash commands)        │
                └───────────────────────────┬────────────────────────────┘
                                            │
@@ -40,7 +40,7 @@ Operating an enterprise monorepo across mixed operating systems (Windows worksta
    │       .claude/            │                        │       .gemini/            │
    │  ├── rules/ (SHA-256)     │                        │  ├── rules/ (SHA-256)     │
    │  ├── skills/ (SHA-256)    │                        │  ├── skills/ (SHA-256)    │
-   │  └── settings.json        │                        │  ├── commands/ (28 TOML)  │
+   │  └── settings.json        │                        │  ├── commands/ (29 TOML)  │
    │                           │                        │  └── settings.json        │
    └─────────────┬─────────────┘                        └─────────────┬─────────────┘
                  │                                                    │
@@ -59,7 +59,7 @@ Operating an enterprise monorepo across mixed operating systems (Windows worksta
   - `agent-config/` is the **sole canonical source of truth**.
   - `scripts/sync-agent-config.mjs` generates physical byte-identical copies in `.claude/` and `.gemini/`.
   - Normalizes line endings to pure LF (`\n`), strips UTF-8 BOM markers, and deletes orphan files.
-  - Generates 28 fallback slash commands (`.gemini/commands/*.toml`) for Gemini CLI.
+  - Generates 29 fallback slash commands (`.gemini/commands/*.toml`) for Gemini CLI.
   - CI enforces `--check` mode to reject uncommitted drift.
 
 ---
@@ -107,7 +107,7 @@ description: "Use when implementing or modifying a backend feature within one of
 ---
 ```
 
-### Complete Inventory of 28 Task Skills
+### Complete Inventory of 29 Task Skills
 
 1. **Process Skills (12 Workflows Adapted from Superpowers)**:
    - `using-rikkei-skills`: Master routing skill directing agents to applicable procedures.
@@ -123,11 +123,12 @@ description: "Use when implementing or modifying a backend feature within one of
    - `dispatching-parallel-agents`: Multi-agent orchestration protocols and interface contracts.
    - `writing-skills`: Methodology for authoring, testing, and refining new skill definitions.
 
-2. **Domain Skills (13 Shared, Frontend & Backend Workflows)**:
+2. **Domain Skills (14 Shared, Frontend & Backend Workflows)**:
    - `frontend-visual-design`: Enforcing design tokens, typography, and anti-AI aesthetics with supporting resources: `references/token-tables.md`, `references/anti-ai-rubric.md` (12-point rubric and Hard Veto rule), and `references/screenshot-protocol.md` (4 viewports: 375/768/1024/1440).
    - `frontend-motion-design`: Physically grounded spring animations with reduced-motion support, supported by `references/motion-tokens.css`, `references/recipes.md` (12 animation recipes), and `references/spring-presets.md`.
    - `frontend-iconography`: Single curated 24px icon system with uniform 2px stroke width, supported by `references/icon-grid-template.svg`, `references/icon-checklist.md`, and starter set of 14 core SVG icons (`references/icons/*.svg`).
    - `frontend-accessibility-audit`: WCAG 2.2 AA mechanical contrast and keyboard checks, supported by `references/a11y-checklist.md`.
+   - `frontend-taste-anti-slop`: Adapted anti-slop copy, surface restraint, fine-pointer micro-interactions, and single-`<h1>`/375px hygiene from `Leonxlnx/taste-skill` (`v2.5.1`), strictly subordinate to Rules 08/09 and `DESIGN_SYSTEM.md`, supported by `references/conflict-table.md` and `references/provenance-and-license.md`.
    - `frontend-feature-slice`: Structuring React 19 components, state, and API hooks.
    - `backend-module-feature`: Standard workflow for implementing Spring Boot domain features.
    - `spring-security-rbac-endpoint`: Method-level security and RFC 7807 error standardization.
@@ -150,7 +151,7 @@ description: "Use when implementing or modifying a backend feature within one of
 The framework is fully operational across both Claude Code and Gemini CLI / Antigravity:
 
 - **Claude Code**: Natively reads `CLAUDE.md`, discovers rules automatically from `.claude/rules/`, and parses frontmatter triggers in `.claude/skills/*/SKILL.md`.
-- **Gemini CLI / Antigravity**: Reads `GEMINI.md` and `AGENTS.md`, imports the 16 rules via explicit `@./.gemini/rules/01-...md` directives inside `GEMINI.md` (keeping the root file concise under 120 lines while ensuring deterministic rule ingestion), and supports dual skill invocation (native task discovery in `.gemini/skills/*/SKILL.md` plus 28 generated fallback slash commands in `.gemini/commands/*.toml`). Antigravity manages coordination metadata inside `.agents/teamwork/` without polluting application source code.
+- **Gemini CLI / Antigravity**: Reads `GEMINI.md` and `AGENTS.md`, imports the 16 rules via explicit `@./.gemini/rules/01-...md` directives inside `GEMINI.md` (keeping the root file concise under 120 lines while ensuring deterministic rule ingestion), and supports dual skill invocation (native task discovery in `.gemini/skills/*/SKILL.md` plus 29 generated fallback slash commands in `.gemini/commands/*.toml`). Antigravity manages coordination metadata inside `.agents/teamwork/` without polluting application source code.
 - Detailed parity proofs, exact official documentation quotes, and mechanics are documented in [`docs/agent-config/TOOL_COMPATIBILITY.md`](TOOL_COMPATIBILITY.md).
 - **Runtime Verification Status**:
   - Claude Code: Format compliance and prompt engineering verified mechanically.
@@ -164,9 +165,9 @@ When runtime binaries are installed on an operator workstation, execute this rap
 |---|---|---|---|---|
 | **Claude Code** | `/memory` | Displays project instructions loaded from `CLAUDE.md` | Context loaded | [Anthropic Claude Code Overview](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview) |
 | **Claude Code** | `/context` | Shows active system prompt context including all 16 rules automatically ingested from `.claude/rules/` | 16 rules discovered | [Anthropic Claude Code Context](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview) |
-| **Claude Code** | Type `/` (autocomplete) or `/help` | Auto-complete menu displays custom slash commands for all 28 task skills in `.claude/skills/` | 28 skills available | [Anthropic Claude Code Slash Commands](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/slash-commands) |
+| **Claude Code** | Type `/` (autocomplete) or `/help` | Auto-complete menu displays custom slash commands for all 29 task skills in `.claude/skills/` | 29 skills available | [Anthropic Claude Code Slash Commands](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/slash-commands) |
 | **Gemini CLI** | `/memory show` | Displays active hierarchical memory context proving ingestion of 16 rules via `@./.gemini/rules/01-...md` | 16 rules imported | [Google Gemini CLI Repository](https://github.com/google-gemini/gemini-cli) |
-| **Gemini CLI** | `/skills list` | Displays the 28 registered skills (or fallback slash commands in `.gemini/commands/*.toml`) | 28 skills active | [Google Gemini CLI Repository](https://github.com/google-gemini/gemini-cli) |
+| **Gemini CLI** | `/skills list` | Displays the 29 registered skills (or fallback slash commands in `.gemini/commands/*.toml`) | 29 skills active | [Google Gemini CLI Repository](https://github.com/google-gemini/gemini-cli) |
 | **Google Antigravity** | Open workspace & prompt inspection | Workspace automatically ingests `GEMINI.md` / `AGENTS.md`; `.agents/teamwork/` metadata isolated | Zero source mutation | Project Invariant |
 
 ---
@@ -214,9 +215,9 @@ Phần này cung cấp hướng dẫn đầy đủ, chi tiết bằng Tiếng Vi
 
 Hệ thống cấu hình AI Agent của Rikkei Jobs được xây dựng theo tiêu chuẩn kỹ thuật cấp doanh nghiệp:
 
-- **Nguồn Sự Thật Duy Nhất (Single Source of Truth)**: Toàn bộ 16 quy tắc doanh nghiệp (Rules), 28 kỹ năng tác vụ (Skills), và các mẫu điểm vào (Templates) được lưu trữ tại `agent-config/`.
+- **Nguồn Sự Thật Duy Nhất (Single Source of Truth)**: Toàn bộ 16 quy tắc doanh nghiệp (Rules), 29 kỹ năng tác vụ (Skills), và các mẫu điểm vào (Templates) được lưu trữ tại `agent-config/`.
 - **Cơ Chế Phản Chiếu Vật Lý Byte-Identical (Option A)**: Thay vì sử dụng symlinks (vốn rất dễ lỗi và mất tính di động trên Windows và container Linux), hệ thống sử dụng script `scripts/sync-agent-config.mjs` để sinh ra hai bản sao vật lý byte-identical tại `.claude/` và `.gemini/`. Cơ chế này tự động chuẩn hóa định dạng dòng xuống chuẩn LF (`\n`), loại bỏ ký tự BOM, và xóa sạch các file mồ côi (orphans).
-- **Tính Tương Thích Song Hành**: Hỗ trợ đầy đủ cả Claude Code (Anthropic) và Gemini CLI / Antigravity (Google) với 28 tệp lệnh slash `.gemini/commands/*.toml` bổ trợ.
+- **Tính Tương Thích Song Hành**: Hỗ trợ đầy đủ cả Claude Code (Anthropic) và Gemini CLI / Antigravity (Google) với 29 tệp lệnh slash `.gemini/commands/*.toml` bổ trợ.
 - **Trạng Thái Xác Thực Runtime (Runtime Verification Status)**:
   - Claude Code: Cấu trúc tệp, định dạng YAML frontmatter và mã băm SHA-256 được kiểm chứng cơ học 100%.
   - Gemini CLI & Antigravity: `NOT VERIFIED AT RUNTIME (CLI not installed per R0)` — Cú pháp tệp TOML, chỉ thị nạp bộ nhớ `@./.gemini/rules/01-...md` và các quy tắc đã được kiểm tra tính hợp lệ cơ học, nhưng việc thực thi runtime thực tế cần được con người kiểm tra qua bảng checklist 2 phút dưới đây.
@@ -227,9 +228,9 @@ Hệ thống cấu hình AI Agent của Rikkei Jobs được xây dựng theo ti
 |---|---|---|---|---|
 | **Claude Code** | `/memory` | Hiển thị thông tin ngữ cảnh dự án từ `CLAUDE.md` | Nạp ngữ cảnh thành công | [Anthropic Claude Code Overview](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview) |
 | **Claude Code** | `/context` | Hiển thị ngữ cảnh hệ thống bao gồm đầy đủ 16 quy tắc tự động nạp từ `.claude/rules/` | 16 rules được nạp | [Anthropic Claude Code Context](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview) |
-| **Claude Code** | Gõ `/` (menu gợi ý) hoặc `/help` | Menu auto-complete hiển thị danh sách lệnh slash tương ứng với 28 kỹ năng trong `.claude/skills/` | 28 skills sẵn sàng | [Anthropic Claude Code Slash Commands](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/slash-commands) |
+| **Claude Code** | Gõ `/` (menu gợi ý) hoặc `/help` | Menu auto-complete hiển thị danh sách lệnh slash tương ứng với 29 kỹ năng trong `.claude/skills/` | 29 skills sẵn sàng | [Anthropic Claude Code Slash Commands](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/slash-commands) |
 | **Gemini CLI** | `/memory show` | Hiển thị ngữ cảnh và xác nhận 16 rules được import qua `@./.gemini/rules/01-...md` | 16 rules được nạp | [Google Gemini CLI Repository](https://github.com/google-gemini/gemini-cli) |
-| **Gemini CLI** | `/skills list` | Hiển thị 28 kỹ năng hoặc các lệnh slash tương ứng từ `.gemini/commands/*.toml` | 28 skills/commands sẵn sàng | [Google Gemini CLI Repository](https://github.com/google-gemini/gemini-cli) |
+| **Gemini CLI** | `/skills list` | Hiển thị 29 kỹ năng hoặc các lệnh slash tương ứng từ `.gemini/commands/*.toml` | 29 skills/commands sẵn sàng | [Google Gemini CLI Repository](https://github.com/google-gemini/gemini-cli) |
 | **Google Antigravity** | Mở workspace và nạp tác vụ | Tự động nhận diện `GEMINI.md` / `AGENTS.md`, metadata cô lập trong `.agents/teamwork/` | Không làm ô nhiễm mã nguồn | Quy chuẩn dự án |
 
 ### 8.2. Quy Định Bắt Buộc: Git Strictly Read-Only
@@ -250,9 +251,9 @@ Hệ thống cấu hình AI Agent của Rikkei Jobs được xây dựng theo ti
 
 Script kiểm tra `scripts/validate-agent-config.mjs` (Quality Gate 25) được tích hợp trực tiếp vào quy trình CI và các bộ script `check.ps1`, `check.sh`. Script thực thi 10 tầng kiểm tra tự động:
 
-- **Tầng 1 (YAML Frontmatter)**: Đảm bảo toàn bộ 28 skills có YAML frontmatter chuẩn, tên kỹ năng trùng tên thư mục, mô tả bắt đầu bằng `"Use when ..."`, không chứa phần tóm tắt quy trình.
+- **Tầng 1 (YAML Frontmatter)**: Đảm bảo toàn bộ 29 skills có YAML frontmatter chuẩn, tên kỹ năng trùng tên thư mục, mô tả bắt đầu bằng `"Use when ..."`, không chứa phần tóm tắt quy trình.
 - **Tầng 2 (Line Limits & Encoding)**: Rules không vượt quá 150 dòng; Skills body không vượt quá 500 dòng; Root entrypoints không vượt quá 120 dòng; định dạng LF thuần túy, không có UTF-8 BOM.
-- **Tầng 3 (Forbidden Patterns)**: Loại bỏ triệt để 100% emoji trên toàn bộ 185 tệp Markdown; ngăn chặn hardcoded secrets/tokens; ngăn chặn lệnh git mutation trái phép; không để sót `TODO`/`FIXME` chưa hoàn thiện.
+- **Tầng 3 (Forbidden Patterns)**: Loại bỏ triệt để 100% emoji trên toàn bộ các tệp Markdown; ngăn chặn hardcoded secrets/tokens; ngăn chặn lệnh git mutation trái phép; không để sót `TODO`/`FIXME` chưa hoàn thiện.
 - **Tầng 4 (Markdown Links & Anchors)**: Kiểm tra toàn bộ đường dẫn relative markdown và anchor `#heading` trong tài liệu đảm bảo tồn tại chính xác trên đĩa.
 - **Tầng 5 (Cryptographic Mirror Parity)**: So sánh mã băm SHA-256 giữa canonical source và hai bản phản chiếu `.claude/` và `.gemini/`, bảo đảm đồng nhất 100% từng byte với 0 tệp mồ côi (zero orphans).
 - **Tầng 6 (Repo Asset, Command & `EXISTS`/`TARGET` Verification)**: Kiểm tra toàn bộ các đường dẫn mã nguồn (`backend/`, `frontend/`, `docs/`, `scripts/`) và lệnh công cụ được dẫn chứng trong rules/skills đều tồn tại thật trong kho lưu trữ, đồng thời phân biệt và kiểm chứng cơ học các chỉ báo `EXISTS` so với các chỉ báo `TARGET` chưa triển khai.
@@ -263,7 +264,7 @@ Script kiểm tra `scripts/validate-agent-config.mjs` (Quality Gate 25) được
 
 ### 8.4. Các Tài Liệu Tham Chiếu & Phụ Lục Kỹ Thuật
 
-- **Ghi Nhận Bản Quyền Nguồn Mở**: Xem [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) ghi nhận tác quyền MIT từ `obra/superpowers` và `nextlevelbuilder/ui-ux-pro-max-skill`, giấy phép SIL Open Font License 1.1 cho các bộ phông mã nguồn mở, và các chuẩn mở W3C.
+- **Ghi Nhận Bản Quyền Nguồn Mở**: Xem [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) ghi nhận tác quyền MIT từ `obra/superpowers`, `nextlevelbuilder/ui-ux-pro-max-skill`, và `Leonxlnx/taste-skill`, giấy phép SIL Open Font License 1.1 cho các bộ phông mã nguồn mở, và các chuẩn mở W3C.
 - **Danh Mục Nguồn & Tiêu Chuẩn Uy Tín**: Xem [`SOURCES.md`](SOURCES.md) liệt kê đầy đủ các URLs tài liệu chính thức của Google Gemini CLI, Claude Code, Antigravity và các tiêu chuẩn kỹ thuật quốc tế.
 - **Bằng Chứng Tương Thích Song Hành**: Xem [`TOOL_COMPATIBILITY.md`](TOOL_COMPATIBILITY.md) phân tích cơ chế khám phá công cụ trên Claude Code, Gemini CLI, Antigravity và giải trình thư mục điều phối `.agents/teamwork/`.
 - **Báo Cáo Kiểm Thử Phá Vỡ Thực Nghiệm**: Xem [`BREAK_TESTS.md`](BREAK_TESTS.md) ghi lại bằng chứng thực tế của 22 bài break tests (`BT-01A` đến `BT-08B`) bao phủ toàn diện 8 tầng kiểm tra với tỷ lệ vượt qua và khôi phục nguyên trạng 100%.

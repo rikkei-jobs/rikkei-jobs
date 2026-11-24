@@ -114,13 +114,106 @@ describe('SkillProfilePage', () => {
     renderPage();
 
     await screen.findByTestId('skill-JAVA');
-    fireEvent.click(screen.getByRole('button', { name: /Tính lại từ LMS, Exam, PM/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Tính lại từ dữ liệu học tập/ }));
 
     await waitFor(() => {
       expect(screen.getByText('84.21')).toBeInTheDocument();
     });
     const [, init] = fetchMock.mock.calls[1] as [string, RequestInit];
     expect(init.method).toBe('POST');
+  });
+
+  it('renders loading skeleton with aria-busy and supports retry recovery on error', async () => {
+    let rejectFirst!: (err: Error) => void;
+    const fetchMock = vi
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise<Response>((_resolve, reject) => {
+            rejectFirst = reject;
+          }),
+      )
+      .mockResolvedValueOnce(okResponse(SAMPLE));
+    globalThis.fetch = fetchMock;
+
+    renderPage();
+
+    const loadingStatus = screen.getByRole('status', { name: /Đang tải hồ sơ kỹ năng/i });
+    expect(loadingStatus).toHaveAttribute('aria-busy', 'true');
+
+    rejectFirst(new Error('Network down'));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(/Không tải được hồ sơ kỹ năng/i);
+
+    const retryBtn = screen.getByRole('button', { name: /Thử lại/i });
+    fireEvent.click(retryBtn);
+
+    expect(await screen.findByTestId('skill-JAVA')).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('supports headingLevel={1} without skipping heading tiers and avoids internal PM jargon in empty state', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(okResponse([]));
+
+    const { container } = render(
+      <SkillProfilePage showLogout={false} headingLevel={1} showEvaluations={false} />,
+    );
+
+    const h1s = await screen.findAllByRole('heading', { level: 1 });
+    expect(h1s).toHaveLength(1);
+    expect(h1s[0]).toHaveTextContent('Hồ sơ năng lực');
+    expect(screen.getAllByRole('heading', { level: 2 }).length).toBeGreaterThanOrEqual(2);
+    expect(container.querySelectorAll('h3')).toHaveLength(0);
+    expect(container.textContent).not.toMatch(/\bPM\b/);
+    expect(
+      screen.getByRole('button', { name: /Tính lại từ dữ liệu học tập/i }),
+    ).toBeInTheDocument();
+  });
+
+  it('renders sequential h1 -> h2 -> h3 heading hierarchy with non-empty skills when headingLevel={1}', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(okResponse(SAMPLE));
+
+    const { container } = render(
+      <SkillProfilePage showLogout={false} headingLevel={1} showEvaluations={false} />,
+    );
+
+    const java = await screen.findByTestId('skill-JAVA');
+    fireEvent.click(within(java).getByRole('button'));
+    const comm = screen.getByTestId('skill-COMMUNICATION');
+    fireEvent.click(within(comm).getByRole('button'));
+
+    const headings = Array.from(container.querySelectorAll('h1, h2, h3, h4, h5, h6'));
+    const levels = headings.map((el) => Number(el.tagName.slice(1)));
+    expect(levels[0]).toBe(1);
+    expect(levels).toContain(1);
+    expect(levels).toContain(2);
+    expect(levels).toContain(3);
+    expect(levels).not.toContain(4);
+    expect(within(java).getByRole('heading', { level: 3, name: 'Bằng chứng (2)' })).toBeVisible();
+    for (let i = 1; i < levels.length; i += 1) {
+      expect(levels[i]! - levels[i - 1]!).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('renders sequential h2 -> h3 -> h4 heading hierarchy with non-empty skills when using default headingLevel={2}', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(okResponse(SAMPLE));
+
+    const { container } = render(<SkillProfilePage showLogout={false} showEvaluations={false} />);
+
+    const java = await screen.findByTestId('skill-JAVA');
+    fireEvent.click(within(java).getByRole('button'));
+
+    const headings = Array.from(container.querySelectorAll('h1, h2, h3, h4, h5, h6'));
+    const levels = headings.map((el) => Number(el.tagName.slice(1)));
+    expect(levels[0]).toBe(2);
+    expect(levels).toContain(2);
+    expect(levels).toContain(3);
+    expect(levels).toContain(4);
+    expect(within(java).getByRole('heading', { level: 4, name: 'Bằng chứng (2)' })).toBeVisible();
+    for (let i = 1; i < levels.length; i += 1) {
+      expect(levels[i]! - levels[i - 1]!).toBeLessThanOrEqual(1);
+    }
   });
 
   it('asks for sign-in again when the backend answers 401', async () => {

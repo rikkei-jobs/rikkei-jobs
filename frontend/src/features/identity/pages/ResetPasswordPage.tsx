@@ -10,7 +10,7 @@ import { AuthEditorialLayout } from '../components/AuthEditorialLayout';
 export const ResetPasswordPage: React.FC = () => {
   const params = useParams<{ token?: string }>();
   const [searchParams] = useSearchParams();
-  const token = params.token || searchParams.get('token') || '';
+  const token = params.token?.trim() || searchParams.get('token')?.trim() || '';
 
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -62,21 +62,34 @@ export const ResetPasswordPage: React.FC = () => {
         </header>
 
         {!token && (
-          <div className="rj-alert rj-alert-danger" role="alert" aria-live="assertive">
-            <Icon name="alert-circle" size={20} />
-            <div>
+          <div className="rj-stack-md">
+            <div className="rj-alert rj-alert-danger" role="alert" aria-live="assertive">
+              <Icon name="alert-circle" size={20} />
               <span>
                 Không tìm thấy mã đặt lại mật khẩu trên đường dẫn. Vui lòng kiểm tra lại liên kết
-                trong email.
-              </span>{' '}
-              <Link to="/forgot-password" className="rj-link">
-                Yêu cầu liên kết mới
+                trong email hoặc yêu cầu liên kết mới.
+              </span>
+            </div>
+
+            <Link to="/forgot-password" className="rj-btn rj-btn-primary rj-btn-block">
+              <Icon name="mail" size={18} />
+              <span>Yêu cầu liên kết mới</span>
+            </Link>
+
+            <div style={{ textAlign: 'center' }}>
+              <Link
+                to="/login"
+                className="rj-link"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+              >
+                <Icon name="arrow-left" size={16} />
+                <span>Quay lại trang đăng nhập</span>
               </Link>
             </div>
           </div>
         )}
 
-        {errorMsg && (
+        {token && errorMsg && (
           <div
             id="reset-password-error"
             className="rj-alert rj-alert-danger"
@@ -88,7 +101,7 @@ export const ResetPasswordPage: React.FC = () => {
           </div>
         )}
 
-        {isSuccess ? (
+        {token && isSuccess && (
           <div role="status" aria-live="polite" className="rj-stagger-item" style={{ textAlign: 'center' }}>
             <div
               style={{
@@ -122,7 +135,9 @@ export const ResetPasswordPage: React.FC = () => {
               </button>
             </div>
           </div>
-        ) : (
+        )}
+
+        {token && !isSuccess && (
           <form onSubmit={handleSubmit} className="rj-form">
             <div className="rj-form-group rj-form-seq" style={{ '--stagger-index': 0 } as React.CSSProperties}>
               <label htmlFor="reset-token" className="rj-label">

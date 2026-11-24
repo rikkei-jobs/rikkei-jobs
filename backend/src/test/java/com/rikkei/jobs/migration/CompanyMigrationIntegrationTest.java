@@ -307,7 +307,9 @@ public class CompanyMigrationIntegrationTest {
                 "CLOUDINARY_API_KEY=prod-cloudinary-key-123",
                 "CLOUDINARY_API_SECRET=prod-cloudinary-secret-xyz-987",
                 "CLOUDINARY_API_BASE_URL=https://api.cloudinary.com/v1_1",
-                "CLOUDINARY_DELIVERY_BASE_URL=https://res.cloudinary.com/prod-rikkei-cloud/image/upload"
+                "CLOUDINARY_DELIVERY_BASE_URL=https://res.cloudinary.com/prod-rikkei-cloud/image/upload",
+                "APP_SECURITY_RATE_LIMIT_TRUST_PROXY_HEADERS=true",
+                "APP_SECURITY_RATE_LIMIT_TRUSTED_PROXIES=127.0.0.1"
             })
     @Testcontainers
     @ActiveProfiles("prod")
