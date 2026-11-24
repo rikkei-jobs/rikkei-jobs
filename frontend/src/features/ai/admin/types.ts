@@ -37,6 +37,7 @@ export interface AiLogPage {
   readonly total: number;
   readonly page: number;
   readonly size: number;
+  readonly totalCapped?: boolean;
 }
 export interface UsageBucket {
   readonly date: string | null;

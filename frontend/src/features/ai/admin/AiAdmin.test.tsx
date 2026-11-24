@@ -138,6 +138,84 @@ describe('AI administrator settings', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Tải lại cấu hình' }));
     expect(await screen.findByRole('spinbutton', { name: 'Nhiệt độ' })).toHaveValue(0.3);
   });
+  it('shows backend 400 missing API key error in alert and preserves form inputs (A6)', async () => {
+    vi.mocked(saveAiConfig).mockRejectedValue(
+      new Error('Chưa cấu hình khóa API cho nhà cung cấp này'),
+    );
+    wrap(<AiConfigPage />);
+    fireEvent.click(await screen.findByRole('combobox', { name: 'Nhà cung cấp' }));
+    fireEvent.click(screen.getByRole('option', { name: 'OpenAI' }));
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Hạn mức mỗi tài khoản / ngày' }), {
+      target: { value: '15' },
+    });
+    fireEvent.submit(screen.getByRole('form', { name: 'Cấu hình AI' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Chưa cấu hình khóa API cho nhà cung cấp này',
+    );
+    expect(screen.getByRole('combobox', { name: 'Nhà cung cấp' })).toHaveTextContent('OpenAI');
+    expect(screen.getByRole('combobox', { name: 'Mô hình' })).toHaveValue('gpt-4o-mini');
+    expect(screen.getByRole('spinbutton', { name: 'Hạn mức mỗi tài khoản / ngày' })).toHaveValue(
+      15,
+    );
+  });
+  it('rejects model names with "..", path chars, whitespace, or ":" on GEMINI/MOCK (A6)', async () => {
+    wrap(<AiConfigPage />);
+    const modelInput = await screen.findByRole('combobox', { name: 'Mô hình' });
+    fireEvent.change(modelInput, { target: { value: 'mock:1' } });
+    fireEvent.submit(screen.getByRole('form', { name: 'Cấu hình AI' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Tên mô hình không hợp lệ');
+
+    fireEvent.click(screen.getByRole('combobox', { name: 'Nhà cung cấp' }));
+    fireEvent.click(screen.getByRole('option', { name: 'Google Gemini' }));
+    for (const invalid of [
+      'gemini..flash',
+      'gemini/flash',
+      'gemini\\flash',
+      'gemini?x=1',
+      'gemini#frag',
+      'gemini flash',
+      'gemini\u0000flash',
+      'gemini:flash',
+    ]) {
+      fireEvent.change(modelInput, { target: { value: invalid } });
+      fireEvent.submit(screen.getByRole('form', { name: 'Cấu hình AI' }));
+      expect(await screen.findByRole('alert')).toHaveTextContent('Tên mô hình không hợp lệ');
+    }
+    expect(saveAiConfig).not.toHaveBeenCalled();
+  });
+  it('clears error banner when clicking "Hủy thay đổi" (A6 UX)', async () => {
+    vi.mocked(saveAiConfig).mockRejectedValue(
+      new Error('Chưa cấu hình khóa API cho nhà cung cấp này'),
+    );
+    wrap(<AiConfigPage />);
+    fireEvent.click(await screen.findByRole('combobox', { name: 'Nhà cung cấp' }));
+    fireEvent.click(screen.getByRole('option', { name: 'OpenAI' }));
+    fireEvent.submit(screen.getByRole('form', { name: 'Cấu hình AI' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Chưa cấu hình khóa API cho nhà cung cấp này',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Hủy thay đổi' }));
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Nhà cung cấp' })).toHaveTextContent('Mô phỏng');
+  });
+  it('uses v-flag-compatible model pattern and noValidate form validation (A6)', async () => {
+    wrap(<AiConfigPage />);
+    const form = await screen.findByRole('form', { name: 'Cấu hình AI' });
+    expect(form).toHaveAttribute('novalidate');
+
+    const modelInput = screen.getByRole('combobox', { name: 'Mô hình' });
+    const mockPattern = modelInput.getAttribute('pattern');
+    expect(mockPattern).toBeTruthy();
+    expect(() => new RegExp(`^(?:${mockPattern ?? ''})$`, 'v')).not.toThrow();
+    expect(new RegExp(`^(?:${mockPattern ?? ''})$`, 'v').test('gemini-1.5-flash')).toBe(true);
+
+    fireEvent.click(screen.getByRole('combobox', { name: 'Nhà cung cấp' }));
+    fireEvent.click(screen.getByRole('option', { name: 'OpenAI' }));
+    const openaiPattern = modelInput.getAttribute('pattern');
+    expect(openaiPattern).toBeTruthy();
+    expect(() => new RegExp(`^(?:${openaiPattern ?? ''})$`, 'v')).not.toThrow();
+    expect(new RegExp(`^(?:${openaiPattern ?? ''})$`, 'v').test('gpt-4o-mini')).toBe(true);
+  });
 });
 
 describe('AI audit UI', () => {
@@ -188,6 +266,18 @@ describe('AI audit UI', () => {
     expect(
       await screen.findByText('Không có nhật ký khớp bộ lọc. Thử đổi ngày hoặc trạng thái.'),
     ).toBeVisible();
+  });
+  it('displays capped count indicator when totalCapped is true (A7)', async () => {
+    vi.mocked(getAiLogs).mockResolvedValue({
+      items: [log],
+      total: 10000,
+      page: 0,
+      size: 20,
+      totalCapped: true,
+    });
+    wrap(<AiLogsPage />);
+    expect(await screen.findByText('10.000+ bản ghi phù hợp.')).toBeVisible();
+    expect(screen.getByText('Trang 1 / 500+')).toBeVisible();
   });
   it('includes a zero-use day in the chart data table', () => {
     wrap(<UsageChart summary={summary} />);

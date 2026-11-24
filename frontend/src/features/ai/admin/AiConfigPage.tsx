@@ -13,6 +13,40 @@ const MODELS: Record<AiProvider, readonly string[]> = {
   CLAUDE: ['claude-3-5-sonnet-20241022'],
 };
 
+const SAFE_MODEL_BASE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,119}$/;
+const SAFE_MODEL_WITH_COLON = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,119}$/;
+const MODEL_ERROR_MESSAGE =
+  'Tên mô hình không hợp lệ cho nhà cung cấp đã chọn (không chứa khoảng trắng, “..”, ký tự điều khiển hoặc /, \\, ?, #).';
+
+function hasControlOrWhitespace(value: string): boolean {
+  for (let i = 0; i < value.length; i += 1) {
+    const code = value.charCodeAt(i);
+    if (code <= 0x1f || code === 0x7f || /\s/.test(value[i])) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function isValidModelForProvider(provider: AiProvider, model: string): boolean {
+  if (!model || model.length > 120) {
+    return false;
+  }
+  if (
+    model.includes('..') ||
+    model.includes('/') ||
+    model.includes('\\') ||
+    model.includes('?') ||
+    model.includes('#') ||
+    hasControlOrWhitespace(model)
+  ) {
+    return false;
+  }
+  const allowed =
+    provider === 'OPENAI' || provider === 'CLAUDE' ? SAFE_MODEL_WITH_COLON : SAFE_MODEL_BASE;
+  return allowed.test(model);
+}
+
 export function AiConfigPage() {
   const [config, setConfig] = useState<AiConfig | null>(null);
   const [saved, setSaved] = useState<AiConfig | null>(null);
@@ -48,6 +82,11 @@ export function AiConfigPage() {
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!config || saving) return;
+    if (!isValidModelForProvider(config.provider, config.model)) {
+      setError(MODEL_ERROR_MESSAGE);
+      setMessage('');
+      return;
+    }
     setSaving(true);
     setError('');
     setMessage('');
@@ -117,6 +156,7 @@ export function AiConfigPage() {
               className="rj-surface-card rj-stack-lg"
               onSubmit={(event) => void submit(event)}
               aria-label="Cấu hình AI"
+              noValidate
             >
               <div className="ai-section-heading">
                 <Icon name="network" />
@@ -146,7 +186,11 @@ export function AiConfigPage() {
                   <input
                     required
                     maxLength={120}
-                    pattern="[A-Za-z0-9][A-Za-z0-9._:\-]*"
+                    pattern={
+                      config.provider === 'OPENAI' || config.provider === 'CLAUDE'
+                        ? '(?!.*\\.\\.)[A-Za-z0-9][A-Za-z0-9._:\\-]*'
+                        : '(?!.*\\.\\.)[A-Za-z0-9][A-Za-z0-9._\\-]*'
+                    }
                     list="ai-models"
                     value={config.model}
                     onChange={(e) => update('model', e.target.value)}
@@ -225,6 +269,7 @@ export function AiConfigPage() {
                   disabled={saving}
                   onClick={() => {
                     setConfig(saved);
+                    setError('');
                     setMessage('');
                   }}
                 >

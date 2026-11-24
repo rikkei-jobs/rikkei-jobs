@@ -78,9 +78,7 @@ export const AdminHomePage: React.FC = () => {
               </li>
               <li className="rj-cand-tile rj-row-between">
                 <div>
-                  <strong className="rj-cand-skill">
-                    Xử lý báo sai bằng chứng & nhật ký thao tác
-                  </strong>
+                  <strong className="rj-cand-skill">Xử lý báo sai bằng chứng & nhật ký thao tác</strong>
                   <p className="rj-cand-meta">
                     Tiếp nhận khiếu nại điểm xác thực, đối chiếu nguồn dữ liệu và tra cứu lịch sử
                     thao tác.
@@ -100,8 +98,7 @@ export const AdminHomePage: React.FC = () => {
                 <div>
                   <strong className="rj-cand-skill">Cấu hình mẫu đánh giá</strong>
                   <p className="rj-cand-meta">
-                    Thiết lập bộ tiêu chí chấm điểm và trọng số áp dụng cho phỏng vấn và thực tập
-                    IOC.
+                    Thiết lập bộ tiêu chí chấm điểm và trọng số áp dụng cho phỏng vấn và thực tập IOC.
                   </p>
                 </div>
                 <span className="rj-card-soon-badge">Sắp ra mắt</span>

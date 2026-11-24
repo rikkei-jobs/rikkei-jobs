@@ -169,7 +169,9 @@ export function AiLogsPage() {
         {loading
           ? 'Đang tải nhật ký AI...'
           : !error && logs
-            ? `${logs.total} bản ghi phù hợp.`
+            ? logs.totalCapped
+              ? `${logs.total.toLocaleString('vi-VN')}+ bản ghi phù hợp.`
+              : `${logs.total} bản ghi phù hợp.`
             : ''}
       </p>
       {summary && !loading && !error && (
@@ -259,6 +261,7 @@ export function AiLogsPage() {
             </button>
             <span>
               Trang {query.page + 1} / {Math.max(1, Math.ceil(logs.total / logs.size))}
+              {logs.totalCapped ? '+' : ''}
             </span>
             <button
               type="button"
