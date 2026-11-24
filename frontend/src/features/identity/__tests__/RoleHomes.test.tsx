@@ -399,7 +399,8 @@ describe('Role Home Pages', () => {
 
     expect(screen.getByText(/Chào mừng, Admin User!/i)).toBeInTheDocument();
     expect(screen.getByText('Danh mục kỹ năng & trọng số')).toBeInTheDocument();
-    expect(screen.getByText('Công cụ quản trị đang được xây dựng')).toBeInTheDocument();
+    expect(screen.getByText('Kiểm soát trợ lý AI')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Mở cấu hình AI' })).toHaveAttribute('href', '/admin/ai-config');
     expect(container.textContent).not.toMatch(/trạng thái kết nối backend|LMS SSO/i);
     expect(container.querySelectorAll('a[href="/change-password"]')).toHaveLength(0);
     expect(screen.queryByRole('link', { name: /Đổi mật khẩu/i })).not.toBeInTheDocument();

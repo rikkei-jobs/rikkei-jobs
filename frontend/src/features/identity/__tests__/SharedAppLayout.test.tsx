@@ -124,6 +124,8 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
       ]);
 
       expect(getRoleMenuItems('ADMIN').map((i) => ({ label: i.label, disabled: Boolean(i.disabled) }))).toEqual([
+        { label: 'Cấu hình AI', disabled: false },
+        { label: 'Nhật ký AI', disabled: false },
         { label: 'Quản trị', disabled: true },
       ]);
 

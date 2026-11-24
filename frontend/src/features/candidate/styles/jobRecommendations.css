@@ -43,6 +43,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  min-height: var(--rj-density-button-height, 44px);
   background-color: var(--rj-color-brand-primary);
   color: var(--rj-color-text-inverse);
   border: none;
@@ -122,6 +123,21 @@
 .badge-provider {
   background: var(--rj-color-status-info-bg);
   color: var(--rj-color-status-info-text);
+}
+
+.recommendations-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  background: var(--rj-color-status-warning-bg);
+  color: var(--rj-color-status-warning-text);
+  border: 1px solid var(--rj-color-status-warning-border);
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.5;
 }
 
 .jobs-grid {

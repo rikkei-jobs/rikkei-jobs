@@ -170,91 +170,102 @@ export const JobRecommendationsSection: React.FC = () => {
 
       {!loading && !error && recommendations.length === 0 && (
         <div className="recommendations-empty">
-          <p>Hiện chưa có tin tuyển dụng nào phù hợp với hồ sơ kỹ năng hiện tại của bạn.</p>
+          <p role="status">
+            {meta?.message ||
+              'Hiện chưa có tin tuyển dụng nào phù hợp với hồ sơ kỹ năng hiện tại của bạn.'}
+          </p>
         </div>
       )}
 
       {!loading && !error && recommendations.length > 0 && (
-        <div className="jobs-grid">
-          {recommendations.map((job) => (
-            <article key={job.jobId} className="job-card">
-              <div>
-                <div className="job-card-header">
-                  <div className="job-rank-title">
-                    <span className="rank-indicator">#{job.rank}</span>
-                    <h3 className="job-title">{job.title}</h3>
+        <>
+          {meta?.message && (
+            <div className="recommendations-notice" role="status">
+              <Icon name="alert-circle" size={18} />
+              <span>{meta.message}</span>
+            </div>
+          )}
+          <div className="jobs-grid">
+            {recommendations.map((job) => (
+              <article key={job.jobId} className="job-card">
+                <div>
+                  <div className="job-card-header">
+                    <div className="job-rank-title">
+                      <span className="rank-indicator">#{job.rank}</span>
+                      <h3 className="job-title">{job.title}</h3>
+                    </div>
+                    <span className={getScoreBadgeClass(job.score)}>{job.score}% khớp</span>
                   </div>
-                  <span className={getScoreBadgeClass(job.score)}>{job.score}% khớp</span>
-                </div>
 
-                <div className="job-company">
-                  <Icon name="building" size={16} />
-                  {job.companyName}
-                </div>
+                  <div className="job-company">
+                    <Icon name="building" size={16} />
+                    {job.companyName}
+                  </div>
 
-                <div className="job-details-meta">
-                  {job.location && <span className="detail-item">Địa điểm: {job.location}</span>}
-                  {job.salaryRange && <span className="detail-item">Lương: {job.salaryRange}</span>}
-                  {job.deadline && (
-                    <span className="detail-item">
-                      <Icon name="calendar" size={14} />
-                      Hạn: {formatDate(job.deadline)}
-                    </span>
-                  )}
-                </div>
-
-                <div className="ai-explanation-box">
-                  <div className="explanation-badge-row">
-                    {job.isAiGenerated ? (
-                      <span className="ai-label">
-                        <Icon name="sparkles" size={14} />
-                        Do AI tạo
-                      </span>
-                    ) : (
-                      <span className="system-label">
-                        <Icon name="network" size={14} />
-                        Gợi ý hệ thống
+                  <div className="job-details-meta">
+                    {job.location && <span className="detail-item">Địa điểm: {job.location}</span>}
+                    {job.salaryRange && <span className="detail-item">Lương: {job.salaryRange}</span>}
+                    {job.deadline && (
+                      <span className="detail-item">
+                        <Icon name="calendar" size={14} />
+                        Hạn: {formatDate(job.deadline)}
                       </span>
                     )}
                   </div>
-                  <p className="explanation-text">{job.explanation}</p>
+
+                  <div className="ai-explanation-box">
+                    <div className="explanation-badge-row">
+                      {job.isAiGenerated ? (
+                        <span className="ai-label">
+                          <Icon name="sparkles" size={14} />
+                          Do AI tạo
+                        </span>
+                      ) : (
+                        <span className="system-label">
+                          <Icon name="network" size={14} />
+                          Gợi ý hệ thống
+                        </span>
+                      )}
+                    </div>
+                    <p className="explanation-text">{job.explanation}</p>
+                  </div>
+
+                  {job.requiredSkills && job.requiredSkills.length > 0 && (
+                    <div className="skills-tags-container">
+                      <div className="skills-tags-label">Kỹ năng phân tích:</div>
+                      <div className="skills-tags">
+                        {job.requiredSkills.map((sk) => (
+                          <span
+                            key={sk.skillCode}
+                            className={`skill-pill ${sk.satisfied ? 'skill-match' : 'skill-gap'}`}
+                            title={sk.satisfied ? 'Đã đạt yêu cầu' : 'Chưa đạt mức yêu cầu'}
+                          >
+                            <Icon name={sk.satisfied ? 'check' : 'x'} size={12} />
+                            {sk.skillName} ({sk.candidateScore}/{sk.requiredLevel})
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {job.requiredSkills && job.requiredSkills.length > 0 && (
-                  <div className="skills-tags-container">
-                    <div className="skills-tags-label">Kỹ năng phân tích:</div>
-                    <div className="skills-tags">
-                      {job.requiredSkills.map((sk) => (
-                        <span
-                          key={sk.skillCode}
-                          className={`skill-pill ${sk.satisfied ? 'skill-match' : 'skill-gap'}`}
-                          title={sk.satisfied ? 'Đã đạt yêu cầu' : 'Chưa đạt mức yêu cầu'}
-                        >
-                          <Icon name={sk.satisfied ? 'check' : 'x'} size={12} />
-                          {sk.skillName} ({sk.candidateScore}/{sk.requiredLevel})
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="job-card-actions">
-                <button
-                  type="button"
-                  className="apply-button"
-                  disabled
-                  title="Tính năng nộp hồ sơ trực tiếp sắp ra mắt"
-                >
-                  Ứng tuyển (Sắp ra mắt)
-                </button>
-                <Link to={`/candidate/jobs/${job.jobId}`} className="details-button">
-                  Chi tiết JD
-                </Link>
-              </div>
-            </article>
-          ))}
-        </div>
+                <div className="job-card-actions">
+                  <button
+                    type="button"
+                    className="apply-button"
+                    disabled
+                    title="Tính năng nộp hồ sơ trực tiếp sắp ra mắt"
+                  >
+                    Ứng tuyển (Sắp ra mắt)
+                  </button>
+                  <Link to={`/candidate/jobs/${job.jobId}`} className="details-button">
+                    Chi tiết JD
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        </>
       )}
     </section>
   );

@@ -1,0 +1,194 @@
+{
+  "contrast": [
+    {
+      "view": "ai-config",
+      "theme": "light",
+      "pairs": [
+        {
+          "color": "rgb(11, 26, 44)",
+          "background": "rgb(238, 242, 248)",
+          "ratio": 15.597807439541679
+        },
+        {
+          "color": "rgb(37, 57, 78)",
+          "background": "rgb(238, 242, 248)",
+          "ratio": 10.536937402555184
+        },
+        {
+          "color": "rgb(11, 26, 44)",
+          "background": "rgb(255, 255, 255)",
+          "ratio": 17.52399203929516
+        },
+        {
+          "color": "rgb(37, 57, 78)",
+          "background": "rgb(255, 255, 255)",
+          "ratio": 11.838151475881673
+        },
+        {
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(13, 85, 184)",
+          "ratio": 6.979871729921576
+        },
+        {
+          "color": "rgb(11, 26, 44)",
+          "background": "rgb(225, 232, 242)",
+          "ratio": 14.208049177649178
+        }
+      ]
+    },
+    {
+      "view": "ai-config",
+      "theme": "dark",
+      "pairs": [
+        {
+          "color": "rgb(237, 242, 247)",
+          "background": "rgb(11, 16, 25)",
+          "ratio": 16.91320700579052
+        },
+        {
+          "color": "rgb(203, 213, 225)",
+          "background": "rgb(11, 16, 25)",
+          "ratio": 12.83060999507446
+        },
+        {
+          "color": "rgb(237, 242, 247)",
+          "background": "rgb(22, 32, 48)",
+          "ratio": 14.52769651055354
+        },
+        {
+          "color": "rgb(203, 213, 225)",
+          "background": "rgb(22, 32, 48)",
+          "ratio": 11.020926308647418
+        },
+        {
+          "color": "rgb(11, 16, 25)",
+          "background": "rgb(80, 140, 238)",
+          "ratio": 5.739326127873217
+        },
+        {
+          "color": "rgb(237, 242, 247)",
+          "background": "rgb(16, 23, 36)",
+          "ratio": 15.934869595068482
+        }
+      ]
+    },
+    {
+      "view": "ai-logs",
+      "theme": "light",
+      "pairs": [
+        {
+          "color": "rgb(11, 26, 44)",
+          "background": "rgb(238, 242, 248)",
+          "ratio": 15.597807439541679
+        },
+        {
+          "color": "rgb(37, 57, 78)",
+          "background": "rgb(238, 242, 248)",
+          "ratio": 10.536937402555184
+        },
+        {
+          "color": "rgb(11, 26, 44)",
+          "background": "rgb(255, 255, 255)",
+          "ratio": 17.52399203929516
+        },
+        {
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(13, 85, 184)",
+          "ratio": 6.979871729921576
+        },
+        {
+          "color": "rgb(14, 98, 81)",
+          "background": "rgb(232, 248, 245)",
+          "ratio": 6.648024384702272
+        },
+        {
+          "color": "rgb(122, 67, 5)",
+          "background": "rgb(254, 249, 231)",
+          "ratio": 7.566125598289991
+        }
+      ]
+    },
+    {
+      "view": "ai-logs",
+      "theme": "dark",
+      "pairs": [
+        {
+          "color": "rgb(237, 242, 247)",
+          "background": "rgb(11, 16, 25)",
+          "ratio": 16.91320700579052
+        },
+        {
+          "color": "rgb(203, 213, 225)",
+          "background": "rgb(11, 16, 25)",
+          "ratio": 12.83060999507446
+        },
+        {
+          "color": "rgb(237, 242, 247)",
+          "background": "rgb(22, 32, 48)",
+          "ratio": 14.52769651055354
+        },
+        {
+          "color": "rgb(11, 16, 25)",
+          "background": "rgb(80, 140, 238)",
+          "ratio": 5.739326127873217
+        },
+        {
+          "color": "rgb(72, 199, 142)",
+          "background": "rgb(22, 32, 48)",
+          "ratio": 7.663640542948582
+        },
+        {
+          "color": "rgb(245, 176, 65)",
+          "background": "rgb(22, 32, 48)",
+          "ratio": 8.702637419100968
+        }
+      ]
+    }
+  ],
+  "source": "Synthetic HTTP fixtures; not backend end-to-end proof",
+  "observations": [
+    {
+      "view": "ai-config",
+      "width": 375,
+      "scroll": 375
+    },
+    {
+      "view": "ai-config",
+      "width": 768,
+      "scroll": 768
+    },
+    {
+      "view": "ai-config",
+      "width": 1024,
+      "scroll": 1024
+    },
+    {
+      "view": "ai-config",
+      "width": 1440,
+      "scroll": 1440
+    },
+    {
+      "view": "ai-logs",
+      "width": 375,
+      "scroll": 375
+    },
+    {
+      "view": "ai-logs",
+      "width": 768,
+      "scroll": 768
+    },
+    {
+      "view": "ai-logs",
+      "width": 1024,
+      "scroll": 1024
+    },
+    {
+      "view": "ai-logs",
+      "width": 1440,
+      "scroll": 1440
+    }
+  ],
+  "browserErrors": [],
+  "savePayloadValidated": true,
+  "dialogEscapeValidated": true
+}
