@@ -45,6 +45,7 @@ public class MentorEvaluationServiceImpl implements MentorEvaluationService {
         return switch (context) {
             case INTERNSHIP -> getInternshipTasks(mentor, mentorEmail, batchId);
             case INTERVIEW -> getInterviewTasks(mentor);
+            case SELF_ASSESSMENT -> null;
         };
     }
 

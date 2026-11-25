@@ -272,6 +272,13 @@ public class RoutePolicyRegistry {
                             true,
                             "Candidate reads personal AI job recommendations",
                             OwnershipGuard.ROLE_CANDIDATE),
+                RoutePolicy.roles(
+                    HttpMethod.GET,
+                    "/api/v1/me/self-assessment/template",
+                    true,
+                    "Candidate retrieves the self-assessment template",
+                    OwnershipGuard.ROLE_CANDIDATE
+                ),
 
                     // 6. Mentor Evaluation
                     RoutePolicy.roles(

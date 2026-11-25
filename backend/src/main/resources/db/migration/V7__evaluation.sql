@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS evaluation_templates (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     CONSTRAINT chk_evaluation_templates_context
-        CHECK (context IN ('INTERNSHIP', 'INTERVIEW')),
+        CHECK (context IN ('INTERNSHIP', 'INTERVIEW', 'SELF_ASSESSMENT')),
     CONSTRAINT uq_evaluation_templates_name_context
         UNIQUE (name, context)
 );
