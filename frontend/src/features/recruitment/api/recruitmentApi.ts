@@ -3,17 +3,37 @@ import { httpClient, type BlobResponse } from '../../../shared/api/httpClient';
 import type { IconName } from '../../../shared/components/Icon';
 import type {
   ApplicationDetailResponse,
+  ApplicationProcessDetailResponse,
   ApplicationStatus,
   ApplicationSummaryResponse,
   ApplyJobRequest,
   CandidateCvItem,
   CandidateCvListResult,
+  CreateInterviewRoundRequest,
+  HrApplicationSummaryResponse,
+  HrJobSummaryResponse,
+  InterviewResult,
+  InterviewRoundResponse,
+  ListHrJobApplicationsParams,
+  ListHrJobsParams,
   ListMyApplicationsParams,
+  ListStaffApplicationsParams,
   PageResponse,
+  StaffApplicationSummaryResponse,
+  TransitionApplicationRequest,
+  UpdateInterviewRoundRequest,
   WithdrawApplicationRequest,
 } from '../types';
 
-export type RecruitmentErrorContext = 'apply' | 'list' | 'detail' | 'withdraw' | 'download';
+export type RecruitmentErrorContext =
+  | 'apply'
+  | 'list'
+  | 'detail'
+  | 'withdraw'
+  | 'download'
+  | 'transition'
+  | 'round'
+  | 'jobs';
 
 export interface StatusMeta {
   readonly status: ApplicationStatus;
@@ -97,6 +117,40 @@ export function getStatusMeta(status: ApplicationStatus): StatusMeta {
   return APPLICATION_STATUS_META[status] ?? APPLICATION_STATUS_META.SUBMITTED;
 }
 
+export interface InterviewResultMeta {
+  readonly result: InterviewResult;
+  readonly label: string;
+  readonly icon: IconName;
+  readonly toneClass: string;
+}
+
+export const INTERVIEW_RESULT_META: Readonly<Record<InterviewResult, InterviewResultMeta>> = {
+  PENDING: {
+    result: 'PENDING',
+    label: 'Chờ kết quả',
+    icon: 'clock',
+    toneClass: 'rec-round-badge--pending',
+  },
+  PASS: {
+    result: 'PASS',
+    label: 'Đạt',
+    icon: 'check-circle',
+    toneClass: 'rec-round-badge--pass',
+  },
+  FAIL: {
+    result: 'FAIL',
+    label: 'Không đạt',
+    icon: 'x',
+    toneClass: 'rec-round-badge--fail',
+  },
+};
+
+export const INTERVIEW_RESULT_ORDER: readonly InterviewResult[] = ['PASS', 'FAIL', 'PENDING'];
+
+export function getInterviewResultMeta(result: InterviewResult): InterviewResultMeta {
+  return INTERVIEW_RESULT_META[result] ?? INTERVIEW_RESULT_META.PENDING;
+}
+
 export function isWithdrawableStatus(status: ApplicationStatus): boolean {
   return status === 'SUBMITTED' || status === 'SCREENING' || status === 'INTERVIEW';
 }
@@ -107,6 +161,10 @@ export function isOpenApplicationStatus(status: ApplicationStatus): boolean {
 
 export function isAbortError(err: unknown): boolean {
   return typeof err === 'object' && err !== null && 'name' in err && err.name === 'AbortError';
+}
+
+export function isRecruitmentConflictError(err: unknown): boolean {
+  return err instanceof ApiError && err.status === 409;
 }
 
 export function formatApplicationDateTime(iso: string | null | undefined): string {
@@ -160,7 +218,14 @@ export function mapRecruitmentError(
 
     // Check optimistic-locking CONFLICT before context-specific 409 fallbacks
     if (code === 'CONFLICT') {
+      if (context === 'round' || context === 'transition') {
+        return 'Dữ liệu hồ sơ vừa được cập nhật ở phiên khác. Vui lòng tải lại dữ liệu mới nhất trước khi tiếp tục.';
+      }
       return 'Trạng thái hồ sơ vừa được cập nhật. Vui lòng tải lại trang và thử lại.';
+    }
+
+    if (code === 'INVALID_TRANSITION') {
+      return 'Không thể chuyển sang trạng thái đã chọn từ trạng thái hiện tại của hồ sơ. Vui lòng tải lại dữ liệu mới nhất để kiểm tra trạng thái mới.';
     }
 
     if (
@@ -173,13 +238,24 @@ export function mapRecruitmentError(
 
     if (
       code === 'CANNOT_WITHDRAW' ||
-      code === 'INVALID_APPLICATION_STATE' ||
+      (code === 'INVALID_APPLICATION_STATE' && context === 'withdraw') ||
       (err.status === 409 && context === 'withdraw')
     ) {
       return 'Không thể rút hồ sơ ở giai đoạn đề nghị nhận việc trở đi hoặc khi hồ sơ đã kết thúc.';
     }
 
+    if (code === 'INVALID_APPLICATION_STATE' && context === 'transition') {
+      return 'Trạng thái hồ sơ hiện tại không cho phép chuyển trạng thái. Vui lòng tải lại dữ liệu mới nhất để kiểm tra.';
+    }
+
+    if (code === 'INVALID_APPLICATION_STATE' || (err.status === 409 && context === 'round')) {
+      return 'Trạng thái hồ sơ hiện tại không cho phép thêm hoặc chỉnh sửa vòng phỏng vấn. Vui lòng tải lại dữ liệu mới nhất để kiểm tra.';
+    }
+
     if (err.status === 409) {
+      if (context === 'transition') {
+        return 'Dữ liệu hồ sơ vừa được cập nhật ở phiên khác. Vui lòng tải lại dữ liệu mới nhất trước khi tiếp tục.';
+      }
       return 'Trạng thái hồ sơ vừa được cập nhật. Vui lòng tải lại trang và thử lại.';
     }
 
@@ -197,6 +273,12 @@ export function mapRecruitmentError(
       }
       if (context === 'download') {
         return 'Không tìm thấy tệp CV đã nộp cho hồ sơ này.';
+      }
+      if (context === 'round') {
+        return 'Không tìm thấy hồ sơ hoặc vòng phỏng vấn yêu cầu.';
+      }
+      if (context === 'jobs') {
+        return 'Không tìm thấy danh sách vị trí tuyển dụng của doanh nghiệp.';
       }
       return 'Không tìm thấy hồ sơ ứng tuyển yêu cầu.';
     }
@@ -348,6 +430,149 @@ export async function fetchCandidateCvs(signal?: AbortSignal): Promise<Candidate
   }
 }
 
+export async function listHrJobs(
+  params: ListHrJobsParams = {},
+  signal?: AbortSignal,
+): Promise<PageResponse<HrJobSummaryResponse>> {
+  const query = new URLSearchParams();
+  const safePage = params.page && params.page >= 1 ? Math.floor(params.page) : 1;
+  const safeSize = params.size && params.size >= 1 ? Math.min(Math.floor(params.size), 100) : 20;
+
+  query.set('page', String(safePage));
+  query.set('size', String(safeSize));
+
+  return httpClient.request<PageResponse<HrJobSummaryResponse>>(
+    `/api/v1/hr/jobs?${query.toString()}`,
+    {
+      method: 'GET',
+      signal,
+    },
+  );
+}
+
+export async function listHrJobApplications(
+  jobId: number,
+  params: ListHrJobApplicationsParams = {},
+  signal?: AbortSignal,
+): Promise<PageResponse<HrApplicationSummaryResponse>> {
+  const query = new URLSearchParams();
+  const safePage = params.page && params.page >= 1 ? Math.floor(params.page) : 1;
+  const safeSize = params.size && params.size >= 1 ? Math.min(Math.floor(params.size), 100) : 20;
+
+  query.set('page', String(safePage));
+  query.set('size', String(safeSize));
+  if (params.status) {
+    query.set('status', params.status);
+  }
+
+  return httpClient.request<PageResponse<HrApplicationSummaryResponse>>(
+    `/api/v1/hr/jobs/${jobId}/applications?${query.toString()}`,
+    {
+      method: 'GET',
+      signal,
+    },
+  );
+}
+
+export async function getApplicationProcessDetail(
+  applicationId: number,
+  signal?: AbortSignal,
+): Promise<ApplicationProcessDetailResponse> {
+  return httpClient.request<ApplicationProcessDetailResponse>(
+    `/api/v1/applications/${applicationId}`,
+    {
+      method: 'GET',
+      signal,
+    },
+  );
+}
+
+export async function downloadApplicationProcessCvSnapshot(
+  applicationId: number,
+  signal?: AbortSignal,
+): Promise<BlobResponse> {
+  return httpClient.requestBlob(`/api/v1/applications/${applicationId}/cv-snapshot`, {
+    method: 'GET',
+    signal,
+  });
+}
+
+export async function transitionApplicationStatus(
+  applicationId: number,
+  payload: TransitionApplicationRequest,
+  signal?: AbortSignal,
+): Promise<ApplicationProcessDetailResponse> {
+  return httpClient.request<ApplicationProcessDetailResponse>(
+    `/api/v1/applications/${applicationId}/transition`,
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      signal,
+    },
+  );
+}
+
+export async function addInterviewRound(
+  applicationId: number,
+  payload: CreateInterviewRoundRequest,
+  signal?: AbortSignal,
+): Promise<InterviewRoundResponse> {
+  return httpClient.request<InterviewRoundResponse>(
+    `/api/v1/applications/${applicationId}/rounds`,
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      signal,
+    },
+  );
+}
+
+export async function updateInterviewRound(
+  applicationId: number,
+  roundId: number,
+  payload: UpdateInterviewRoundRequest,
+  signal?: AbortSignal,
+): Promise<InterviewRoundResponse> {
+  return httpClient.request<InterviewRoundResponse>(
+    `/api/v1/applications/${applicationId}/rounds/${roundId}`,
+    {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+      signal,
+    },
+  );
+}
+
+export async function listStaffApplications(
+  params: ListStaffApplicationsParams = {},
+  signal?: AbortSignal,
+): Promise<PageResponse<StaffApplicationSummaryResponse>> {
+  const query = new URLSearchParams();
+  const safePage = params.page && params.page >= 1 ? Math.floor(params.page) : 1;
+  const safeSize = params.size && params.size >= 1 ? Math.min(Math.floor(params.size), 100) : 20;
+
+  query.set('page', String(safePage));
+  query.set('size', String(safeSize));
+
+  if (typeof params.companyId === 'number' && Number.isInteger(params.companyId) && params.companyId > 0) {
+    query.set('companyId', String(params.companyId));
+  }
+  if (typeof params.jobId === 'number' && Number.isInteger(params.jobId) && params.jobId > 0) {
+    query.set('jobId', String(params.jobId));
+  }
+  if (params.status) {
+    query.set('status', params.status);
+  }
+
+  return httpClient.request<PageResponse<StaffApplicationSummaryResponse>>(
+    `/api/v1/staff/applications?${query.toString()}`,
+    {
+      method: 'GET',
+      signal,
+    },
+  );
+}
+
 export const recruitmentApi = {
   applyToJob,
   listMyApplications,
@@ -355,5 +580,14 @@ export const recruitmentApi = {
   withdrawApplication,
   downloadMyApplicationCvSnapshot,
   fetchCandidateCvs,
+  listHrJobs,
+  listHrJobApplications,
+  getApplicationProcessDetail,
+  downloadApplicationProcessCvSnapshot,
+  transitionApplicationStatus,
+  addInterviewRound,
+  updateInterviewRound,
+  listStaffApplications,
+  isRecruitmentConflictError,
   mapRecruitmentError,
 };

@@ -63,6 +63,21 @@ export const PROTECTED_ROUTE_POLICIES = {
     path: '/hr/company',
     allowedRoles: ['HR'],
   },
+  hrRecruitment: {
+    id: 'hrRecruitment',
+    path: '/hr/recruitment',
+    allowedRoles: ['HR'],
+  },
+  hrJobApplications: {
+    id: 'hrJobApplications',
+    path: '/hr/jobs/:jobId/applications',
+    allowedRoles: ['HR'],
+  },
+  hrApplicationDetail: {
+    id: 'hrApplicationDetail',
+    path: '/hr/applications/:id',
+    allowedRoles: ['HR'],
+  },
   mentorHome: {
     id: 'mentorHome',
     path: '/mentor',
@@ -71,6 +86,16 @@ export const PROTECTED_ROUTE_POLICIES = {
   staffHome: {
     id: 'staffHome',
     path: '/staff',
+    allowedRoles: ['STAFF'],
+  },
+  staffApplications: {
+    id: 'staffApplications',
+    path: '/staff/applications',
+    allowedRoles: ['STAFF'],
+  },
+  staffApplicationDetail: {
+    id: 'staffApplicationDetail',
+    path: '/staff/applications/:id',
     allowedRoles: ['STAFF'],
   },
   adminHome: {

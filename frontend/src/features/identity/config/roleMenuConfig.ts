@@ -67,9 +67,8 @@ export const ROLE_MENU_CONFIG: Readonly<Record<UserRole, readonly RoleMenuItem[]
     {
       id: 'hr-recruitment',
       label: 'Tuyển dụng',
+      path: '/hr/recruitment',
       icon: 'user-check',
-      disabled: true,
-      comingSoonLabel: 'Sắp ra mắt',
     },
     {
       id: 'hr-interns',
@@ -89,6 +88,12 @@ export const ROLE_MENU_CONFIG: Readonly<Record<UserRole, readonly RoleMenuItem[]
     },
   ],
   STAFF: [
+    {
+      id: 'staff-applications',
+      label: 'Hồ sơ ứng tuyển',
+      path: '/staff/applications',
+      icon: 'file-text',
+    },
     {
       id: 'staff-profiles',
       label: 'Duyệt hồ sơ',

@@ -648,8 +648,10 @@ describe('MyApplicationsPage', () => {
     const dialog = await screen.findByRole('dialog');
     expect(dialog).toHaveTextContent('Rút hồ sơ ứng tuyển');
     expect(dialog.closest('.rec-dialog-backdrop')?.parentElement).toBe(document.body);
-    expect(document.documentElement.getAttribute('data-scroll-locked')).toBe('true');
-    expect(document.body.style.overflow).toBe('');
+    await waitFor(() => {
+      expect(document.documentElement.getAttribute('data-scroll-locked')).toBe('true');
+      expect(document.body.style.overflow).toBe('');
+    });
 
     // Blank / whitespace validation
     const reasonInput = screen.getByLabelText(/Lý do rút hồ sơ/i) as HTMLTextAreaElement;
@@ -696,10 +698,10 @@ describe('MyApplicationsPage', () => {
     expect(statusBanner).not.toBeNull();
     await waitFor(() => {
       expect(document.activeElement).toBe(statusBanner);
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      expect(document.documentElement.getAttribute('data-scroll-locked')).toBeNull();
+      expect(document.body.style.overflow).toBe('');
+      expect(screen.getByRole('button', { name: /Rút hồ sơ ứng tuyển/i })).toBeDisabled();
     });
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    expect(document.documentElement.getAttribute('data-scroll-locked')).toBeNull();
-    expect(document.body.style.overflow).toBe('');
-    expect(screen.getByRole('button', { name: /Rút hồ sơ ứng tuyển/i })).toBeDisabled();
   });
 });

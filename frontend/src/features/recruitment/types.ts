@@ -89,3 +89,118 @@ export interface ListMyApplicationsParams {
   readonly page?: number;
   readonly size?: number;
 }
+
+export type InterviewResult = 'PENDING' | 'PASS' | 'FAIL';
+
+export interface InterviewRoundResponse {
+  readonly id: number;
+  readonly applicationId: number;
+  readonly roundNo: number;
+  readonly name: string;
+  readonly interviewerEmail: string;
+  readonly scheduledAt: string | null;
+  readonly result: InterviewResult;
+  readonly score: number | null;
+  readonly note: string | null;
+  readonly version: number;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+export interface CreateInterviewRoundRequest {
+  readonly name: string;
+  readonly interviewerEmail: string;
+  readonly scheduledAt?: string | null;
+}
+
+export interface UpdateInterviewRoundRequest {
+  readonly result: InterviewResult;
+  readonly score?: number | null;
+  readonly note?: string | null;
+  readonly version: number;
+}
+
+export interface TransitionApplicationRequest {
+  readonly toStatus: ApplicationStatus;
+  readonly note: string;
+}
+
+export interface ApplicationProcessDetailResponse {
+  readonly id: number;
+  readonly jobId: number;
+  readonly jobTitle: string;
+  readonly companyId: number | null;
+  readonly companyName: string;
+  readonly candidateUserId: number;
+  readonly candidateName: string;
+  readonly candidateEmail: string;
+  readonly cvId: number;
+  readonly cvSnapshotUrl: string;
+  readonly coverLetter: string | null;
+  readonly status: ApplicationStatus;
+  readonly matchScore: number;
+  readonly canWithdraw: boolean;
+  readonly canSendOffer: boolean;
+  readonly allowedTransitions: readonly ApplicationStatus[];
+  readonly rounds: readonly InterviewRoundResponse[];
+  readonly histories: readonly ApplicationStatusHistoryResponse[];
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+export interface HrJobSummaryResponse {
+  readonly id: number;
+  readonly title: string;
+  readonly companyId: number | null;
+  readonly companyName: string;
+  readonly status: string;
+  readonly expired: boolean;
+  readonly deadline: string | null;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+export interface HrApplicationSummaryResponse {
+  readonly id: number;
+  readonly candidateUserId: number;
+  readonly cvSnapshotUrl: string;
+  readonly coverLetter: string | null;
+  readonly status: ApplicationStatus;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+export interface StaffApplicationSummaryResponse {
+  readonly id: number;
+  readonly jobId: number;
+  readonly jobTitle: string;
+  readonly companyId: number | null;
+  readonly companyName: string;
+  readonly candidateUserId: number;
+  readonly candidateName: string;
+  readonly candidateEmail: string;
+  readonly status: ApplicationStatus;
+  readonly roundCount: number;
+  readonly matchScore: number;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+export interface ListHrJobsParams {
+  readonly page?: number;
+  readonly size?: number;
+}
+
+export interface ListHrJobApplicationsParams {
+  readonly status?: ApplicationStatus | '';
+  readonly page?: number;
+  readonly size?: number;
+}
+
+export interface ListStaffApplicationsParams {
+  readonly companyId?: number;
+  readonly jobId?: number;
+  readonly status?: ApplicationStatus | '';
+  readonly page?: number;
+  readonly size?: number;
+}

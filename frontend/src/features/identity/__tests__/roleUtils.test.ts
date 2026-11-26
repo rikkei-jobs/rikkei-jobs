@@ -55,9 +55,9 @@ describe('roleUtils', () => {
   });
 
   describe('routePolicies (SSOT)', () => {
-    it('covers all 17 protected routes (including /403) with exact allowedRoles', () => {
+    it('covers all 22 protected routes (including /403) with exact allowedRoles', () => {
       const policies = Object.values(PROTECTED_ROUTE_POLICIES);
-      expect(policies).toHaveLength(17);
+      expect(policies).toHaveLength(22);
       expect(policies.map((p) => [p.path, [...p.allowedRoles]])).toEqual([
         ['/candidate', ['CANDIDATE']],
         ['/candidate/skills', ['CANDIDATE']],
@@ -70,8 +70,13 @@ describe('roleUtils', () => {
         ['/candidate/applications/:id', ['CANDIDATE']],
         ['/hr', ['HR']],
         ['/hr/company', ['HR']],
+        ['/hr/recruitment', ['HR']],
+        ['/hr/jobs/:jobId/applications', ['HR']],
+        ['/hr/applications/:id', ['HR']],
         ['/mentor', ['MENTOR']],
         ['/staff', ['STAFF']],
+        ['/staff/applications', ['STAFF']],
+        ['/staff/applications/:id', ['STAFF']],
         ['/admin', ['ADMIN']],
         ['/admin/ai-config', ['ADMIN']],
         ['/admin/ai-logs', ['ADMIN']],
@@ -107,6 +112,15 @@ describe('roleUtils', () => {
       expect(isPathAllowedForRole('/candidate/applications/42', 'STAFF')).toBe(false);
       expect(isPathAllowedForRole('/hr/company', 'HR')).toBe(true);
       expect(isPathAllowedForRole('/hr/company', 'CANDIDATE')).toBe(false);
+      expect(isPathAllowedForRole('/hr/recruitment', 'HR')).toBe(true);
+      expect(isPathAllowedForRole('/hr/jobs/2/applications', 'HR')).toBe(true);
+      expect(isPathAllowedForRole('/hr/applications/10', 'HR')).toBe(true);
+      expect(isPathAllowedForRole('/hr/recruitment', 'STAFF')).toBe(false);
+      expect(isPathAllowedForRole('/hr/applications/10', 'CANDIDATE')).toBe(false);
+      expect(isPathAllowedForRole('/staff/applications', 'STAFF')).toBe(true);
+      expect(isPathAllowedForRole('/staff/applications/10', 'STAFF')).toBe(true);
+      expect(isPathAllowedForRole('/staff/applications', 'HR')).toBe(false);
+      expect(isPathAllowedForRole('/staff/applications/10', 'CANDIDATE')).toBe(false);
       expect(isPathAllowedForRole('/hr/company', 'hr')).toBe(false);
       expect(isPathAllowedForRole('/hr/company', 'UNKNOWN')).toBe(false);
       expect(isPathAllowedForRole('/hr/company', '')).toBe(false);

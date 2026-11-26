@@ -36,11 +36,11 @@ public class HrNotificationListener {
     public static final String HR_HOME_PATH = "/hr";
 
     // Email clients ignore CSS custom properties, so mirror design-tokens.css values directly.
-    private static final String BRAND_PRIMARY_HEX = "#0D55B8"; // --rj-color-brand-primary
-    private static final String SURFACE_CARD_HEX = "#FFFFFF"; // --rj-color-surface-card
-    private static final String TEXT_PRIMARY_HEX = "#0B1A2C"; // --rj-color-text-primary
-    private static final String TEXT_MUTED_HEX = "#475B70"; // --rj-color-text-muted
-    private static final String TEXT_INVERSE_HEX = "#FFFFFF"; // --rj-color-text-inverse
+    static final String BRAND_PRIMARY_HEX = "#0D55B8"; // --rj-color-brand-primary
+    static final String SURFACE_CARD_HEX = "#FFFFFF"; // --rj-color-surface-card
+    static final String TEXT_PRIMARY_HEX = "#0B1A2C"; // --rj-color-text-primary
+    static final String TEXT_MUTED_HEX = "#475B70"; // --rj-color-text-muted
+    static final String TEXT_INVERSE_HEX = "#FFFFFF"; // --rj-color-text-inverse
 
     private final IdentityPublicService identityPublicService;
     private final JavaMailSender mailSender;
@@ -191,16 +191,18 @@ public class HrNotificationListener {
     }
 
     private String buildHrTargetUrl() {
-        // Single place to construct the HR destination URL; UT-02 can swap HR_HOME_PATH in one
-        // line.
-        String base = frontendUrl == null ? "" : frontendUrl.trim();
+        return normalizeBaseUrl(frontendUrl) + HR_HOME_PATH;
+    }
+
+    static String normalizeBaseUrl(String rawUrl) {
+        String base = rawUrl == null ? "" : rawUrl.trim();
         while (base.endsWith("/")) {
             base = base.substring(0, base.length() - 1);
         }
-        return base + HR_HOME_PATH;
+        return base;
     }
 
-    private static String sanitizeHeader(String value) {
-        return value.replaceAll("[\\r\\n]+", " ").trim();
+    static String sanitizeHeader(String value) {
+        return value == null ? "" : value.replaceAll("[\\r\\n]+", " ").trim();
     }
 }

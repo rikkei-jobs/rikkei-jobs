@@ -671,14 +671,399 @@
   gap: var(--rj-primitive-space-3);
 }
 
+.rec-alert-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--rj-primitive-space-2);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.rec-alert-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rj-primitive-space-2);
+}
+
+.rec-reload-btn {
+  min-height: var(--rj-density-button-height);
+}
+
 .rec-cv-skeleton-item {
   height: 56px;
 }
 
+/* UT-02 HR & STAFF Dense Process Views */
+.rec-process-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--rj-primitive-space-3);
+}
+
+.rec-process-top-bar-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--rj-primitive-space-3);
+}
+
+.rec-detail-header-badges {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--rj-primitive-space-3);
+}
+
+.rec-match-card {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--rj-primitive-space-2);
+  padding: var(--rj-primitive-space-1) var(--rj-primitive-space-3);
+  border-radius: var(--rj-radius-lg);
+  background: var(--rj-color-status-success-bg);
+  border: 1px solid var(--rj-color-status-success-border);
+  color: var(--rj-color-status-success-text);
+}
+
+.rec-match-card-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.rec-match-card-value {
+  font-size: 1.0625rem;
+  font-weight: 700;
+}
+
+.rec-match-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--rj-primitive-space-2);
+  border-radius: var(--rj-radius-full);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  background: var(--rj-color-status-success-bg);
+  color: var(--rj-color-status-success-text);
+  border: 1px solid var(--rj-color-status-success-border);
+}
+
+.rec-summary-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--rj-primitive-space-3);
+  margin: 0;
+  padding: var(--rj-primitive-space-3);
+  background: var(--rj-color-surface-subtle);
+  border: 1px solid var(--rj-color-border-subtle);
+  border-radius: var(--rj-radius-md);
+}
+
+.rec-cv-action-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--rj-primitive-space-3);
+}
+
+.rec-process-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: var(--rj-primitive-space-6);
+  align-items: start;
+}
+
+.rec-timeline-badges {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--rj-primitive-space-2);
+}
+
+.rec-timeline-arrow {
+  display: inline-flex;
+  align-items: center;
+  color: var(--rj-color-text-muted);
+}
+
+.rec-rounds-header {
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: var(--rj-primitive-space-3);
+}
+
+.rec-offer-banner {
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.rec-round-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rj-primitive-space-1);
+  padding: 2px var(--rj-primitive-space-2);
+  border-radius: var(--rj-radius-full);
+  border: 1px solid var(--rj-color-border-subtle);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.rec-round-badge--pending {
+  background: var(--rj-color-status-warning-bg);
+  color: var(--rj-color-status-warning-text);
+  border-color: var(--rj-color-status-warning-border);
+}
+
+.rec-round-badge--pass {
+  background: var(--rj-color-status-success-bg);
+  color: var(--rj-color-status-success-text);
+  border-color: var(--rj-color-status-success-border);
+}
+
+.rec-round-badge--fail {
+  background: var(--rj-color-status-danger-bg);
+  color: var(--rj-color-status-danger-text);
+  border-color: var(--rj-color-status-danger-border);
+}
+
+/* Dense Tables (HR & STAFF: 36-38px rows, 13-14px text, <= 150ms hover) */
+.rec-table-scroll {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.rec-dense-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  text-align: left;
+  color: var(--rj-color-text-primary);
+}
+
+.rec-dense-table th,
+.rec-dense-table td {
+  padding: var(--rj-primitive-space-1) var(--rj-primitive-space-3);
+  min-height: 38px;
+  height: 38px;
+  line-height: 1.5;
+  border-bottom: 1px solid var(--rj-color-border-subtle);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.rec-cell-ellipsis {
+  display: block;
+  max-width: 13.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rec-dense-table thead th {
+  background: var(--rj-color-surface-subtle);
+  color: var(--rj-color-text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.rec-table-row-clickable {
+  cursor: pointer;
+  transition: background-color var(--rj-duration-fast) var(--rj-ease-hover);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .rec-table-row-clickable:hover {
+    background: var(--rj-color-surface-subtle);
+  }
+}
+
+.rec-table-action-btn {
+  min-height: 32px;
+  padding: var(--rj-primitive-space-1) var(--rj-primitive-space-3);
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+
+.rec-cell-subtext {
+  font-size: 0.8125rem;
+  color: var(--rj-color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+/* Staff Filter Grid */
+.rec-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  gap: var(--rj-primitive-space-3);
+  align-items: end;
+}
+
+.rec-filter-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--rj-primitive-space-2);
+}
+
+/* HR Job Selector + Applications Split */
+.rec-hr-jobs-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 4fr) minmax(0, 8fr);
+  gap: var(--rj-primitive-space-5);
+  align-items: start;
+}
+
+.rec-hr-apps-panel {
+  min-width: 0;
+}
+
+.rec-hr-job-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--rj-primitive-space-2);
+}
+
+.rec-hr-job-item {
+  width: 100%;
+  min-height: 44px;
+  padding: var(--rj-primitive-space-3);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--rj-primitive-space-1);
+  text-align: left;
+  background: var(--rj-color-surface-card);
+  border: 1px solid var(--rj-color-border-interactive);
+  border-radius: var(--rj-radius-md);
+  color: var(--rj-color-text-primary);
+  cursor: pointer;
+  transition:
+    border-color var(--rj-duration-fast) var(--rj-ease-hover),
+    background-color var(--rj-duration-fast) var(--rj-ease-hover);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .rec-hr-job-item:hover {
+    border-color: var(--rj-color-border-hover);
+    background: var(--rj-color-surface-subtle);
+  }
+}
+
+.rec-hr-job-item.is-selected {
+  background: var(--rj-color-brand-surface);
+  border-color: var(--rj-color-brand-primary);
+}
+
+.rec-hr-job-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.rec-hr-job-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rj-primitive-space-2);
+  font-size: 0.8125rem;
+  color: var(--rj-color-text-muted);
+}
+
+/* Modal Choice Cards (Transition & Round Result) */
+.rec-current-status-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--rj-primitive-space-2);
+}
+
+.rec-choice-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rj-primitive-space-2);
+}
+
+.rec-choice-option {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--rj-primitive-space-3);
+  min-height: 44px;
+  padding: var(--rj-primitive-space-3);
+  background: var(--rj-color-surface-card);
+  border: 1px solid var(--rj-color-border-interactive);
+  border-radius: var(--rj-radius-md);
+  cursor: pointer;
+  transition:
+    border-color var(--rj-duration-fast) var(--rj-ease-hover),
+    background-color var(--rj-duration-fast) var(--rj-ease-hover);
+}
+
+.rec-choice-option input[type='radio'] {
+  margin-top: 3px;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--rj-color-brand-primary);
+  flex-shrink: 0;
+}
+
+.rec-choice-option.is-selected {
+  background: var(--rj-color-brand-surface);
+  border-color: var(--rj-color-brand-primary);
+}
+
+.rec-choice-option.is-danger {
+  background: var(--rj-color-status-danger-bg);
+  border-color: var(--rj-color-status-danger-border);
+}
+
+.rec-choice-option-label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rj-primitive-space-1);
+  min-width: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--rj-color-text-primary);
+}
+
+.rec-choice-option-label--inline {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--rj-primitive-space-2);
+}
+
+.rec-choice-option-desc {
+  font-size: 0.8125rem;
+  font-weight: 400;
+  color: var(--rj-color-text-muted);
+  overflow-wrap: anywhere;
+}
+
 /* Responsive Breakpoints (1024px / 768px / 375px) */
-@media (max-width: 1023px) {
-  .rec-detail-grid {
+@media (max-width: 1199px) {
+  .rec-process-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 1023px) {
+  .rec-detail-grid,
+  .rec-hr-jobs-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rec-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -728,6 +1113,22 @@
   .rec-dialog {
     padding: var(--rj-primitive-space-5);
   }
+
+  .rec-filter-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rec-table-action-btn,
+  .rec-rounds-header .rj-btn,
+  .rec-dense-table .rj-link,
+  .rec-reload-btn,
+  .rec-alert-actions .rj-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    min-width: 44px;
+  }
 }
 
 @media (max-width: 479px) {
@@ -759,6 +1160,12 @@
   .rec-dialog-backdrop,
   .rec-dialog {
     animation: rj-fade-in 100ms ease both;
+  }
+
+  .rec-table-row-clickable,
+  .rec-hr-job-item,
+  .rec-choice-option {
+    transition-duration: 0.001ms;
   }
 }
 

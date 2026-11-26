@@ -315,6 +315,65 @@ class OpenApiCoverageIntegrationTest {
                             .path("cvSnapshotUrl")
                             .path("example")
                             .asText());
+
+            // Spot-check Option 1A, Option 2A, and UT-02 recruitment endpoints & schemas
+            JsonNode hrJobsGet = paths.path("/api/v1/hr/jobs").path("get");
+            assertErrorResponsesAnd403(hrJobsGet, "HR", "400", "401", "403", "404");
+            assertTrue(hrJobsGet.path("responses").has("200"));
+            assertTrue(hrJobsGet.path("description").asText().contains("DN-04"));
+
+            JsonNode appDetailGet = paths.path("/api/v1/applications/{id}").path("get");
+            assertErrorResponsesAnd403(appDetailGet, "HR", "400", "401", "403", "404");
+            assertErrorResponsesAnd403(appDetailGet, "STAFF", "400", "401", "403", "404");
+            assertTrue(appDetailGet.path("responses").has("200"));
+
+            JsonNode appSnapshotGet =
+                    paths.path("/api/v1/applications/{id}/cv-snapshot").path("get");
+            assertErrorResponsesAnd403(appSnapshotGet, "HR", "400", "401", "403", "404");
+            assertErrorResponsesAnd403(appSnapshotGet, "STAFF", "400", "401", "403", "404");
+            assertTrue(
+                    appSnapshotGet
+                            .path("responses")
+                            .path("200")
+                            .path("content")
+                            .has("application/pdf"));
+
+            JsonNode transitionPost =
+                    paths.path("/api/v1/applications/{id}/transition").path("post");
+            assertErrorResponsesAnd403(transitionPost, "HR", "400", "401", "403", "404", "409");
+            assertTrue(transitionPost.path("responses").has("200"));
+
+            JsonNode addRoundPost = paths.path("/api/v1/applications/{id}/rounds").path("post");
+            assertErrorResponsesAnd403(addRoundPost, "HR", "400", "401", "403", "404", "409");
+            assertTrue(addRoundPost.path("responses").has("201"));
+
+            JsonNode updateRoundPut =
+                    paths.path("/api/v1/applications/{id}/rounds/{roundId}").path("put");
+            assertErrorResponsesAnd403(updateRoundPut, "HR", "400", "401", "403", "404", "409");
+            assertTrue(updateRoundPut.path("responses").has("200"));
+
+            JsonNode staffAppsGet = paths.path("/api/v1/staff/applications").path("get");
+            assertErrorResponsesAnd403(staffAppsGet, "STAFF", "400", "401", "403");
+            assertTrue(staffAppsGet.path("responses").has("200"));
+
+            assertTrue(schemas.has("HrJobSummaryDto"));
+            assertTrue(
+                    schemas.path("HrJobSummaryDto").path("properties").has("expired"),
+                    "HrJobSummaryDto schema must expose expired boolean");
+            assertTrue(schemas.has("ApplicationProcessDetailResponse"));
+            assertTrue(schemas.has("InterviewRoundResponse"));
+            assertTrue(schemas.has("StaffApplicationSummaryResponse"));
+            assertTrue(schemas.has("UpdateInterviewRoundRequest"));
+            List<String> updateRoundRequired = new ArrayList<>();
+            schemas.path("UpdateInterviewRoundRequest")
+                    .path("required")
+                    .forEach(node -> updateRoundRequired.add(node.asText()));
+            assertTrue(
+                    updateRoundRequired.contains("version"),
+                    "UpdateInterviewRoundRequest OpenAPI schema must require version");
+            assertTrue(
+                    updateRoundRequired.contains("result"),
+                    "UpdateInterviewRoundRequest OpenAPI schema must require result");
         }
 
         private void assertErrorResponsesAnd403(

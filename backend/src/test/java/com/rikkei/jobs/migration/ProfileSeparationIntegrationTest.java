@@ -28,8 +28,8 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
  * Validates strict separation between prod and dev profiles. - Prod profile: ONLY schema migrations
- * V1, V3, V5, V7, V9, V11, V13, V15, V17, V19 and V21 applied, exactly 0 users seeded,
- * /api/v1/test/** blocked. - Dev profile: all 19 migrations (V1..V15, V17, V19, V21, V22) applied,
+ * V1, V3, V5, V7, V9, V11, V13, V15, V17, V19, V21 and V23 applied, exactly 0 users seeded,
+ * /api/v1/test/** blocked. - Dev profile: all 21 migrations (V1..V15, V17, V19, V21..V24) applied,
  * exactly 9 users seeded. - Mutation/negative test: verifies that seed data isolation holds and
  * fails if inverted.
  */
@@ -114,17 +114,17 @@ public class ProfileSeparationIntegrationTest {
 
         @Test
         @DisplayName(
-                "Prod profile must apply only V1, V3, V5, V7, V9, V11, V13, V15, V17, V19 and V21 migrations in flyway_schema_history")
+                "Prod profile must apply only V1, V3, V5, V7, V9, V11, V13, V15, V17, V19, V21 and V23 migrations in flyway_schema_history")
         void testProdProfileAppliesOnlyV1Schema() {
             Integer migrationCount =
                     jdbcTemplate.queryForObject(
                             "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                             Integer.class);
             assertEquals(
-                    11,
+                    12,
                     migrationCount,
                     "Prod environment must only execute schema migrations V1, V3, V5, V7, V9, V11,"
-                            + " V13, V15, V17, V19 and V21, count must be 11");
+                            + " V13, V15, V17, V19, V21 and V23, count must be 12");
 
             Boolean hasV2 =
                     jdbcTemplate.queryForObject(
@@ -253,6 +253,22 @@ public class ProfileSeparationIntegrationTest {
             assertFalse(
                     Boolean.TRUE.equals(hasV22),
                     "V22 dev seed migration must NOT be applied in prod profile");
+
+            Boolean hasV23 =
+                    jdbcTemplate.queryForObject(
+                            "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '23')",
+                            Boolean.class);
+            assertTrue(
+                    Boolean.TRUE.equals(hasV23),
+                    "V23 schema migration must be applied in prod profile");
+
+            Boolean hasV24 =
+                    jdbcTemplate.queryForObject(
+                            "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '24')",
+                            Boolean.class);
+            assertFalse(
+                    Boolean.TRUE.equals(hasV24),
+                    "V24 dev seed migration must NOT be applied in prod profile");
         }
 
         @Test
@@ -301,7 +317,7 @@ public class ProfileSeparationIntegrationTest {
 
         @Test
         @DisplayName(
-                "Dev profile must apply V1..V15, V17, V19, V21 and V22, resulting in exactly 9 seeded users with V6, V8, V10, V12, V14 and V22 seed adjustments")
+                "Dev profile must apply V1..V15, V17, V19, V21, V22, V23 and V24, resulting in exactly 9 seeded users with V6, V8, V10, V12, V14, V22 and V24 seed adjustments")
         void testDevProfileHasNineUsers() {
             long userCount = userRepository.count();
             assertEquals(
@@ -324,17 +340,17 @@ public class ProfileSeparationIntegrationTest {
 
         @Test
         @DisplayName(
-                "Dev profile must apply 19 migrations (V1..V15, V17, V19, V21, V22) in flyway_schema_history")
+                "Dev profile must apply 21 migrations (V1..V15, V17, V19, V21, V22, V23, V24) in flyway_schema_history")
         void testDevProfileAppliesV1AndV2() {
             Integer migrationCount =
                     jdbcTemplate.queryForObject(
                             "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                             Integer.class);
             assertEquals(
-                    19,
+                    21,
                     migrationCount,
-                    "Dev environment must execute 19 migrations (V1..V15, V17, V19, V21, V22),"
-                            + " migration count must be 19");
+                    "Dev environment must execute 21 migrations (V1..V15, V17, V19, V21, V22, V23,"
+                            + " V24), migration count must be 21");
 
             Boolean hasV2 =
                     jdbcTemplate.queryForObject(
@@ -462,6 +478,22 @@ public class ProfileSeparationIntegrationTest {
             assertTrue(
                     Boolean.TRUE.equals(hasV22),
                     "V22 dev seed migration must be applied in dev profile");
+
+            Boolean hasV23 =
+                    jdbcTemplate.queryForObject(
+                            "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '23')",
+                            Boolean.class);
+            assertTrue(
+                    Boolean.TRUE.equals(hasV23),
+                    "V23 schema migration must be applied in dev profile");
+
+            Boolean hasV24 =
+                    jdbcTemplate.queryForObject(
+                            "SELECT EXISTS(SELECT 1 FROM flyway_schema_history WHERE version = '24')",
+                            Boolean.class);
+            assertTrue(
+                    Boolean.TRUE.equals(hasV24),
+                    "V24 dev seed migration must be applied in dev profile");
         }
     }
 }
