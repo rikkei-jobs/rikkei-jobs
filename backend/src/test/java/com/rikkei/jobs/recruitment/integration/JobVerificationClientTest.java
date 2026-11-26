@@ -9,12 +9,14 @@ import static org.mockito.Mockito.when;
 
 import com.rikkei.jobs.common.exception.ResourceNotFoundException;
 import com.rikkei.jobs.company.dto.JobApplicationInfoDto;
+import com.rikkei.jobs.company.dto.JobSkillRequirementDto;
 import com.rikkei.jobs.company.service.JobQueryService;
 import com.rikkei.jobs.identity.MutableClock;
 import com.rikkei.jobs.recruitment.exception.JobNotEligibleException;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -106,5 +108,20 @@ class JobVerificationClientTest {
 
         assertTrue(client.isOwnedByCompany(2L, 2L));
         assertFalse(client.isOwnedByCompany(2L, 1L));
+    }
+
+    @Test
+    @DisplayName(
+            "findJobIdsByCompanyId and job required skill delegates forward to JobQueryService")
+    void shouldDelegateCompanyJobIdsAndSkillRequirements() {
+        when(jobQueryService.findJobIdsByCompanyId(2L)).thenReturn(Set.of(2L, 8L, 12L));
+        List<JobSkillRequirementDto> reqs =
+                List.of(new JobSkillRequirementDto("JAVA", "Java", 75, true));
+        when(jobQueryService.getJobRequiredSkills(2L)).thenReturn(reqs);
+        when(jobQueryService.getJobRequiredSkillsByJobIds(Set.of(2L))).thenReturn(Map.of(2L, reqs));
+
+        assertEquals(Set.of(2L, 8L, 12L), client.findJobIdsByCompanyId(2L));
+        assertEquals(reqs, client.getJobRequiredSkills(2L));
+        assertEquals(Map.of(2L, reqs), client.getJobRequiredSkillsByJobIds(Set.of(2L)));
     }
 }

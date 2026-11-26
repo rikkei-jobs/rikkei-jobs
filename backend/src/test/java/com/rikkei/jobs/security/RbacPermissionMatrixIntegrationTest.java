@@ -259,6 +259,56 @@ class RbacPermissionMatrixIntegrationTest {
                                 null,
                                 403,
                                 "FORBIDDEN"),
+                        // UT-02 + Option 1A + Option 2A blocked for CANDIDATE
+                        new RoleAccessCase(
+                                "candidate1@rikkeijobs.test",
+                                HttpMethod.GET,
+                                "/api/v1/hr/jobs",
+                                null,
+                                403,
+                                "FORBIDDEN"),
+                        new RoleAccessCase(
+                                "candidate1@rikkeijobs.test",
+                                HttpMethod.GET,
+                                "/api/v1/applications/1",
+                                null,
+                                403,
+                                "FORBIDDEN"),
+                        new RoleAccessCase(
+                                "candidate1@rikkeijobs.test",
+                                HttpMethod.GET,
+                                "/api/v1/applications/1/cv-snapshot",
+                                null,
+                                403,
+                                "FORBIDDEN"),
+                        new RoleAccessCase(
+                                "candidate1@rikkeijobs.test",
+                                HttpMethod.POST,
+                                "/api/v1/applications/1/transition",
+                                "{\"toStatus\":\"SCREENING\",\"note\":\"Blocked\"}",
+                                403,
+                                "FORBIDDEN"),
+                        new RoleAccessCase(
+                                "candidate1@rikkeijobs.test",
+                                HttpMethod.POST,
+                                "/api/v1/applications/2/rounds",
+                                "{\"name\":\"Blocked\",\"interviewerEmail\":\"a@b.com\"}",
+                                403,
+                                "FORBIDDEN"),
+                        new RoleAccessCase(
+                                "candidate1@rikkeijobs.test",
+                                HttpMethod.PUT,
+                                "/api/v1/applications/3/rounds/1",
+                                "{\"result\":\"PASS\"}",
+                                403,
+                                "FORBIDDEN"),
+                        new RoleAccessCase(
+                                "candidate1@rikkeijobs.test",
+                                HttpMethod.GET,
+                                "/api/v1/staff/applications",
+                                null,
+                                403,
+                                "FORBIDDEN"),
                         new RoleAccessCase(
                                 "candidate1@rikkeijobs.test",
                                 HttpMethod.GET,
@@ -367,6 +417,36 @@ class RbacPermissionMatrixIntegrationTest {
                                 null,
                                 200,
                                 null),
+                        // UT-02 + Option 1A + Option 2A HR allowed (own company 2)
+                        new RoleAccessCase(
+                                "hr2@rikkeijobs.test",
+                                HttpMethod.GET,
+                                "/api/v1/hr/jobs",
+                                null,
+                                200,
+                                null),
+                        new RoleAccessCase(
+                                "hr2@rikkeijobs.test",
+                                HttpMethod.GET,
+                                "/api/v1/applications/1",
+                                null,
+                                200,
+                                null),
+                        new RoleAccessCase(
+                                "hr2@rikkeijobs.test",
+                                HttpMethod.GET,
+                                "/api/v1/applications/1/cv-snapshot",
+                                null,
+                                200,
+                                null),
+                        // HR blocked from staff applications
+                        new RoleAccessCase(
+                                "hr2@rikkeijobs.test",
+                                HttpMethod.GET,
+                                "/api/v1/staff/applications",
+                                null,
+                                403,
+                                "FORBIDDEN"),
                         // HR blocked
                         new RoleAccessCase(
                                 "hr2@rikkeijobs.test",
@@ -588,6 +668,56 @@ class RbacPermissionMatrixIntegrationTest {
                                 null,
                                 403,
                                 "FORBIDDEN"),
+                        // UT-02 + Option 1A + Option 2A blocked for MENTOR
+                        new RoleAccessCase(
+                                "mentor1@rikkeijobs.test",
+                                HttpMethod.GET,
+                                "/api/v1/hr/jobs",
+                                null,
+                                403,
+                                "FORBIDDEN"),
+                        new RoleAccessCase(
+                                "mentor1@rikkeijobs.test",
+                                HttpMethod.GET,
+                                "/api/v1/applications/1",
+                                null,
+                                403,
+                                "FORBIDDEN"),
+                        new RoleAccessCase(
+                                "mentor1@rikkeijobs.test",
+                                HttpMethod.GET,
+                                "/api/v1/applications/1/cv-snapshot",
+                                null,
+                                403,
+                                "FORBIDDEN"),
+                        new RoleAccessCase(
+                                "mentor1@rikkeijobs.test",
+                                HttpMethod.POST,
+                                "/api/v1/applications/1/transition",
+                                "{\"toStatus\":\"SCREENING\",\"note\":\"Blocked\"}",
+                                403,
+                                "FORBIDDEN"),
+                        new RoleAccessCase(
+                                "mentor1@rikkeijobs.test",
+                                HttpMethod.POST,
+                                "/api/v1/applications/2/rounds",
+                                "{\"name\":\"Blocked\",\"interviewerEmail\":\"a@b.com\"}",
+                                403,
+                                "FORBIDDEN"),
+                        new RoleAccessCase(
+                                "mentor1@rikkeijobs.test",
+                                HttpMethod.PUT,
+                                "/api/v1/applications/3/rounds/1",
+                                "{\"result\":\"PASS\"}",
+                                403,
+                                "FORBIDDEN"),
+                        new RoleAccessCase(
+                                "mentor1@rikkeijobs.test",
+                                HttpMethod.GET,
+                                "/api/v1/staff/applications",
+                                null,
+                                403,
+                                "FORBIDDEN"),
 
                         // STAFF allowed
                         new RoleAccessCase(
@@ -632,6 +762,57 @@ class RbacPermissionMatrixIntegrationTest {
                                 null,
                                 200,
                                 null),
+                        // UT-02 + Option 2A STAFF read-only allowed
+                        new RoleAccessCase(
+                                "staff1@rikkeijobs.test",
+                                HttpMethod.GET,
+                                "/api/v1/staff/applications",
+                                null,
+                                200,
+                                null),
+                        new RoleAccessCase(
+                                "staff1@rikkeijobs.test",
+                                HttpMethod.GET,
+                                "/api/v1/applications/1",
+                                null,
+                                200,
+                                null),
+                        new RoleAccessCase(
+                                "staff1@rikkeijobs.test",
+                                HttpMethod.GET,
+                                "/api/v1/applications/1/cv-snapshot",
+                                null,
+                                200,
+                                null),
+                        // STAFF blocked from HR routes & mutations
+                        new RoleAccessCase(
+                                "staff1@rikkeijobs.test",
+                                HttpMethod.GET,
+                                "/api/v1/hr/jobs",
+                                null,
+                                403,
+                                "FORBIDDEN"),
+                        new RoleAccessCase(
+                                "staff1@rikkeijobs.test",
+                                HttpMethod.POST,
+                                "/api/v1/applications/1/transition",
+                                "{\"toStatus\":\"SCREENING\",\"note\":\"Blocked\"}",
+                                403,
+                                "FORBIDDEN"),
+                        new RoleAccessCase(
+                                "staff1@rikkeijobs.test",
+                                HttpMethod.POST,
+                                "/api/v1/applications/2/rounds",
+                                "{\"name\":\"Blocked\",\"interviewerEmail\":\"a@b.com\"}",
+                                403,
+                                "FORBIDDEN"),
+                        new RoleAccessCase(
+                                "staff1@rikkeijobs.test",
+                                HttpMethod.PUT,
+                                "/api/v1/applications/3/rounds/1",
+                                "{\"result\":\"PASS\"}",
+                                403,
+                                "FORBIDDEN"),
                         // STAFF blocked
                         new RoleAccessCase(
                                 "staff1@rikkeijobs.test",
@@ -887,6 +1068,56 @@ class RbacPermissionMatrixIntegrationTest {
                                 "/api/v1/hr/jobs/2/applications/1/cv-snapshot",
                                 null,
                                 403,
+                                "FORBIDDEN"),
+                        // UT-02 + Option 1A + Option 2A blocked for ADMIN
+                        new RoleAccessCase(
+                                "admin1@rikkeijobs.test",
+                                HttpMethod.GET,
+                                "/api/v1/hr/jobs",
+                                null,
+                                403,
+                                "FORBIDDEN"),
+                        new RoleAccessCase(
+                                "admin1@rikkeijobs.test",
+                                HttpMethod.GET,
+                                "/api/v1/applications/1",
+                                null,
+                                403,
+                                "FORBIDDEN"),
+                        new RoleAccessCase(
+                                "admin1@rikkeijobs.test",
+                                HttpMethod.GET,
+                                "/api/v1/applications/1/cv-snapshot",
+                                null,
+                                403,
+                                "FORBIDDEN"),
+                        new RoleAccessCase(
+                                "admin1@rikkeijobs.test",
+                                HttpMethod.POST,
+                                "/api/v1/applications/1/transition",
+                                "{\"toStatus\":\"SCREENING\",\"note\":\"Blocked\"}",
+                                403,
+                                "FORBIDDEN"),
+                        new RoleAccessCase(
+                                "admin1@rikkeijobs.test",
+                                HttpMethod.POST,
+                                "/api/v1/applications/2/rounds",
+                                "{\"name\":\"Blocked\",\"interviewerEmail\":\"a@b.com\"}",
+                                403,
+                                "FORBIDDEN"),
+                        new RoleAccessCase(
+                                "admin1@rikkeijobs.test",
+                                HttpMethod.PUT,
+                                "/api/v1/applications/3/rounds/1",
+                                "{\"result\":\"PASS\"}",
+                                403,
+                                "FORBIDDEN"),
+                        new RoleAccessCase(
+                                "admin1@rikkeijobs.test",
+                                HttpMethod.GET,
+                                "/api/v1/staff/applications",
+                                null,
+                                403,
                                 "FORBIDDEN"))
                 .map(Arguments::of);
     }
@@ -945,9 +1176,16 @@ class RbacPermissionMatrixIntegrationTest {
                 Arguments.of(HttpMethod.GET, "/api/v1/me/applications/1"),
                 Arguments.of(HttpMethod.POST, "/api/v1/me/applications/1/withdraw"),
                 Arguments.of(HttpMethod.GET, "/api/v1/me/applications/1/cv-snapshot"),
+                Arguments.of(HttpMethod.GET, "/api/v1/hr/jobs"),
                 Arguments.of(HttpMethod.GET, "/api/v1/hr/jobs/2/applications"),
                 Arguments.of(HttpMethod.GET, "/api/v1/hr/jobs/2/applications/1"),
                 Arguments.of(HttpMethod.GET, "/api/v1/hr/jobs/2/applications/1/cv-snapshot"),
+                Arguments.of(HttpMethod.GET, "/api/v1/applications/1"),
+                Arguments.of(HttpMethod.GET, "/api/v1/applications/1/cv-snapshot"),
+                Arguments.of(HttpMethod.POST, "/api/v1/applications/1/transition"),
+                Arguments.of(HttpMethod.POST, "/api/v1/applications/2/rounds"),
+                Arguments.of(HttpMethod.PUT, "/api/v1/applications/3/rounds/1"),
+                Arguments.of(HttpMethod.GET, "/api/v1/staff/applications"),
                 Arguments.of(HttpMethod.GET, "/api/v1/unknown-deny-all-route"));
     }
 

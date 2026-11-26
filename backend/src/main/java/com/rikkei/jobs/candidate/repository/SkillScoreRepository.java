@@ -2,6 +2,7 @@ package com.rikkei.jobs.candidate.repository;
 
 import com.rikkei.jobs.candidate.model.SkillScore;
 import com.rikkei.jobs.candidate.model.SkillScoreId;
+import java.util.Collection;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -10,4 +11,6 @@ import org.springframework.stereotype.Repository;
 public interface SkillScoreRepository extends JpaRepository<SkillScore, SkillScoreId> {
 
     List<SkillScore> findByUserId(Long userId);
+
+    List<SkillScore> findByUserIdIn(Collection<Long> userIds);
 }

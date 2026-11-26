@@ -25,6 +25,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -228,20 +230,54 @@ public class CandidatePublicServiceImpl implements CandidatePublicService {
                 skillCatalogService.findByIds(scores.stream().map(SkillScore::getSkillId).toList());
 
         return scores.stream()
-                .map(
-                        score -> {
-                            SkillDto skill = catalogue.get(score.getSkillId());
-                            if (skill == null) {
-                                return null;
-                            }
-                            int value =
-                                    score.getVerifiedScore()
-                                            .setScale(0, RoundingMode.HALF_UP)
-                                            .intValue();
-                            return new CandidateSkillScoreDto(skill.code(), value);
-                        })
-                .filter(dto -> dto != null)
+                .map(score -> toCandidateSkillScoreDto(score, catalogue))
+                .filter(Objects::nonNull)
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<Long, List<CandidateSkillScoreDto>> getVerifiedSkillScoresByUserIds(
+            Set<Long> candidateUserIds) {
+        if (candidateUserIds == null || candidateUserIds.isEmpty()) {
+            return Map.of();
+        }
+        List<SkillScore> scores =
+                skillScoreRepository.findByUserIdIn(candidateUserIds).stream()
+                        .filter(score -> score.getVerifiedScore() != null)
+                        .toList();
+        if (scores.isEmpty()) {
+            return Map.of();
+        }
+
+        Map<Integer, SkillDto> catalogue =
+                skillCatalogService.findByIds(
+                        scores.stream().map(SkillScore::getSkillId).distinct().toList());
+
+        return scores.stream()
+                .collect(
+                        Collectors.groupingBy(
+                                SkillScore::getUserId,
+                                Collectors.collectingAndThen(
+                                        Collectors.toList(),
+                                        userScores ->
+                                                userScores.stream()
+                                                        .map(
+                                                                s ->
+                                                                        toCandidateSkillScoreDto(
+                                                                                s, catalogue))
+                                                        .filter(Objects::nonNull)
+                                                        .toList())));
+    }
+
+    private static CandidateSkillScoreDto toCandidateSkillScoreDto(
+            SkillScore score, Map<Integer, SkillDto> catalogue) {
+        SkillDto skill = catalogue.get(score.getSkillId());
+        if (skill == null) {
+            return null;
+        }
+        int value = score.getVerifiedScore().setScale(0, RoundingMode.HALF_UP).intValue();
+        return new CandidateSkillScoreDto(skill.code(), value);
     }
 
     @Override

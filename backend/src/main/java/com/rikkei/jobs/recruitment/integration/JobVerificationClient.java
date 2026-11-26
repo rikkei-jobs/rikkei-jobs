@@ -2,10 +2,12 @@ package com.rikkei.jobs.recruitment.integration;
 
 import com.rikkei.jobs.common.exception.ResourceNotFoundException;
 import com.rikkei.jobs.company.dto.JobApplicationInfoDto;
+import com.rikkei.jobs.company.dto.JobSkillRequirementDto;
 import com.rikkei.jobs.company.service.JobQueryService;
 import com.rikkei.jobs.recruitment.exception.JobNotEligibleException;
 import java.time.Clock;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -67,6 +69,18 @@ public class JobVerificationClient {
 
     public boolean isOwnedByCompany(Long jobId, Long companyId) {
         return jobQueryService.isJobOwnedByCompany(jobId, companyId);
+    }
+
+    public Set<Long> findJobIdsByCompanyId(Long companyId) {
+        return jobQueryService.findJobIdsByCompanyId(companyId);
+    }
+
+    public List<JobSkillRequirementDto> getJobRequiredSkills(Long jobId) {
+        return jobQueryService.getJobRequiredSkills(jobId);
+    }
+
+    public Map<Long, List<JobSkillRequirementDto>> getJobRequiredSkillsByJobIds(Set<Long> jobIds) {
+        return jobQueryService.getJobRequiredSkillsByJobIds(jobIds);
     }
 
     private static JobSummaryDto toSummary(JobApplicationInfoDto info) {

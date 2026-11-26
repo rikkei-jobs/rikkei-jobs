@@ -1,5 +1,7 @@
 package com.rikkei.jobs.recruitment.model;
 
+import java.util.Set;
+
 /** Lifecycle states of a job application. Shared across the entire recruitment module. */
 public enum ApplicationStatus {
     SUBMITTED, // Đã gửi hồ sơ
@@ -37,5 +39,23 @@ public enum ApplicationStatus {
             case OFFER -> next == HIRED || next == REJECTED;
             case HIRED, REJECTED, WITHDRAWN -> false;
         };
+    }
+
+    /**
+     * Single source of truth for allowed next statuses exposed by the UT-02 recruitment transition
+     * API. Backward transitions are prohibited; {@code INTERVIEW -> OFFER} and {@code OFFER ->
+     * HIRED | REJECTED} belong to UT-07 and return {@code 409 INVALID_TRANSITION} from UT-02.
+     */
+    public Set<ApplicationStatus> allowedUt02Transitions() {
+        return switch (this) {
+            case SUBMITTED -> Set.of(SCREENING, REJECTED);
+            case SCREENING -> Set.of(INTERVIEW, REJECTED);
+            case INTERVIEW -> Set.of(REJECTED);
+            case OFFER, HIRED, REJECTED, WITHDRAWN -> Set.of();
+        };
+    }
+
+    public boolean canTransitionInUt02(ApplicationStatus next) {
+        return next != null && allowedUt02Transitions().contains(next);
     }
 }

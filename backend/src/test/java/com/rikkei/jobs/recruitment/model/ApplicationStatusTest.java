@@ -41,10 +41,41 @@ class ApplicationStatusTest {
 
     @ParameterizedTest(name = "{0} -> {1} allowed={2}")
     @MethodSource("allTransitionPairs")
-    @DisplayName("All 49 status transition pairs follow the UT-01/UT-02 state machine")
+    @DisplayName("All 49 status transition pairs follow the UT-01/UT-07 full domain state machine")
     void shouldVerifyAllFortyNineTransitions(
             ApplicationStatus from, ApplicationStatus to, boolean expectedAllowed) {
         assertEquals(expectedAllowed, from.canTransitionTo(to));
+    }
+
+    static Stream<Arguments> allUt02TransitionPairs() {
+        return Stream.of(ApplicationStatus.values())
+                .flatMap(
+                        from ->
+                                Stream.of(ApplicationStatus.values())
+                                        .map(
+                                                to ->
+                                                        Arguments.of(
+                                                                from,
+                                                                to,
+                                                                expectedUt02Transition(from, to))));
+    }
+
+    private static boolean expectedUt02Transition(ApplicationStatus from, ApplicationStatus to) {
+        return switch (from) {
+            case SUBMITTED -> to == ApplicationStatus.SCREENING || to == ApplicationStatus.REJECTED;
+            case SCREENING -> to == ApplicationStatus.INTERVIEW || to == ApplicationStatus.REJECTED;
+            case INTERVIEW -> to == ApplicationStatus.REJECTED;
+            case OFFER, HIRED, REJECTED, WITHDRAWN -> false;
+        };
+    }
+
+    @ParameterizedTest(name = "UT-02: {0} -> {1} allowed={2}")
+    @MethodSource("allUt02TransitionPairs")
+    @DisplayName("All 49 status transition pairs follow the strict UT-02 API state machine")
+    void shouldVerifyAllFortyNineUt02Transitions(
+            ApplicationStatus from, ApplicationStatus to, boolean expectedAllowed) {
+        assertEquals(expectedAllowed, from.canTransitionInUt02(to));
+        assertEquals(expectedAllowed, from.allowedUt02Transitions().contains(to));
     }
 
     @ParameterizedTest(name = "canWithdraw({0})")
