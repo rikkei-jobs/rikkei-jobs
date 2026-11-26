@@ -8,6 +8,9 @@ springdoc:
   api-docs:
     enabled: true
 
+jwt:
+  secret: dev-insecure-jwt-secret-key-rikkei-jobs-min-32-chars
+
 logging:
   level:
     com.rikkei.jobs: DEBUG

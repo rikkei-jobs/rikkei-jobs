@@ -1,5 +1,3 @@
-<!-- cspell:ignore Tokotype Rahayu -->
-
 # Third-Party Notices & Open Source Attribution (T022DB0)
 
 This repository incorporates architectural patterns, process structures, and design philosophies adapted from open-source projects licensed under the MIT License. In compliance with the licensing terms, the copyright notices, permission notices, and detailed records of adaptation are documented below.
@@ -101,7 +99,7 @@ SOFTWARE.
 2. **Crucial Repository-Specific Overhauls (100% Rewritten)**:
    - **Zero Host CLI Dependencies**: The upstream repository features a local Node CLI tool (`uipro`). In strict compliance with operational constraint R1 ("No host package installations"), no CLI tools or external host packages were installed or executed.
    - **Mathematical Design System Reconstruction (`docs/design/DESIGN_SYSTEM.md`)**: A complete 1,155-line enterprise design system was built from first principles for Rikkei Jobs, featuring:
-     - 48 computed WCAG 2.2 AA contrast pairs (26 Light Mode + 22 Dark Mode) calculated via W3C CIE 1931 relative luminance formulas.
+     - 66 computed WCAG 2.2 AA/AAA contrast pairs (36 Light Mode + 30 Dark Mode) calculated via W3C CIE 1931 relative luminance formulas.
      - Vietnamese typography support with font-metrics compensation (`line-height >= 1.5`, `padding-top` allowances for double-accent glyphs like `ể`, `ẵ`, `ộ` reaching +1050 units).
      - Purposeful physics-based spring motion presets with strict `prefers-reduced-motion` compliance.
      - Role density calibration: dense information architecture for Staff/Mentor vs airy breathing layout for Candidates.
@@ -109,32 +107,90 @@ SOFTWARE.
 
 ---
 
-## 3. Open Fonts & SIL Open Font License (OFL 1.1)
+## 3. Upstream Project: Leonxlnx/taste-skill
 
-In alignment with our Anti-AI design philosophy and commitment to high-craft typography, Rikkei Jobs selects three open-source font families licensed under the **SIL Open Font License (OFL) Version 1.1**. In strict adherence to our security policy and operational invariants, all fonts are designed for **100% self-hosted deployment** (zero runtime reliance on external CDNs or Google Fonts endpoints):
+- **Project Name**: `taste-skill` (`design-taste-frontend`, version `2.5.1`)
+- **Repository URL**: <https://github.com/leonxlnx/taste-skill> (canonical redirect: <https://github.com/Leonxlnx/taste-skill>)
+- **Author & Copyright**: Copyright (c) 2026 Leonxlnx
+- **License**: MIT License
+- **Pinned Commit / Snapshot**: Commit `f6b76575f949707b4e3c37cd86cb44b0b98643e8` (`2026-11-07T12:33:21Z`, evaluated `2026-11-22`)
 
-1. **Plus Jakarta Sans** (Display & Brand Typography):
-   - **Copyright**: Copyright (c) 2020 Tokotype, Gumpita Rahayu (<https://github.com/tokotype/Plus-Jakarta-Sans>).
-   - **License**: SIL Open Font License, Version 1.1 (<http://scripts.sil.org/OFL>).
-   - **Role**: Geometric contemporary display face with friendly warmth, optimized for headers and hero typography.
+### Full MIT License Text (Leonxlnx)
 
-2. **Be Vietnam Pro** (Body & Interface Typography):
-   - **Copyright**: Copyright (c) 2021 TypeType, Lam Bao (<https://github.com/bettertype/BeVietnamPro>).
-   - **License**: SIL Open Font License, Version 1.1 (<http://scripts.sil.org/OFL>).
-   - **Role**: Engineered specifically for Vietnamese diacritic typography, providing optical clearance for stacked accents (`ệ`, `ổ`, `ự`, `ữ`, `ặ`).
+```text
+MIT License
 
-3. **JetBrains Mono** (Code & Tabular Numerical Typography):
-   - **Copyright**: Copyright (c) 2020 JetBrains s.r.o. (<https://github.com/JetBrains/JetBrainsMono>).
-   - **License**: SIL Open Font License, Version 1.1 (<http://scripts.sil.org/OFL>).
-   - **Role**: High-legibility monospaced typeface with tabular numbers, optimized for tabular data, timestamps, salaries, and code blocks.
+Copyright (c) 2026 Leonxlnx
 
-### SIL Open Font License 1.1 Summary
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-Under the SIL Open Font License 1.1, the licensed fonts, including any derivative works, can be bundled, embedded, redistributed and/or sold with any software, provided that any reserved font names are not used by derivative works, and the fonts are not sold by themselves.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+### Adaptation & Precedence Summary (`frontend-taste-anti-slop`)
+
+1. **Instructions-Only Vendoring**: Only adapted instructions (`SKILL.md`, `references/conflict-table.md`, `references/provenance-and-license.md`) are vendored under `agent-config/skills/frontend-taste-anti-slop/`. Upstream Claude Code `Stop` hooks, shell installers (`install.sh`), plugin manifests, Node gate/checker scripts, runtime CDN fetchers (`fonts.googleapis.com`, `cdn.jsdelivr.net`, Wikimedia Commons, Overpass API), WebGL shaders, and marketing palette/type dealers are strictly excluded.
+2. **Project Precedence**: Enterprise Rules `08`/`09`, `docs/design/DESIGN_SYSTEM.md`, `--rj-*` tokens, self-hosted WOFF2 fonts, Role-Density specs, Motion Budgets, Showcase Motion Tier, `/login` UIUX exceptions, and `docs/uiux/CONTENT.md` unconditionally supersede upstream rules across a documented 17-item conflict matrix, while retaining additive anti-slop copy, one-moment-per-page, box restraint (`<= 2` levels), render integrity, fine-pointer hover/press, single `<h1>`, and `375px` mobile hygiene practices.
 
 ---
 
-## 4. Other Open Standards and Architectural Foundations
+## 4. Open Fonts & SIL Open Font License (OFL 1.1)
+
+In alignment with our Anti-AI design philosophy and commitment to high-craft typography, Rikkei Jobs selects three open-source font families licensed under the **SIL Open Font License (OFL) Version 1.1**. In strict adherence to our security policy and operational invariants, all fonts are designed for **100% self-hosted deployment** under `frontend/public/fonts/` (zero runtime reliance on external CDNs or Google Fonts endpoints):
+
+1. **Plus Jakarta Sans** (Display & Brand Typography):
+   - **Copyright**: Copyright (c) 2020 The Plus Jakarta Sans Project Authors (<https://github.com/tokotype/PlusJakartaSans>).
+   - **Authors & Designers**: Gumpita Rahayu (Tokotype).
+   - **License**: SIL Open Font License, Version 1.1 (<https://github.com/tokotype/PlusJakartaSans/blob/master/OFL.txt>).
+   - **Version**: v2.600 (Google Fonts v12, upstream commit `18d1cd2`)
+   - **Role**: Geometric contemporary display face with friendly warmth, optimized for headers and hero typography.
+   - **Shipped Files & Cryptographic Checksums (SHA-256)**:
+     - `frontend/public/fonts/PlusJakartaSans-SemiBold.woff2` (42,356 bytes): `16387125b045457b8d49123d31bcc143e696cf9e867831f8ae41eb244b11106e`
+     - `frontend/public/fonts/PlusJakartaSans-Bold.woff2` (42,556 bytes): `8d76ee4c4f645bc12ebdeae87f8ec2468bade2d4f04458416848229bcc804342`
+
+2. **Be Vietnam Pro** (Body & Interface Typography):
+   - **Copyright**: Copyright (c) 2021 The Be Vietnam Pro Project Authors (<https://github.com/bettergui/BeVietnamPro>).
+   - **Authors & Designers**: VietAnh Nguyen, Omnibus-Type.
+   - **License**: SIL Open Font License, Version 1.1 (<https://github.com/bettergui/BeVietnamPro/blob/master/OFL.txt>).
+   - **Version**: v1.002 (Google Fonts v12, upstream commit `804e62d`)
+   - **Role**: Engineered specifically for Vietnamese diacritic typography, providing optical clearance for stacked accents (`ệ`, `ổ`, `ự`, `ữ`, `ặ`).
+   - **Shipped Files & Cryptographic Checksums (SHA-256)**:
+     - `frontend/public/fonts/BeVietnamPro-Regular.woff2` (38,064 bytes): `907ebfa4a4bd967cdcb313b2889655ff9fb90d5fd4f193723aa99142d14a1652`
+     - `frontend/public/fonts/BeVietnamPro-Medium.woff2` (40,232 bytes): `15a399b6a57023c665fa8aca7f4691d36c512b17cc36f74bd9dc077487ac9ffc`
+     - `frontend/public/fonts/BeVietnamPro-SemiBold.woff2` (40,464 bytes): `91329e727900425300269d9402c32e9e020943783fc0b9457f0b7419bef90dbf`
+     - `frontend/public/fonts/BeVietnamPro-Bold.woff2` (41,212 bytes): `32eb3a183490d280351f9676cc0b8e1725d95090988db57503dc83879b5fe602`
+
+3. **JetBrains Mono** (Code & Tabular Numerical Typography):
+   - **Copyright**: Copyright 2020 The JetBrains Mono Project Authors (<https://github.com/JetBrains/JetBrainsMono>).
+   - **Authors & Designers**: Philipp Nurullin, Konstantin Bulenkov, JetBrains s.r.o.
+   - **License**: SIL Open Font License, Version 1.1 (<https://github.com/JetBrains/JetBrainsMono/blob/master/OFL.txt>).
+   - **Version**: v2.304 (upstream release)
+   - **Role**: High-legibility monospaced typeface with tabular numbers, optimized for tabular data, timestamps, salaries, and code blocks.
+   - **Shipped Files & Cryptographic Checksums (SHA-256)**:
+     - `frontend/public/fonts/JetBrainsMono-Regular.woff2` (92,380 bytes): `f1a7a03672cdd494ce0d5543fac6e4360fe22403c6de297fdc2e55a815f7baff`
+     - `frontend/public/fonts/JetBrainsMono-SemiBold.woff2` (94,484 bytes): `8f20245500c375a63879b47c12560a07bcaf7a88672d272f4d8e79b68f9186ae`
+
+### SIL Open Font License 1.1 Summary
+
+Under the SIL Open Font License 1.1, the licensed fonts, including any derivative works, can be bundled, embedded, redistributed and/or sold with any software, provided that any reserved font names are not used by derivative works, and the fonts are not sold by themselves. All shipped WOFF2 font files have been empirically verified in a throwaway Docker container (`python:3.11-slim`) to contain the complete 134 precomposed Vietnamese characters, 5 combining diacritical marks (U+0300, U+0301, U+0303, U+0309, U+0323), and tabular figures in JetBrains Mono.
+
+---
+
+## 5. Other Open Standards and Architectural Foundations
 
 We also acknowledge and reference the following industry specifications and standards that govern the engineering of Rikkei Jobs:
 
@@ -152,28 +208,32 @@ We also acknowledge and reference the following industry specifications and stan
 
 ---
 
-## 5. Tóm Tắt Bản Quyền Mã Nguồn Mở & Tiêu Chuẩn Kỹ Thuật (Bản Tiếng Việt)
+## 6. Tóm Tắt Bản Quyền Mã Nguồn Mở & Tiêu Chuẩn Kỹ Thuật (Bản Tiếng Việt)
 
 Phần này tóm lược toàn bộ các thông báo bản quyền, nguồn gốc kiến trúc và tiêu chuẩn kỹ thuật mở được kế thừa trong dự án Rikkei Jobs:
 
-### 5.1. Kế Thừa Kiến Trúc Quy Trình Từ obra/superpowers (Giấy Phép MIT)
+### 6.1. Kế Thừa Kiến Trúc Quy Trình Từ obra/superpowers (Giấy Phép MIT)
 
 Dự án Rikkei Jobs kế thừa mô hình kích hoạt kỹ năng theo tác vụ (task-triggered skills) từ dự án nguồn mở `superpowers` của tác giả Jesse Vincent. Các quy trình cốt lõi đã được viết lại toàn diện 100% để phù hợp với kiến trúc Monolith hiện đại (Java 25 LTS, Spring Boot 4.1.2, React 19.3.1, PostgreSQL 18.6). Đặc biệt, kỹ năng chuyển nhánh tự động (`finishing-a-development-branch`) đã bị loại bỏ hoàn toàn và thay thế bằng kỹ năng bàn giao `handoff-to-team-lead` nhằm bảo vệ tuyệt đối nguyên tắc **Git Strictly Read-Only**.
 
-### 5.2. Triết Lý Thiết Kế Anti-AI Từ nextlevelbuilder/ui-ux-pro-max-skill (Giấy Phép MIT)
+### 6.2. Triết Lý Thiết Kế Anti-AI Từ nextlevelbuilder/ui-ux-pro-max-skill (Giấy Phép MIT)
 
-Dự án áp dụng triết lý loại bỏ thiết kế AI đại trà (Anti-AI Aesthetic Bar): cấm sử dụng dải màu gradient tím-xanh mặc định, cấm dùng biểu tượng emoji trang trí, và yêu cầu bảng màu sở hữu riêng. Không có bất kỳ gói phần mềm hay công cụ CLI nào được cài đặt trên máy chủ phát triển, toàn bộ 48 cặp độ tương phản WCAG 2.2 AA và thông số font chữ tiếng Việt đều được tính toán lại bằng công thức toán học từ đầu trong `docs/design/DESIGN_SYSTEM.md`.
+Dự án áp dụng triết lý loại bỏ thiết kế AI đại trà (Anti-AI Aesthetic Bar): cấm sử dụng dải màu gradient tím-xanh mặc định, cấm dùng biểu tượng emoji trang trí, và yêu cầu bảng màu sở hữu riêng. Không có bất kỳ gói phần mềm hay công cụ CLI nào được cài đặt trên máy chủ phát triển, toàn bộ 66 cặp độ tương phản WCAG 2.2 AA/AAA và thông số font chữ tiếng Việt đều được tính toán lại bằng công thức toán học từ đầu trong `docs/design/DESIGN_SYSTEM.md`.
 
-### 5.3. Giấy Phép Phông Chữ SIL Open Font License (OFL 1.1)
+### 6.3. Kỹ Năng Anti-Slop Frontend Từ Leonxlnx/taste-skill (Giấy Phép MIT)
 
-Ba bộ phông chữ mã nguồn mở được chỉ định trong dự án bao gồm:
+Dự án tiếp nhận có chọn lọc các nguyên tắc chống thiết kế đại trà (anti-slop copy, kiểm soát độ sâu hộp lồng nhau tối đa 2 cấp, mọi phần tử trực quan phải hiển thị đầy đủ, vi tương tác `hover`/`active` cho con trỏ chính xác, mỗi trang có đúng 1 thẻ `<h1>` và không tràn ngang ở `375px`) từ `Leonxlnx/taste-skill` (`v2.5.1`, commit `f6b76575f949707b4e3c37cd86cb44b0b98643e8`, ngày `2026-11-07T12:33:21Z`, Copyright (c) 2026 Leonxlnx) vào kỹ năng `frontend-taste-anti-slop`. Toàn bộ `Stop` hooks, trình cài đặt `install.sh`, script Node tải tài nguyên mạng và bộ chọn bảng màu/font CDN đều bị loại bỏ; quy tắc dự án (`08`, `09`, `DESIGN_SYSTEM.md`, `CONTENT.md`, Showcase Tier và các ngoại lệ UIUX) luôn được ưu tiên tuyệt đối qua bảng đối chiếu xung đột 17 mục.
 
-- **Plus Jakarta Sans** (Tokotype, Gumpita Rahayu) dành cho tiêu đề hiển thị.
-- **Be Vietnam Pro** (TypeType, Lam Bao) được tối ưu hóa đặc biệt cho tiếng Việt có dấu kép xếp chồng (`ệ`, `ổ`, `ự`, `ữ`, `ặ`).
-- **JetBrains Mono** (JetBrains s.r.o.) dành cho mã nguồn và bảng số liệu dạng tabular.
+### 6.4. Giấy Phép Phông Chữ SIL Open Font License (OFL 1.1)
 
-Cả ba bộ phông đều tuân thủ giấy phép nguồn mở OFL 1.1 và được quy hoạch theo mô hình tự lưu trữ (self-hosted), không gọi bất kỳ CDN bên thứ ba nào tại runtime để đảm bảo bảo mật và tính độc lập offline.
+Ba bộ phông chữ mã nguồn mở được nhúng tự lưu trữ (self-hosted) tại `frontend/public/fonts/` bao gồm:
 
-### 5.4. Các Tiêu Chuẩn Mở Quốc Tế (W3C, OWASP, Spring Modulith)
+- **Plus Jakarta Sans** (The Plus Jakarta Sans Project Authors, thiết kế bởi Gumpita Rahayu / Tokotype) dành cho tiêu đề hiển thị (SemiBold 600, Bold 700). Kho mã nguồn: <https://github.com/tokotype/PlusJakartaSans>, Giấy phép OFL 1.1: <https://github.com/tokotype/PlusJakartaSans/blob/master/OFL.txt>.
+- **Be Vietnam Pro** (The Be Vietnam Pro Project Authors, thiết kế bởi VietAnh Nguyen / Omnibus-Type) được tối ưu hóa đặc biệt cho tiếng Việt có dấu kép xếp chồng (`ệ`, `ổ`, `ự`, `ữ`, `ặ`) (Regular 400, Medium 500, SemiBold 600, Bold 700). Kho mã nguồn: <https://github.com/bettergui/BeVietnamPro>, Giấy phép OFL 1.1: <https://github.com/bettergui/BeVietnamPro/blob/master/OFL.txt>.
+- **JetBrains Mono** (The JetBrains Mono Project Authors, JetBrains s.r.o., thiết kế bởi Philipp Nurullin và Konstantin Bulenkov) dành cho mã nguồn và bảng số liệu dạng tabular figures (Regular 400, SemiBold 600). Kho mã nguồn: <https://github.com/JetBrains/JetBrainsMono>, Giấy phép OFL 1.1: <https://github.com/JetBrains/JetBrainsMono/blob/master/OFL.txt>.
+
+Cả ba bộ phông đều tuân thủ giấy phép nguồn mở OFL 1.1 và được lưu trữ nội bộ 100% trong `frontend/public/fonts/`, không gọi bất kỳ CDN bên thứ ba nào tại runtime để đảm bảo bảo mật và tính độc lập offline. Toàn bộ 8 file WOFF2 đã được xác thực mã hóa trong Docker container đảm bảo chứa đủ 134 chữ cái tiếng Việt và 5 dấu kết hợp.
+
+### 6.5. Các Tiêu Chuẩn Mở Quốc Tế (W3C, OWASP, Spring Modulith)
 
 Dự án tuân thủ chặt chẽ các chuẩn công nghiệp quốc tế gồm: OWASP ASVS 4.0.3 về bảo mật ứng dụng, W3C WCAG 2.2 Level AA về khả năng tiếp cận, W3C CSS View Transitions và Scroll-driven Animations cho chuyển động giao diện người dùng, và Spring Modulith cho tính bao đóng mô-đun nghiệp vụ.

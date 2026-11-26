@@ -9,48 +9,32 @@ import com.rikkei.jobs.recruitment.dto.HrApplicationSummaryResponse;
 import com.rikkei.jobs.recruitment.dto.WithdrawApplicationRequest;
 import com.rikkei.jobs.recruitment.model.ApplicationStatus;
 
-/** Service interface for candidate job applications and status tracking. */
+/**
+ * Service interface for candidate job applications and read-only HR views.
+ *
+ * <p>Re-apply rule: candidates cannot hold more than one open application ({@code SUBMITTED},
+ * {@code SCREENING}, {@code INTERVIEW}, {@code OFFER}) for the same JD, but may re-apply after any
+ * terminal decision ({@code WITHDRAWN}, {@code REJECTED}, or {@code HIRED}).
+ */
 public interface ApplicationService {
 
-    /**
-     * Applies for a job posting using candidate CV. Enforces rules: - JD must be APPROVED and not
-     * expired. - Candidate cannot have any existing application for the same job, including
-     * terminal states. - Captures immutable PDF snapshot of candidate CV. - Records initial history
-     * entry with status SUBMITTED. - Notifies company HR via domain event.
-     */
     ApplicationDetailResponse apply(Long jobId, Long candidateUserId, ApplyJobRequest request);
 
-    /** Retrieves all applications submitted by the candidate, optionally filtered by status. */
     PageResponse<ApplicationSummaryResponse> getMyApplications(
             Long candidateUserId, ApplicationStatus status, int page, int size);
 
-    /**
-     * Retrieves application details along with full status history. Verifies candidate ownership to
-     * prevent IDOR vulnerabilities.
-     */
     ApplicationDetailResponse getMyApplicationDetail(Long applicationId, Long candidateUserId);
 
-    /**
-     * Withdraws an active application before it reaches OFFER stage. Enforces rules: - Only
-     * permissible when status is SUBMITTED, SCREENING, or INTERVIEW. - Blocked if status is OFFER,
-     * HIRED, or terminal. - Updates status to WITHDRAWN and logs reason into history.
-     */
     ApplicationDetailResponse withdraw(
             Long applicationId, Long candidateUserId, WithdrawApplicationRequest request);
 
     PageResponse<HrApplicationSummaryResponse> getHrApplications(
-            Long jobId, Long hrUserId, int page, int size);
+            Long jobId, Long hrCompanyId, ApplicationStatus status, int page, int size);
 
-    ApplicationDetailResponse getHrApplicationDetail(Long applicationId, Long jobId, Long hrUserId);
-
-    ApplicationDetailResponse updateStatus(
-            Long applicationId,
-            Long jobId,
-            Long hrUserId,
-            ApplicationStatus newStatus,
-            String note);
+    ApplicationDetailResponse getHrApplicationDetail(
+            Long applicationId, Long jobId, Long hrCompanyId);
 
     CvSnapshotDownload getCandidateCvSnapshot(Long applicationId, Long candidateUserId);
 
-    CvSnapshotDownload getHrCvSnapshot(Long applicationId, Long jobId, Long hrUserId);
+    CvSnapshotDownload getHrCvSnapshot(Long applicationId, Long jobId, Long hrCompanyId);
 }

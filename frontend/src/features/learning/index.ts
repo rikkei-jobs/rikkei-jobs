@@ -1,3 +1,5 @@
+import { formatRoleList } from '../../shared/i18n/enumLabels';
+
 /**
  * Module 5: Learning (Đào tạo bổ sung & LMS)
  * Phân tích khoảng thiếu hụt kỹ năng (Skill Gap), đề xuất môn học bổ sung trên LMS.
@@ -15,6 +17,6 @@ export const learningModuleConfig = {
   name: 'Đào tạo bổ sung (Learning)',
   description:
     'Phân tích khoảng thiếu hụt kỹ năng (Skill Gap) so với JD mục tiêu, gợi ý khóa học LMS để hoàn thiện năng lực.',
-  roleTarget: 'CANDIDATE, MENTOR',
+  roleTarget: formatRoleList(['CANDIDATE', 'MENTOR']),
   badge: 'Module 5',
 };

@@ -66,7 +66,7 @@ Group each feedback item into one of four technical priority tiers:
 
 1. Never assume a small fix is safe without running the full verification suite.
 2. Execute `powershell -File .\check.ps1` (or `./check.sh`).
-3. Verify that all 25 active runtime quality gates pass with exit code 0.
+3. Verify that all 26 active runtime quality gates pass with exit code 0.
 4. Confirm zero regressions across all other modules.
 
 ### Step 5: Formulate Professional, Traceable Responses

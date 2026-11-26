@@ -38,7 +38,7 @@ Architectural highlights:
 
 ### Step 1: Verify Domain Concept & Prevent Icon Duplication
 
-- Check the existing registry in `frontend/src/shared/components/Icon/iconRegistry.ts` before creating a new icon.
+- Check the existing registry in `frontend/src/shared/components/Icon.tsx` before creating a new icon.
 - Cross-reference with the 14 starter core icons in [references/icons/](references/icons/).
 - Confirm the icon represents a distinct business concept (e.g., `briefcase` for jobs, `badge-check` for verified skills, `calendar` for interview schedules, `building` for enterprise employers).
 
@@ -56,7 +56,7 @@ Architectural highlights:
 
 ### Step 3: Register Strongly Typed Icon Keys
 
-- Define the icon name within the TypeScript string literal union in `frontend/src/shared/components/Icon/Icon.types.ts`:
+- Define the icon name within the `IconName` union in `frontend/src/shared/components/Icon.tsx`.
 
 ```typescript
 export type IconName =
@@ -96,11 +96,11 @@ export interface IconProps extends React.SVGProps<SVGSVGElement> {
 
 - **Decorative Icons (Accompanying Visible Text)**: When no `aria-label` is provided, automatically inject `aria-hidden="true"` so screen readers ignore the decorative graphic.
 - **Standalone Semantic Icons**: When an `aria-label` is provided, render `role="img"` and `aria-label={label}`.
-- **Icon-Only Interactive Buttons**: When rendering an icon inside a button without visible text, the parent `<button>` element MUST include an explicit `aria-label="Action description"` or encapsulate an `<span className="sr-only">Action description</span>` helper.
+- **Icon-Only Interactive Buttons**: When rendering an icon inside a button without visible text, the parent `<button>` element MUST include an explicit `aria-label="Action description"` (no duplicate visible text span). For stateful collapse/expand controls (e.g., `panel-left-close`), flip a single icon via CSS `transform` instead of swapping paths; for `role="switch"` theme toggles, keep both `sun` and `moon` `<Icon />` elements `aria-hidden="true"` inside the animated thumb.
 
 ### Step 6: Automated Vitest Suite
 
-- Author tests in `frontend/src/shared/components/Icon/Icon.test.tsx`.
+- Author tests in `frontend/src/shared/components/Icon.test.tsx`.
 - Verify correct SVG path lookup by `name`.
 - Verify accurate dimension binding for `size` props (16, 20, 24, 32).
 - Verify `aria-hidden="true"` is rendered when `aria-label` is absent.
@@ -126,7 +126,7 @@ export interface IconProps extends React.SVGProps<SVGSVGElement> {
 |---|---|
 | "Installing `lucide-react` or `react-icons` directly saves time compared to maintaining a registry." | Direct third-party imports lead to bundle size inflation, styling inconsistencies, and break the cohesive Anti-AI visual identity of Rikkei Jobs. |
 | "This icon is purely decorative, so accessibility properties do not matter." | Decorative icons without `aria-hidden="true"` cause screen readers to announce meaningless raw SVG coordinates or path tokens, creating auditory clutter for visually impaired users. |
-| "Hardcoding `#132F52` ensures the brand color stays consistent everywhere." | Hardcoded colors break theme flexibility, failing when components invert into Dark Mode or render on active navigation states. |
+| "Hardcoding `#0D55B8` ensures the brand color stays consistent everywhere." | Hardcoded colors break theme flexibility, failing when components invert into Dark Mode or render on active navigation states. |
 
 ## 7. Verification Checklist
 
@@ -135,18 +135,16 @@ export interface IconProps extends React.SVGProps<SVGSVGElement> {
 - [ ] No hardcoded color strings exist within SVG paths.
 - [ ] Every icon-only button contains a descriptive `aria-label`.
 - [ ] 10-step mechanical checklist in [icon-checklist.md](references/icon-checklist.md) passes.
-- [ ] Vitest test suite (`frontend/src/shared/components/Icon/Icon.test.tsx`) passes cleanly.
+- [ ] Vitest test suite (`frontend/src/shared/components/Icon.test.tsx`) passes cleanly.
 
 ## 8. Rikkei Jobs Specifics
 
-- Component implementation: `frontend/src/shared/components/Icon/Icon.tsx`.
-- Component contracts: `frontend/src/shared/components/Icon/Icon.types.ts`.
-- Icon registry dictionary: `frontend/src/shared/components/Icon/iconRegistry.ts`.
+- Component & registry implementation: `frontend/src/shared/components/Icon.tsx`.
 - Supporting specifications:
   - Grid template: [references/icon-grid-template.svg](references/icon-grid-template.svg).
   - Compliance checklist: [references/icon-checklist.md](references/icon-checklist.md).
   - Core starter SVGs: [references/icons/](references/icons/).
-- Test suite: `frontend/src/shared/components/Icon/Icon.test.tsx`.
+- Test suite: `frontend/src/shared/components/Icon.test.tsx`.
 - Verification commands:
 
 ```bash

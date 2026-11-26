@@ -1,6 +1,7 @@
 package com.rikkei.jobs.migration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -57,7 +58,7 @@ public class FlywayMigrationIntegrationTest {
         Integer snapshotCount =
                 jdbcTemplate.queryForObject(
                         "SELECT count(*) FROM application_cv_snapshots", Integer.class);
-        assertEquals(5, snapshotCount);
+        assertEquals(7, snapshotCount);
 
         String pdfHeader =
                 jdbcTemplate.queryForObject(
@@ -65,6 +66,23 @@ public class FlywayMigrationIntegrationTest {
                                 + "FROM application_cv_snapshots WHERE application_id = 1",
                         String.class);
         assertEquals("255044462d", pdfHeader);
+
+        Long fileSize =
+                jdbcTemplate.queryForObject(
+                        "SELECT file_size FROM application_cv_snapshots WHERE application_id = 1",
+                        Long.class);
+        assertEquals(594L, fileSize);
+
+        String sha256 =
+                jdbcTemplate.queryForObject(
+                        "SELECT sha256 FROM application_cv_snapshots WHERE application_id = 1",
+                        String.class);
+        assertEquals("9b71184ae956dd96864598cc8abfffb29bcf23c9bff28aff431fd779ac564782", sha256);
+
+        Integer candidate2AppCount =
+                jdbcTemplate.queryForObject(
+                        "SELECT count(*) FROM applications WHERE user_id = 2", Integer.class);
+        assertEquals(0, candidate2AppCount);
     }
 
     @Test
@@ -123,10 +141,10 @@ public class FlywayMigrationIntegrationTest {
 
     @Test
     @DisplayName(
-            "Dev profile must seed exactly 8 sample users with Bcrypt(Test@123) and LMS ID mapping")
+            "Dev profile must seed exactly 9 sample users with Bcrypt(Test@123) and LMS ID mapping")
     void testUsersSeeded() {
         List<User> users = userRepository.findAll();
-        assertEquals(8, users.size(), "Dev profile must have exactly 8 sample accounts");
+        assertEquals(9, users.size(), "Dev profile must have exactly 9 sample accounts");
 
         // Verify candidate1
         User cand1 = userRepository.findByEmail("candidate1@rikkeijobs.test").orElseThrow();
@@ -159,6 +177,18 @@ public class FlywayMigrationIntegrationTest {
         User mentor1 = userRepository.findByEmail("mentor1@rikkeijobs.test").orElseThrow();
         assertEquals("lms-mt-001", mentor1.getLmsUserId());
         assertTrue(passwordEncoder.matches("Test@123", mentor1.getPasswordHash()));
+
+        // Verify mentor2 (seeded in V8)
+        User mentor2 = userRepository.findByEmail("mentor2@rikkeijobs.test").orElseThrow();
+        assertEquals(9L, mentor2.getId());
+        assertEquals("Trần Minh Tuấn", mentor2.getFullName());
+        assertEquals("lms-mt-002", mentor2.getLmsUserId());
+        assertEquals(3, mentor2.getRoleId());
+        assertEquals("MENTOR", mentor2.getRole().getName());
+        assertNull(mentor2.getCompanyId(), "Mentor accounts must have null company_id");
+        assertFalse(
+                mentor2.isMustChangePassword(), "mentor2 must have must_change_password = false");
+        assertTrue(passwordEncoder.matches("Test@123", mentor2.getPasswordHash()));
 
         // Verify staff1
         User staff1 = userRepository.findByEmail("staff1@rikkeijobs.test").orElseThrow();

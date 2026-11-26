@@ -51,7 +51,7 @@ Assumptions, theoretical correctness, or past test runs do not constitute eviden
 1. Run the project quality gate script appropriate for the current host environment:
    - Windows PowerShell: `powershell -File .\check.ps1`
    - Unix/Linux/macOS Bash: `./check.sh`
-2. Monitor all 25 active runtime quality gates across backend compilation, Spotless formatting check, static analysis, frontend linting, Vitest suites, and documentation integrity.
+2. Monitor all 26 active runtime quality gates across backend compilation, Spotless formatting check, static analysis, frontend linting, Vitest suites, and documentation integrity.
 3. Observe raw console streams and verify that the gate runner outputs a clean exit code 0.
 
 ### Step 4: Verify Agent Configuration Parity and Gate Synchronization
@@ -59,7 +59,7 @@ Assumptions, theoretical correctness, or past test runs do not constitute eviden
 1. If agent rules, skills, or tooling were authored or modified:
    - Run `node scripts/sync-agent-config.mjs --check` to verify byte-identical parity across canonical sources, `.claude/`, and `.gemini/`.
    - Run `node scripts/validate-agent-config.mjs` to mechanically validate YAML frontmatter, line limits (<=500 for skills, <=150 for rules), forbidden patterns (zero emoji, zero hardcoded secrets, zero commit commands), and path references.
-   - Run `node scripts/check-gate-sync.mjs` to ensure total gate count consistency (25 active runtime gates, 28 definitions) across local runners and `.github/workflows/ci.yml`.
+   - Run `node scripts/check-gate-sync.mjs` to ensure total gate count consistency (26 active runtime gates, 29 definitions) across local runners and `.github/workflows/ci.yml`.
 
 ### Step 5: Capture and Triage Raw Evidence
 
@@ -75,7 +75,7 @@ Assumptions, theoretical correctness, or past test runs do not constitute eviden
 
 - **Iron Law 1 (Zero Fake Pass)**: An agent must NEVER claim a test or check passed without executing the command in the current session and observing exit code 0. Fabricating verification output, reporting numbers not observed, or claiming "verified by inspection" is an immediate integrity violation.
 - **Iron Law 2 (Complete Suite Execution)**: Passing a localized unit test is necessary but never sufficient. The full automated quality suite (`check.ps1` / `check.sh`) must be executed prior to completion.
-- **Iron Law 3 (Honest Non-Execution Reporting)**: If a specific gate cannot run due to an uninstalled host dependency or blocked environment, the agent must explicitly report "NOT VERIFIED: [Gate Name] - [Precise Reason]" rather than assuming or asserting success.
+- **Iron Law 3 (Honest Non-Execution Reporting)**: If a specific gate cannot run due to an uninstalled host dependency or blocked environment, the agent must explicitly report "NOT VERIFIED: `<Gate Name>` - `<Precise Reason>`" rather than assuming or asserting success.
 
 ## 5. Red Flags
 
@@ -122,4 +122,4 @@ Assumptions, theoretical correctness, or past test runs do not constitute eviden
   - Type checking: `npm --prefix frontend run typecheck`
   - Vitest test suite: `npm --prefix frontend run test`
   - Code linting: `npm --prefix frontend run lint`
-- Quality gate count: Exactly 25 active runtime gates mapping to 21 CI jobs.
+- Quality gate count: Exactly 26 active runtime gates mapping to 23 CI checks.

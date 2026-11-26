@@ -31,7 +31,7 @@ This rubric evaluates user interfaces and components to eliminate generic AI-gen
 
 - **0 Points (FAIL - HARD VETO)**: Default Tailwind scale (slate/indigo/sky); unreadable gray body text (< 4.5:1); purple-to-blue gradient headers; lack of dark mode design.
 - **1 Point (ACCEPTABLE)**: Meets 4.5:1 contrast, but palette lacks proprietary brand character; dark mode is a naive luminance inversion.
-- **2 Points (EXEMPLARY)**: Proprietary Technical Iron Cobalt & Cyber Persimmon palette; 100% computed contrast ratios (text >= 4.5:1, UI >= 3.0:1); designed dark mode surfaces.
+- **2 Points (EXEMPLARY)**: Proprietary Confident Royal Cobalt & Iron Obsidian palette (Core #0D55B8, Luminous Electric #508CEE, Brand Mark #C8161D) with quarantined semantic error (#9B1C2A / #F1707A) and non-color cues; 100% computed contrast ratios (text >= 4.5:1, UI >= 3.0:1); designed dark mode surfaces.
 
 ### Criterion 4: Curated Iconography & Asset Discipline
 
@@ -57,10 +57,10 @@ This rubric evaluates user interfaces and components to eliminate generic AI-gen
 
 | Criterion | Points (0-2) | Pass/Fail Assessment | Notes / Evidence |
 |---|---|---|---|
-| C1. Typography & Diacritics | [0-2] | PASS / FAIL | |
-| C2. Layout Asymmetry & Density | [0-2] | PASS / FAIL | |
-| C3. Color & WCAG 2.2 Contrast | [0-2] | PASS / FAIL | |
-| C4. Curated Iconography | [0-2] | PASS / FAIL | |
-| C5. Purposeful Motion | [0-2] | PASS / FAIL | |
-| C6. Authentic Copy & Anti-AI | [0-2] | PASS / FAIL | |
+| C1. Typography & Diacritics | `0-2` | PASS / FAIL | |
+| C2. Layout Asymmetry & Density | `0-2` | PASS / FAIL | |
+| C3. Color & WCAG 2.2 Contrast | `0-2` | PASS / FAIL | |
+| C4. Curated Iconography | `0-2` | PASS / FAIL | |
+| C5. Purposeful Motion | `0-2` | PASS / FAIL | |
+| C6. Authentic Copy & Anti-AI | `0-2` | PASS / FAIL | |
 | **Total Score** | **/12** | **PASS (>=11) / FAIL** | **Hard Veto: Any 0 = REJECT** |

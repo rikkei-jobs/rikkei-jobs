@@ -16,7 +16,9 @@ The security of Rikkei Jobs is built on the strict enforcement of the **Zero Rea
 
 ### 2. Environment Variables & Secret Configuration
 
-- **`.env.example` as the Blueprint**: The committed `.env.example` file contains safe development placeholders and self-documenting defaults (e.g., `EXTERNAL_SERVICE_KEY=dev-key`, `POSTGRES_PASSWORD=rikkei_secret`).
+- **`.env.example` as the Blueprint**: The committed `.env.example` file contains safe development placeholders and self-documenting defaults (e.g., `EXTERNAL_SERVICE_KEY=dev-key`, `POSTGRES_PASSWORD=rikkei_secret`, `APP_FRONTEND_URL=http://localhost:3000`, `APP_MAIL_FROM=no-reply@rikkeijobs.local`, `APP_SECURITY_RATE_LIMIT_TRUST_PROXY_HEADERS=false`, `APP_SECURITY_RATE_LIMIT_TRUSTED_PROXIES=`).
+- **Production Email & URL Validation (`ProdEnvironmentValidator`)**: Under the `prod` profile, `ProdEnvironmentValidator` fails fast unless `APP_FRONTEND_URL` is a valid non-blank `https://` URL (no `localhost`, `127.0.0.1`, `.local`, or mock hosts) and `APP_MAIL_FROM` is a valid non-blank sender email distinct from the dev placeholder `no-reply@rikkeijobs.local`.
+- **Production Auth Rate-Limit Proxy Validation (`AuthRateLimitProdValidator`)**: Under the `prod` profile, `AuthRateLimitProdValidator` (ordered after `ProdEnvironmentValidator` in `META-INF/spring.factories`) fails fast whenever `app.security.rate-limit.enabled=true` (the default) unless `APP_SECURITY_RATE_LIMIT_TRUST_PROXY_HEADERS=true` and `APP_SECURITY_RATE_LIMIT_TRUSTED_PROXIES` specifies at least one valid non-wildcard (`/0`) reverse-proxy IP or CIDR (and rejects inconsistent settings where trusted proxies are provided while `TRUST_PROXY_HEADERS` is `false`).
 - **`.env` Exclusion**: The `.env` file containing local execution settings is strictly listed in `.gitignore` and must never be tracked by version control.
 - **Service Key Boundary**:
   - The shared service key (`X-Service-Key: dev-key`) authorizes backend-to-mock machine communications.
@@ -28,9 +30,10 @@ The security of Rikkei Jobs is built on the strict enforcement of the **Zero Rea
 
 ### 3. API Security & Role-Based Access Control (RBAC)
 
-- **Default Deny Strategy**: The Spring Security layer enforces a default-deny posture. All API routes under `/api/v1/**` require a valid JWT Bearer token, except for explicitly whitelisted public endpoints:
-  - `GET /api/v1/health` (Health verification)
-  - `GET /v3/api-docs/**` and `GET /swagger-ui/**` (Enabled only in `dev` profile)
+- **Default Deny Strategy**: The Spring Security layer enforces a declarative deny-by-default posture via `RoutePolicyRegistry` and `SecurityConfig` (`.anyRequest().denyAll()`), combined with `OwnershipGuard` for horizontal IDOR protection (`404 NOT_FOUND` on cross-tenant/cross-user access). All API routes under `/api/v1/**` require a valid JWT Bearer token, except for explicitly whitelisted public endpoints:
+  - `GET /api/v1/health` and `GET /actuator/health` (Health verification)
+  - `POST /api/v1/auth/{sso,login,forgot-password,reset-password}` (Public authentication flows)
+  - `GET /api/docs`, `GET /api/api-docs/**`, and `GET /api/swagger-ui/**` alongside legacy dev routes `GET /api-docs/**`, `GET /swagger-ui/**`, and `GET /swagger-ui.html` (Enabled only in `dev` profile; completely disabled in `prod`)
 - **Unauthenticated Handling**: Any request attempting to access protected resources without an Authorization header or with an invalid token returns HTTP `401 Unauthorized` with the standard error body:
 
   ```json
@@ -46,6 +49,12 @@ The security of Rikkei Jobs is built on the strict enforcement of the **Zero Rea
   - `MENTOR`: Submits assessment forms, records interview technical feedback.
   - `STAFF`: Approves candidate profiles, approves enterprise JDs, unlocks contact info.
   - `ADMIN`: System configuration, audit logs, 20 skills catalogue management.
+
+#### JWT Validation Rules & Deployment Rollout Note
+
+- **Enforced Claims & Verification**: `JwtService` signs access tokens with `HS256` (`alg`) and strictly enforces HMAC-SHA256 signature verification, token expiration/not-before (`exp`/`nbf`) against the server clock, required issuer `iss="rikkei-jobs"`, and required audience `aud="rikkei-jobs-api"`.
+- **Purpose of `jti` Claim**: Each issued token includes a random UUID `jti` solely as a unique per-token correlation and audit identifier; `jti` is **not** checked for revocation or replay. Stateful token revocation (such as `token_version` on `users`) remains **Proposed, not applied**.
+- **Deployment Rollout Note**: Because `iss` (`rikkei-jobs`) and `aud` (`rikkei-jobs-api`) are strictly required by `JwtService#extractAllClaims`, any JWT issued prior to deploying this change without those exact claims will be rejected with HTTP `401 Unauthorized`. Active users will be forced to re-login once after rollout (maximum impact window: up to the 8-hour token TTL).
 
 ---
 
@@ -76,7 +85,9 @@ An ninh của nền tảng Rikkei Jobs được xây dựng dựa trên nguyên 
 
 ### 2. Quản lý Biến Môi trường & Ranh giới Khóa Dịch vụ
 
-- **`.env.example` làm tài liệu chuẩn**: Tệp `.env.example` được lưu trong Git chỉ chứa các giá trị giả lập an toàn phục vụ môi trường dev cục bộ (ví dụ: `EXTERNAL_SERVICE_KEY=dev-key`, `POSTGRES_PASSWORD=rikkei_secret`).
+- **`.env.example` làm tài liệu chuẩn**: Tệp `.env.example` được lưu trong Git chỉ chứa các giá trị giả lập an toàn phục vụ môi trường dev cục bộ (ví dụ: `EXTERNAL_SERVICE_KEY=dev-key`, `POSTGRES_PASSWORD=rikkei_secret`, `APP_FRONTEND_URL=http://localhost:3000`, `APP_MAIL_FROM=no-reply@rikkeijobs.local`, `APP_SECURITY_RATE_LIMIT_TRUST_PROXY_HEADERS=false`, `APP_SECURITY_RATE_LIMIT_TRUSTED_PROXIES=`).
+- **Kiểm tra Biến URL & Email trên Production (`ProdEnvironmentValidator`)**: Ở profile `prod`, `ProdEnvironmentValidator` sẽ fail-fast nếu `APP_FRONTEND_URL` bị thiếu, không phải `https://`, hoặc trỏ tới `localhost`, `127.0.0.1`, `.local` hay máy chủ mock, và nếu `APP_MAIL_FROM` bị thiếu, sai cú pháp email, hoặc giữ giá trị dev `no-reply@rikkeijobs.local`.
+- **Kiểm tra Proxy Rate-Limit Xác thực trên Production (`AuthRateLimitProdValidator`)**: Ở profile `prod`, `AuthRateLimitProdValidator` (chạy sau `ProdEnvironmentValidator` theo thứ tự trong `META-INF/spring.factories`) sẽ fail-fast khi `app.security.rate-limit.enabled=true` (mặc định) trừ khi `APP_SECURITY_RATE_LIMIT_TRUST_PROXY_HEADERS=true` và `APP_SECURITY_RATE_LIMIT_TRUSTED_PROXIES` khai báo ít nhất một IP hoặc CIDR proxy tin cậy hợp lệ khác wildcard `/0` (và từ chối cấu hình mâu thuẫn khi có proxy tin cậy nhưng `TRUST_PROXY_HEADERS` là `false`).
 - **Cô lập tệp `.env` thực tế**: Tệp `.env` cấu hình môi trường thực tế bắt buộc phải nằm trong `.gitignore` và không bao giờ được đưa lên hệ thống quản lý phiên bản.
 - **Ranh giới Bảo vệ Khóa Dịch vụ (Service Key)**:
   - Khóa dịch vụ (`X-Service-Key: dev-key`) được dùng cho giao tiếp nội bộ giữa Backend và dịch vụ Mock.
@@ -88,9 +99,10 @@ An ninh của nền tảng Rikkei Jobs được xây dựng dựa trên nguyên 
 
 ### 3. Kiểm soát Truy cập Dựa trên Vai trò (RBAC) & Bảo mật API
 
-- **Chiến lược Từ chối Mặc định (Default Deny)**: Tầng Spring Security áp dụng quy tắc đóng toàn bộ các API `/api/v1/**`, ngoại trừ các endpoint công khai được chỉ định rõ:
-  - `GET /api/v1/health` (Kiểm tra sức khỏe hệ thống)
-  - `GET /v3/api-docs/**` và `GET /swagger-ui/**` (Chỉ kích hoạt trên profile `dev`)
+- **Chiến lược Từ chối Mặc định (Default Deny)**: Tầng Spring Security áp dụng nguyên tắc từ chối mặc định khai báo tập trung qua `RoutePolicyRegistry` và `SecurityConfig` (`.anyRequest().denyAll()`), kết hợp `OwnershipGuard` chống dò ID ngang IDOR (trả `404 NOT_FOUND` khi truy cập trái chủ sở hữu). Mọi API dưới `/api/v1/**` đều yêu cầu JWT Bearer token hợp lệ, ngoại trừ các endpoint công khai được chỉ định rõ:
+  - `GET /api/v1/health` và `GET /actuator/health` (Kiểm tra sức khỏe hệ thống)
+  - `POST /api/v1/auth/{sso,login,forgot-password,reset-password}` (Các luồng xác thực công khai)
+  - `GET /api/docs`, `GET /api/api-docs/**` và `GET /api/swagger-ui/**` cùng các đường dẫn dev tương thích ngược `GET /api-docs/**`, `GET /swagger-ui/**`, `GET /swagger-ui.html` (Chỉ kích hoạt trên profile `dev`; tắt hoàn toàn ở `prod`)
 - **Xử lý Khi Chưa Xác thực**: Bất kỳ yêu cầu nào không có header Authorization hợp lệ đều bị chặn và trả về HTTP `401 Unauthorized` kèm cấu trúc JSON chuẩn:
 
   ```json
@@ -106,6 +118,12 @@ An ninh của nền tảng Rikkei Jobs được xây dựng dựa trên nguyên 
   - `MENTOR`: Điền phiếu đánh giá năng lực, chấm điểm chuyên môn phỏng vấn.
   - `STAFF`: Xét duyệt hồ sơ năng lực, phê duyệt JD của doanh nghiệp, mở thông tin liên hệ.
   - `ADMIN`: Quản trị hệ thống, danh mục 20 kỹ năng, xem nhật ký kiểm toán (audit log).
+
+#### Quy tắc Xác thực JWT & Lưu ý Triển khai (Rollout)
+
+- **Các trường được kiểm chứng thực tế**: `JwtService` ký access token bằng `HS256` (`alg`) và bắt buộc kiểm tra chữ ký HMAC-SHA256, thời hạn `exp`/`nbf` theo đồng hồ máy chủ, trường định danh nhà phát hành `iss="rikkei-jobs"`, và đối tượng tiếp nhận `aud="rikkei-jobs-api"`.
+- **Mục đích của `jti`**: Mỗi token được cấp kèm một UUID ngẫu nhiên ở trường `jti` chỉ nhằm làm mã định danh duy nhất phục vụ đối chiếu log/audit cho từng token; `jti` **không** được kiểm tra để thu hồi hay chống phát lại. Cơ chế thu hồi token có trạng thái (như `token_version` trên bảng `users`) vẫn giữ ở trạng thái **Đề xuất, chưa áp dụng** (Proposed, not applied).
+- **Lưu ý khi triển khai (Deployment Note)**: Do `JwtService#extractAllClaims` bắt buộc yêu cầu `iss` (`rikkei-jobs`) và `aud` (`rikkei-jobs-api`), mọi token JWT được phát hành trước thời điểm triển khai phiên bản mới sẽ bị từ chối với HTTP `401 Unauthorized`. Người dùng đang đăng nhập sẽ phải đăng nhập lại một lần sau khi triển khai (thời gian ảnh hưởng tối đa bằng thời hạn sống TTL 8 giờ của token).
 
 ---
 

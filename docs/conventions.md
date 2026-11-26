@@ -42,12 +42,12 @@ All HTTP error responses (HTTP status codes 4xx and 5xx) must return a consisten
 |---|---|---|---|
 | **400 Bad Request** | Invalid payload syntax, missing required fields, boundary validation failures. | `VALIDATION_ERROR`, `BAD_REQUEST` | `"Trường email không đúng định dạng"` |
 | **401 Unauthorized** | Missing, malformed, expired, or invalid JWT token; missing or invalid service key. | `UNAUTHORIZED`, `INVALID_SERVICE_KEY` | `"Yêu cầu xác thực tài khoản"` |
-| **403 Forbidden** | Authenticated user lacks permission or required role for the resource. | `FORBIDDEN` | `"Bạn không có quyền thực hiện thao tác này"` |
+| **403 Forbidden** | Authenticated user lacks permission or required role for the resource. | `FORBIDDEN` | `"Không có quyền truy cập"` |
 | **404 Not Found** | Target resource ID, student ID, course ID, or batch ID does not exist. | `NOT_FOUND` | `"Không tìm thấy tài nguyên yêu cầu"` |
-| **405 Method Not Allowed** | HTTP method is not supported on the target URI path (e.g., POST to a GET-only route). | `METHOD_NOT_ALLOWED` | `"Phương thức HTTP không được hỗ trợ"` |
+| **405 Method Not Allowed** | HTTP method is not supported on the target URI path (e.g., `POST` to a `GET`-only route, or `PUT /api/v1/companies/{id}` now that `GET /api/v1/companies/{id}` is mapped). | `METHOD_NOT_ALLOWED` | `"Phương thức HTTP không được hỗ trợ"` |
 | **409 Conflict** | Business rule conflict, e.g., duplicate enrollment, user already exists in batch. | `CONFLICT`, `ALREADY_ENROLLED`, `ALREADY_MEMBER` | `"Sinh viên đã ghi danh khoá học này"` |
 | **429 Too Many Requests** | Rate limit exceeded (e.g., AI queries or password reset requests). | `RATE_LIMITED` | `"Bạn đã vượt quá giới hạn yêu cầu trong ngày"` |
-| **503 Service Unavailable** | Downstream dependency (LMS, Exam, PM, Meet mock) is down, unreachable, or times out (>5s). | `EXTERNAL_UNAVAILABLE` | `"Hệ thống bên ngoài tạm thời không khả dụng"` |
+| **503 Service Unavailable** | Downstream dependency (LMS, Exam, PM, Meet mock) is down, unreachable, or times out (>5s), or the CV service integration (`CvPort`, awaiting HS-04) is not yet available. | `EXTERNAL_UNAVAILABLE`, `CV_SERVICE_UNAVAILABLE` | `"Hệ thống bên ngoài tạm thời không khả dụng"` |
 
 #### Concrete JSON Error Examples
 
@@ -163,6 +163,12 @@ List endpoints returning multiple records must support 1-based pagination via qu
 - **Database Storage**: In PostgreSQL, all datetime columns MUST be stored as `TIMESTAMPTZ` (Timestamp with Time Zone in UTC).
 - **Serialization**: The Spring Boot backend uses `java.time.Instant` or `java.time.OffsetDateTime` serialized via Jackson `JavaTimeModule` without timestamps as raw numeric epoch milliseconds.
 
+### 1.5 OpenAPI & Swagger UI Contract (NT-02)
+
+- **Dev Profile (`dev`)**: Swagger UI is exposed at `/api/docs` on both the direct backend (`http://127.0.0.1:8080/api/docs`) and the Nginx gateway (`http://127.0.0.1:3000/api/docs`, routed via `location ^~ /api/` in `frontend/nginx.conf`). Springdoc serves OpenAPI JSON at `/api/api-docs` (and legacy `/api-docs`), YAML at `/api/api-docs.yaml` (and `/api-docs.yaml`), and preserves legacy redirects at `/swagger-ui.html`.
+- **Contract Standard**: All merged business controllers declare `@Tag`, `@Operation`, `bearerAuth` HTTP Bearer JWT security where required, and unified `ErrorResponse` (`401`/`403`/`404`) schemas; dev-only `TestErrorController` is marked `@Hidden` and excluded from OpenAPI output.
+- **Production Profile (`prod`)**: Springdoc (`swagger-ui` and `api-docs`) is completely disabled (`404 NOT_FOUND` on all OpenAPI/Swagger paths).
+
 ---
 
 ## 2. System Roles (RBAC)
@@ -177,11 +183,23 @@ The Rikkei Jobs access control system comprises five distinct user roles:
 | **`STAFF`** | Cán bộ tuyển dụng | Cán bộ điều phối Rikkei Education phụ trách duyệt hồ sơ năng lực, duyệt JD doanh nghiệp, mở thông tin liên hệ và ghép đợt thực tập IOC. |
 | **`ADMIN`** | Quản trị viên hệ thống | Quản trị viên hệ thống toàn quyền cấu hình danh mục 20 kỹ năng, quản trị người dùng, thiết lập trọng số đánh giá và kiểm tra nhật ký kiểm toán (audit log). |
 
+### 2.1 Declarative Route Guard, Horizontal Ownership & Frontend RBAC (NT-02)
+
+- **Declarative Route Policy (`RoutePolicyRegistry`)**: `com.rikkei.jobs.common.security.RoutePolicyRegistry` is the single declarative source of truth for `route -> allowed roles`, consumed in order by `SecurityConfig` with `.anyRequest().denyAll()` (deny-by-default). Literal `/me` routes MUST appear before parameterized `/{id}` or `/{userId}` routes, and every `ROLES` policy maintains `@PreAuthorize` parity verified automatically by `RbacEndpointPolicyCoverageIntegrationTest`.
+- **Horizontal Ownership Helper (`OwnershipGuard`)**: `com.rikkei.jobs.common.security.OwnershipGuard` is a stateless utility in `common.security` compliant with Rule 14 module boundaries (depends only on `UserPrincipal`, `ResourceNotFoundException`, and canonical role constants). Horizontal ownership violations (cross-tenant company reads, cross-candidate profile reads, cross-mentor evaluation edits) return `404 NOT_FOUND` with unified `{"code","message"}` identical to missing IDs so IDs cannot be probed:
+  - `GET /api/v1/companies/{id}`: `HR` reads only `principal.getCompanyId()` (`404` otherwise); `STAFF` reads any company; other roles receive `403 FORBIDDEN`. Now that `/{id}` is mapped, `PUT /api/v1/companies/{id}` returns `405 METHOD_NOT_ALLOWED` uniformly for own, cross-tenant, and missing IDs (`401` for anonymous).
+  - `GET /api/v1/jobs/{jobId}` and `GET /api/v1/target-positions`: `authenticated-any` for approved, non-expired JDs and target positions; any future endpoint exposing draft or company-scoped JDs MUST enforce `OwnershipGuard`.
+  - Complete endpoint-by-endpoint rules are maintained in [`docs/nt02/permission-matrix.md`](nt02/permission-matrix.md).
+- **Frontend Shared Role Layout, Route Guard & API Wrapper**:
+  - `SharedAppLayout` + `roleMenuConfig` render role-isolated Vietnamese navigation menus (unimplemented items use `aria-disabled="true"`, `tabIndex={-1}`, and `"Sắp ra mắt"` with zero navigation) while keeping role homes reachable via the Brand link.
+  - `RequireAuth`, `RequireMustChangePassword`, and `RequireRole` enforce unauthenticated redirect to `/login`, forced password change at `/change-password`, and an in-place Vietnamese `ForbiddenPage` (`403`) displaying the localized role via `frontend/src/shared/i18n/enumLabels.ts` and a link back to the user's role home.
+  - `frontend/src/shared/api/httpClient.ts` attaches the in-memory Bearer token automatically, clears the session and redirects to `/login` on `401`, and preserves the session on `403`.
+
 ---
 
 ## 3. Sample Accounts for Development (Dev Profile)
 
-For local development and continuous integration testing, exactly 8 fictitious accounts are provisioned via the dev database seed.
+For local development and continuous integration testing, exactly 9 fictitious accounts are provisioned via the dev database seeds (`V2__dev_seed.sql` + `V8__dev_evaluation_seed.sql`).
 
 - **Universal Password**: `Test@123` (Stored as BCrypt hash: `$2a$10$...`)
 - **Email Domain**: `@rikkeijobs.test`
@@ -194,6 +212,7 @@ For local development and continuous integration testing, exactly 8 fictitious a
 | `hr1@rikkeijobs.test` | Đại diện Doanh nghiệp A | `HR` | *(None / NULL)* | Enterprise recruiter for Company A |
 | `hr2@rikkeijobs.test` | Đại diện Doanh nghiệp B | `HR` | *(None / NULL)* | Enterprise recruiter for Company B |
 | `mentor1@rikkeijobs.test` | Phạm Quốc Dũng | `MENTOR` | `lms-mt-001` | Mentor for internship batch `IOC-JB-2026-09` |
+| `mentor2@rikkeijobs.test` | Trần Minh Tuấn | `MENTOR` | `lms-mt-002` | Second IOC project mentor (`V8` seed) |
 | `staff1@rikkeijobs.test` | Hoàng Thu Hà | `STAFF` | `lms-st-001` | Placement coordinator reviewing candidates and JDs |
 | `admin1@rikkeijobs.test` | Đỗ Thanh Hải | `ADMIN` | `lms-ad-001` | System administrator with full permissions |
 
@@ -206,9 +225,9 @@ For local development and continuous integration testing, exactly 8 fictitious a
 Full details and schema examples are documented in [`docs/mock-contract.md`](mock-contract.md).
 
 - **Mock Process**: Standalone Node.js Express server running on port `9000`.
-- **Authentication**: Requires HTTP header `X-Service-Key: dev-key` for all `/lms`, `/exam`, `/pm`, and `/meet` routes.
-- **11 Business Endpoints**: Covers LMS SSO authentication, student results, course recommendations, course enrollment, exam scores, PM internships, batch member addition, and Rikkei Meet room generation.
-- **4 Testing Tools**: Non-authenticated testing tools at `/mock/reload`, `/mock/requests`, `/mock/enrollments`, and `/mock/reset`.
+- **Authentication**: Requires HTTP header `X-Service-Key: dev-key` for all `/lms`, `/exam`, `/pm`, and `/meet` routes. The separate `/cloudinary/*` mock namespace uses Cloudinary `api_key` + SHA-1 `signature` validation instead of `X-Service-Key`.
+- **11 Business Endpoints + Cloudinary Mock Namespace**: Covers LMS SSO authentication, student results, course recommendations, course enrollment, exam scores, PM internships, batch member addition, Rikkei Meet room generation, plus `/cloudinary/*` signed upload, delivery, and destroy simulation for local company logo storage.
+- **5 Testing Tools**: Non-authenticated testing tools at `/mock/reload`, `/mock/requests`, `/mock/enrollments`, `/mock/reset`, and `/mock/cloudinary/fail-next`.
 - **SSO Single-Use & Expiration Rule**: The mock server deliberately does NOT enforce single-use or 60-second expiration (it returns 200 on repeated calls). The **Backend** is strictly responsible for enforcing single-use and the 60s TTL window in subsequent task `NT-01` via the `used_sso_tickets` table. Neither mock nor backend implements this rejection logic in Sprint 1.
 
 ---
@@ -280,7 +299,7 @@ To preserve architectural integrity across sprints, the following rules are non-
    - `internship`: `internship_batches`, `internship_members`, `internship_tasks`
    - `assessment`: `skills` (the 20 catalogue codes), `assessments`, `evaluation_sheets`
    - `learning`: `course_recommendations`, `study_progress`
-   - `recruitment`: `applications`, `interviews`, `offers`
+   - `recruitment`: `applications`, `application_status_history`, `application_cv_snapshots`
    - `ai`: Stateless assistant sessions, no persistent domain tables.
 
 ### 6.2 No Cross-Module Foreign Keys or SQL Joins
@@ -313,7 +332,7 @@ A task, feature, or pull request achieves "Done" status when:
 
 For detailed AI coding agent specifications, architectural rules, and design guidelines, consult:
 
-- [AI Agent Configuration Guide](agent-config/README.md) — Architectural principles, 16 enterprise rules, 28 task-triggered skills in `agent-config/` mirrored to `.claude/` and `.gemini/`.
+- [AI Agent Configuration Guide](agent-config/README.md) — Architectural principles, 16 enterprise rules, 29 task-triggered skills in `agent-config/` mirrored to `.claude/` and `.gemini/`.
 - [Frontend Design System](design/DESIGN_SYSTEM.md) — Comprehensive design tokens, calculated WCAG 2.2 AA contrast matrix, Vietnamese typography rules, and anti-AI design bar (Rule 09).
 - [Third-Party Attribution](agent-config/THIRD_PARTY_NOTICES.md) — Open-source MIT licenses and adaptation details for referenced upstream repositories.
 - [Authoritative Sources Inventory](agent-config/SOURCES.md) — Complete catalogue of external specifications, standards, verified URLs, and access dates.

@@ -1,0 +1,8 @@
+# Auto-generated fallback command for Gemini CLI / Antigravity
+# Skill: frontend-taste-anti-slop
+description = "Use when auditing, crafting, or polishing frontend copy, visual hierarchy, micro-interactions, layout restraint, or anti-slop discipline across Rikkei Jobs screens."
+prompt = """
+You are activating the 'frontend-taste-anti-slop' skill.
+Follow all instructions and rules defined in:
+.gemini/skills/frontend-taste-anti-slop/SKILL.md
+"""

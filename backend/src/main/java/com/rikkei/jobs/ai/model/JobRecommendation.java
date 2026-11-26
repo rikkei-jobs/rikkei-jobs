@@ -1,0 +1,136 @@
+package com.rikkei.jobs.ai.model;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import java.time.OffsetDateTime;
+
+/**
+ * Entity representing a cached AI Job Recommendation. Table: job_recommendations(user_id, job_id,
+ * score, explanation, ai_generated, created_at)
+ */
+@Entity
+@Table(name = "job_recommendations")
+public class JobRecommendation {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
+
+    @Column(name = "job_id", nullable = false)
+    private Long jobId;
+
+    @Column(nullable = false)
+    private Integer score;
+
+    @Column(columnDefinition = "TEXT", nullable = false)
+    private String explanation;
+
+    @Column(name = "ai_generated", nullable = false)
+    private Boolean aiGenerated = Boolean.FALSE;
+
+    @Column(name = "quota_degraded", nullable = false)
+    private Boolean quotaDegraded = Boolean.FALSE;
+
+    @Column(name = "created_at", nullable = false)
+    private OffsetDateTime createdAt;
+
+    public JobRecommendation() {}
+
+    public JobRecommendation(
+            Long userId,
+            Long jobId,
+            Integer score,
+            String explanation,
+            Boolean aiGenerated,
+            OffsetDateTime createdAt) {
+        this.userId = userId;
+        this.jobId = jobId;
+        this.score = score;
+        this.explanation = explanation;
+        this.aiGenerated = aiGenerated != null ? aiGenerated : Boolean.FALSE;
+        this.createdAt = createdAt;
+    }
+
+    public JobRecommendation(
+            Long id,
+            Long userId,
+            Long jobId,
+            Integer score,
+            String explanation,
+            Boolean aiGenerated,
+            OffsetDateTime createdAt) {
+        this(userId, jobId, score, explanation, aiGenerated, createdAt);
+        this.id = id;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
+    public Long getJobId() {
+        return jobId;
+    }
+
+    public void setJobId(Long jobId) {
+        this.jobId = jobId;
+    }
+
+    public Integer getScore() {
+        return score;
+    }
+
+    public void setScore(Integer score) {
+        this.score = score;
+    }
+
+    public String getExplanation() {
+        return explanation;
+    }
+
+    public void setExplanation(String explanation) {
+        this.explanation = explanation;
+    }
+
+    public Boolean getAiGenerated() {
+        return aiGenerated;
+    }
+
+    public void setAiGenerated(Boolean aiGenerated) {
+        this.aiGenerated = aiGenerated;
+    }
+
+    public Boolean getQuotaDegraded() {
+        return quotaDegraded;
+    }
+
+    public void setQuotaDegraded(Boolean quotaDegraded) {
+        this.quotaDegraded = quotaDegraded != null ? quotaDegraded : Boolean.FALSE;
+    }
+
+    public OffsetDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(OffsetDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+}

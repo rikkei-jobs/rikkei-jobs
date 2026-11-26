@@ -1,5 +1,3 @@
-<!-- cspell:ignore Tokotype Rahayu memport geminiignore claudeignore -->
-
 # Dual-Agent Tool Compatibility & Parity Architecture (T022DB0)
 
 This document establishes the empirical and architectural proof of cross-compatibility for the Rikkei Jobs agent configuration suite across **Claude Code** (Anthropic), **Gemini CLI** (Google), and **Google Antigravity**.
@@ -17,8 +15,8 @@ Operating across Windows developer workstations and Linux CI containers introduc
 
 1. **The Fragility of Windows Symlinks**: On Windows NTFS, creating symbolic links requires Administrator privileges or Developer Mode. Git checkouts without `core.symlinks=true` degrade symlinks into plaintext stub files, breaking rule and skill discovery inside Linux CI containers.
 2. **The Option A Solution**:
-   - Canonical single source of truth maintained exclusively in `agent-config/` (`16` rules in `agent-config/rules/`, `28` skills + `23` `references/*` assets in `agent-config/skills/`, and entrypoint/settings templates in `agent-config/templates/`).
-   - Zero-dependency Node synchronizer (`scripts/sync-agent-config.mjs`) generates `168` managed files: `67` byte-identical portable files in `.claude/`, `67` byte-identical portable files in `.gemini/`, `28` `.gemini/commands/*.toml` wrappers, `.claude/settings.json`, `.gemini/settings.json`, root `CLAUDE.md`, `GEMINI.md`, `AGENTS.md`, and root `.geminiignore`.
+   - Canonical single source of truth maintained exclusively in `agent-config/` (`16` rules in `agent-config/rules/`, `29` skills + `25` `references/*` assets in `agent-config/skills/`, and entrypoint/settings templates in `agent-config/templates/`).
+   - Zero-dependency Node synchronizer (`scripts/sync-agent-config.mjs`) generates `175` managed files: `70` byte-identical portable files in `.claude/`, `70` byte-identical portable files in `.gemini/`, `29` `.gemini/commands/*.toml` wrappers, `.claude/settings.json`, `.gemini/settings.json`, root `CLAUDE.md`, `GEMINI.md`, `AGENTS.md`, and root `.geminiignore`.
    - Enforces pure LF (`\n`), strips UTF-8 BOM, purges orphan files, and verifies SHA-256 parity via `node scripts/sync-agent-config.mjs --check` and `node scripts/validate-agent-config.mjs` (Quality Gate 25).
 
 ---
@@ -108,8 +106,8 @@ Every format and discovery claim below is marked with one of three strict verifi
   - Antigravity documents `.agents/` (or `.agent/`) for workspace customizations alongside hierarchical `GEMINI.md` and `AGENTS.md`.
   - **Decision**: `scripts/sync-agent-config.mjs` intentionally does **NOT** generate a third physical mirror at `rikkei-jobs/.agents/`, for three documented reasons:
     1. **Binding Scope & Hard Rule**: The project's hard rule specifies `.claude/` and `.gemini/` as the two tracked mirrors inside `rikkei-jobs/`, while parent `D:\GitHub\Rikkei\.agents` is strictly READ-ONLY.
-    2. **Precedence Collision Avoidance**: Official Gemini CLI documentation (`docs/cli/skills.md`) states: *"Within the same tier (user or workspace), the `.agents/skills/` alias takes precedence over the `.gemini/skills/` directory."* Generating `rikkei-jobs/.agents/` would duplicate `67` files (`90+` total) and shadow `.gemini/skills/`.
-    3. **Full Antigravity Coverage Already Achieved**: Antigravity walks up and loads root `GEMINI.md` (`3,735` bytes, well under the `24,000`-byte cap) and `AGENTS.md`, while parent-workspace Teamwork harness state lives strictly in `D:\GitHub\Rikkei\.agents\teamwork/` (created by the Antigravity Teamwork harness for orchestration metadata only, zero product code).
+    2. **Precedence Collision Avoidance**: Official Gemini CLI documentation (`docs/cli/skills.md`) states: *"Within the same tier (user or workspace), the `.agents/skills/` alias takes precedence over the `.gemini/skills/` directory."* Generating `rikkei-jobs/.agents/` would duplicate `70` files (`99+` total) and shadow `.gemini/skills/`.
+    3. **Full Antigravity Coverage Already Achieved**: Antigravity walks up and loads root `GEMINI.md` (`3,921` bytes, well under the `24,000`-byte cap) and `AGENTS.md`, while parent-workspace Teamwork harness state lives strictly in `D:\GitHub\Rikkei\.agents\teamwork/` (created by the Antigravity Teamwork harness for orchestration metadata only, zero product code).
 
 ---
 
@@ -145,7 +143,7 @@ Reads root `GEMINI.md` (61 lines) ────────► Processes 16 `@./.
 Discovers `.gemini/skills/*/SKILL.md` ────► Injects name + description; activates via `activate_skill`
             │
             ▼ (Deterministic Slash Fallback)
-Loads `.gemini/commands/*.toml` (28) ─────► Enables direct `/<skill-name>` slash invocation
+Loads `.gemini/commands/*.toml` (29) ─────► Enables direct `/<skill-name>` slash invocation
             │
             ▼
 Applies `.gemini/settings.json` + `.geminiignore` ──► Excludes `.env*`/`*.pem`/`*.key` & destructive git
@@ -175,15 +173,15 @@ Both `.claude/settings.json` and `.gemini/settings.json` (plus `.geminiignore`) 
 
 ---
 
-## 6. Cross-Ecosystem Parity Matrix (`168` Synchronized Files)
+## 6. Cross-Ecosystem Parity Matrix (`175` Synchronized Files)
 
 | Component | Technical Specification | Claude Code | Gemini CLI / Antigravity | Parity / Validation |
 |---|---|---|---|---|
-| **Root Entrypoints** | `<= 120` lines, pure LF, 0 emoji | `CLAUDE.md` (52 lines) | `GEMINI.md` (61 lines), `AGENTS.md` (55 lines) | Check 2 (`validate-agent-config.mjs`) |
+| **Root Entrypoints** | `<= 120` lines, pure LF, 0 emoji | `CLAUDE.md` (47 lines) | `GEMINI.md` (61 lines), `AGENTS.md` (44 lines) | Check 2 (`validate-agent-config.mjs`) |
 | **Enterprise Rules** | `16` files, `<= 150` lines, LF | `.claude/rules/*.md` | `.gemini/rules/*.md` (imported via `@` in `GEMINI.md`) | SHA-256 byte-identical (`16/16`, Check 5) |
-| **Task Skills** | `28` `SKILL.md` files, `<= 500` body lines | `.claude/skills/<name>/SKILL.md` | `.gemini/skills/<name>/SKILL.md` | SHA-256 byte-identical (`28/28`, Check 1, 2, 5) |
-| **Skill Assets** | `23` files under `references/*` + `.gitkeep` | `.claude/skills/<name>/references/**` | `.gemini/skills/<name>/references/**` | SHA-256 byte-identical (`23/23`, Check 7) |
-| **Command Wrappers** | `28` TOML slash commands | Not needed (`.claude/skills/` creates `/skill`) | `.gemini/commands/*.toml` (`28` files) | Generated by `sync-agent-config.mjs` |
+| **Task Skills** | `29` `SKILL.md` files, `<= 500` body lines | `.claude/skills/<name>/SKILL.md` | `.gemini/skills/<name>/SKILL.md` | SHA-256 byte-identical (`29/29`, Check 1, 2, 5) |
+| **Skill Assets** | `25` files under `references/*` + `.gitkeep` | `.claude/skills/<name>/references/**` | `.gemini/skills/<name>/references/**` | SHA-256 byte-identical (`25/25`, Check 7) |
+| **Command Wrappers** | `29` TOML slash commands | Not needed (`.claude/skills/` creates `/skill`) | `.gemini/commands/*.toml` (`29` files) | Generated by `sync-agent-config.mjs` |
 | **Security Settings** | Single template `settings.template.json` | `.claude/settings.json` | `.gemini/settings.json` + `.geminiignore` | Check 8 (`validate-agent-config.mjs`) |
 
 ---
@@ -203,5 +201,5 @@ node scripts/check-gate-sync.mjs
 ### 8.1. Cơ Chế Khám Phá Thực Tế Của Từng Công Cụ
 
 - **Claude Code (`VERIFIED-BY-DOC`)**: Đọc `./CLAUDE.md`, quét đệ quy `.claude/rules/*.md` ngay khi khởi chạy phiên làm việc, nạp danh mục kỹ năng `.claude/skills/*/SKILL.md` theo cơ chế progressive disclosure, và áp đặt rào chắn cứng `deny -> ask -> allow` từ `.claude/settings.json`.
-- **Gemini CLI (`VERIFIED-BY-DOC`, `/memory show` `NOT VERIFIED AT RUNTIME` do không cài CLI lên máy host theo R0)**: Đọc `GEMINI.md` (61 dòng) và nạp toàn bộ 16 quy tắc thông qua 16 chỉ thị `@./.gemini/rules/01-...md`..`16-...md` của Memory Import Processor (`memport.md`), tự động phát hiện `.gemini/skills/*/SKILL.md`, cung cấp 28 lệnh `/skill` dự phòng qua `.gemini/commands/*.toml`, và bảo vệ tệp nhạy cảm qua `.geminiignore` kết hợp `.gemini/settings.json` tuân thủ 100% `schemas/settings.schema.json`.
+- **Gemini CLI (`VERIFIED-BY-DOC`, `/memory show` `NOT VERIFIED AT RUNTIME` do không cài CLI lên máy host theo R0)**: Đọc `GEMINI.md` (61 dòng) và nạp toàn bộ 16 quy tắc thông qua 16 chỉ thị `@./.gemini/rules/01-...md`..`16-...md` của Memory Import Processor (`memport.md`), tự động phát hiện `.gemini/skills/*/SKILL.md`, cung cấp 29 lệnh `/skill` dự phòng qua `.gemini/commands/*.toml`, và bảo vệ tệp nhạy cảm qua `.geminiignore` kết hợp `.gemini/settings.json` tuân thủ 100% `schemas/settings.schema.json`.
 - **Google Antigravity (`VERIFIED-BY-DOC` & `VERIFIED-AT-RUNTIME`)**: Tự động nạp phân cấp `GEMINI.md` và `AGENTS.md` (giới hạn 24 KB/tệp, ngân sách 20.000 tokens). Dự án chủ đích không sinh bản sao thứ ba tại `rikkei-jobs/.agents/` để tuân thủ quy tắc cứng chỉ duy trì hai gương `.claude/` và `.gemini/`, đồng thời tránh xung đột độ ưu tiên của `.agents/skills/` đè lên `.gemini/skills/`. Thư mục `D:\GitHub\Rikkei\.agents\teamwork/` bên ngoài repo là thư mục trạng thái điều phối do chính Antigravity Teamwork harness tạo lập (không chứa mã nguồn hay tài sản sản phẩm).

@@ -54,6 +54,9 @@ services:
     environment:
       PORT: 9000
       SERVICE_KEY: ${EXTERNAL_SERVICE_KEY:-dev-key}
+      PUBLIC_BASE_URL: ${MOCK_PUBLIC_BASE_URL:-http://127.0.0.1:9000}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-dev-key}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-dev-secret}
     ports:
       - "127.0.0.1:${MOCK_PORT:-9000}:9000"
     healthcheck:
@@ -108,10 +111,18 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-rikkei_secret}
       EXTERNAL_BASE_URL: ${EXTERNAL_BASE_URL:-http://mock:9000}
       EXTERNAL_SERVICE_KEY: ${EXTERNAL_SERVICE_KEY:-dev-key}
-      JWT_SECRET: ${JWT_SECRET:-local-dev-jwt-secret-change-before-production}
       SPRING_MAIL_HOST: ${SPRING_MAIL_HOST:-mailpit}
       SPRING_MAIL_PORT: ${SPRING_MAIL_PORT:-1025}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
+      JWT_SECRET: ${JWT_SECRET:-dev-insecure-jwt-secret-key-rikkei-jobs-min-32-chars}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-dev-cloud}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-dev-key}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-dev-secret}
+      CLOUDINARY_API_BASE_URL: ${CLOUDINARY_API_BASE_URL:-http://mock:9000/cloudinary/v1_1}
+      CLOUDINARY_DELIVERY_BASE_URL: ${CLOUDINARY_DELIVERY_BASE_URL:-http://127.0.0.1:9000/cloudinary}
+      CLOUDINARY_TIMEOUT_SECONDS: ${CLOUDINARY_TIMEOUT_SECONDS:-5}
+      APP_SECURITY_RATE_LIMIT_TRUST_PROXY_HEADERS: ${APP_SECURITY_RATE_LIMIT_TRUST_PROXY_HEADERS:-true}
+      APP_SECURITY_RATE_LIMIT_TRUSTED_PROXIES: ${APP_SECURITY_RATE_LIMIT_TRUSTED_PROXIES:-172.28.0.0/16}
     ports:
       - "127.0.0.1:${BACKEND_PORT:-8080}:8080"
     healthcheck:
@@ -135,6 +146,9 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+    environment:
+      CSP_DEV_IMG_SRC: "${CSP_DEV_IMG_SRC- http://127.0.0.1:9000 http://localhost:9000}"
+      CSP_DEV_CONNECT_SRC: "${CSP_DEV_CONNECT_SRC- http://127.0.0.1:9000 http://localhost:9000}"
     ports:
       - "127.0.0.1:${FRONTEND_PORT:-3000}:8080"
     healthcheck:
@@ -151,9 +165,12 @@ services:
 # ------------------------------------------------------------------------------
 volumes:
   postgres_data:
-    name: rikkei_postgres_data_v2
+    name: rikkei_postgres_data
 
 networks:
   rikkei-network:
     name: rikkei-network
     driver: bridge
+    ipam:
+      config:
+        - subnet: ${RIKKEI_NETWORK_SUBNET:-172.28.0.0/16}

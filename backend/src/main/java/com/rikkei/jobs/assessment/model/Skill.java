@@ -37,7 +37,18 @@ public class Skill {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "skill_group", nullable = false, length = 50)
+    private String skillGroup = "GENERAL";
+
     public Skill() {}
+
+    public String getSkillGroup() {
+        return skillGroup;
+    }
+
+    public void setSkillGroup(String skillGroup) {
+        this.skillGroup = skillGroup;
+    }
 
     public Skill(String code, String nameVi, String nameEn, String scale, String description) {
         this.code = code;

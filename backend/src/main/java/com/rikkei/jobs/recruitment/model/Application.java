@@ -9,7 +9,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.time.OffsetDateTime;
 
 /**
@@ -21,7 +23,11 @@ import java.time.OffsetDateTime;
 public class Application {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "applications_seq")
+    @SequenceGenerator(
+            name = "applications_seq",
+            sequenceName = "applications_id_seq",
+            allocationSize = 1)
     private Long id;
 
     @Column(name = "job_id", nullable = false)
@@ -43,6 +49,10 @@ public class Application {
     @Column(name = "status", nullable = false, length = 30)
     private ApplicationStatus status;
 
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version = 0L;
+
     @Column(name = "created_at")
     private OffsetDateTime createdAt;
 
@@ -58,21 +68,38 @@ public class Application {
             String cvSnapshotUrl,
             String coverLetter,
             ApplicationStatus status) {
+        this(jobId, userId, cvId, cvSnapshotUrl, coverLetter, status, null, null);
+    }
+
+    public Application(
+            Long jobId,
+            Long userId,
+            Long cvId,
+            String cvSnapshotUrl,
+            String coverLetter,
+            ApplicationStatus status,
+            OffsetDateTime createdAt,
+            OffsetDateTime updatedAt) {
         this.jobId = jobId;
         this.userId = userId;
         this.cvId = cvId;
         this.cvSnapshotUrl = cvSnapshotUrl;
         this.coverLetter = coverLetter;
         this.status = status != null ? status : ApplicationStatus.SUBMITTED;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
     }
 
     @PrePersist
     public void prePersist() {
+        if (id != null && (cvSnapshotUrl == null || cvSnapshotUrl.isBlank())) {
+            cvSnapshotUrl = "/api/v1/me/applications/" + id + "/cv-snapshot";
+        }
         if (createdAt == null) {
             createdAt = OffsetDateTime.now();
         }
         if (updatedAt == null) {
-            updatedAt = OffsetDateTime.now();
+            updatedAt = createdAt;
         }
         if (status == null) {
             status = ApplicationStatus.SUBMITTED;
@@ -81,7 +108,15 @@ public class Application {
 
     @PreUpdate
     public void preUpdate() {
-        updatedAt = OffsetDateTime.now();
+        if (updatedAt == null) {
+            updatedAt = OffsetDateTime.now();
+        }
+    }
+
+    /** Transitions this application to WITHDRAWN using an injected-Clock timestamp. */
+    public void markWithdrawn(OffsetDateTime withdrawnAt) {
+        this.status = ApplicationStatus.WITHDRAWN;
+        this.updatedAt = withdrawnAt != null ? withdrawnAt : OffsetDateTime.now();
     }
 
     // Getters and Setters
@@ -140,6 +175,14 @@ public class Application {
 
     public void setStatus(ApplicationStatus status) {
         this.status = status;
+    }
+
+    public Long getVersion() {
+        return version;
+    }
+
+    public void setVersion(Long version) {
+        this.version = version;
     }
 
     public OffsetDateTime getCreatedAt() {

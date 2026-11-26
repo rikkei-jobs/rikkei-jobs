@@ -1,5 +1,7 @@
 server:
   port: ${SERVER_PORT:8080}
+  tomcat:
+    max-swallow-size: 5MB
 
 spring:
   application:
@@ -29,14 +31,23 @@ spring:
     locations: classpath:db/migration
     validate-on-migrate: true
 
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 3MB
+
   mail:
     host: ${SPRING_MAIL_HOST:localhost}
     port: ${SPRING_MAIL_PORT:1025}
+    properties:
+      mail:
+        smtp:
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
 
-  servlet:
-    multipart:
-      max-file-size: 5MB
-      max-request-size: 6MB
+jwt:
+  secret: ${JWT_SECRET:}
 
 external:
   api:
@@ -45,16 +56,60 @@ external:
     timeout-seconds: ${EXTERNAL_API_TIMEOUT:5}
     max-retries: 2
 
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME:dev-cloud}
+  api-key: ${CLOUDINARY_API_KEY:dev-key}
+  api-secret: ${CLOUDINARY_API_SECRET:dev-secret}
+  api-base-url: ${CLOUDINARY_API_BASE_URL:http://localhost:9000/cloudinary/v1_1}
+  delivery-base-url: ${CLOUDINARY_DELIVERY_BASE_URL:http://127.0.0.1:9000/cloudinary}
+  timeout-seconds: ${CLOUDINARY_TIMEOUT_SECONDS:5}
+
+ai:
+  provider: ${AI_PROVIDER:mock}
+  timeout-seconds: ${AI_TIMEOUT_SECONDS:10}
+  mock:
+    explanation: "Hồ sơ của bạn phù hợp với vị trí này nhờ năng lực vững vàng về các kỹ năng trọng tâm. Bạn cần trau dồi thêm về các công cụ liên quan để gia tăng lợi thế cạnh tranh."
+  openai:
+    api-key: ${OPENAI_API_KEY:}
+    model: ${OPENAI_MODEL:gpt-4o-mini}
+    base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
+  gemini:
+    api-key: ${GEMINI_API_KEY:}
+    model: ${GEMINI_MODEL:gemini-1.5-flash}
+    base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com/v1beta}
+  claude:
+    api-key: ${CLAUDE_API_KEY:}
+    model: ${CLAUDE_MODEL:claude-3-5-sonnet-20241022}
+    base-url: ${CLAUDE_BASE_URL:https://api.anthropic.com/v1}
+
 app:
-  security:
-    jwt:
-      secret: ${JWT_SECRET:local-dev-jwt-secret-change-before-production}
+  frontend-url: ${APP_FRONTEND_URL:http://localhost:3000}
+  mail:
+    from: ${APP_MAIL_FROM:no-reply@rikkeijobs.local}
+  ai:
+    config-cache-ttl-ms: ${AI_CONFIG_CACHE_TTL_MS:5000}
+    log-retention-days: ${AI_LOG_RETENTION_DAYS:90}
+    log-retention-batch-size: ${AI_LOG_RETENTION_BATCH_SIZE:5000}
+    log-retention-time-budget-ms: ${AI_LOG_RETENTION_TIME_BUDGET_MS:10000}
+    log-retention-cron: ${AI_LOG_RETENTION_CRON:0 15 2 * * *}
+    log-retention-max-batches: ${AI_LOG_RETENTION_MAX_BATCHES:1000}
+  server:
+    tomcat:
+      # Must stay > nginx upstream keepalive_timeout (60s in frontend/nginx.conf) so nginx closes
+      # idle pooled sockets first, preventing 502 races on non-idempotent POST requests.
+      keep-alive-timeout-ms: ${APP_SERVER_TOMCAT_KEEP_ALIVE_TIMEOUT_MS:65000}
+      # Socket read timeout per chunk (disableUploadTimeout=true; nginx buffers 3m uploads).
+      connection-timeout-ms: ${APP_SERVER_TOMCAT_CONNECTION_TIMEOUT_MS:5000}
+    persistence:
+      # Protective JPA query ceiling (vs < 1 ms measured core queries in BASELINE.md section 2.4).
+      query-timeout-ms: ${APP_JPA_QUERY_TIMEOUT_MS:5000}
 
 springdoc:
   api-docs:
-    path: /api-docs
+    path: /api/api-docs
   swagger-ui:
-    path: /swagger-ui.html
+    path: /api/docs
+    disable-swagger-default-url: true
 
 management:
   endpoints:

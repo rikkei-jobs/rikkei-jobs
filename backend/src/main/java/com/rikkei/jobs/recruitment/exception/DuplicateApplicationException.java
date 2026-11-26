@@ -11,12 +11,10 @@ public class DuplicateApplicationException extends ConflictException {
     private static final long serialVersionUID = 1L;
 
     public DuplicateApplicationException(String message) {
-        super("ALREADY_APPLIED", message);
+        super("DUPLICATE_APPLICATION", message);
     }
 
     public DuplicateApplicationException() {
-        super(
-                "ALREADY_APPLIED",
-                "Ứng viên đã từng nộp hồ sơ cho vị trí này. Mỗi ứng viên chỉ được nộp một lần.");
+        super("DUPLICATE_APPLICATION", "Ứng viên đã có đơn ứng tuyển đang mở cho vị trí này.");
     }
 }

@@ -6,11 +6,71 @@
 
 set -eo pipefail
 
+check_port_conflicts() {
+    local required_ports=(5433 8080 3000 9000 8025 1025)
+    local conflict=false
+    for port in "${required_ports[@]}"; do
+        local is_open=false
+        if (exec 3<>/dev/tcp/127.0.0.1/"$port") 2>/dev/null; then
+            exec 3<&-
+            exec 3>&-
+            is_open=true
+        elif (echo > /dev/tcp/127.0.0.1/"$port") 2>/dev/null; then
+            is_open=true
+        elif command -v nc >/dev/null 2>&1 && nc -z 127.0.0.1 "$port" 2>/dev/null; then
+            is_open=true
+        elif command -v python3 >/dev/null 2>&1 && python3 -c "import socket; s = socket.socket(); s.settimeout(0.1); exit(0 if s.connect_ex(('127.0.0.1', $port)) == 0 else 1)" 2>/dev/null; then
+            is_open=true
+        fi
+        if [ "$is_open" = true ]; then
+            echo "================================================================================" >&2
+            echo "  FATAL ERROR: Port conflict detected on 127.0.0.1:${port}!" >&2
+            conflict=true
+        fi
+    done
+    if [ "$conflict" = true ]; then
+        echo "  A development stack is already running on the host." >&2
+        echo "  The CI harness will NOT stop or modify your running developer environment." >&2
+        echo "  Please stop your dev stack or run in a clean environment." >&2
+        echo "================================================================================" >&2
+        return 1
+    fi
+    return 0
+}
+
 if [ ! -d "/host-repo" ]; then
     # --- HOST EXECUTION MODE ---
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
     cd "${REPO_ROOT}"
+
+    # Isolate Docker Compose project name
+    CI_PROJECT_NAME="rikkei-ci-$(date +%s)-$RANDOM"
+    export COMPOSE_PROJECT_NAME="${CI_PROJECT_NAME}"
+
+    # Pre-check port conflicts on host before allocating resources
+    check_port_conflicts || exit 1
+
+    # Check for stopped dev stack resources to display isolation notice
+    check_dev_resources() {
+        local has_dev=false
+        if [ -n "$(docker volume ls -q --filter "name=^rikkei_postgres_data$")" ]; then
+            has_dev=true
+        elif [ -n "$(docker network ls -q --filter "name=^rikkei-network$")" ]; then
+            has_dev=true
+        elif [ -n "$(docker ps -aq --filter "name=^/rikkei-")" ]; then
+            has_dev=true
+        fi
+
+        if [ "$has_dev" = true ]; then
+            echo "--------------------------------------------------------------------------------"
+            echo "[ISOLATION NOTICE] Developer resources detected on host (dev stack stopped)."
+            echo "  Ports are free. Running harness with isolated Docker project: ${COMPOSE_PROJECT_NAME}"
+            echo "  Developer volumes, networks, and containers are protected and will NOT be touched."
+            echo "--------------------------------------------------------------------------------"
+        fi
+    }
+    check_dev_resources
 
     IMAGE_TAG="${IMAGE_TAG:-rikkei-ci-runner}"
 
@@ -24,8 +84,26 @@ if [ ! -d "/host-repo" ]; then
     docker volume create "${VOL_NAME}" >/dev/null
 
     cleanup_host() {
+        echo "Cleaning up isolated CI resources for project: ${COMPOSE_PROJECT_NAME}"
+        local ci_containers
+        ci_containers=$(docker ps -aq --filter "label=com.docker.compose.project=${COMPOSE_PROJECT_NAME}" 2>/dev/null || true)
+        if [ -n "$ci_containers" ]; then
+            docker rm -f $ci_containers >/dev/null 2>&1 || true
+        fi
+
+        local ci_volumes
+        ci_volumes=$(docker volume ls -q --filter "label=com.docker.compose.project=${COMPOSE_PROJECT_NAME}" 2>/dev/null || true)
+        if [ -n "$ci_volumes" ]; then
+            docker volume rm -f $ci_volumes >/dev/null 2>&1 || true
+        fi
+
+        local ci_networks
+        ci_networks=$(docker network ls -q --filter "label=com.docker.compose.project=${COMPOSE_PROJECT_NAME}" 2>/dev/null || true)
+        if [ -n "$ci_networks" ]; then
+            docker network rm $ci_networks >/dev/null 2>&1 || true
+        fi
+
         echo "Cleaning up workspace volume: ${VOL_NAME}"
-        docker compose down -v 2>/dev/null || true
         local removed=false
         for i in {1..5}; do
             if docker volume rm "${VOL_NAME}" >/dev/null 2>&1; then
@@ -42,6 +120,7 @@ if [ ! -d "/host-repo" ]; then
 
     echo "================================================================================"
     echo "  LAUNCHING CLEAN DOCKER CI RUNNER HARNESS"
+    echo "  Isolated Compose Project: ${COMPOSE_PROJECT_NAME}"
     echo "================================================================================"
     docker run --rm \
         --network host \
@@ -49,13 +128,16 @@ if [ ! -d "/host-repo" ]; then
         -v "${REPO_ROOT}:/host-repo:ro" \
         -v "${VOL_NAME}:/ci-workspace" \
         -e "CI_VOLUME_NAME=${VOL_NAME}" \
+        -e "COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME}" \
         "${IMAGE_TAG}"
     exit $?
 fi
 
 # --- CONTAINER EXECUTION MODE ---
+export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-rikkei-ci-$(date +%s)-$RANDOM}"
 echo "================================================================================"
 echo "  CLEAN CONTAINER CI EXECUTION HARNESS INITIALIZING"
+echo "  Isolated Compose Project: ${COMPOSE_PROJECT_NAME}"
 echo "================================================================================"
 
 # 1. Sync repository files from /host-repo (:ro) to /ci-workspace
@@ -72,7 +154,33 @@ rsync -a --delete \
 
 cd /ci-workspace
 
-# 2. Configure Testcontainers and Docker wrapper for volume mounts in DooD environment
+# 2. Generate ephemeral docker-compose.override.yml to isolate containers, volumes, and network
+echo "[CI HARNESS] Generating ephemeral isolated docker-compose.override.yml for project: ${COMPOSE_PROJECT_NAME}"
+cat << OVERRIDE_EOF > /ci-workspace/docker-compose.override.yml
+name: ${COMPOSE_PROJECT_NAME}
+
+services:
+  postgres:
+    container_name: ${COMPOSE_PROJECT_NAME}-postgres
+  mock:
+    container_name: ${COMPOSE_PROJECT_NAME}-mock
+  mailpit:
+    container_name: ${COMPOSE_PROJECT_NAME}-mailpit
+  backend:
+    container_name: ${COMPOSE_PROJECT_NAME}-backend
+  frontend:
+    container_name: ${COMPOSE_PROJECT_NAME}-frontend
+
+volumes:
+  postgres_data:
+    name: ${COMPOSE_PROJECT_NAME}_postgres_data
+
+networks:
+  rikkei-network:
+    name: ${COMPOSE_PROJECT_NAME}_network
+OVERRIDE_EOF
+
+# 3. Configure Testcontainers and Docker wrapper for volume mounts in DooD environment
 TC_HOST=""
 
 # Step 2a: Honor pre-configured TESTCONTAINERS_HOST_OVERRIDE from environment if present
@@ -150,9 +258,16 @@ if [ -n "$CI_VOLUME_NAME" ]; then
 #!/usr/bin/env bash
 REAL_DOCKER="/usr/bin/docker"
 TARGET_VOL="${CI_VOLUME_NAME}"
+PROJECT_PREFIX="${COMPOSE_PROJECT_NAME}"
 NEW_ARGS=()
 PREV_ARG=""
 for arg in "$@"; do
+    # 1. Translate container names for E2E tests and CLI invocations
+    if [[ -n "$PROJECT_PREFIX" && "$arg" =~ ^rikkei-(postgres|mock|mailpit|backend|frontend)$ ]]; then
+        arg="${PROJECT_PREFIX}-${BASH_REMATCH[1]}"
+    fi
+
+    # 2. Translate volume paths for DooD environment
     if [[ "$arg" == *"/ci-workspace:"* ]]; then
         arg="${arg/\/ci-workspace:/${TARGET_VOL}:}"
     elif [[ -n "$PWD" && "$arg" == *"$PWD:"* ]]; then
@@ -342,23 +457,26 @@ execute_clean_code_and_linters() {
     echo "6. Running Version Table Drift Check..."
     node scripts/check-version-drift.mjs
 
-    echo "7. Running Quality Gate Synchronization Check..."
+    echo "7. Running Contrast Table Verification..."
+    node scripts/compute-contrast.mjs
+
+    echo "8. Running Quality Gate Synchronization Check..."
     node scripts/check-gate-sync.mjs
 
-    echo "8. Running Agent Configuration Sync & Validation Check..."
+    echo "9. Running Agent Configuration Sync & Validation Check..."
     node scripts/sync-agent-config.mjs --check
     node scripts/validate-agent-config.mjs
 
-    echo "9. Running Yamllint..."
+    echo "10. Running Yamllint..."
     docker run --rm -v "$PWD:/data" cytopia/yamllint:1-0.14 -c /data/.yamllint.yml /data
 
-    echo "10. Running Hadolint..."
+    echo "11. Running Hadolint..."
     docker run --rm -v "$PWD:/repo" hadolint/hadolint:v2.15.1 hadolint /repo/backend/Dockerfile /repo/frontend/Dockerfile /repo/mock/Dockerfile
 
-    echo "11. Running Actionlint..."
+    echo "12. Running Actionlint..."
     docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 .github/workflows/ci.yml
 
-    echo "12. Running SQLFluff on Flyway Migrations..."
+    echo "13. Running SQLFluff on Flyway Migrations..."
     docker run --rm -v "$PWD:/repo" -w /repo sqlfluff/sqlfluff:4.5.0 lint backend/src/main/resources/db/migration
 }
 run_job "clean-code-and-linters" "Code Hygiene & Security Leak Scan" execute_clean_code_and_linters
@@ -372,9 +490,12 @@ execute_smoke_test() {
 
     cleanup_compose() {
         echo "Tearing down Docker Compose environment..."
-        docker compose down -v 2>/dev/null || true
+        docker compose -p "${COMPOSE_PROJECT_NAME}" down -v 2>/dev/null || true
     }
     trap cleanup_compose EXIT INT TERM
+
+    # Check port conflicts before spinning up compose services
+    check_port_conflicts || return 1
 
     echo "1. Spinning up multi-container stack with health gates..."
     docker compose up -d --build --wait
@@ -389,8 +510,8 @@ execute_smoke_test() {
 
     echo "3. Asserting seed data in Dev profile (8 users, 20 skills)..."
     USERS_COUNT=$(docker compose exec -T postgres psql -U rikkei_app -d rikkeijobs -t -A -c "SELECT count(*) FROM users;")
-    if [ "$USERS_COUNT" -ne 8 ]; then
-      echo "ERROR: Expected exactly 8 seed users, got $USERS_COUNT"
+    if [ "$USERS_COUNT" -ne 9 ]; then
+      echo "ERROR: Expected exactly 9 seed users, got $USERS_COUNT"
       return 1
     fi
     SKILLS_COUNT=$(docker compose exec -T postgres psql -U rikkei_app -d rikkeijobs -t -A -c "SELECT count(*) FROM skills;")

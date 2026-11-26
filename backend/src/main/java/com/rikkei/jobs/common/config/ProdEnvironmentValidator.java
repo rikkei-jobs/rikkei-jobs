@@ -1,8 +1,14 @@
 package com.rikkei.jobs.common.config;
 
+import jakarta.mail.internet.AddressException;
+import jakarta.mail.internet.InternetAddress;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,22 +36,50 @@ public class ProdEnvironmentValidator implements ApplicationListener<Application
                     "EXTERNAL_BASE_URL",
                     "EXTERNAL_SERVICE_KEY",
                     "CORS_ALLOWED_ORIGINS",
-                    "JWT_SECRET");
+                    "JWT_SECRET",
+                    "CLOUDINARY_CLOUD_NAME",
+                    "CLOUDINARY_API_KEY",
+                    "CLOUDINARY_API_SECRET",
+                    "CLOUDINARY_API_BASE_URL",
+                    "CLOUDINARY_DELIVERY_BASE_URL",
+                    "APP_FRONTEND_URL",
+                    "APP_MAIL_FROM");
 
     private static final Set<String> INSECURE_DEFAULT_VALUES =
             Set.of(
                     "postgres",
                     "dev-key",
+                    "dev-cloud",
+                    "dev-secret",
+                    "dummy",
+                    "placeholder",
+                    "your-cloud-name",
+                    "your-api-key",
+                    "your-api-secret",
+                    "no-reply@rikkeijobs.local",
                     "change-me",
                     "change_me",
                     "changeme",
                     "password",
                     "secret",
+                    "secretkey",
+                    "secret_key",
                     "rikkei_secret",
                     "default-key",
-                    "local-dev-jwt-secret-change-before-production",
+                    "default_key",
+                    "default",
                     "admin",
-                    "root");
+                    "root",
+                    "123456",
+                    "12345678",
+                    "12345678901234567890123456789012",
+                    "01234567890123456789012345678901",
+                    "98765432109876543210987654321098",
+                    "qwerty",
+                    "admin123",
+                    "dev-secret-key-minimum-32-characters-rikkei-2026",
+                    "dev-insecure-jwt-secret-key-rikkei-jobs-min-32-chars",
+                    "super-secret-jwt-key-with-at-least-32-characters-rikkei!");
 
     private Environment environment;
 
@@ -82,11 +116,13 @@ public class ProdEnvironmentValidator implements ApplicationListener<Application
 
             String trimmedValue = value.trim();
 
-            if (INSECURE_DEFAULT_VALUES.contains(trimmedValue.toLowerCase())) {
+            if (INSECURE_DEFAULT_VALUES.contains(trimmedValue.toLowerCase(Locale.ROOT))) {
                 throw new IllegalStateException(
                         "CẤU HÌNH PRODUCTION THẤT BẠI: Biến môi trường bắt buộc bị thiếu hoặc không an toàn: "
                                 + varName
-                                + " chứa giá trị mặc định không an toàn");
+                                + " chứa giá trị mặc định không an toàn ("
+                                + trimmedValue
+                                + ")");
             }
 
             if ("CORS_ALLOWED_ORIGINS".equals(varName) && trimmedValue.contains("*")) {
@@ -96,14 +132,154 @@ public class ProdEnvironmentValidator implements ApplicationListener<Application
                                 + " không được chứa ký tự wildcard (*)");
             }
 
-            if ("JWT_SECRET".equals(varName)
-                    && trimmedValue.getBytes(StandardCharsets.UTF_8).length < 32) {
-                throw new IllegalStateException(
-                        "CẤU HÌNH PRODUCTION THẤT BẠI: JWT_SECRET phải dài ít nhất 32 byte");
+            if ("CLOUDINARY_API_BASE_URL".equals(varName)
+                    || "CLOUDINARY_DELIVERY_BASE_URL".equals(varName)) {
+                validateHttpsExternalUrl(varName, trimmedValue, true);
+            }
+
+            if ("APP_FRONTEND_URL".equals(varName)) {
+                validateHttpsExternalUrl(varName, trimmedValue, false);
+            }
+
+            if ("APP_MAIL_FROM".equals(varName)) {
+                validateMailFromAddress(varName, trimmedValue);
+            }
+
+            if ("JWT_SECRET".equals(varName)) {
+                byte[] secretBytes = trimmedValue.getBytes(StandardCharsets.UTF_8);
+                if (secretBytes.length < 32) {
+                    throw new IllegalStateException(
+                            "CẤU HÌNH PRODUCTION THẤT BẠI: Biến môi trường bắt buộc bị thiếu hoặc không an toàn: "
+                                    + varName
+                                    + " phải có độ dài tối thiểu 32 bytes (256-bit), hiện tại: "
+                                    + secretBytes.length
+                                    + " bytes");
+                }
+
+                if (trimmedValue.matches("^\\d+$")) {
+                    throw new IllegalStateException(
+                            "CẤU HÌNH PRODUCTION THẤT BẠI: Biến môi trường bắt buộc bị thiếu hoặc không an toàn: "
+                                    + varName
+                                    + " chỉ chứa chữ số, không đủ độ phức tạp");
+                }
+
+                double entropy = calculateShannonEntropy(trimmedValue);
+                long distinctChars = trimmedValue.chars().distinct().count();
+                if (entropy < 2.5 || distinctChars < 8) {
+                    throw new IllegalStateException(
+                            "CẤU HÌNH PRODUCTION THẤT BẠI: Biến môi trường bắt buộc bị thiếu hoặc không an toàn: "
+                                    + varName
+                                    + " có độ phức tạp (entropy) quá thấp (entropy="
+                                    + String.format(Locale.ROOT, "%.2f", entropy)
+                                    + ", distinctChars="
+                                    + distinctChars
+                                    + ", yêu cầu: entropy >= 2.5 và distinctChars >= 8)");
+                }
             }
         }
         log.info(
                 "Cấu hình môi trường Production đã được xác thực an toàn (fail-fast check PASSED).");
+    }
+
+    private static void validateHttpsExternalUrl(
+            String varName, String trimmedValue, boolean rejectNonCloudinaryPath) {
+        URI uri;
+        try {
+            uri = URI.create(trimmedValue);
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalStateException(
+                    "CẤU HÌNH PRODUCTION THẤT BẠI: Biến môi trường bắt buộc bị thiếu hoặc không an toàn: "
+                            + varName
+                            + " không phải URL hợp lệ",
+                    ex);
+        }
+
+        String scheme = uri.getScheme();
+        String host = uri.getHost();
+        if (scheme == null || !"https".equalsIgnoreCase(scheme) || host == null || host.isBlank()) {
+            throw new IllegalStateException(
+                    "CẤU HÌNH PRODUCTION THẤT BẠI: Biến môi trường bắt buộc bị thiếu hoặc không an toàn: "
+                            + varName
+                            + " phải sử dụng giao thức https:// hợp lệ");
+        }
+
+        String lowerHost = host.toLowerCase(Locale.ROOT);
+        String rawPath = uri.getRawPath();
+        String lowerPath = rawPath != null ? rawPath.toLowerCase(Locale.ROOT) : "";
+        boolean isLoopbackOrMock =
+                isLoopbackOrMockHost(lowerHost)
+                        || (rejectNonCloudinaryPath
+                                && !lowerHost.endsWith("cloudinary.com")
+                                && lowerPath.startsWith("/cloudinary"));
+        if (isLoopbackOrMock) {
+            throw new IllegalStateException(
+                    "CẤU HÌNH PRODUCTION THẤT BẠI: Biến môi trường bắt buộc bị thiếu hoặc không an toàn: "
+                            + varName
+                            + " không được trỏ tới máy chủ mock hoặc địa chỉ nội bộ");
+        }
+    }
+
+    private static boolean isLoopbackOrMockHost(String lowerHost) {
+        return "localhost".equals(lowerHost)
+                || "127.0.0.1".equals(lowerHost)
+                || "0.0.0.0".equals(lowerHost)
+                || "::1".equals(lowerHost)
+                || "[::1]".equals(lowerHost)
+                || "mock".equals(lowerHost)
+                || lowerHost.startsWith("mock.")
+                || lowerHost.endsWith(".mock")
+                || lowerHost.endsWith(".local");
+    }
+
+    private static void validateMailFromAddress(String varName, String trimmedValue) {
+        try {
+            InternetAddress[] parsed = InternetAddress.parse(trimmedValue, true);
+            if (parsed.length != 1) {
+                throw new AddressException("Expected exactly one sender address");
+            }
+            InternetAddress address = parsed[0];
+            address.validate();
+            String plainAddress = address.getAddress();
+            if (plainAddress == null || !plainAddress.equals(trimmedValue)) {
+                throw new AddressException("Address must be a plain email without display name");
+            }
+            int atIndex = plainAddress.indexOf('@');
+            if (atIndex <= 0 || atIndex >= plainAddress.length() - 1) {
+                throw new AddressException("Missing email local-part or domain");
+            }
+            String domain = plainAddress.substring(atIndex + 1).toLowerCase(Locale.ROOT);
+            if (!domain.contains(".")
+                    || domain.startsWith(".")
+                    || domain.endsWith(".")
+                    || isLoopbackOrMockHost(domain)) {
+                throw new AddressException("Invalid or local-only sender email domain");
+            }
+        } catch (AddressException ex) {
+            throw new IllegalStateException(
+                    "CẤU HÌNH PRODUCTION THẤT BẠI: Biến môi trường bắt buộc bị thiếu hoặc không an toàn: "
+                            + varName
+                            + " không phải địa chỉ email hợp lệ",
+                    ex);
+        }
+    }
+
+    /** Calculates the Shannon Entropy (H = -sum(p_i * log2(p_i))) of an input string. */
+    public static double calculateShannonEntropy(String input) {
+        if (input == null || input.isEmpty()) {
+            return 0.0;
+        }
+        Map<Character, Integer> freqMap = new HashMap<>();
+        for (char c : input.toCharArray()) {
+            freqMap.merge(c, 1, Integer::sum);
+        }
+        double entropy = 0.0;
+        double len = input.length();
+        double log2 = Math.log(2.0);
+        for (int count : freqMap.values()) {
+            double p = count / len;
+            entropy -= p * (Math.log(p) / log2);
+        }
+        return entropy;
     }
 
     private String resolveProperty(String varName) {
@@ -125,7 +301,15 @@ public class ProdEnvironmentValidator implements ApplicationListener<Application
             case "EXTERNAL_BASE_URL" -> environment.getProperty("external.api.base-url");
             case "EXTERNAL_SERVICE_KEY" -> environment.getProperty("external.api.service-key");
             case "CORS_ALLOWED_ORIGINS" -> environment.getProperty("cors.allowed-origins");
-            case "JWT_SECRET" -> environment.getProperty("app.security.jwt.secret");
+            case "JWT_SECRET" -> environment.getProperty("jwt.secret");
+            case "CLOUDINARY_CLOUD_NAME" -> environment.getProperty("cloudinary.cloud-name");
+            case "CLOUDINARY_API_KEY" -> environment.getProperty("cloudinary.api-key");
+            case "CLOUDINARY_API_SECRET" -> environment.getProperty("cloudinary.api-secret");
+            case "CLOUDINARY_API_BASE_URL" -> environment.getProperty("cloudinary.api-base-url");
+            case "CLOUDINARY_DELIVERY_BASE_URL" ->
+                    environment.getProperty("cloudinary.delivery-base-url");
+            case "APP_FRONTEND_URL" -> environment.getProperty("app.frontend-url");
+            case "APP_MAIL_FROM" -> environment.getProperty("app.mail.from");
             default -> null;
         };
     }
