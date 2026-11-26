@@ -188,7 +188,7 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
       expect(getRoleMenuItems('HR').map((i) => ({ label: i.label, path: i.path, disabled: Boolean(i.disabled) }))).toEqual([
         { label: 'Công ty', path: '/hr/company', disabled: false },
         { label: 'JD', path: undefined, disabled: true },
-        { label: 'Tuyển dụng', path: undefined, disabled: true },
+        { label: 'Tuyển dụng', path: '/hr/recruitment', disabled: false },
         { label: 'Thực tập sinh', path: undefined, disabled: true },
       ]);
 
@@ -196,12 +196,13 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
         { label: 'Cần đánh giá', disabled: true },
       ]);
 
-      expect(getRoleMenuItems('STAFF').map((i) => ({ label: i.label, disabled: Boolean(i.disabled) }))).toEqual([
-        { label: 'Duyệt hồ sơ', disabled: true },
-        { label: 'Duyệt JD', disabled: true },
-        { label: 'Doanh nghiệp', disabled: true },
-        { label: 'Ghép thực tập', disabled: true },
-        { label: 'Báo cáo', disabled: true },
+      expect(getRoleMenuItems('STAFF').map((i) => ({ label: i.label, path: i.path, disabled: Boolean(i.disabled) }))).toEqual([
+        { label: 'Hồ sơ ứng tuyển', path: '/staff/applications', disabled: false },
+        { label: 'Duyệt hồ sơ', path: undefined, disabled: true },
+        { label: 'Duyệt JD', path: undefined, disabled: true },
+        { label: 'Doanh nghiệp', path: undefined, disabled: true },
+        { label: 'Ghép thực tập', path: undefined, disabled: true },
+        { label: 'Báo cáo', path: undefined, disabled: true },
       ]);
 
       expect(getRoleMenuItems('ADMIN').map((i) => ({ label: i.label, disabled: Boolean(i.disabled) }))).toEqual([
@@ -250,8 +251,15 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
         density: 'dense',
         badgeClass: 'rj-role-staff',
         icon: 'briefcase' as const,
-        expectedItems: ['Duyệt hồ sơ', 'Duyệt JD', 'Doanh nghiệp', 'Ghép thực tập', 'Báo cáo'],
-        forbiddenItems: ['Hồ sơ', 'Thực tập IOC', 'Công ty', 'Quản trị', 'Cần đánh giá'],
+        expectedItems: [
+          'Hồ sơ ứng tuyển',
+          'Duyệt hồ sơ',
+          'Duyệt JD',
+          'Doanh nghiệp',
+          'Ghép thực tập',
+          'Báo cáo',
+        ],
+        forbiddenItems: ['Việc làm', 'Thực tập IOC', 'Công ty', 'Quản trị', 'Cần đánh giá'],
       },
       {
         role: 'ADMIN',
@@ -437,6 +445,44 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
       expect(screen.getByRole('link', { name: 'Công ty' })).toHaveAttribute('aria-current', 'page');
       expect(screen.getByRole('link', { name: 'Trang chủ' })).not.toHaveAttribute('aria-current');
       unmountHrCompany();
+
+      for (const hrRecPath of ['/hr/recruitment', '/hr/jobs/2/applications', '/hr/applications/10']) {
+        const { unmount: unmountHrRec } = render(
+          <AuthProvider initialToken="jwt" initialUser={createUser('HR')}>
+            <MemoryRouter initialEntries={[hrRecPath]}>
+              <SharedAppLayout roleBadgeClass="rj-role-hr" roleIcon="building">
+                <div>Tuyển dụng HR</div>
+              </SharedAppLayout>
+            </MemoryRouter>
+          </AuthProvider>,
+        );
+        expect(screen.getByRole('link', { name: 'Tuyển dụng' })).toHaveAttribute(
+          'aria-current',
+          'page',
+        );
+        expect(screen.getByRole('link', { name: 'Công ty' })).not.toHaveAttribute('aria-current');
+        unmountHrRec();
+      }
+
+      for (const staffAppPath of ['/staff/applications', '/staff/applications/10']) {
+        const { unmount: unmountStaffApp } = render(
+          <AuthProvider initialToken="jwt" initialUser={createUser('STAFF')}>
+            <MemoryRouter initialEntries={[staffAppPath]}>
+              <SharedAppLayout roleBadgeClass="rj-role-staff" roleIcon="briefcase">
+                <div>Hồ sơ ứng tuyển STAFF</div>
+              </SharedAppLayout>
+            </MemoryRouter>
+          </AuthProvider>,
+        );
+        expect(screen.getByRole('link', { name: 'Hồ sơ ứng tuyển' })).toHaveAttribute(
+          'aria-current',
+          'page',
+        );
+        expect(screen.getByRole('link', { name: 'Trang chủ' })).not.toHaveAttribute(
+          'aria-current',
+        );
+        unmountStaffApp();
+      }
 
       render(
         <AuthProvider initialToken="jwt" initialUser={createUser('CANDIDATE')}>

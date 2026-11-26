@@ -6,12 +6,22 @@ import {
   setAuthToken,
 } from '../../../shared/api/httpClient';
 import {
+  addInterviewRound,
   applyToJob,
+  downloadApplicationProcessCvSnapshot,
   downloadMyApplicationCvSnapshot,
   fetchCandidateCvs,
+  getApplicationProcessDetail,
+  getInterviewResultMeta,
   getMyApplicationDetail,
+  isRecruitmentConflictError,
+  listHrJobApplications,
+  listHrJobs,
   listMyApplications,
+  listStaffApplications,
   mapRecruitmentError,
+  transitionApplicationStatus,
+  updateInterviewRound,
   withdrawApplication,
 } from '../api/recruitmentApi';
 
@@ -205,5 +215,133 @@ describe('recruitmentApi', () => {
       expect(msg.length).toBeGreaterThan(10);
       expect(msg).not.toMatch(/\b(API|409|503|400|404|JWT|RBAC|backend|mock|snapshot)\b/i);
     });
+  });
+
+  it('calls Option 1A HR jobs, HR job applications, process detail, Option 2A CV snapshot, transition, rounds, and STAFF list endpoints', async () => {
+    const pdfBlob = new Blob(['%PDF-1.4'], { type: 'application/pdf' });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonOk({ items: [], page: 1, size: 20, totalItems: 0, totalPages: 0 }))
+      .mockResolvedValueOnce(jsonOk({ items: [], page: 2, size: 20, totalItems: 0, totalPages: 0 }))
+      .mockResolvedValueOnce(jsonOk({ id: 10, status: 'SCREENING', allowedTransitions: ['INTERVIEW', 'REJECTED'], rounds: [], histories: [] }))
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: new Headers({
+          'content-type': 'application/pdf',
+          'content-disposition': 'attachment; filename="cv-10.pdf"',
+        }),
+        blob: () => Promise.resolve(pdfBlob),
+      } as unknown as Response)
+      .mockResolvedValueOnce(jsonOk({ id: 10, status: 'INTERVIEW', allowedTransitions: ['REJECTED'], rounds: [], histories: [] }))
+      .mockResolvedValueOnce(jsonOk({ id: 1, applicationId: 10, roundNo: 1, name: 'Vòng 1', result: 'PENDING', version: 0 }, 201))
+      .mockResolvedValueOnce(jsonOk({ id: 1, applicationId: 10, roundNo: 1, name: 'Vòng 1', result: 'PASS', score: 90, version: 1 }))
+      .mockResolvedValueOnce(jsonOk({ items: [], page: 1, size: 20, totalItems: 0, totalPages: 0 }));
+    globalThis.fetch = fetchMock;
+
+    await listHrJobs();
+    expect((fetchMock.mock.calls[0] as [string])[0]).toBe('/api/v1/hr/jobs?page=1&size=20');
+
+    await listHrJobApplications(7, { status: 'SCREENING', page: 2, size: 20 });
+    expect((fetchMock.mock.calls[1] as [string])[0]).toBe(
+      '/api/v1/hr/jobs/7/applications?page=2&size=20&status=SCREENING',
+    );
+
+    const detail = await getApplicationProcessDetail(10);
+    expect(detail.id).toBe(10);
+    expect((fetchMock.mock.calls[2] as [string])[0]).toBe('/api/v1/applications/10');
+
+    const snapshot = await downloadApplicationProcessCvSnapshot(10);
+    expect(snapshot.blob).toBe(pdfBlob);
+    expect(snapshot.filename).toBe('cv-10.pdf');
+    expect((fetchMock.mock.calls[3] as [string])[0]).toBe('/api/v1/applications/10/cv-snapshot');
+
+    await transitionApplicationStatus(10, { toStatus: 'INTERVIEW', note: 'Mời phỏng vấn' });
+    const [transUrl, transInit] = fetchMock.mock.calls[4] as [string, RequestInit];
+    expect(transUrl).toBe('/api/v1/applications/10/transition');
+    expect(transInit.method).toBe('POST');
+
+    await addInterviewRound(10, {
+      name: 'Vòng 1',
+      interviewerEmail: 'lead@company.vn',
+      scheduledAt: null,
+    });
+    const [addUrl, addInit] = fetchMock.mock.calls[5] as [string, RequestInit];
+    expect(addUrl).toBe('/api/v1/applications/10/rounds');
+    expect(addInit.method).toBe('POST');
+
+    await updateInterviewRound(10, 1, {
+      result: 'PASS',
+      score: 90,
+      note: 'Tốt',
+      version: 0,
+    });
+    const [putUrl, putInit] = fetchMock.mock.calls[6] as [string, RequestInit];
+    expect(putUrl).toBe('/api/v1/applications/10/rounds/1');
+    expect(putInit.method).toBe('PUT');
+    expect(putInit.body).toBe(
+      JSON.stringify({ result: 'PASS', score: 90, note: 'Tốt', version: 0 }),
+    );
+
+    await listStaffApplications({ companyId: 2, jobId: 7, status: 'INTERVIEW', page: 1, size: 20 });
+    expect((fetchMock.mock.calls[7] as [string])[0]).toBe(
+      '/api/v1/staff/applications?page=1&size=20&companyId=2&jobId=7&status=INTERVIEW',
+    );
+  });
+
+  it('maps UT-02 errors (INVALID_TRANSITION, INVALID_APPLICATION_STATE, CONFLICT, 404, 403, 400) and interview result labels cleanly', () => {
+    expect(getInterviewResultMeta('PASS').label).toBe('Đạt');
+    expect(getInterviewResultMeta('FAIL').label).toBe('Không đạt');
+    expect(getInterviewResultMeta('PENDING').label).toBe('Chờ kết quả');
+
+    const ut02Errors = [
+      mapRecruitmentError(new ApiError(409, 'bad', 'INVALID_TRANSITION'), 'transition'),
+      mapRecruitmentError(new ApiError(409, 'bad', 'INVALID_APPLICATION_STATE'), 'round'),
+      mapRecruitmentError(new ApiError(409, 'stale', 'CONFLICT'), 'round'),
+      mapRecruitmentError(new ApiError(404, 'missing', 'NOT_FOUND'), 'round'),
+      mapRecruitmentError(new ApiError(404, 'missing', 'NOT_FOUND'), 'jobs'),
+      mapRecruitmentError(new ApiError(403, 'denied', 'FORBIDDEN'), 'transition'),
+      mapRecruitmentError(new ApiError(400, 'invalid', 'VALIDATION_ERROR'), 'round'),
+    ];
+
+    ut02Errors.forEach((msg) => {
+      expect(msg.length).toBeGreaterThan(10);
+      expect(msg).not.toMatch(
+        /\b(API|409|404|403|400|503|JWT|RBAC|backend|mock|snapshot|INVALID_TRANSITION|CONFLICT)\b/i,
+      );
+    });
+  });
+
+  it('detects 409 conflicts via isRecruitmentConflictError and avoids page-reload wording for HR 409 flows while preserving UT-01 withdraw', () => {
+    expect(isRecruitmentConflictError(new ApiError(409, 'Conflict', 'CONFLICT'))).toBe(true);
+    expect(isRecruitmentConflictError(new ApiError(409, 'Invalid', 'INVALID_TRANSITION'))).toBe(true);
+    expect(isRecruitmentConflictError(new ApiError(400, 'Bad', 'VALIDATION_ERROR'))).toBe(false);
+    expect(isRecruitmentConflictError(new Error('Network'))).toBe(false);
+
+    const hr409Messages = [
+      mapRecruitmentError(new ApiError(409, 'stale', 'CONFLICT'), 'transition'),
+      mapRecruitmentError(new ApiError(409, 'bad', 'INVALID_TRANSITION'), 'transition'),
+      mapRecruitmentError(new ApiError(409, 'bad state', 'INVALID_APPLICATION_STATE'), 'transition'),
+      mapRecruitmentError(new ApiError(409, 'fallback'), 'transition'),
+      mapRecruitmentError(new ApiError(409, 'stale', 'CONFLICT'), 'round'),
+      mapRecruitmentError(new ApiError(409, 'bad', 'INVALID_APPLICATION_STATE'), 'round'),
+      mapRecruitmentError(new ApiError(409, 'fallback'), 'round'),
+    ];
+
+    hr409Messages.forEach((msg) => {
+      expect(msg).not.toMatch(/tải lại trang/i);
+      expect(msg).toMatch(/tải lại dữ liệu mới nhất/i);
+    });
+
+    const invalidStateTransitionMsg = mapRecruitmentError(
+      new ApiError(409, 'bad state', 'INVALID_APPLICATION_STATE'),
+      'transition',
+    );
+    expect(invalidStateTransitionMsg).not.toMatch(/vòng phỏng vấn/i);
+    expect(invalidStateTransitionMsg).toMatch(/chuyển trạng thái/i);
+
+    expect(mapRecruitmentError(new ApiError(409, 'Conflict', 'CONFLICT'), 'withdraw')).toBe(
+      'Trạng thái hồ sơ vừa được cập nhật. Vui lòng tải lại trang và thử lại.',
+    );
   });
 });

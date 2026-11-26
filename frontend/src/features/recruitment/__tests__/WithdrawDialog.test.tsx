@@ -65,8 +65,10 @@ describe('WithdrawDialog', () => {
     expect(main!.contains(backdrop!)).toBe(false);
     expect(main!.contains(dialog)).toBe(false);
 
-    expect(document.documentElement.getAttribute('data-scroll-locked')).toBe('true');
-    expect(document.body.style.overflow).toBe('');
+    await waitFor(() => {
+      expect(document.documentElement.getAttribute('data-scroll-locked')).toBe('true');
+      expect(document.body.style.overflow).toBe('');
+    });
 
     const closeBtn = screen.getByRole('button', { name: 'Đóng hộp thoại rút hồ sơ' });
     const confirmBtn = screen.getByRole('button', { name: 'Xác nhận rút đơn' });
@@ -79,9 +81,9 @@ describe('WithdrawDialog', () => {
     fireEvent.keyDown(document, { key: 'Escape' });
     await waitFor(() => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      expect(document.documentElement.getAttribute('data-scroll-locked')).toBeNull();
+      expect(document.body.style.overflow).toBe('');
+      expect(trigger).toHaveFocus();
     });
-    expect(document.documentElement.getAttribute('data-scroll-locked')).toBeNull();
-    expect(document.body.style.overflow).toBe('');
-    expect(trigger).toHaveFocus();
   });
 });

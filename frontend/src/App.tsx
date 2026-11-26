@@ -82,6 +82,15 @@ const CompanyProfilePage = lazyRoute(async () => {
   const m = await import('./features/company/pages/CompanyProfilePage');
   return { default: m.CompanyProfilePage };
 });
+const HrRecruitmentPage = lazyRoute(
+  () => import('./features/recruitment/pages/HrRecruitmentPage'),
+);
+const StaffApplicationsPage = lazyRoute(
+  () => import('./features/recruitment/pages/StaffApplicationsPage'),
+);
+const ApplicationDetailPage = lazyRoute(
+  () => import('./features/recruitment/pages/ApplicationDetailPage'),
+);
 const MentorHomePage = lazyRoute(
   () => import('./features/identity/pages/role-homes/MentorHomePage'),
 );
@@ -161,6 +170,21 @@ registerRoutePreloader(
   CompanyProfilePage.isLoaded,
 );
 registerRoutePreloader(
+  PROTECTED_ROUTE_POLICIES.hrRecruitment.path,
+  HrRecruitmentPage.preload,
+  HrRecruitmentPage.isLoaded,
+);
+registerPrefixRoutePreloader(
+  '/hr/jobs/',
+  HrRecruitmentPage.preload,
+  HrRecruitmentPage.isLoaded,
+);
+registerPrefixRoutePreloader(
+  '/hr/applications/',
+  ApplicationDetailPage.preload,
+  ApplicationDetailPage.isLoaded,
+);
+registerRoutePreloader(
   PROTECTED_ROUTE_POLICIES.mentorHome.path,
   MentorHomePage.preload,
   MentorHomePage.isLoaded,
@@ -169,6 +193,16 @@ registerRoutePreloader(
   PROTECTED_ROUTE_POLICIES.staffHome.path,
   StaffHomePage.preload,
   StaffHomePage.isLoaded,
+);
+registerRoutePreloader(
+  PROTECTED_ROUTE_POLICIES.staffApplications.path,
+  StaffApplicationsPage.preload,
+  StaffApplicationsPage.isLoaded,
+);
+registerPrefixRoutePreloader(
+  '/staff/applications/',
+  ApplicationDetailPage.preload,
+  ApplicationDetailPage.isLoaded,
 );
 registerRoutePreloader(
   PROTECTED_ROUTE_POLICIES.adminHome.path,
@@ -659,6 +693,30 @@ export const AppRoutes: React.FC = () => {
             }
           />
           <Route
+            path={PROTECTED_ROUTE_POLICIES.hrRecruitment.path}
+            element={
+              <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.hrRecruitment.allowedRoles}>
+                <HrRecruitmentPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path={PROTECTED_ROUTE_POLICIES.hrJobApplications.path}
+            element={
+              <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.hrJobApplications.allowedRoles}>
+                <HrRecruitmentPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path={PROTECTED_ROUTE_POLICIES.hrApplicationDetail.path}
+            element={
+              <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.hrApplicationDetail.allowedRoles}>
+                <ApplicationDetailPage />
+              </RequireRole>
+            }
+          />
+          <Route
             path={PROTECTED_ROUTE_POLICIES.mentorHome.path}
             element={
               <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.mentorHome.allowedRoles}>
@@ -671,6 +729,24 @@ export const AppRoutes: React.FC = () => {
             element={
               <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.staffHome.allowedRoles}>
                 <StaffHomePage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path={PROTECTED_ROUTE_POLICIES.staffApplications.path}
+            element={
+              <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.staffApplications.allowedRoles}>
+                <StaffApplicationsPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path={PROTECTED_ROUTE_POLICIES.staffApplicationDetail.path}
+            element={
+              <RequireRole
+                allowedRoles={PROTECTED_ROUTE_POLICIES.staffApplicationDetail.allowedRoles}
+              >
+                <ApplicationDetailPage />
               </RequireRole>
             }
           />

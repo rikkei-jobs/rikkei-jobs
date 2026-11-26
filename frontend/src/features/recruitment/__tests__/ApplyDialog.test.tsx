@@ -148,8 +148,10 @@ describe('ApplyDialog', () => {
       fireEvent.click(trigger);
 
       const dialog = await screen.findByRole('dialog');
-      expect(document.documentElement.getAttribute('data-scroll-locked')).toBe('true');
-      expect(document.body.style.overflow).toBe('');
+      await waitFor(() => {
+        expect(document.documentElement.getAttribute('data-scroll-locked')).toBe('true');
+        expect(document.body.style.overflow).toBe('');
+      });
 
       const alert = await screen.findByRole('alert');
       expect(alert).toHaveTextContent(/Dịch vụ quản lý CV hiện chưa sẵn sàng/i);
@@ -164,10 +166,10 @@ describe('ApplyDialog', () => {
       fireEvent.keyDown(document, { key: 'Escape' });
       await waitFor(() => {
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(document.documentElement.getAttribute('data-scroll-locked')).toBeNull();
+        expect(document.body.style.overflow).toBe('');
+        expect(trigger).toHaveFocus();
       });
-      expect(document.documentElement.getAttribute('data-scroll-locked')).toBeNull();
-      expect(document.body.style.overflow).toBe('');
-      expect(trigger).toHaveFocus();
     },
   );
 
@@ -352,8 +354,8 @@ describe('ApplyDialog', () => {
 
     await waitFor(() => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      expect(trigger).toHaveFocus();
     });
-    expect(trigger).toHaveFocus();
   });
 
   it('regression: portals ApplyDialog backdrop into document.body outside <main> and locks scroll on <html> without mutating body.style.overflow', async () => {
@@ -385,16 +387,18 @@ describe('ApplyDialog', () => {
     expect(main!.contains(backdrop!)).toBe(false);
     expect(main!.contains(dialog)).toBe(false);
 
-    expect(document.documentElement.getAttribute('data-scroll-locked')).toBe('true');
-    expect(document.body.style.overflow).toBe('');
+    await waitFor(() => {
+      expect(document.documentElement.getAttribute('data-scroll-locked')).toBe('true');
+      expect(document.body.style.overflow).toBe('');
+    });
 
     fireEvent.keyDown(document, { key: 'Escape' });
     await waitFor(() => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      expect(document.documentElement.getAttribute('data-scroll-locked')).toBeNull();
+      expect(document.body.style.overflow).toBe('');
+      expect(trigger).toHaveFocus();
     });
-    expect(document.documentElement.getAttribute('data-scroll-locked')).toBeNull();
-    expect(document.body.style.overflow).toBe('');
-    expect(trigger).toHaveFocus();
   });
 
   it('allows portaled Select inside a modal dialog to render above dialog in document.body and consume Escape without closing the dialog', async () => {

@@ -643,7 +643,12 @@ export const SharedAppLayout: React.FC<SharedAppLayoutProps> = ({
                       ? location.pathname === item.path
                       : location.pathname === item.path ||
                         (item.path === '/candidate/jobs' &&
-                          location.pathname.startsWith('/candidate/jobs/'));
+                          location.pathname.startsWith('/candidate/jobs/')) ||
+                        (item.path === '/hr/recruitment' &&
+                          (location.pathname.startsWith('/hr/jobs/') ||
+                            location.pathname.startsWith('/hr/applications/'))) ||
+                        (item.path === '/staff/applications' &&
+                          location.pathname.startsWith('/staff/applications/'));
 
                   return (
                     <li key={item.id} className={itemClass} style={itemStyle}>
