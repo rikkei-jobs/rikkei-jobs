@@ -32,7 +32,8 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
-@DisplayName("V19, V21 & V22 Recruitment Applications Migration, Constraints & Seed Tests")
+@DisplayName(
+        "V19..V24 Recruitment Applications & Interview Rounds Migration, Constraints & Seed Tests")
 public class RecruitmentMigrationIntegrationTest {
 
     private static final String POSTGRES_IMAGE = "postgres:18.6-alpine";
@@ -65,7 +66,7 @@ public class RecruitmentMigrationIntegrationTest {
         }
 
         @Test
-        @DisplayName("Prod migrations V19 and V21 apply cleanly from empty DB with 0 rows")
+        @DisplayName("Prod migrations V19, V21 and V23 apply cleanly from empty DB with 0 rows")
         void testProdMigrationsApplyCleanlyFromEmptyDatabase() {
             try (PostgreSQLContainer db = new PostgreSQLContainer(POSTGRES_IMAGE)) {
                 db.start();
@@ -79,7 +80,7 @@ public class RecruitmentMigrationIntegrationTest {
 
                 JdbcTemplate jdbc = new JdbcTemplate(dataSource);
                 assertEquals(
-                        Integer.valueOf(11),
+                        Integer.valueOf(12),
                         jdbc.queryForObject(
                                 "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                                 Integer.class));
@@ -94,11 +95,16 @@ public class RecruitmentMigrationIntegrationTest {
                         Integer.valueOf(0),
                         jdbc.queryForObject(
                                 "SELECT count(*) FROM application_cv_snapshots", Integer.class));
+                assertEquals(
+                        Integer.valueOf(0),
+                        jdbc.queryForObject(
+                                "SELECT count(*) FROM interview_rounds", Integer.class));
             }
         }
 
         @Test
-        @DisplayName("Dev migrations apply 19 scripts, 7 applications, and advance sequences")
+        @DisplayName(
+                "Dev migrations apply 21 scripts, 7 applications, 6 interview rounds, and advance sequences")
         void testDevMigrationsApplyCleanlyFromEmptyDatabase() {
             try (PostgreSQLContainer db = new PostgreSQLContainer(POSTGRES_IMAGE)) {
                 db.start();
@@ -112,7 +118,7 @@ public class RecruitmentMigrationIntegrationTest {
 
                 JdbcTemplate jdbc = new JdbcTemplate(dataSource);
                 assertEquals(
-                        Integer.valueOf(19),
+                        Integer.valueOf(21),
                         jdbc.queryForObject(
                                 "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                                 Integer.class));
@@ -123,6 +129,10 @@ public class RecruitmentMigrationIntegrationTest {
                         Integer.valueOf(7),
                         jdbc.queryForObject(
                                 "SELECT count(*) FROM application_cv_snapshots", Integer.class));
+                assertEquals(
+                        Integer.valueOf(6),
+                        jdbc.queryForObject(
+                                "SELECT count(*) FROM interview_rounds", Integer.class));
 
                 Long nextAppId =
                         jdbc.queryForObject(
@@ -131,11 +141,19 @@ public class RecruitmentMigrationIntegrationTest {
                                 Long.class);
                 assertNotNull(nextAppId);
                 assertTrue(nextAppId >= 8L, "applications_id_seq must advance past 7");
+
+                Long nextRoundId =
+                        jdbc.queryForObject(
+                                "INSERT INTO interview_rounds (application_id, round_no, name, interviewer_email) "
+                                        + "VALUES (3, 3, 'Vòng 3: Phỏng vấn văn hóa', 'hr-lead@rikkeisoft.test') RETURNING id",
+                                Long.class);
+                assertNotNull(nextRoundId);
+                assertTrue(nextRoundId >= 7L, "interview_rounds_id_seq must advance past 6");
             }
         }
 
         @Test
-        @DisplayName("V19, V21, and V22 upgrade cleanly on top of origin/develop V1..V17 baseline")
+        @DisplayName("V19..V24 upgrade cleanly on top of V1..V17 baseline")
         void testUpgradesCleanlyOnTopOfOriginDevelopBaseline() {
             try (PostgreSQLContainer prodDb = new PostgreSQLContainer(POSTGRES_IMAGE)) {
                 prodDb.start();
@@ -156,11 +174,11 @@ public class RecruitmentMigrationIntegrationTest {
                                 .load()
                                 .migrate()
                                 .migrationsExecuted;
-                assertEquals(2, prodExecuted);
+                assertEquals(3, prodExecuted);
 
                 JdbcTemplate prodJdbc = new JdbcTemplate(prodDataSource);
                 assertEquals(
-                        Integer.valueOf(11),
+                        Integer.valueOf(12),
                         prodJdbc.queryForObject(
                                 "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                                 Integer.class));
@@ -185,7 +203,80 @@ public class RecruitmentMigrationIntegrationTest {
                                 .load()
                                 .migrate()
                                 .migrationsExecuted;
-                assertEquals(3, devExecuted);
+                assertEquals(5, devExecuted);
+
+                JdbcTemplate devJdbc = new JdbcTemplate(devDataSource);
+                assertEquals(
+                        Integer.valueOf(21),
+                        devJdbc.queryForObject(
+                                "SELECT count(*) FROM flyway_schema_history WHERE success = true",
+                                Integer.class));
+                assertEquals(
+                        Integer.valueOf(7),
+                        devJdbc.queryForObject("SELECT count(*) FROM applications", Integer.class));
+                assertEquals(
+                        Integer.valueOf(6),
+                        devJdbc.queryForObject(
+                                "SELECT count(*) FROM interview_rounds", Integer.class));
+            }
+        }
+
+        @Test
+        @DisplayName("V23 and V24 upgrade cleanly on top of current develop V1..V22 baseline")
+        void testV23AndV24UpgradeCleanlyOnTopOfDevelopV22Baseline() {
+            try (PostgreSQLContainer prodDb = new PostgreSQLContainer(POSTGRES_IMAGE)) {
+                prodDb.start();
+                DataSource prodDataSource = createDataSource(prodDb);
+                Flyway.configure()
+                        .dataSource(prodDataSource)
+                        .locations("classpath:db/migration")
+                        .target("21")
+                        .validateOnMigrate(true)
+                        .load()
+                        .migrate();
+
+                JdbcTemplate prodJdbc = new JdbcTemplate(prodDataSource);
+                assertEquals(
+                        Integer.valueOf(11),
+                        prodJdbc.queryForObject(
+                                "SELECT count(*) FROM flyway_schema_history WHERE success = true",
+                                Integer.class));
+                assertFalse(
+                        Boolean.TRUE.equals(
+                                prodJdbc.queryForObject(
+                                        "SELECT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'interview_rounds')",
+                                        Boolean.class)));
+
+                int prodExecuted =
+                        Flyway.configure()
+                                .dataSource(prodDataSource)
+                                .locations("classpath:db/migration")
+                                .validateOnMigrate(true)
+                                .load()
+                                .migrate()
+                                .migrationsExecuted;
+                assertEquals(1, prodExecuted);
+                assertEquals(
+                        Integer.valueOf(12),
+                        prodJdbc.queryForObject(
+                                "SELECT count(*) FROM flyway_schema_history WHERE success = true",
+                                Integer.class));
+                assertEquals(
+                        Integer.valueOf(0),
+                        prodJdbc.queryForObject(
+                                "SELECT count(*) FROM interview_rounds", Integer.class));
+            }
+
+            try (PostgreSQLContainer devDb = new PostgreSQLContainer(POSTGRES_IMAGE)) {
+                devDb.start();
+                DataSource devDataSource = createDataSource(devDb);
+                Flyway.configure()
+                        .dataSource(devDataSource)
+                        .locations("classpath:db/migration", "classpath:db/migration-dev")
+                        .target("22")
+                        .validateOnMigrate(true)
+                        .load()
+                        .migrate();
 
                 JdbcTemplate devJdbc = new JdbcTemplate(devDataSource);
                 assertEquals(
@@ -193,14 +284,35 @@ public class RecruitmentMigrationIntegrationTest {
                         devJdbc.queryForObject(
                                 "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                                 Integer.class));
+                assertFalse(
+                        Boolean.TRUE.equals(
+                                devJdbc.queryForObject(
+                                        "SELECT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'interview_rounds')",
+                                        Boolean.class)));
+
+                int devExecuted =
+                        Flyway.configure()
+                                .dataSource(devDataSource)
+                                .locations("classpath:db/migration", "classpath:db/migration-dev")
+                                .validateOnMigrate(true)
+                                .load()
+                                .migrate()
+                                .migrationsExecuted;
+                assertEquals(2, devExecuted);
                 assertEquals(
-                        Integer.valueOf(7),
-                        devJdbc.queryForObject("SELECT count(*) FROM applications", Integer.class));
+                        Integer.valueOf(21),
+                        devJdbc.queryForObject(
+                                "SELECT count(*) FROM flyway_schema_history WHERE success = true",
+                                Integer.class));
+                assertEquals(
+                        Integer.valueOf(6),
+                        devJdbc.queryForObject(
+                                "SELECT count(*) FROM interview_rounds", Integer.class));
             }
         }
 
         @Test
-        @DisplayName("Re-running V19, V21, and V22 SQL directly is idempotent and keeps sequences")
+        @DisplayName("Re-running V19..V24 SQL directly is idempotent and keeps sequences")
         void testDirectSqlRerunIdempotency() throws SQLException {
             try (PostgreSQLContainer db = new PostgreSQLContainer(POSTGRES_IMAGE)) {
                 db.start();
@@ -221,18 +333,33 @@ public class RecruitmentMigrationIntegrationTest {
                                 Long.class);
                 assertEquals(Long.valueOf(8L), beforeRerunId);
 
+                Long beforeRerunRoundId =
+                        jdbc.queryForObject(
+                                "INSERT INTO interview_rounds (application_id, round_no, name, interviewer_email) "
+                                        + "VALUES (3, 3, 'Vòng 3: Trước chạy lại', 'round3@rikkeisoft.test') RETURNING id",
+                                Long.class);
+                assertEquals(Long.valueOf(7L), beforeRerunRoundId);
+
                 executeMigrationScriptDirectly(
                         dataSource, "db/migration/V19__create_recruitment_applications.sql");
                 executeMigrationScriptDirectly(
                         dataSource, "db/migration/V21__create_application_cv_snapshots.sql");
                 executeMigrationScriptDirectly(
                         dataSource, "db/migration-dev/V22__dev_recruitment_seed.sql");
+                executeMigrationScriptDirectly(
+                        dataSource, "db/migration/V23__create_interview_rounds.sql");
+                executeMigrationScriptDirectly(
+                        dataSource, "db/migration-dev/V24__dev_interview_rounds_seed.sql");
 
                 flyway.validate();
                 assertEquals(0, flyway.migrate().migrationsExecuted);
                 assertEquals(
                         Integer.valueOf(8),
                         jdbc.queryForObject("SELECT count(*) FROM applications", Integer.class));
+                assertEquals(
+                        Integer.valueOf(7),
+                        jdbc.queryForObject(
+                                "SELECT count(*) FROM interview_rounds", Integer.class));
 
                 Long afterRerunId =
                         jdbc.queryForObject(
@@ -240,6 +367,13 @@ public class RecruitmentMigrationIntegrationTest {
                                         + "VALUES (9, 2, 1, '/api/v1/me/applications/9/cv-snapshot', 'SUBMITTED') RETURNING id",
                                 Long.class);
                 assertEquals(Long.valueOf(9L), afterRerunId);
+
+                Long afterRerunRoundId =
+                        jdbc.queryForObject(
+                                "INSERT INTO interview_rounds (application_id, round_no, name, interviewer_email) "
+                                        + "VALUES (3, 4, 'Vòng 4: Sau chạy lại', 'round4@rikkeisoft.test') RETURNING id",
+                                Long.class);
+                assertEquals(Long.valueOf(8L), afterRerunRoundId);
             }
         }
     }
@@ -248,7 +382,8 @@ public class RecruitmentMigrationIntegrationTest {
     @SpringBootTest
     @Testcontainers
     @ActiveProfiles("dev")
-    @DisplayName("Dev Profile: V19/V21/V22 Schema Boundaries, Constraints & Seed Verification")
+    @DisplayName(
+            "Dev Profile: V19/V21/V22/V23/V24 Schema Boundaries, Constraints & Seed Verification")
     class SchemaConstraintsAndSeedTests {
 
         @Container
@@ -514,6 +649,130 @@ public class RecruitmentMigrationIntegrationTest {
                             "SELECT deadline FROM jobs WHERE id = 12", OffsetDateTime.class);
             assertNotNull(expiredJobDeadline);
             assertFalse(expiredJobDeadline.isAfter(OffsetDateTime.now()));
+        }
+
+        @Test
+        @DisplayName(
+                "V23 interview_rounds schema, constraints, staff indexes, and V24 dev seed verified")
+        void testInterviewRoundsSchemaConstraintsIndexesAndSeed() {
+            List<Map<String, Object>> roundFks =
+                    jdbcTemplate.queryForList(
+                            """
+                            SELECT tc.constraint_name, ccu.table_name AS foreign_table_name, rc.delete_rule
+                            FROM information_schema.table_constraints AS tc
+                            JOIN information_schema.constraint_column_usage AS ccu
+                              ON ccu.constraint_name = tc.constraint_name
+                              AND ccu.table_schema = tc.table_schema
+                            JOIN information_schema.referential_constraints AS rc
+                              ON rc.constraint_name = tc.constraint_name
+                              AND rc.constraint_schema = tc.table_schema
+                            WHERE tc.constraint_type = 'FOREIGN KEY'
+                              AND tc.table_schema = 'public'
+                              AND tc.table_name = 'interview_rounds'
+                            """);
+            assertEquals(1, roundFks.size());
+            assertEquals("fk_interview_rounds_application", roundFks.get(0).get("constraint_name"));
+            assertEquals("applications", roundFks.get(0).get("foreign_table_name"));
+            assertEquals("CASCADE", roundFks.get(0).get("delete_rule"));
+
+            assertEquals(
+                    "numeric",
+                    jdbcTemplate.queryForObject(
+                            "SELECT data_type FROM information_schema.columns WHERE table_name = 'interview_rounds' AND column_name = 'score'",
+                            String.class));
+            assertEquals(
+                    "NO",
+                    jdbcTemplate.queryForObject(
+                            "SELECT is_nullable FROM information_schema.columns WHERE table_name = 'interview_rounds' AND column_name = 'interviewer_email'",
+                            String.class));
+            assertEquals(
+                    "bigint",
+                    jdbcTemplate.queryForObject(
+                            "SELECT data_type FROM information_schema.columns WHERE table_name = 'interview_rounds' AND column_name = 'version'",
+                            String.class));
+            assertEquals(
+                    "timestamp with time zone",
+                    jdbcTemplate.queryForObject(
+                            "SELECT data_type FROM information_schema.columns WHERE table_name = 'interview_rounds' AND column_name = 'created_at'",
+                            String.class));
+
+            List<String> roundIndexes =
+                    jdbcTemplate.queryForList(
+                            "SELECT indexname FROM pg_indexes WHERE tablename = 'interview_rounds'",
+                            String.class);
+            assertTrue(roundIndexes.contains("uq_interview_rounds_app_round"));
+            assertTrue(roundIndexes.contains("idx_interview_rounds_application_id"));
+
+            List<String> appIndexes =
+                    jdbcTemplate.queryForList(
+                            "SELECT indexname FROM pg_indexes WHERE tablename = 'applications'",
+                            String.class);
+            assertTrue(appIndexes.contains("idx_applications_created_at_id"));
+            assertTrue(appIndexes.contains("idx_applications_status_created_at_id"));
+            assertTrue(appIndexes.contains("idx_applications_job_id_status_created_at_id"));
+
+            assertEquals(
+                    Integer.valueOf(2),
+                    jdbcTemplate.queryForObject(
+                            "SELECT count(*) FROM interview_rounds WHERE application_id = 3",
+                            Integer.class));
+            assertEquals(
+                    Integer.valueOf(2),
+                    jdbcTemplate.queryForObject(
+                            "SELECT count(*) FROM interview_rounds WHERE application_id = 4",
+                            Integer.class));
+            assertEquals(
+                    Integer.valueOf(1),
+                    jdbcTemplate.queryForObject(
+                            "SELECT count(*) FROM interview_rounds WHERE application_id = 5",
+                            Integer.class));
+            assertEquals(
+                    Integer.valueOf(1),
+                    jdbcTemplate.queryForObject(
+                            "SELECT count(*) FROM interview_rounds WHERE application_id = 6",
+                            Integer.class));
+            assertEquals(
+                    Integer.valueOf(0),
+                    jdbcTemplate.queryForObject(
+                            "SELECT count(*) FROM interview_rounds WHERE application_id IN (1, 2, 7)",
+                            Integer.class));
+
+            assertThrows(
+                    DataIntegrityViolationException.class,
+                    () ->
+                            jdbcTemplate.update(
+                                    "INSERT INTO interview_rounds (application_id, round_no, name, interviewer_email) "
+                                            + "VALUES (3, 1, 'Trùng vòng', 'dup@rikkeisoft.test')"));
+            assertThrows(
+                    DataIntegrityViolationException.class,
+                    () ->
+                            jdbcTemplate.update(
+                                    "INSERT INTO interview_rounds (application_id, round_no, name, interviewer_email) "
+                                            + "VALUES (3, 0, 'Vòng 0 không hợp lệ', 'bad@rikkeisoft.test')"));
+            assertThrows(
+                    DataIntegrityViolationException.class,
+                    () ->
+                            jdbcTemplate.update(
+                                    "INSERT INTO interview_rounds (application_id, round_no, name, interviewer_email, result) "
+                                            + "VALUES (3, 99, 'Kết quả sai', 'bad@rikkeisoft.test', 'MAYBE')"));
+            assertThrows(
+                    DataIntegrityViolationException.class,
+                    () ->
+                            jdbcTemplate.update(
+                                    "INSERT INTO interview_rounds (application_id, round_no, name, interviewer_email, score) "
+                                            + "VALUES (3, 98, 'Điểm âm', 'bad@rikkeisoft.test', -0.01)"));
+            assertThrows(
+                    DataIntegrityViolationException.class,
+                    () ->
+                            jdbcTemplate.update(
+                                    "INSERT INTO interview_rounds (application_id, round_no, name, interviewer_email, score) "
+                                            + "VALUES (3, 97, 'Điểm quá 100', 'bad@rikkeisoft.test', 100.01)"));
+            assertThrows(
+                    DataIntegrityViolationException.class,
+                    () ->
+                            jdbcTemplate.update(
+                                    "INSERT INTO interview_rounds (application_id, round_no, name, interviewer_email) "
+                                            + "VALUES (3, 96, 'Thiếu email', NULL)"));
         }
     }
 }
