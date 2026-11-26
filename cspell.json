@@ -307,7 +307,13 @@
     "pkey",
     "indexdef",
     "cccd",
-    "unconfigured"
+    "unconfigured",
+    "nextval",
+    "rethrowing",
+    "reqs",
+    "refetched",
+    "sandboxed",
+    "securitypolicyviolation"
   ],
   "ignorePaths": [
     "**/node_modules/**",

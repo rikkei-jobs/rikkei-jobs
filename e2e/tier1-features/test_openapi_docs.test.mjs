@@ -1,6 +1,6 @@
 // Tier 1: Feature Coverage — OpenAPI /api/docs, Swagger UI Assets & Legacy Routes
 // Verifies /api/docs redirect and HTML rendering, Swagger UI CSS/JS/PNG/config assets on :8080 and :3000,
-// full OpenAPI 38-path / 41-operation contract, @Hidden exclusion of TestErrorController, and hr1 allow-list
+// full OpenAPI 45-path / 48-operation contract, @Hidden exclusion of TestErrorController, and hr1 allow-list
 
 import { describe, it, before } from 'node:test';
 import assert from 'node:assert/strict';
@@ -52,7 +52,14 @@ const EXPECTED_OPERATIONS = new Map([
   ['/api/v1/me/applications/{id}/cv-snapshot', ['get']],
   ['/api/v1/hr/jobs/{jobId}/applications', ['get']],
   ['/api/v1/hr/jobs/{jobId}/applications/{applicationId}', ['get']],
-  ['/api/v1/hr/jobs/{jobId}/applications/{applicationId}/cv-snapshot', ['get']]
+  ['/api/v1/hr/jobs/{jobId}/applications/{applicationId}/cv-snapshot', ['get']],
+  ['/api/v1/hr/jobs', ['get']],
+  ['/api/v1/applications/{id}', ['get']],
+  ['/api/v1/applications/{id}/cv-snapshot', ['get']],
+  ['/api/v1/applications/{id}/transition', ['post']],
+  ['/api/v1/applications/{id}/rounds', ['post']],
+  ['/api/v1/applications/{id}/rounds/{roundId}', ['put']],
+  ['/api/v1/staff/applications', ['get']]
 ]);
 
 const PUBLIC_OPERATIONS = new Set([
@@ -220,7 +227,7 @@ describe('Tier 1: OpenAPI /api/docs & Swagger UI Verification', () => {
     }
   });
 
-  it('TC-T1-DOCS-03: Should expose identical OpenAPI 3 contract with bearerAuth and all 38 paths / 41 operations across :8080 and :3000', async () => {
+  it('TC-T1-DOCS-03: Should expose identical OpenAPI 3 contract with bearerAuth and all 45 paths / 48 operations across :8080 and :3000', async () => {
     assert.ok(backendOnline, 'Backend service must be reachable');
     assert.ok(frontendOnline, 'Frontend Nginx proxy must be reachable');
 
@@ -251,7 +258,7 @@ describe('Tier 1: OpenAPI /api/docs & Swagger UI Verification', () => {
     const paths = backendApiRes.body.paths || {};
     const actualPathKeys = Object.keys(paths).sort();
     const expectedPathKeys = [...EXPECTED_OPERATIONS.keys()].sort();
-    assert.deepStrictEqual(actualPathKeys, expectedPathKeys, 'OpenAPI paths must match all 38 merged module endpoints');
+    assert.deepStrictEqual(actualPathKeys, expectedPathKeys, 'OpenAPI paths must match all 45 merged module endpoints');
 
     let totalOperations = 0;
     const rootSecurity = backendApiRes.body.security || [];
@@ -278,7 +285,7 @@ describe('Tier 1: OpenAPI /api/docs & Swagger UI Verification', () => {
       }
     }
 
-    assert.strictEqual(totalOperations, 41, `Expected 41 OpenAPI operations, got ${totalOperations}`);
+    assert.strictEqual(totalOperations, 48, `Expected 48 OpenAPI operations, got ${totalOperations}`);
 
     const getCompanyByIdOp = paths['/api/v1/companies/{id}']?.get;
     assert.ok(getCompanyByIdOp, 'GET /api/v1/companies/{id} must exist in OpenAPI');
@@ -387,9 +394,67 @@ describe('Tier 1: OpenAPI /api/docs & Swagger UI Verification', () => {
       'ApplicationDetailResponse.cvSnapshotUrl.example must match /api/v1/me/applications/1/cv-snapshot'
     );
 
-    // Out-of-scope UT-02 and HS-04 paths must stay absent
-    assert.strictEqual(paths['/api/v1/hr/jobs/{jobId}/applications/{applicationId}/status'], undefined, 'UT-02 PATCH status endpoint must not be exposed in UT-01');
-    assert.strictEqual(paths['/api/v1/me/cvs'], undefined, 'HS-04 /api/v1/me/cvs endpoint must not be exposed in UT-01');
+    const hrJobsGet = paths['/api/v1/hr/jobs']?.get;
+    assertErrorResponsesAnd403(hrJobsGet, 'GET /api/v1/hr/jobs', 'HR', ['400', '401', '403', '404']);
+    assert.ok(hrJobsGet.responses?.['200'], 'GET /api/v1/hr/jobs must document 200');
+    assert.ok((hrJobsGet.description || '').includes('DN-04'), 'GET /api/v1/hr/jobs description must note DN-04 expansion');
+
+    const appDetailGet = paths['/api/v1/applications/{id}']?.get;
+    assertErrorResponsesAnd403(appDetailGet, 'GET /api/v1/applications/{id}', 'HR', ['400', '401', '403', '404']);
+    assert.ok((appDetailGet.responses?.['403']?.description || '').includes('STAFF'), 'GET /api/v1/applications/{id} 403 description must mention STAFF');
+    const appDetail200 = appDetailGet.responses?.['200']?.content?.['application/json'] ?? appDetailGet.responses?.['200']?.content?.['*/*'];
+    assert.strictEqual(appDetail200?.schema?.$ref, '#/components/schemas/ApplicationProcessDetailResponse');
+
+    const appSnapshotGet = paths['/api/v1/applications/{id}/cv-snapshot']?.get;
+    assertErrorResponsesAnd403(appSnapshotGet, 'GET /api/v1/applications/{id}/cv-snapshot', 'HR', ['400', '401', '403', '404']);
+    assert.ok((appSnapshotGet.responses?.['403']?.description || '').includes('STAFF'), 'GET /api/v1/applications/{id}/cv-snapshot 403 description must mention STAFF');
+    assert.ok(appSnapshotGet.responses?.['200']?.content?.['application/pdf'], 'GET /api/v1/applications/{id}/cv-snapshot must document application/pdf');
+
+    const transitionPost = paths['/api/v1/applications/{id}/transition']?.post;
+    assertErrorResponsesAnd403(transitionPost, 'POST /api/v1/applications/{id}/transition', 'HR', ['400', '401', '403', '404', '409']);
+    const transition200 = transitionPost.responses?.['200']?.content?.['application/json'] ?? transitionPost.responses?.['200']?.content?.['*/*'];
+    assert.strictEqual(transition200?.schema?.$ref, '#/components/schemas/ApplicationProcessDetailResponse');
+
+    const addRoundPost = paths['/api/v1/applications/{id}/rounds']?.post;
+    assertErrorResponsesAnd403(addRoundPost, 'POST /api/v1/applications/{id}/rounds', 'HR', ['400', '401', '403', '404', '409']);
+    const addRound201 = addRoundPost.responses?.['201']?.content?.['application/json'] ?? addRoundPost.responses?.['201']?.content?.['*/*'];
+    assert.strictEqual(addRound201?.schema?.$ref, '#/components/schemas/InterviewRoundResponse');
+
+    const updateRoundPut = paths['/api/v1/applications/{id}/rounds/{roundId}']?.put;
+    assertErrorResponsesAnd403(updateRoundPut, 'PUT /api/v1/applications/{id}/rounds/{roundId}', 'HR', ['400', '401', '403', '404', '409']);
+    const updateRound200 = updateRoundPut.responses?.['200']?.content?.['application/json'] ?? updateRoundPut.responses?.['200']?.content?.['*/*'];
+    assert.strictEqual(updateRound200?.schema?.$ref, '#/components/schemas/InterviewRoundResponse');
+
+    const staffAppsGet = paths['/api/v1/staff/applications']?.get;
+    assertErrorResponsesAnd403(staffAppsGet, 'GET /api/v1/staff/applications', 'STAFF', ['400', '401', '403']);
+    assert.ok(staffAppsGet.responses?.['200'], 'GET /api/v1/staff/applications must document 200');
+
+    for (const ut02SchemaName of [
+      'HrJobSummaryDto',
+      'ApplicationProcessDetailResponse',
+      'InterviewRoundResponse',
+      'StaffApplicationSummaryResponse',
+      'TransitionApplicationRequest',
+      'CreateInterviewRoundRequest',
+      'UpdateInterviewRoundRequest'
+    ]) {
+      assert.ok(schemas[ut02SchemaName], `OpenAPI components.schemas must include ${ut02SchemaName}`);
+    }
+    assert.ok(
+      schemas.HrJobSummaryDto?.properties?.expired,
+      'OpenAPI HrJobSummaryDto schema must expose expired boolean'
+    );
+    assert.ok(
+      Array.isArray(schemas.UpdateInterviewRoundRequest?.required) &&
+        schemas.UpdateInterviewRoundRequest.required.includes('version'),
+      'OpenAPI UpdateInterviewRoundRequest schema must require version'
+    );
+
+    // Legacy UT-02 PATCH status, unprefixed/stray routes, and out-of-scope HS-04 paths must stay absent
+    assert.strictEqual(paths['/api/v1/hr/jobs/{jobId}/applications/{applicationId}/status'], undefined, 'Legacy UT-02 PATCH status endpoint must not be exposed');
+    assert.strictEqual(paths['/api/v1/hr/applications'], undefined, 'Stray /api/v1/hr/applications endpoint must not be exposed');
+    assert.strictEqual(paths['/applications/{id}'], undefined, 'Unprefixed /applications/{id} endpoint must not be exposed');
+    assert.strictEqual(paths['/api/v1/me/cvs'], undefined, 'HS-04 /api/v1/me/cvs endpoint must not be exposed before HS-04');
   });
 
   it('TC-T1-DOCS-04: Should exclude @Hidden TestErrorController (/api/v1/test/*) and legacy controllers from OpenAPI spec', async () => {
