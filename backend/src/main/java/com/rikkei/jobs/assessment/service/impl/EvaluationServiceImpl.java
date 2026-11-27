@@ -354,4 +354,20 @@ public class EvaluationServiceImpl implements EvaluationService {
         // 10. Lưu và flush để Hibernate kích hoạt @Version optimistic locking check
         evaluationRepository.saveAndFlush(evaluation);
     }
+
+    @Override
+    public EvaluationResponse getEvaluation(Long evaluationId, Long mentorId) {
+        // 1. Tìm phiếu kèm template, scores và criterion
+        Evaluation evaluation =
+                evaluationRepository
+                        .findByIdWithDetails(evaluationId)
+                        .orElseThrow(EvaluationNotFoundException::new);
+
+        // 2. Chỉ mentor sở hữu phiếu mới được xem
+        OwnershipGuard.requireSelf(
+                mentorId, evaluation.getMentorId(), EvaluationNotFoundException::new);
+
+        // 3. Chuyển Entity thành Response
+        return evaluationMapper.toResponse(evaluation);
+    }
 }

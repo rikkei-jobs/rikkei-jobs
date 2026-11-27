@@ -19,12 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /** REST Controller for Mentor Evaluation management (Gate G4 & G5). */
 @SecurityScheme(
@@ -42,6 +37,34 @@ public class EvaluationController {
 
     public EvaluationController(EvaluationService evaluationService) {
         this.evaluationService = evaluationService;
+    }
+
+    @Operation(
+            summary = "Lấy chi tiết phiếu đánh giá",
+            description = "Mentor xem chi tiết phiếu đánh giá do mình quản lý",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponse(
+            responseCode = "200",
+            description = "Lấy chi tiết phiếu thành công",
+            content = @Content(schema = @Schema(implementation = EvaluationResponse.class)))
+    @ApiResponse(
+            responseCode = "401",
+            description = "Chưa xác thực: UNAUTHORIZED",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @ApiResponse(
+            responseCode = "403",
+            description = "Không có quyền Mentor: FORBIDDEN",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @ApiResponse(
+            responseCode = "404",
+            description = "Phiếu không tồn tại hoặc không thuộc quyền quản lý: NOT_FOUND",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @GetMapping("/{id}")
+    @PreAuthorize("hasRole('MENTOR')")
+    public ResponseEntity<EvaluationResponse> getEvaluation(
+            @PathVariable Long id, @AuthenticationPrincipal UserPrincipal user) {
+
+        return ResponseEntity.ok(evaluationService.getEvaluation(id, user.getId()));
     }
 
     @Operation(

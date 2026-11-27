@@ -83,8 +83,7 @@ export const ROLE_MENU_CONFIG: Readonly<Record<UserRole, readonly RoleMenuItem[]
       id: 'mentor-evaluations',
       label: 'Cần đánh giá',
       icon: 'badge-check',
-      disabled: true,
-      comingSoonLabel: 'Sắp ra mắt',
+      path: '/mentor/evaluations',
     },
   ],
   STAFF: [

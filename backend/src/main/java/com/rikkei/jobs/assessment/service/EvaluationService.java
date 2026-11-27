@@ -10,4 +10,6 @@ public interface EvaluationService {
     void updateEvaluation(Long evaluationId, Long mentorId, UpdateEvaluationRequest request);
 
     void submitEvaluation(Long evaluationId, Long mentorId);
+
+    EvaluationResponse getEvaluation(Long evaluationId, Long mentorId);
 }

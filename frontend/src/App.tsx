@@ -94,6 +94,9 @@ const ApplicationDetailPage = lazyRoute(
 const MentorHomePage = lazyRoute(
   () => import('./features/identity/pages/role-homes/MentorHomePage'),
 );
+const MentorEvaluationsPage = lazyRoute(
+  () => import('./features/assessment/pages/MentorEvaluationsPage'),
+);
 const StaffHomePage = lazyRoute(
   () => import('./features/identity/pages/role-homes/StaffHomePage'),
 );
@@ -188,6 +191,11 @@ registerRoutePreloader(
   PROTECTED_ROUTE_POLICIES.mentorHome.path,
   MentorHomePage.preload,
   MentorHomePage.isLoaded,
+);
+registerRoutePreloader(
+  PROTECTED_ROUTE_POLICIES.mentorEvaluations.path,
+  MentorEvaluationsPage.preload,
+  MentorEvaluationsPage.isLoaded,
 );
 registerRoutePreloader(
   PROTECTED_ROUTE_POLICIES.staffHome.path,
@@ -724,6 +732,15 @@ export const AppRoutes: React.FC = () => {
               </RequireRole>
             }
           />
+          <Route
+            path={PROTECTED_ROUTE_POLICIES.mentorEvaluations.path}
+            element={
+              <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.mentorEvaluations.allowedRoles}>
+                <MentorEvaluationsPage />
+              </RequireRole>
+            }
+          />
+      
           <Route
             path={PROTECTED_ROUTE_POLICIES.staffHome.path}
             element={

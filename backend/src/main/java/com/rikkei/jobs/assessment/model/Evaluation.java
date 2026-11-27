@@ -27,7 +27,7 @@ public class Evaluation {
     private EvaluationContext context;
 
     @Column(name = "batch_id")
-    private Long batchId;
+    private String batchId;
 
     @Column(name = "interview_round_id")
     private Long interviewRoundId;
@@ -91,11 +91,11 @@ public class Evaluation {
         this.context = context;
     }
 
-    public Long getBatchId() {
+    public String getBatchId() {
         return batchId;
     }
 
-    public void setBatchId(Long batchId) {
+    public void setBatchId(String batchId) {
         this.batchId = batchId;
     }
 

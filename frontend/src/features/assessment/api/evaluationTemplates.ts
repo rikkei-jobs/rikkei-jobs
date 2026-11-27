@@ -1,30 +1,25 @@
 import { request } from '../../../shared/api/httpClient';
+import type {
+  EvaluationContext,
+  EvaluationTemplate,
+} from '../types';
 
-export interface EvaluationTemplateCriterion {
-  readonly id: number;
-  readonly skillId: number;
-  readonly description: string;
-  /** Percentage weight on a 0.01..100.00 scale (template criteria sum to 100.00). */
-  readonly weight: number;
-}
+export type EvaluationTemplateItem = EvaluationTemplate;
 
-export interface EvaluationTemplateItem {
-  readonly id: number;
-  readonly name: string;
-  readonly position: string;
-  readonly context: 'INTERVIEW' | 'INTERNSHIP' | string;
-  readonly active: boolean;
-  readonly criteria: readonly EvaluationTemplateCriterion[];
-}
+export type EvaluationTemplateCriterion =
+  NonNullable<EvaluationTemplate['criteria']>[number];
 
-/**
- * Fetches active evaluation templates for the authenticated mentor.
- * Endpoint: GET /api/v1/evaluation-templates
- */
 export const fetchEvaluationTemplates = (
+  context: EvaluationContext,
   signal?: AbortSignal,
-): Promise<EvaluationTemplateItem[]> =>
-  request<EvaluationTemplateItem[]>('/api/v1/evaluation-templates', {
-    method: 'GET',
-    signal,
-  });
+): Promise<EvaluationTemplate[]> => {
+  const params = new URLSearchParams({ context });
+
+  return request<EvaluationTemplate[]>(
+    `/api/v1/evaluation-templates?${params.toString()}`,
+    {
+      method: 'GET',
+      signal,
+    },
+  );
+};

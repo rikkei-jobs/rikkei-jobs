@@ -23,6 +23,7 @@ describe('Role Home Pages', () => {
           json: () => Promise.resolve([]),
         } as unknown as Response);
       }
+
       if (String(url).includes('/api/v1/me/job-recommendations')) {
         return Promise.resolve({
           ok: true,
@@ -30,13 +31,19 @@ describe('Role Home Pages', () => {
           json: () => Promise.resolve({ items: [], total: 0 }),
         } as unknown as Response);
       }
+
       if (String(url).includes('/api/v1/me/target')) {
         return Promise.resolve({
           ok: false,
           status: 404,
-          json: () => Promise.resolve({ code: 'NOT_FOUND', message: 'Chưa chọn mục tiêu' }),
+          json: () =>
+            Promise.resolve({
+              code: 'NOT_FOUND',
+              message: 'Chưa chọn mục tiêu',
+            }),
         } as unknown as Response);
       }
+
       if (String(url).includes('/evaluations')) {
         return Promise.resolve({
           ok: true,
@@ -44,6 +51,7 @@ describe('Role Home Pages', () => {
           json: () => Promise.resolve({ userId: 100, evaluations: [] }),
         } as unknown as Response);
       }
+
       return Promise.resolve({
         ok: true,
         status: 200,
@@ -69,6 +77,7 @@ describe('Role Home Pages', () => {
 
   it('renders CandidateHomePage with real empty state, secondary account block, and route links', async () => {
     const user = createUser('CANDIDATE', 'Nguyen Candidate');
+
     render(
       <AuthProvider initialToken="token" initialUser={user}>
         <MemoryRouter>
@@ -77,7 +86,13 @@ describe('Role Home Pages', () => {
       </AuthProvider>,
     );
 
-    expect(screen.getByRole('heading', { level: 1, name: /Chào mừng, Nguyen Candidate!/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', {
+        level: 1,
+        name: /Chào mừng, Nguyen Candidate!/i,
+      }),
+    ).toBeInTheDocument();
+
     expect(screen.getAllByText('Ứng viên').length).toBeGreaterThanOrEqual(1);
     expect(screen.queryByText('CANDIDATE')).not.toBeInTheDocument();
 
@@ -87,22 +102,31 @@ describe('Role Home Pages', () => {
 
     expect(screen.queryByText('Hồ sơ ứng tuyển')).not.toBeInTheDocument();
     expect(screen.getAllByText('Trợ lý AI').length).toBeGreaterThanOrEqual(2);
+
     expect(
       screen.getByText('Góp ý cải thiện CV và luyện phỏng vấn thử theo yêu cầu tin tuyển dụng.'),
     ).toBeInTheDocument();
+
     expect(screen.getAllByText('Hồ sơ năng lực').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('Sắp ra mắt').length).toBeGreaterThanOrEqual(2);
-    const skillsLinks = screen.getAllByRole('link', { name: /Xem hồ sơ năng lực/i });
+
+    const skillsLinks = screen.getAllByRole('link', {
+      name: /Xem hồ sơ năng lực/i,
+    });
+
     expect(skillsLinks.length).toBeGreaterThanOrEqual(1);
     expect(skillsLinks[0]).toHaveAttribute('href', '/candidate/skills');
+
     expect(screen.getByRole('link', { name: /Xem việc làm gợi ý/i })).toHaveAttribute(
       'href',
       '/candidate/jobs',
     );
+
     expect(screen.getByRole('link', { name: /Phân tích khoảng thiếu/i })).toHaveAttribute(
       'href',
       '/candidate/gap-analysis',
     );
+
     expect(screen.getByRole('link', { name: /Xem đánh giá/i })).toHaveAttribute(
       'href',
       '/candidate/evaluations',
@@ -111,6 +135,7 @@ describe('Role Home Pages', () => {
 
   it('renders CandidateHomePage with real verified skills, job recommendations, gap analysis, and mentor evaluation', async () => {
     const user = createUser('CANDIDATE', 'Nguyễn Văn An');
+
     globalThis.fetch = vi.fn().mockImplementation((url: string) => {
       if (String(url).includes('/api/v1/profiles/me/skills')) {
         return Promise.resolve({
@@ -119,14 +144,24 @@ describe('Role Home Pages', () => {
           json: () =>
             Promise.resolve([
               {
-                skill: { id: 1, code: 'JAVA', name: 'Lập trình Java', group: 'PROGRAMMING' },
+                skill: {
+                  id: 1,
+                  code: 'JAVA',
+                  name: 'Lập trình Java',
+                  group: 'PROGRAMMING',
+                },
                 verifiedScore: 86,
                 selfScore: 80,
                 level: 'EXPERT',
                 evidences: [],
               },
               {
-                skill: { id: 2, code: 'SPRING_BOOT', name: 'Spring Boot', group: 'BACKEND' },
+                skill: {
+                  id: 2,
+                  code: 'SPRING_BOOT',
+                  name: 'Spring Boot',
+                  group: 'BACKEND',
+                },
                 verifiedScore: 82,
                 selfScore: null,
                 level: 'ADVANCED',
@@ -135,6 +170,7 @@ describe('Role Home Pages', () => {
             ]),
         } as unknown as Response);
       }
+
       if (String(url).includes('/api/v1/me/job-recommendations')) {
         return Promise.resolve({
           ok: true,
@@ -163,6 +199,7 @@ describe('Role Home Pages', () => {
             }),
         } as unknown as Response);
       }
+
       if (String(url).includes('/api/v1/me/target')) {
         return Promise.resolve({
           ok: true,
@@ -177,6 +214,7 @@ describe('Role Home Pages', () => {
             }),
         } as unknown as Response);
       }
+
       if (String(url).includes('/api/v1/me/gap-analysis')) {
         return Promise.resolve({
           ok: true,
@@ -205,6 +243,7 @@ describe('Role Home Pages', () => {
             }),
         } as unknown as Response);
       }
+
       if (String(url).includes('/evaluations')) {
         return Promise.resolve({
           ok: true,
@@ -220,13 +259,25 @@ describe('Role Home Pages', () => {
                   context: 'INTERNSHIP',
                   submittedAt: '2026-11-10T10:00:00Z',
                   overallComment: 'Nắm chắc Spring Boot và SQL.',
-                  scores: [{ criterionId: 1, criterionDescription: 'Java Core', score: 90, comment: null }],
+                  scores: [
+                    {
+                      criterionId: 1,
+                      criterionDescription: 'Java Core',
+                      score: 90,
+                      comment: null,
+                    },
+                  ],
                 },
               ],
             }),
         } as unknown as Response);
       }
-      return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({}) } as unknown as Response);
+
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({}),
+      } as unknown as Response);
     });
 
     render(
@@ -240,10 +291,16 @@ describe('Role Home Pages', () => {
     await waitFor(() => {
       expect(screen.getAllByText('Java Backend Fresher').length).toBeGreaterThanOrEqual(2);
     });
+
     expect(screen.getByText(/Bổ sung 1 kỹ năng ưu tiên/i)).toBeInTheDocument();
     expect(screen.getByText(/Nắm chắc Spring Boot và SQL\./i)).toBeInTheDocument();
     expect(screen.getByText(/Mentor: Phạm Quốc Dũng/i)).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: /Điểm trung bình 6 nhóm kỹ năng từ dữ liệu đã xác thực của bạn/i })).toBeInTheDocument();
+
+    expect(
+      screen.getByRole('img', {
+        name: /Điểm trung bình 6 nhóm kỹ năng từ dữ liệu đã xác thực của bạn/i,
+      }),
+    ).toBeInTheDocument();
   });
 
   it('renders HrHomePage without internal database IDs and with real company summary', async () => {
@@ -269,10 +326,16 @@ describe('Role Home Pages', () => {
             }),
         } as unknown as Response);
       }
-      return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({}) } as unknown as Response);
+
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({}),
+      } as unknown as Response);
     });
 
     const user = createUser('HR', 'Tran Thi HR');
+
     const { container } = render(
       <AuthProvider initialToken="token" initialUser={user}>
         <MemoryRouter>
@@ -285,30 +348,56 @@ describe('Role Home Pages', () => {
     expect(screen.getByText('hr@rikkei.vn')).toBeInTheDocument();
     expect(screen.queryByText(/Company ID/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/User ID/i)).not.toBeInTheDocument();
+
     await waitFor(() => {
       expect(screen.getByText('Công ty Cổ phần Công nghệ Nam Phương')).toBeInTheDocument();
     });
+
     expect(
       screen.getByText('Tải lên logo cho Công ty Cổ phần Công nghệ Nam Phương'),
     ).toBeInTheDocument();
+
     const main = screen.getByRole('main');
+
     expect(main.querySelectorAll('a[href="/hr/company"]')).toHaveLength(2);
     expect(main.querySelectorAll('a[href="/hr/recruitment"]')).toHaveLength(1);
+
     const hero = main.querySelector('.rj-cand-hero') as HTMLElement;
     expect(hero.querySelectorAll('.rj-btn-primary')).toHaveLength(1);
-    const companyNextCta = screen.getByRole('link', { name: /Mở hồ sơ công ty/i });
+
+    const companyNextCta = screen.getByRole('link', {
+      name: /Mở hồ sơ công ty/i,
+    });
+
     expect(companyNextCta).toHaveAttribute('href', '/hr/company');
     expect(companyNextCta).toHaveClass('rj-btn-primary');
+
     const roadmapAside = container.querySelector('aside[aria-labelledby="hr-roadmap-heading"]');
+
     expect(roadmapAside).not.toBeNull();
-    expect(within(roadmapAside as HTMLElement).queryByText('Quản lý ứng viên')).not.toBeInTheDocument();
+
     expect(
-      within(roadmapAside as HTMLElement).queryByRole('link', { name: /Mở tuyển dụng/i }),
+      within(roadmapAside as HTMLElement).queryByText('Quản lý ứng viên'),
     ).not.toBeInTheDocument();
-    expect(within(roadmapAside as HTMLElement).getByText('Đăng tin tuyển dụng')).toBeInTheDocument();
+
+    expect(
+      within(roadmapAside as HTMLElement).queryByRole('link', {
+        name: /Mở tuyển dụng/i,
+      }),
+    ).not.toBeInTheDocument();
+
+    expect(
+      within(roadmapAside as HTMLElement).getByText('Đăng tin tuyển dụng'),
+    ).toBeInTheDocument();
+
     expect(within(roadmapAside as HTMLElement).getByText('Thực tập sinh IOC')).toBeInTheDocument();
+
     expect(within(roadmapAside as HTMLElement).getAllByText('Sắp ra mắt')).toHaveLength(2);
-    const recruitmentCta = screen.getByRole('link', { name: /Mở tuyển dụng/i });
+
+    const recruitmentCta = screen.getByRole('link', {
+      name: /Mở tuyển dụng/i,
+    });
+
     expect(recruitmentCta).toHaveAttribute('href', '/hr/recruitment');
     expect(recruitmentCta).toHaveClass('rj-btn-secondary');
   });
@@ -336,10 +425,16 @@ describe('Role Home Pages', () => {
             }),
         } as unknown as Response);
       }
-      return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({}) } as unknown as Response);
+
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({}),
+      } as unknown as Response);
     });
 
     const user = createUser('HR', 'HR Missing Logo');
+
     const { container } = render(
       <AuthProvider initialToken="token" initialUser={user}>
         <MemoryRouter>
@@ -355,23 +450,28 @@ describe('Role Home Pages', () => {
     });
 
     const nextBoxes = container.querySelectorAll('.rj-cand-hero .rj-stack-md > .rj-cand-next-box');
+
     expect(nextBoxes).toHaveLength(2);
 
     expect(
       within(nextBoxes[0] as HTMLElement).getByText('Bước tiếp theo cho doanh nghiệp'),
     ).toBeInTheDocument();
+
     const companyLink = within(nextBoxes[0] as HTMLElement).getByRole('link', {
       name: /Mở hồ sơ công ty/i,
     });
+
     expect(companyLink).toHaveAttribute('href', '/hr/company');
     expect(companyLink).toHaveClass('rj-btn-primary');
 
     expect(
       within(nextBoxes[1] as HTMLElement).getByText('Hoạt động tuyển dụng'),
     ).toBeInTheDocument();
+
     const recruitLink = within(nextBoxes[1] as HTMLElement).getByRole('link', {
       name: /Mở tuyển dụng/i,
     });
+
     expect(recruitLink).toHaveAttribute('href', '/hr/recruitment');
     expect(recruitLink).toHaveClass('rj-btn-secondary');
   });
@@ -379,42 +479,49 @@ describe('Role Home Pages', () => {
   it('renders MentorHomePage with real evaluation templates and airy layout', async () => {
     globalThis.fetch = vi.fn().mockImplementation((url: string) => {
       if (String(url).includes('/api/v1/evaluation-templates')) {
+        const templates = [
+          {
+            id: 1,
+            name: 'Java Backend – Thực tập',
+            position: 'Java Backend Fresher',
+            context: 'INTERNSHIP',
+            active: true,
+            criteria: [
+              { id: 10, skillId: 1, description: 'Java Core', weight: 30 },
+              { id: 11, skillId: 2, description: 'Spring Boot', weight: 25 },
+              { id: 12, skillId: 3, description: 'SQL', weight: 20 },
+              { id: 13, skillId: 4, description: 'Git', weight: 10 },
+              { id: 14, skillId: 5, description: 'Teamwork', weight: 15 },
+            ],
+          },
+          {
+            id: 2,
+            name: 'Đánh giá chuyên sâu',
+            position: 'Backend Engineer',
+            context: 'INTERVIEW',
+            active: true,
+            criteria: [{ id: 20, skillId: 1, description: 'Architecture', weight: 12.5 }],
+          },
+        ];
+
+        const context = new URL(String(url), 'http://localhost').searchParams.get('context');
+
         return Promise.resolve({
           ok: true,
           status: 200,
-          json: () =>
-            Promise.resolve([
-              {
-                id: 1,
-                name: 'Java Backend – Thực tập',
-                position: 'Java Backend Fresher',
-                context: 'INTERNSHIP',
-                active: true,
-                criteria: [
-                  { id: 10, skillId: 1, description: 'Java Core', weight: 30 },
-                  { id: 11, skillId: 2, description: 'Spring Boot', weight: 25 },
-                  { id: 12, skillId: 3, description: 'SQL', weight: 20 },
-                  { id: 13, skillId: 4, description: 'Git', weight: 10 },
-                  { id: 14, skillId: 5, description: 'Teamwork', weight: 15 },
-                ],
-              },
-              {
-                id: 2,
-                name: 'Đánh giá chuyên sâu',
-                position: 'Backend Engineer',
-                context: 'INTERVIEW',
-                active: true,
-                criteria: [
-                  { id: 20, skillId: 1, description: 'Architecture', weight: 12.5 },
-                ],
-              },
-            ]),
+          json: () => Promise.resolve(templates.filter((template) => template.context === context)),
         } as unknown as Response);
       }
-      return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({}) } as unknown as Response);
+
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({}),
+      } as unknown as Response);
     });
 
     const user = createUser('MENTOR', 'Thay Giao Mentor');
+
     const { container } = render(
       <AuthProvider initialToken="token" initialUser={user}>
         <MemoryRouter>
@@ -424,18 +531,24 @@ describe('Role Home Pages', () => {
     );
 
     expect(container.querySelector('.rj-dashboard')).toHaveAttribute('data-density', 'airy');
+
     expect(screen.getByText(/Chào mừng, Thay Giao Mentor!/i)).toBeInTheDocument();
+
     await waitFor(() => {
       expect(screen.getByText('Java Backend – Thực tập')).toBeInTheDocument();
+
       expect(screen.getByText(/Hiện có 2 mẫu phiếu đánh giá đang áp dụng/i)).toBeInTheDocument();
     });
+
     expect(screen.getByText('Java Core (30%)')).toBeInTheDocument();
     expect(screen.getByText('Spring Boot (25%)')).toBeInTheDocument();
     expect(screen.getByText('SQL (20%)')).toBeInTheDocument();
     expect(screen.getByText('Git (10%)')).toBeInTheDocument();
     expect(screen.getByText('Teamwork (15%)')).toBeInTheDocument();
     expect(screen.getByText('Architecture (12.5%)')).toBeInTheDocument();
+
     expect(screen.queryByText(/3000%|2500%|2000%|1000%|1500%|1250%/)).not.toBeInTheDocument();
+
     expect(screen.getByText('Đánh giá ứng viên')).toBeInTheDocument();
   });
 
@@ -447,14 +560,25 @@ describe('Role Home Pages', () => {
           status: 200,
           json: () =>
             Promise.resolve([
-              { id: 1, code: 'JAVA_BACKEND_FRESHER', name: 'Java Backend Fresher', description: 'Lập trình Java & Spring Boot' },
+              {
+                id: 1,
+                code: 'JAVA_BACKEND_FRESHER',
+                name: 'Java Backend Fresher',
+                description: 'Lập trình Java & Spring Boot',
+              },
             ]),
         } as unknown as Response);
       }
-      return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({}) } as unknown as Response);
+
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({}),
+      } as unknown as Response);
     });
 
     const user = createUser('STAFF', 'Co Giao Staff');
+
     const { container } = render(
       <AuthProvider initialToken="token" initialUser={user}>
         <MemoryRouter>
@@ -464,14 +588,18 @@ describe('Role Home Pages', () => {
     );
 
     expect(screen.getByText(/Chào mừng, Co Giao Staff!/i)).toBeInTheDocument();
+
     expect(container.textContent).not.toMatch(/Cán bộ tuyển sinh|đối soát hợp đồng/i);
+
     await waitFor(() => {
       expect(screen.getByText('Java Backend Fresher')).toBeInTheDocument();
     });
+
     expect(screen.getByRole('link', { name: /Theo dõi hồ sơ ứng tuyển/i })).toHaveAttribute(
       'href',
       '/staff/applications',
     );
+
     expect(screen.getByText('Duyệt hồ sơ & doanh nghiệp')).toBeInTheDocument();
   });
 
@@ -480,6 +608,7 @@ describe('Role Home Pages', () => {
       ...createUser('ADMIN', 'Admin User'),
       lmsUserId: 'lms-ad-001',
     };
+
     const { container, unmount } = render(
       <AuthProvider initialToken="token" initialUser={ssoAdminUser}>
         <MemoryRouter>
@@ -489,15 +618,26 @@ describe('Role Home Pages', () => {
     );
 
     expect(screen.getByText(/Chào mừng, Admin User!/i)).toBeInTheDocument();
+
     expect(screen.getByText('Danh mục kỹ năng & trọng số')).toBeInTheDocument();
+
     expect(screen.getByText('Kiểm soát trợ lý AI')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Mở cấu hình AI' })).toHaveAttribute('href', '/admin/ai-config');
+
+    expect(screen.getByRole('link', { name: 'Mở cấu hình AI' })).toHaveAttribute(
+      'href',
+      '/admin/ai-config',
+    );
+
     expect(container.textContent).not.toMatch(/trạng thái kết nối backend|LMS SSO/i);
+
     expect(container.querySelectorAll('a[href="/change-password"]')).toHaveLength(0);
+
     expect(screen.queryByRole('link', { name: /Đổi mật khẩu/i })).not.toBeInTheDocument();
+
     unmount();
 
     const enterpriseAdminUser = createUser('ADMIN', 'Enterprise Admin');
+
     const { container: enterpriseContainer } = render(
       <AuthProvider initialToken="token" initialUser={enterpriseAdminUser}>
         <MemoryRouter>
@@ -505,7 +645,9 @@ describe('Role Home Pages', () => {
         </MemoryRouter>
       </AuthProvider>,
     );
+
     expect(enterpriseContainer.querySelectorAll('a[href="/change-password"]')).toHaveLength(1);
+
     expect(screen.getAllByRole('link', { name: /Đổi mật khẩu/i })).toHaveLength(1);
   });
 
@@ -514,6 +656,7 @@ describe('Role Home Pages', () => {
       ...createUser('CANDIDATE', 'LMS Candidate'),
       lmsUserId: 'lms-sv-001',
     };
+
     const { container: candContainer, unmount } = render(
       <AuthProvider initialToken="token" initialUser={lmsCandidate}>
         <MemoryRouter>
@@ -521,10 +664,13 @@ describe('Role Home Pages', () => {
         </MemoryRouter>
       </AuthProvider>,
     );
+
     await waitFor(() => {
       expect(screen.getByText(/Chào mừng, LMS Candidate!/i)).toBeInTheDocument();
     });
+
     expect(candContainer.querySelectorAll('a[href="/change-password"]')).toHaveLength(0);
+
     unmount();
 
     const hr2: UserDto = {
@@ -533,6 +679,7 @@ describe('Role Home Pages', () => {
       lmsUserId: null,
       mustChangePassword: false,
     };
+
     const { container: hrContainer } = render(
       <AuthProvider initialToken="token" initialUser={hr2}>
         <MemoryRouter>
@@ -540,15 +687,18 @@ describe('Role Home Pages', () => {
         </MemoryRouter>
       </AuthProvider>,
     );
+
     await waitFor(() => {
       expect(screen.getByText(/Chào mừng, HR Two!/i)).toBeInTheDocument();
     });
+
     expect(hrContainer.querySelectorAll('a[href="/change-password"]')).toHaveLength(1);
   });
 
   it('renders CandidateSkillsPage wrapped in RoleHomeLayout with shared page container', async () => {
     const user = createUser('CANDIDATE', 'Nguyen Candidate');
     const originalFetch = globalThis.fetch;
+
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
@@ -568,10 +718,16 @@ describe('Role Home Pages', () => {
       expect(container.querySelector('.rj-dashboard')).toBeInTheDocument();
       expect(container.querySelector('.rj-dashboard-nav')).toBeInTheDocument();
       expect(container.querySelector('aside.rj-sidebar')).toBeInTheDocument();
-      const nav = screen.getByRole('navigation', { name: /Điều hướng theo vai trò/i });
+
+      const nav = screen.getByRole('navigation', {
+        name: /Điều hướng theo vai trò/i,
+      });
+
       const navLinks = within(nav).getAllByRole('link');
+
       expect(navLinks[0]).toHaveTextContent('Trang chủ');
       expect(navLinks[0]).toHaveAttribute('href', '/candidate');
+
       expect(screen.getByText('Rikkei Jobs')).toBeInTheDocument();
       expect(screen.getAllByText('Ứng viên').length).toBeGreaterThanOrEqual(1);
       expect(screen.queryByText('CANDIDATE')).not.toBeInTheDocument();
@@ -583,8 +739,10 @@ describe('Role Home Pages', () => {
 
       // Verify Candidate Skills content inside the container with single h1
       const h1s = await screen.findAllByRole('heading', { level: 1 });
+
       expect(h1s).toHaveLength(1);
       expect(h1s[0]).toHaveTextContent('Hồ sơ năng lực');
+
       expect(screen.getByText(/Chỉ số 0 - 100 theo từng kỹ năng/i)).toBeInTheDocument();
     } finally {
       globalThis.fetch = originalFetch;
@@ -596,18 +754,18 @@ describe('Role Home Pages', () => {
       ...createUser('CANDIDATE', 'Ứng viên LMS'),
       lmsUserId: 'lms-sv-001',
     };
+
     const { unmount } = render(
       <AuthProvider initialToken="token" initialUser={candidateLms}>
         <MemoryRouter>
-          <RoleHomeLayout
-            roleBadgeClass="rj-role-candidate"
-            roleIcon="user"
-          />
+          <RoleHomeLayout roleBadgeClass="rj-role-candidate" roleIcon="user" />
         </MemoryRouter>
       </AuthProvider>,
     );
+
     expect(screen.getByText('Mã học viên LMS')).toBeInTheDocument();
     expect(screen.queryByText('Mã tài khoản LMS')).not.toBeInTheDocument();
+
     unmount();
 
     for (const role of ['MENTOR', 'STAFF', 'ADMIN'] as const) {
@@ -615,18 +773,18 @@ describe('Role Home Pages', () => {
         ...createUser(role, `${role} LMS`),
         lmsUserId: `lms-${role.toLowerCase()}-001`,
       };
+
       const { unmount: unmountRole } = render(
         <AuthProvider initialToken="token" initialUser={nonCandidateLms}>
           <MemoryRouter>
-            <RoleHomeLayout
-              roleBadgeClass={`rj-role-${role.toLowerCase()}`}
-              roleIcon="shield"
-            />
+            <RoleHomeLayout roleBadgeClass={`rj-role-${role.toLowerCase()}`} roleIcon="shield" />
           </MemoryRouter>
         </AuthProvider>,
       );
+
       expect(screen.getByText('Mã tài khoản LMS')).toBeInTheDocument();
       expect(screen.queryByText('Mã học viên LMS')).not.toBeInTheDocument();
+
       unmountRole();
     }
   });
@@ -707,7 +865,15 @@ describe('Role Home Pages', () => {
 
     it.each(matrix)(
       'renders localized role "$expectedLabel" and status "$expectedStatusLabel" for $role ($label) without raw enums or N/A',
-      async ({ role, expectedLabel, fullName, Component, status, mustChangePassword, expectedStatusLabel }) => {
+      async ({
+        role,
+        expectedLabel,
+        fullName,
+        Component,
+        status,
+        mustChangePassword,
+        expectedStatusLabel,
+      }) => {
         const user: UserDto = {
           id: 200,
           email: `nguoi.dung.${role.toLowerCase()}@rikkei.vn`,
@@ -729,12 +895,15 @@ describe('Role Home Pages', () => {
         await waitFor(() => {
           expect(screen.getByText(expectedStatusLabel)).toBeInTheDocument();
         });
+
         expect(screen.getAllByText(expectedLabel).length).toBeGreaterThanOrEqual(1);
 
         const domText = container.textContent ?? '';
+
         expect(domText).not.toMatch(
           /\b(CANDIDATE|MENTOR|STAFF|ADMIN|ACTIVE|LOCKED|MUST_CHANGE_PASSWORD)\b/,
         );
+
         expect(domText).not.toContain('N/A');
         expect(domText).not.toMatch(/\((Candidate|Staff|Admin)\)/i);
 
@@ -769,7 +938,9 @@ describe('Role Home Pages', () => {
       );
 
       expect(screen.getAllByText('Không xác định').length).toBeGreaterThanOrEqual(4);
+
       const domText = container.textContent ?? '';
+
       expect(domText).not.toContain('N/A');
       expect(domText).not.toContain('SUPER_GUEST');
       expect(domText).not.toContain('SUSPENDED');
@@ -787,46 +958,46 @@ describe('Role Home Pages', () => {
     const { rerender } = render(
       <AuthProvider initialToken="token" initialUser={enterpriseHr}>
         <MemoryRouter>
-          <RoleHomeLayout
-            roleBadgeClass="rj-role-hr"
-            roleIcon="building"
-            isLoading={true}
-          />
+          <RoleHomeLayout roleBadgeClass="rj-role-hr" roleIcon="building" isLoading={true} />
         </MemoryRouter>
       </AuthProvider>,
     );
 
-    const linkBefore = screen.getByRole('link', { name: /Đổi mật khẩu/i });
+    const linkBefore = screen.getByRole('link', {
+      name: /Đổi mật khẩu/i,
+    });
+
     linkBefore.focus();
     expect(linkBefore).toHaveFocus();
 
     rerender(
       <AuthProvider initialToken="token" initialUser={enterpriseHr}>
         <MemoryRouter>
-          <RoleHomeLayout
-            roleBadgeClass="rj-role-hr"
-            roleIcon="building"
-            isLoading={false}
-          />
+          <RoleHomeLayout roleBadgeClass="rj-role-hr" roleIcon="building" isLoading={false} />
         </MemoryRouter>
       </AuthProvider>,
     );
 
-    const linkAfter = screen.getByRole('link', { name: /Đổi mật khẩu/i });
+    const linkAfter = screen.getByRole('link', {
+      name: /Đổi mật khẩu/i,
+    });
+
     expect(linkAfter).toBe(linkBefore);
     expect(linkBefore).toHaveFocus();
   });
 
   it('preserves MentorHomePage grid, reserved slot, and account card DOM references across loading -> ready and loading -> error', async () => {
-    let resolveFetch!: (value: Response) => void;
+    const resolveFetches: Array<(value: Response) => void> = [];
+
     globalThis.fetch = vi.fn().mockImplementation(
       () =>
         new Promise<Response>((resolve) => {
-          resolveFetch = resolve;
+          resolveFetches.push(resolve);
         }),
     );
 
     const mentor = createUser('MENTOR', 'Mentor Stability');
+
     const { container, unmount } = render(
       <AuthProvider initialToken="token" initialUser={mentor}>
         <MemoryRouter>
@@ -836,16 +1007,30 @@ describe('Role Home Pages', () => {
     );
 
     const gridBefore = container.querySelector('.rj-cand-grid');
+
     const slotBefore = container.querySelector('.rj-role-async-slot.rj-mentor-templates-slot');
+
     const asideBefore = container.querySelector('.rj-cand-grid > aside');
+
     const accountBefore = container.querySelector('.rj-account-card-secondary');
+
     expect(gridBefore).not.toBeNull();
     expect(slotBefore).not.toBeNull();
     expect(asideBefore).not.toBeNull();
     expect(accountBefore).not.toBeNull();
-    expect(screen.getByRole('status', { name: /Đang tải mẫu phiếu đánh giá/i })).toBeInTheDocument();
 
-    resolveFetch({
+    expect(
+      screen.getByRole('status', {
+        name: /Đang tải mẫu phiếu đánh giá/i,
+      }),
+    ).toBeInTheDocument();
+
+    // MentorHomePage gọi API hai lần: INTERNSHIP và INTERVIEW.
+    await waitFor(() => {
+      expect(resolveFetches).toHaveLength(2);
+    });
+
+    resolveFetches[0]({
       ok: true,
       status: 200,
       json: () =>
@@ -856,9 +1041,22 @@ describe('Role Home Pages', () => {
             position: 'Java Backend Fresher',
             context: 'INTERNSHIP',
             active: true,
-            criteria: [{ id: 10, skillId: 1, description: 'Java Core', weight: 100 }],
+            criteria: [
+              {
+                id: 10,
+                skillId: 1,
+                description: 'Java Core',
+                weight: 100,
+              },
+            ],
           },
         ]),
+    } as unknown as Response);
+
+    resolveFetches[1]({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve([]),
     } as unknown as Response);
 
     await waitFor(() => {
@@ -866,16 +1064,24 @@ describe('Role Home Pages', () => {
     });
 
     expect(container.querySelector('.rj-cand-grid')).toBe(gridBefore);
-    expect(container.querySelector('.rj-role-async-slot.rj-mentor-templates-slot')).toBe(slotBefore);
+
+    expect(container.querySelector('.rj-role-async-slot.rj-mentor-templates-slot')).toBe(
+      slotBefore,
+    );
+
     expect(container.querySelector('.rj-cand-grid > aside')).toBe(asideBefore);
+
     expect(container.querySelector('.rj-account-card-secondary')).toBe(accountBefore);
+
     unmount();
 
-    let rejectFetch!: (reason?: unknown) => void;
+    // Kiểm tra nhánh lỗi: cả hai request đều bị reject.
+    const rejectFetches: Array<(reason?: unknown) => void> = [];
+
     globalThis.fetch = vi.fn().mockImplementation(
       () =>
         new Promise<Response>((_resolve, reject) => {
-          rejectFetch = reject;
+          rejectFetches.push(reject);
         }),
     );
 
@@ -887,19 +1093,36 @@ describe('Role Home Pages', () => {
       </AuthProvider>,
     );
 
-    const errSlotBefore = errContainer.querySelector('.rj-role-async-slot.rj-mentor-templates-slot');
+    const errSlotBefore = errContainer.querySelector(
+      '.rj-role-async-slot.rj-mentor-templates-slot',
+    );
+
     const errAccountBefore = errContainer.querySelector('.rj-account-card-secondary');
-    rejectFetch(new Error('Network down'));
 
     await waitFor(() => {
-      expect(screen.getByText(/Chưa thể tải danh sách mẫu phiếu đánh giá lúc này/i)).toBeInTheDocument();
+      expect(rejectFetches).toHaveLength(2);
     });
-    expect(errContainer.querySelector('.rj-role-async-slot.rj-mentor-templates-slot')).toBe(errSlotBefore);
+
+    rejectFetches.forEach((reject) => {
+      reject(new Error('Network down'));
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Chưa thể tải danh sách mẫu phiếu đánh giá lúc này/i),
+      ).toBeInTheDocument();
+    });
+
+    expect(errContainer.querySelector('.rj-role-async-slot.rj-mentor-templates-slot')).toBe(
+      errSlotBefore,
+    );
+
     expect(errContainer.querySelector('.rj-account-card-secondary')).toBe(errAccountBefore);
   });
 
   it('preserves StaffHomePage and HrHomePage grid and reserved async slot DOM references across loading transitions', async () => {
     let resolveStaff!: (value: Response) => void;
+
     globalThis.fetch = vi.fn().mockImplementation(
       () =>
         new Promise<Response>((resolve) => {
@@ -908,6 +1131,7 @@ describe('Role Home Pages', () => {
     );
 
     const staff = createUser('STAFF', 'Staff Stability');
+
     const { container: staffContainer, unmount } = render(
       <AuthProvider initialToken="token" initialUser={staff}>
         <MemoryRouter>
@@ -917,22 +1141,39 @@ describe('Role Home Pages', () => {
     );
 
     const staffGridBefore = staffContainer.querySelector('.rj-cand-grid');
-    const staffSlotBefore = staffContainer.querySelector('.rj-role-async-slot.rj-staff-positions-slot');
+
+    const staffSlotBefore = staffContainer.querySelector(
+      '.rj-role-async-slot.rj-staff-positions-slot',
+    );
+
     resolveStaff({
       ok: true,
       status: 200,
       json: () =>
-        Promise.resolve([{ id: 1, code: 'JAVA', name: 'Java Backend', description: 'Backend' }]),
+        Promise.resolve([
+          {
+            id: 1,
+            code: 'JAVA',
+            name: 'Java Backend',
+            description: 'Backend',
+          },
+        ]),
     } as unknown as Response);
 
     await waitFor(() => {
       expect(screen.getByText('Java Backend')).toBeInTheDocument();
     });
+
     expect(staffContainer.querySelector('.rj-cand-grid')).toBe(staffGridBefore);
-    expect(staffContainer.querySelector('.rj-role-async-slot.rj-staff-positions-slot')).toBe(staffSlotBefore);
+
+    expect(staffContainer.querySelector('.rj-role-async-slot.rj-staff-positions-slot')).toBe(
+      staffSlotBefore,
+    );
+
     unmount();
 
     let resolveHr!: (value: Response) => void;
+
     globalThis.fetch = vi.fn().mockImplementation(
       () =>
         new Promise<Response>((resolve) => {
@@ -941,6 +1182,7 @@ describe('Role Home Pages', () => {
     );
 
     const hr = createUser('HR', 'HR Stability');
+
     const { container: hrContainer } = render(
       <AuthProvider initialToken="token" initialUser={hr}>
         <MemoryRouter>
@@ -950,11 +1192,19 @@ describe('Role Home Pages', () => {
     );
 
     const hrGridBefore = hrContainer.querySelector('.rj-cand-grid');
+
     const hrSlotBefore = hrContainer.querySelector('.rj-role-async-slot.rj-hr-company-slot');
+
     const hrNextBoxBefore = hrContainer.querySelector('.rj-cand-next-box.rj-hr-next-box');
-    const hrNextLinkBefore = screen.getByRole('link', { name: /Mở hồ sơ công ty/i });
+
+    const hrNextLinkBefore = screen.getByRole('link', {
+      name: /Mở hồ sơ công ty/i,
+    });
+
     expect(
-      screen.getByRole('status', { name: 'Đang xác định bước tiếp theo cho doanh nghiệp' }),
+      screen.getByRole('status', {
+        name: 'Đang xác định bước tiếp theo cho doanh nghiệp',
+      }),
     ).toBeInTheDocument();
 
     resolveHr({
@@ -980,14 +1230,24 @@ describe('Role Home Pages', () => {
     await waitFor(() => {
       expect(screen.getByText('Công ty Cổ phần Giải pháp Số')).toBeInTheDocument();
     });
+
     expect(hrContainer.querySelector('.rj-cand-grid')).toBe(hrGridBefore);
+
     expect(hrContainer.querySelector('.rj-role-async-slot.rj-hr-company-slot')).toBe(hrSlotBefore);
+
     expect(hrContainer.querySelector('.rj-cand-next-box.rj-hr-next-box')).toBe(hrNextBoxBefore);
-    const hrNextLinkAfter = screen.getByRole('link', { name: /Mở hồ sơ công ty/i });
+
+    const hrNextLinkAfter = screen.getByRole('link', {
+      name: /Mở hồ sơ công ty/i,
+    });
+
     expect(hrNextLinkAfter).toBe(hrNextLinkBefore);
     expect(hrNextLinkAfter).toHaveTextContent('Mở hồ sơ công ty');
+
     expect(
-      screen.queryByRole('status', { name: 'Đang xác định bước tiếp theo cho doanh nghiệp' }),
+      screen.queryByRole('status', {
+        name: 'Đang xác định bước tiếp theo cho doanh nghiệp',
+      }),
     ).not.toBeInTheDocument();
   });
 });
