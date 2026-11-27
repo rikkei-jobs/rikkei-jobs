@@ -47,16 +47,23 @@ export const MentorHomePage: React.FC = () => {
 
     const loadTemplates = async () => {
       try {
-        const data = await fetchEvaluationTemplates(controller.signal);
+        const [internshipTemplates, interviewTemplates] = await Promise.all([
+          fetchEvaluationTemplates('INTERNSHIP', controller.signal),
+          fetchEvaluationTemplates('INTERVIEW', controller.signal),
+        ]);
+
         if (cancelled || controller.signal.aborted) {
           return;
         }
-        setTemplates(Array.isArray(data) ? data : []);
+
+        setTemplates([...internshipTemplates, ...interviewTemplates]);
+
         setTemplatesError(null);
       } catch {
         if (cancelled || controller.signal.aborted) {
           return;
         }
+
         setTemplates([]);
         setTemplatesError('Chưa thể tải danh sách mẫu phiếu đánh giá lúc này.');
       } finally {
@@ -115,8 +122,8 @@ export const MentorHomePage: React.FC = () => {
                     : 'Chuẩn bị tiêu chí cho đợt đánh giá sắp tới'}
                 </h2>
                 <p className="rj-role-card-desc">
-                  Xem trước các bộ tiêu chí và trọng số chấm điểm. Giao diện nhập phiếu trực tiếp cho
-                  từng học viên sẽ mở ở bản cập nhật tiếp theo.
+                  Xem trước các bộ tiêu chí và trọng số chấm điểm. Giao diện nhập phiếu trực tiếp
+                  cho từng học viên sẽ mở ở bản cập nhật tiếp theo.
                 </p>
               </div>
               <span className="rj-card-soon-badge">Chấm điểm trực tiếp: Sắp ra mắt</span>

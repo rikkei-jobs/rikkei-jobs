@@ -1,9 +1,13 @@
-
 import { request } from '../../../shared/api/httpClient';
 import type {
   EvaluationContext,
   EvaluationTemplate,
 } from '../types';
+
+export type EvaluationTemplateItem = EvaluationTemplate;
+
+export type EvaluationTemplateCriterion =
+  NonNullable<EvaluationTemplate['criteria']>[number];
 
 export const fetchEvaluationTemplates = (
   context: EvaluationContext,
