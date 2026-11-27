@@ -547,7 +547,7 @@ class AiGovernanceIntegrationTest {
     void openApiContainsNewAdminContracts() throws Exception {
         mvc.perform(get("/api/api-docs"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.paths.length()").value(45))
+                .andExpect(jsonPath("$.paths.length()").value(46))
                 .andExpect(jsonPath("$.paths['/api/v1/admin/ai-config'].get").exists())
                 .andExpect(
                         jsonPath("$.paths['/api/v1/admin/ai-config'].put.responses['409']")
