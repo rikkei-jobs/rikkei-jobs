@@ -7,12 +7,12 @@ spring:
   application:
     name: rikkei-jobs-backend
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:dev}
+    active: ${SPRING_PROFILES_ACTIVE:}
 
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/rikkeijobs}
-    username: ${SPRING_DATASOURCE_USERNAME:postgres}
-    password: ${SPRING_DATASOURCE_PASSWORD:Ngocmai@1004}
+    username: ${SPRING_DATASOURCE_USERNAME:rikkei_app}
+    password: ${SPRING_DATASOURCE_PASSWORD:rikkei_secret}
     driver-class-name: org.postgresql.Driver
     hikari:
       connection-timeout: 5000
@@ -70,7 +70,7 @@ ai:
   mock:
     explanation: "Hồ sơ của bạn phù hợp với vị trí này nhờ năng lực vững vàng về các kỹ năng trọng tâm. Bạn cần trau dồi thêm về các công cụ liên quan để gia tăng lợi thế cạnh tranh."
   openai:
-    api-key: ${OPENAI_API_KEY:sakdjhsakjdkqwnkxdqwjdhjqskxqxckwqkhf}
+    api-key: ${OPENAI_API_KEY:}
     model: ${OPENAI_MODEL:gpt-4o-mini}
     base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
   gemini:

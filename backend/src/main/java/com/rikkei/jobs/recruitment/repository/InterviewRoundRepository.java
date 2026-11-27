@@ -35,4 +35,6 @@ public interface InterviewRoundRepository extends JpaRepository<InterviewRound, 
                     + "GROUP BY r.applicationId")
     List<RoundCountProjection> countByApplicationIds(
             @Param("applicationIds") Collection<Long> applicationIds);
+
+    List<InterviewRound> findAllByInterviewerEmailIgnoreCase(String interviewerEmail);
 }

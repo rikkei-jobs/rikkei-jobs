@@ -83,6 +83,11 @@ export const PROTECTED_ROUTE_POLICIES = {
     path: '/mentor',
     allowedRoles: ['MENTOR'],
   },
+  mentorEvaluations: {
+    id: 'mentorEvaluations',
+    path: '/mentor/evaluations',
+    allowedRoles: ['MENTOR'],
+  },
   staffHome: {
     id: 'staffHome',
     path: '/staff',

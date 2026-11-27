@@ -1,11 +1,8 @@
 package com.rikkei.jobs.internship.repository;
 
 import com.rikkei.jobs.internship.model.Internship;
-
 import java.util.List;
 import java.util.Optional;
-
-import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -14,15 +11,11 @@ public interface InternshipRepository extends JpaRepository<Internship, Long> {
 
     Optional<Internship> findByUserIdAndBatchId(Long userId, String batchId);
 
-
     // Lấy danh sách thực tập sinh do Mentor phụ trách
     List<Internship> findAllByMentorEmailIgnoreCase(String mentorEmail);
 
     // Lấy danh sách thực tập sinh do Mentor phụ trách trong batch
-    List<Internship> findAllByMentorEmailIgnoreCaseAndBatchId(
-        String mentorEmail,
-        String batchId
-    );
+    List<Internship> findAllByMentorEmailIgnoreCaseAndBatchId(String mentorEmail, String batchId);
 
     List<Internship> findAllByUserIdOrderBySyncedAtDesc(Long userId);
 }
