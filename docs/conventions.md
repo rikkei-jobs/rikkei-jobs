@@ -45,9 +45,9 @@ All HTTP error responses (HTTP status codes 4xx and 5xx) must return a consisten
 | **403 Forbidden** | Authenticated user lacks permission or required role for the resource. | `FORBIDDEN` | `"Không có quyền truy cập"` |
 | **404 Not Found** | Target resource ID, student ID, course ID, or batch ID does not exist. | `NOT_FOUND` | `"Không tìm thấy tài nguyên yêu cầu"` |
 | **405 Method Not Allowed** | HTTP method is not supported on the target URI path (e.g., `POST` to a `GET`-only route, or `PUT /api/v1/companies/{id}` now that `GET /api/v1/companies/{id}` is mapped). | `METHOD_NOT_ALLOWED` | `"Phương thức HTTP không được hỗ trợ"` |
-| **409 Conflict** | Business rule conflict, e.g., duplicate enrollment, user already exists in batch. | `CONFLICT`, `ALREADY_ENROLLED`, `ALREADY_MEMBER` | `"Sinh viên đã ghi danh khoá học này"` |
+| **409 Conflict** | Business rule conflict, e.g., duplicate enrollment, user already exists in batch, or UT-02 invalid status transition / round state / `@Version` conflict. | `CONFLICT`, `ALREADY_ENROLLED`, `ALREADY_MEMBER`, `DUPLICATE_APPLICATION`, `CANNOT_WITHDRAW`, `INVALID_TRANSITION`, `INVALID_APPLICATION_STATE` | `"Sinh viên đã ghi danh khoá học này"` |
 | **429 Too Many Requests** | Rate limit exceeded (e.g., AI queries or password reset requests). | `RATE_LIMITED` | `"Bạn đã vượt quá giới hạn yêu cầu trong ngày"` |
-| **503 Service Unavailable** | Downstream dependency (LMS, Exam, PM, Meet mock) is down, unreachable, or times out (>5s). | `EXTERNAL_UNAVAILABLE` | `"Hệ thống bên ngoài tạm thời không khả dụng"` |
+| **503 Service Unavailable** | Downstream dependency (LMS, Exam, PM, Meet mock) is down, unreachable, or times out (>5s), or the CV service integration (`CvPort`, awaiting HS-04) is not yet available. | `EXTERNAL_UNAVAILABLE`, `CV_SERVICE_UNAVAILABLE` | `"Hệ thống bên ngoài tạm thời không khả dụng"` |
 
 #### Concrete JSON Error Examples
 
@@ -166,7 +166,7 @@ List endpoints returning multiple records must support 1-based pagination via qu
 ### 1.5 OpenAPI & Swagger UI Contract (NT-02)
 
 - **Dev Profile (`dev`)**: Swagger UI is exposed at `/api/docs` on both the direct backend (`http://127.0.0.1:8080/api/docs`) and the Nginx gateway (`http://127.0.0.1:3000/api/docs`, routed via `location ^~ /api/` in `frontend/nginx.conf`). Springdoc serves OpenAPI JSON at `/api/api-docs` (and legacy `/api-docs`), YAML at `/api/api-docs.yaml` (and `/api-docs.yaml`), and preserves legacy redirects at `/swagger-ui.html`.
-- **Contract Standard**: All merged business controllers declare `@Tag`, `@Operation`, `bearerAuth` HTTP Bearer JWT security where required, and unified `ErrorResponse` (`401`/`403`/`404`) schemas; dev-only `TestErrorController` is marked `@Hidden` and excluded from OpenAPI output.
+- **Contract Standard**: All merged business controllers declare `@Tag`, `@Operation`, `bearerAuth` HTTP Bearer JWT security where required, and unified `ErrorResponse` (`401`/`403`/`404`) schemas; dev-only `TestErrorController` is marked `@Hidden` and excluded from OpenAPI output. With `UT-02` integrated, the OpenAPI specification exposes `45` paths and `48` operations.
 - **Production Profile (`prod`)**: Springdoc (`swagger-ui` and `api-docs`) is completely disabled (`404 NOT_FOUND` on all OpenAPI/Swagger paths).
 
 ---
@@ -299,7 +299,7 @@ To preserve architectural integrity across sprints, the following rules are non-
    - `internship`: `internship_batches`, `internship_members`, `internship_tasks`
    - `assessment`: `skills` (the 20 catalogue codes), `assessments`, `evaluation_sheets`
    - `learning`: `course_recommendations`, `study_progress`
-   - `recruitment`: `applications`, `interviews`, `offers`
+   - `recruitment`: `applications`, `application_status_history`, `application_cv_snapshots`, `interview_rounds`
    - `ai`: Stateless assistant sessions, no persistent domain tables.
 
 ### 6.2 No Cross-Module Foreign Keys or SQL Joins
@@ -332,7 +332,7 @@ A task, feature, or pull request achieves "Done" status when:
 
 For detailed AI coding agent specifications, architectural rules, and design guidelines, consult:
 
-- [AI Agent Configuration Guide](agent-config/README.md) — Architectural principles, 16 enterprise rules, 28 task-triggered skills in `agent-config/` mirrored to `.claude/` and `.gemini/`.
+- [AI Agent Configuration Guide](agent-config/README.md) — Architectural principles, 16 enterprise rules, 29 task-triggered skills in `agent-config/` mirrored to `.claude/` and `.gemini/`.
 - [Frontend Design System](design/DESIGN_SYSTEM.md) — Comprehensive design tokens, calculated WCAG 2.2 AA contrast matrix, Vietnamese typography rules, and anti-AI design bar (Rule 09).
 - [Third-Party Attribution](agent-config/THIRD_PARTY_NOTICES.md) — Open-source MIT licenses and adaptation details for referenced upstream repositories.
 - [Authoritative Sources Inventory](agent-config/SOURCES.md) — Complete catalogue of external specifications, standards, verified URLs, and access dates.

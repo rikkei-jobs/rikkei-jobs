@@ -4,6 +4,7 @@ import com.rikkei.jobs.common.exception.ConflictException;
 import com.rikkei.jobs.common.exception.ValidationException;
 import com.rikkei.jobs.identity.dto.CreateHrUserCommand;
 import com.rikkei.jobs.identity.dto.CreatedHrUserResult;
+import com.rikkei.jobs.identity.dto.HrRecipientDto;
 import com.rikkei.jobs.identity.dto.SendHrOnboardingEmailCommand;
 import com.rikkei.jobs.identity.dto.UserSummaryDto;
 import com.rikkei.jobs.identity.model.Role;
@@ -18,6 +19,7 @@ import jakarta.mail.internet.InternetAddress;
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -257,6 +259,19 @@ public class IdentityPublicServiceImpl implements IdentityPublicService {
                 command.fullName(),
                 command.companyName(),
                 command.rawTemporaryPassword());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<HrRecipientDto> findActiveHrRecipientsByCompanyId(Long companyId) {
+        if (companyId == null || companyId <= 0) {
+            return List.of();
+        }
+        return userRepository
+                .findByCompanyIdAndRoleNameAndStatus(companyId, Role.HR, UserStatus.ACTIVE)
+                .stream()
+                .map(u -> new HrRecipientDto(u.getId(), u.getEmail(), u.getFullName()))
+                .toList();
     }
 
     private static boolean containsForbiddenCharacters(String value) {

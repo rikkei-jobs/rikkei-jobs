@@ -1,2 +1,3 @@
 org.springframework.context.ApplicationListener=\
-com.rikkei.jobs.common.config.ProdEnvironmentValidator
+com.rikkei.jobs.common.config.ProdEnvironmentValidator,\
+com.rikkei.jobs.identity.security.AuthRateLimitProdValidator

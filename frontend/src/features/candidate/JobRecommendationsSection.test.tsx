@@ -3,6 +3,7 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { JobRecommendationsSection } from './JobRecommendationsSection';
 import * as api from './api/jobRecommendations';
+import { recruitmentApi } from '../recruitment';
 import type { JobRecommendationsResponse } from './types';
 
 describe('JobRecommendationsSection Component', () => {
@@ -97,11 +98,36 @@ describe('JobRecommendationsSection Component', () => {
     expect(document.querySelector('.system-label')).toHaveTextContent('Gợi ý hệ thống');
     expect(screen.getByText(/Cập nhật trong ngày/i)).toBeInTheDocument();
     expect(screen.queryByText(/AI Provider/i)).not.toBeInTheDocument();
-    const applyButtons = screen.getAllByRole('button', { name: /Ứng tuyển \(Sắp ra mắt\)/i });
+    const applyButtons = screen.getAllByRole('button', { name: /^Ứng tuyển$/i });
     expect(applyButtons).toHaveLength(2);
     applyButtons.forEach((button) => {
-      expect(button).toBeDisabled();
+      expect(button).toBeEnabled();
     });
+  });
+
+  it('opens ApplyDialog when clicking "Ứng tuyển" on a job card', async () => {
+    vi.spyOn(api, 'fetchJobRecommendations').mockResolvedValueOnce(mockResponse);
+    vi.spyOn(recruitmentApi, 'fetchCandidateCvs').mockResolvedValueOnce({
+      availability: 'ready',
+      items: [{ id: 11, title: 'CV Java Backend', isDefault: true }],
+    });
+
+    renderSection();
+
+    await waitFor(() => {
+      expect(screen.getByText('Kỹ sư Java Backend')).toBeInTheDocument();
+    });
+
+    const applyButtons = screen.getAllByRole('button', { name: /^Ứng tuyển$/i });
+    fireEvent.click(applyButtons[0]);
+
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog).toHaveTextContent('Nộp hồ sơ ứng tuyển');
+    expect(dialog).toHaveTextContent('Kỹ sư Java Backend — Rikkeisoft');
+    expect(await screen.findByText('CV Java Backend')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Đóng hộp thoại ứng tuyển' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('does not expose a candidate selector anymore', async () => {
@@ -168,6 +194,60 @@ describe('JobRecommendationsSection Component', () => {
     await waitFor(() => {
       expect(fetchSpy).toHaveBeenCalledTimes(2);
       expect(screen.getByText('Kỹ sư Java Backend')).toBeInTheDocument();
+    });
+  });
+
+  it('displays notice banner together with fallback recommendations when meta.message is present (A2)', async () => {
+    const quotaNotice =
+      'Bạn đã dùng hết lượt AI trong ngày. Đang hiển thị gợi ý dựa trên điểm kỹ năng.';
+    vi.spyOn(api, 'fetchJobRecommendations').mockResolvedValueOnce({
+      ...mockResponse,
+      items: [mockResponse.items[1]],
+      total: 1,
+      message: quotaNotice,
+    });
+    vi.spyOn(recruitmentApi, 'fetchCandidateCvs').mockResolvedValueOnce({
+      availability: 'unavailable',
+      items: [],
+      reason: 'Tính năng chọn và tải lên CV đang được hoàn thiện. Bạn vui lòng thử lại sau.',
+    });
+
+    renderSection();
+
+    await waitFor(() => {
+      expect(screen.getByText('Fresher Java Developer')).toBeInTheDocument();
+    });
+
+    expect(screen.getByRole('status')).toHaveTextContent(quotaNotice);
+    const applyButton = screen.getByRole('button', { name: /^Ứng tuyển$/i });
+    expect(applyButton).toBeEnabled();
+
+    fireEvent.click(applyButton);
+
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog).toHaveTextContent('Nộp hồ sơ ứng tuyển');
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      /Dịch vụ quản lý CV hiện chưa sẵn sàng/i,
+    );
+    expect(screen.getByRole('status')).toHaveTextContent(quotaNotice);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Đóng hộp thoại ứng tuyển' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('displays disabled notice when recommendations list is empty and meta.message is present (A3)', async () => {
+    const disabledNotice = 'AI đang tạm tắt';
+    vi.spyOn(api, 'fetchJobRecommendations').mockResolvedValueOnce({
+      ...mockResponse,
+      items: [],
+      total: 0,
+      message: disabledNotice,
+    });
+
+    renderSection();
+
+    await waitFor(() => {
+      expect(screen.getByRole('status')).toHaveTextContent(disabledNotice);
     });
   });
 });

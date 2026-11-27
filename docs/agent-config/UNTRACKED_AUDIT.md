@@ -64,11 +64,11 @@ Every assertion across the five test tiers in `tests/agent-config/` has been for
 | `F01-06` | `withBackup` preserves SHA-256 on mutation | **DROPPED** | Dropped because mutating tracked repo files violates binding rule R0 and risks permanent repository corruption on process abort. |
 | `F01-07` | `withBackup` restores original content on error | **DROPPED** | Dropped because process termination bypasses `finally` blocks in Node.js, making in-place file mutation unacceptable for repository safety. |
 | `F02-01..05` | 16 Rules filenames, H1 headers, LF line endings | **FOLDED** | Enforced mechanically in `scripts/validate-agent-config.mjs` Checks 1, 2, and 6. |
-| `F03-01..05` | 28 Skills catalog, naming, and trigger descriptions | **FOLDED** | Enforced mechanically in `scripts/validate-agent-config.mjs` Check 1. |
+| `F03-01..05` | 29 Skills catalog, naming, and trigger descriptions | **FOLDED** | Enforced mechanically in `scripts/validate-agent-config.mjs` Check 1. |
 | `F04-01..05` | Root entrypoints (CLAUDE, GEMINI, AGENTS) compliance | **FOLDED** | Enforced mechanically in `scripts/validate-agent-config.mjs` Checks 2 and 3. |
 | `F05-01..05` | Mirror parity between `.claude` and `.gemini` | **FOLDED** | Enforced mechanically in `scripts/validate-agent-config.mjs` Check 5 and `sync-agent-config.mjs --check`. |
 | `F06-01..03` | Line cap thresholds (rules <= 150, skills <= 500, entrypoints <= 120) | **FOLDED** | Enforced mechanically in `scripts/validate-agent-config.mjs` Check 2. |
-| `F07-01..03` | Emoji, credentials, and git mutation checks | **FOLDED** | Enforced mechanically in `scripts/validate-agent-config.mjs` Check 3 across 185 markdown files. |
+| `F07-01..03` | Emoji, credentials, and git mutation checks | **FOLDED** | Enforced mechanically in `scripts/validate-agent-config.mjs` Check 3 across all repository markdown files (185 at the 2026-11-16 audit). |
 | `F08-01..02` | Markdown link target and internal anchor existence | **FOLDED** | Enforced mechanically in `scripts/validate-agent-config.mjs` Check 4 and Check 7. |
 | `F09-01..03` | Security policies in `settings.json` and `.geminiignore` | **FOLDED** | Enforced mechanically in `scripts/validate-agent-config.mjs` Check 8. |
 
@@ -86,7 +86,7 @@ Every assertion across the five test tiers in `tests/agent-config/` has been for
 
 | Test Identifier | Assertion Description | Disposition | Exact Destination or Drop Rationale |
 |---|---|---|---|
-| `C01-C06` | Cross-platform mirror parity and hash identity | **FOLDED** | Enforced in `scripts/validate-agent-config.mjs` Check 5 (168 mirror files verified with zero drift). |
+| `C01-C06` | Cross-platform mirror parity and hash identity | **FOLDED** | Enforced in `scripts/validate-agent-config.mjs` Check 5 (175 mirror files verified with zero drift). |
 | `C07-C12` | Missing file and rogue file detection across mirrors | **FOLDED** | Enforced in `scripts/validate-agent-config.mjs` Check 5 (asymmetric orphan detection). |
 | `C13-C18` | Synthetic multi-file mutation permutation harness | **DROPPED** | Dropped because synthetic harness unit tests duplicate the deterministic verification provided by `sync-agent-config.mjs --check`. |
 

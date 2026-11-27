@@ -107,7 +107,48 @@ SOFTWARE.
 
 ---
 
-## 3. Open Fonts & SIL Open Font License (OFL 1.1)
+## 3. Upstream Project: Leonxlnx/taste-skill
+
+- **Project Name**: `taste-skill` (`design-taste-frontend`, version `2.5.1`)
+- **Repository URL**: <https://github.com/leonxlnx/taste-skill> (canonical redirect: <https://github.com/Leonxlnx/taste-skill>)
+- **Author & Copyright**: Copyright (c) 2026 Leonxlnx
+- **License**: MIT License
+- **Pinned Commit / Snapshot**: Commit `f6b76575f949707b4e3c37cd86cb44b0b98643e8` (`2026-11-07T12:33:21Z`, evaluated `2026-11-22`)
+
+### Full MIT License Text (Leonxlnx)
+
+```text
+MIT License
+
+Copyright (c) 2026 Leonxlnx
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+### Adaptation & Precedence Summary (`frontend-taste-anti-slop`)
+
+1. **Instructions-Only Vendoring**: Only adapted instructions (`SKILL.md`, `references/conflict-table.md`, `references/provenance-and-license.md`) are vendored under `agent-config/skills/frontend-taste-anti-slop/`. Upstream Claude Code `Stop` hooks, shell installers (`install.sh`), plugin manifests, Node gate/checker scripts, runtime CDN fetchers (`fonts.googleapis.com`, `cdn.jsdelivr.net`, Wikimedia Commons, Overpass API), WebGL shaders, and marketing palette/type dealers are strictly excluded.
+2. **Project Precedence**: Enterprise Rules `08`/`09`, `docs/design/DESIGN_SYSTEM.md`, `--rj-*` tokens, self-hosted WOFF2 fonts, Role-Density specs, Motion Budgets, Showcase Motion Tier, `/login` UIUX exceptions, and `docs/uiux/CONTENT.md` unconditionally supersede upstream rules across a documented 17-item conflict matrix, while retaining additive anti-slop copy, one-moment-per-page, box restraint (`<= 2` levels), render integrity, fine-pointer hover/press, single `<h1>`, and `375px` mobile hygiene practices.
+
+---
+
+## 4. Open Fonts & SIL Open Font License (OFL 1.1)
 
 In alignment with our Anti-AI design philosophy and commitment to high-craft typography, Rikkei Jobs selects three open-source font families licensed under the **SIL Open Font License (OFL) Version 1.1**. In strict adherence to our security policy and operational invariants, all fonts are designed for **100% self-hosted deployment** under `frontend/public/fonts/` (zero runtime reliance on external CDNs or Google Fonts endpoints):
 
@@ -149,7 +190,7 @@ Under the SIL Open Font License 1.1, the licensed fonts, including any derivativ
 
 ---
 
-## 4. Other Open Standards and Architectural Foundations
+## 5. Other Open Standards and Architectural Foundations
 
 We also acknowledge and reference the following industry specifications and standards that govern the engineering of Rikkei Jobs:
 
@@ -167,19 +208,23 @@ We also acknowledge and reference the following industry specifications and stan
 
 ---
 
-## 5. Tóm Tắt Bản Quyền Mã Nguồn Mở & Tiêu Chuẩn Kỹ Thuật (Bản Tiếng Việt)
+## 6. Tóm Tắt Bản Quyền Mã Nguồn Mở & Tiêu Chuẩn Kỹ Thuật (Bản Tiếng Việt)
 
 Phần này tóm lược toàn bộ các thông báo bản quyền, nguồn gốc kiến trúc và tiêu chuẩn kỹ thuật mở được kế thừa trong dự án Rikkei Jobs:
 
-### 5.1. Kế Thừa Kiến Trúc Quy Trình Từ obra/superpowers (Giấy Phép MIT)
+### 6.1. Kế Thừa Kiến Trúc Quy Trình Từ obra/superpowers (Giấy Phép MIT)
 
 Dự án Rikkei Jobs kế thừa mô hình kích hoạt kỹ năng theo tác vụ (task-triggered skills) từ dự án nguồn mở `superpowers` của tác giả Jesse Vincent. Các quy trình cốt lõi đã được viết lại toàn diện 100% để phù hợp với kiến trúc Monolith hiện đại (Java 25 LTS, Spring Boot 4.1.2, React 19.3.1, PostgreSQL 18.6). Đặc biệt, kỹ năng chuyển nhánh tự động (`finishing-a-development-branch`) đã bị loại bỏ hoàn toàn và thay thế bằng kỹ năng bàn giao `handoff-to-team-lead` nhằm bảo vệ tuyệt đối nguyên tắc **Git Strictly Read-Only**.
 
-### 5.2. Triết Lý Thiết Kế Anti-AI Từ nextlevelbuilder/ui-ux-pro-max-skill (Giấy Phép MIT)
+### 6.2. Triết Lý Thiết Kế Anti-AI Từ nextlevelbuilder/ui-ux-pro-max-skill (Giấy Phép MIT)
 
 Dự án áp dụng triết lý loại bỏ thiết kế AI đại trà (Anti-AI Aesthetic Bar): cấm sử dụng dải màu gradient tím-xanh mặc định, cấm dùng biểu tượng emoji trang trí, và yêu cầu bảng màu sở hữu riêng. Không có bất kỳ gói phần mềm hay công cụ CLI nào được cài đặt trên máy chủ phát triển, toàn bộ 66 cặp độ tương phản WCAG 2.2 AA/AAA và thông số font chữ tiếng Việt đều được tính toán lại bằng công thức toán học từ đầu trong `docs/design/DESIGN_SYSTEM.md`.
 
-### 5.3. Giấy Phép Phông Chữ SIL Open Font License (OFL 1.1)
+### 6.3. Kỹ Năng Anti-Slop Frontend Từ Leonxlnx/taste-skill (Giấy Phép MIT)
+
+Dự án tiếp nhận có chọn lọc các nguyên tắc chống thiết kế đại trà (anti-slop copy, kiểm soát độ sâu hộp lồng nhau tối đa 2 cấp, mọi phần tử trực quan phải hiển thị đầy đủ, vi tương tác `hover`/`active` cho con trỏ chính xác, mỗi trang có đúng 1 thẻ `<h1>` và không tràn ngang ở `375px`) từ `Leonxlnx/taste-skill` (`v2.5.1`, commit `f6b76575f949707b4e3c37cd86cb44b0b98643e8`, ngày `2026-11-07T12:33:21Z`, Copyright (c) 2026 Leonxlnx) vào kỹ năng `frontend-taste-anti-slop`. Toàn bộ `Stop` hooks, trình cài đặt `install.sh`, script Node tải tài nguyên mạng và bộ chọn bảng màu/font CDN đều bị loại bỏ; quy tắc dự án (`08`, `09`, `DESIGN_SYSTEM.md`, `CONTENT.md`, Showcase Tier và các ngoại lệ UIUX) luôn được ưu tiên tuyệt đối qua bảng đối chiếu xung đột 17 mục.
+
+### 6.4. Giấy Phép Phông Chữ SIL Open Font License (OFL 1.1)
 
 Ba bộ phông chữ mã nguồn mở được nhúng tự lưu trữ (self-hosted) tại `frontend/public/fonts/` bao gồm:
 
@@ -189,6 +234,6 @@ Ba bộ phông chữ mã nguồn mở được nhúng tự lưu trữ (self-host
 
 Cả ba bộ phông đều tuân thủ giấy phép nguồn mở OFL 1.1 và được lưu trữ nội bộ 100% trong `frontend/public/fonts/`, không gọi bất kỳ CDN bên thứ ba nào tại runtime để đảm bảo bảo mật và tính độc lập offline. Toàn bộ 8 file WOFF2 đã được xác thực mã hóa trong Docker container đảm bảo chứa đủ 134 chữ cái tiếng Việt và 5 dấu kết hợp.
 
-### 5.4. Các Tiêu Chuẩn Mở Quốc Tế (W3C, OWASP, Spring Modulith)
+### 6.5. Các Tiêu Chuẩn Mở Quốc Tế (W3C, OWASP, Spring Modulith)
 
 Dự án tuân thủ chặt chẽ các chuẩn công nghiệp quốc tế gồm: OWASP ASVS 4.0.3 về bảo mật ứng dụng, W3C WCAG 2.2 Level AA về khả năng tiếp cận, W3C CSS View Transitions và Scroll-driven Animations cho chuyển động giao diện người dùng, và Spring Modulith cho tính bao đóng mô-đun nghiệp vụ.

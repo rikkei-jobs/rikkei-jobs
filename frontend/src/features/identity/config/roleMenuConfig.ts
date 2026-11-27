@@ -27,9 +27,8 @@ export const ROLE_MENU_CONFIG: Readonly<Record<UserRole, readonly RoleMenuItem[]
     {
       id: 'candidate-applications',
       label: 'Ứng tuyển',
+      path: '/candidate/applications',
       icon: 'file-check',
-      disabled: true,
-      comingSoonLabel: 'Sắp ra mắt',
     },
     {
       id: 'candidate-gap',
@@ -68,9 +67,8 @@ export const ROLE_MENU_CONFIG: Readonly<Record<UserRole, readonly RoleMenuItem[]
     {
       id: 'hr-recruitment',
       label: 'Tuyển dụng',
+      path: '/hr/recruitment',
       icon: 'user-check',
-      disabled: true,
-      comingSoonLabel: 'Sắp ra mắt',
     },
     {
       id: 'hr-interns',
@@ -90,6 +88,12 @@ export const ROLE_MENU_CONFIG: Readonly<Record<UserRole, readonly RoleMenuItem[]
     },
   ],
   STAFF: [
+    {
+      id: 'staff-applications',
+      label: 'Hồ sơ ứng tuyển',
+      path: '/staff/applications',
+      icon: 'file-text',
+    },
     {
       id: 'staff-profiles',
       label: 'Duyệt hồ sơ',
@@ -127,6 +131,8 @@ export const ROLE_MENU_CONFIG: Readonly<Record<UserRole, readonly RoleMenuItem[]
     },
   ],
   ADMIN: [
+    { id: 'admin-ai-config', label: 'Cấu hình AI', path: '/admin/ai-config', icon: 'shield-check' },
+    { id: 'admin-ai-logs', label: 'Nhật ký AI', path: '/admin/ai-logs', icon: 'clock' },
     {
       id: 'admin-portal',
       label: 'Quản trị',

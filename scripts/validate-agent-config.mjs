@@ -9,7 +9,7 @@
  *   - Check 2: Strict Line Cap Limits & Line Ending Hygiene (LF, no BOM, caps)
  *   - Check 3: Forbidden Patterns Detection (recursive emoji scan across all docs, secrets, commit mutations, TODOs)
  *   - Check 4: Markdown Links & Anchor Validity (internal relative links and anchors)
- *   - Check 5: Cryptographic Mirror Parity (.claude <-> .gemini 1:1 SHA-256 hash match, full 168 mirror artifacts verified)
+ *   - Check 5: Cryptographic Mirror Parity (.claude <-> .gemini 1:1 SHA-256 hash match, full 175 mirror artifacts verified)
  *   - Check 6: Repository Asset Citation & Command Existence (real repo assets/commands)
  *   - Check 7: Skill Supporting Files (references/*) Link Validity & Mirror Parity
  *   - Check 8: Project-Level Settings (settings.json) Mapping & Security Enforcement
@@ -92,7 +92,7 @@ export const SKILL_NAMES = Object.freeze([
   'backend-module-feature', 'flyway-migration-authoring', 'spring-security-rbac-endpoint',
   'api-contract-and-errors', 'external-system-integration-and-mock', 'frontend-feature-slice',
   'frontend-visual-design', 'frontend-motion-design', 'frontend-iconography',
-  'frontend-accessibility-audit', 'docs-bilingual-update', 'ci-local-and-debug',
+  'frontend-accessibility-audit', 'frontend-taste-anti-slop', 'docs-bilingual-update', 'ci-local-and-debug',
   'security-review-checklist', 'backend-persistence-performance',
   'backend-module-boundaries', 'module-domain-knowledge'
 ]);
@@ -438,7 +438,7 @@ export async function validateAgentConfig(options = {}) {
   }
 
   if (results.check1Violations.length === 0) {
-    console.log(`  ${GREEN}[PASS] Check 1: All 28 skills have valid trigger-only YAML frontmatter.${RESET}`);
+    console.log(`  ${GREEN}[PASS] Check 1: All 29 skills have valid trigger-only YAML frontmatter.${RESET}`);
   } else {
     console.log(`  ${RED}[FAIL] Check 1: Found ${results.check1Violations.length} frontmatter violation(s).${RESET}`);
     results.check1Violations.forEach(v => console.log(`    ${RED}- ${v}${RESET}`));
@@ -822,7 +822,7 @@ export async function validateAgentConfig(options = {}) {
     logVerbose(`Skill parity ${skillName}: ${canonHash?.slice(0, 8)}`);
   }
 
-  // 5.3 Complete Mirror Artifacts Parity & Verification (168 desired files from sync-agent-config.mjs)
+  // 5.3 Complete Mirror Artifacts Parity & Verification (175 desired files from sync-agent-config.mjs)
   const desiredMirrors = buildDesiredFilesMap(CANONICAL_DIR, REPO_ROOT);
   results.mirrorArtifactsChecked = desiredMirrors.size;
   for (const [destPath, desiredBuf] of desiredMirrors.entries()) {
@@ -861,7 +861,7 @@ export async function validateAgentConfig(options = {}) {
   const geminiFiles = scanDirRecursive(GEMINI_DIR);
   for (const gFile of geminiFiles) {
     if (gFile.startsWith('commands/')) {
-      // Ignore .gemini/commands/ (which holds the 28 TOML fallback commands)
+      // Ignore .gemini/commands/ (which holds the 29 TOML fallback commands)
       continue;
     }
     if (gFile.endsWith('.json') || gFile.endsWith('.toml') || gFile.startsWith('settings/') || gFile === 'settings.json') {

@@ -41,7 +41,8 @@ The `using-rikkei-skills` skill serves as the bootstrap and navigation gateway f
 
 4. **Load Skills Progressively (On-Demand)**:
    - Read only the specific `SKILL.md` file required for the active phase.
-   - Do not bulk-load all 28 skills into working context simultaneously; preserve context window fidelity for implementation details.
+   - Do not bulk-load all 29 skills into working context simultaneously; preserve context window fidelity for implementation details.
+   - Frontend design and polish tasks route across `frontend-feature-slice`, `frontend-visual-design`, `frontend-motion-design`, `frontend-iconography`, `frontend-accessibility-audit`, and `frontend-taste-anti-slop` (with Enterprise Rules 08/09 and `docs/design/DESIGN_SYSTEM.md` taking strict precedence).
 
 5. **Execute Under Skill Governance**:
    - Follow the numbered step-by-step workflow of the loaded skill.

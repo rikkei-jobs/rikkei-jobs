@@ -2,8 +2,10 @@ package com.rikkei.jobs.identity.service;
 
 import com.rikkei.jobs.identity.dto.CreateHrUserCommand;
 import com.rikkei.jobs.identity.dto.CreatedHrUserResult;
+import com.rikkei.jobs.identity.dto.HrRecipientDto;
 import com.rikkei.jobs.identity.dto.SendHrOnboardingEmailCommand;
 import com.rikkei.jobs.identity.dto.UserSummaryDto;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -29,4 +31,6 @@ public interface IdentityPublicService {
     CreatedHrUserResult createHrAccount(CreateHrUserCommand command);
 
     void sendHrOnboardingEmail(SendHrOnboardingEmailCommand command);
+
+    List<HrRecipientDto> findActiveHrRecipientsByCompanyId(Long companyId);
 }

@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { JobDetailPanel } from './JobDetailPanel';
 import { ApiError } from '../../../shared/api/auth';
 import * as api from '../api/gapAnalysis';
+import { recruitmentApi } from '../../recruitment';
 import type { GapAnalysisResponse, JobDetail } from '../types';
 
 const JOB: JobDetail = {
@@ -118,5 +119,26 @@ describe('JobDetailPanel (DT-01)', () => {
       /Không tìm thấy JD đang tuyển dụng/i,
     );
     expect(screen.getByRole('heading', { name: 'Kỹ sư Java Backend' })).toBeInTheDocument();
+  });
+
+  it('renders an enabled "Ứng tuyển" button in .jd-actions and opens ApplyDialog on click', async () => {
+    vi.spyOn(api, 'fetchJobDetail').mockResolvedValue(JOB);
+    vi.spyOn(recruitmentApi, 'fetchCandidateCvs').mockResolvedValueOnce({
+      availability: 'ready',
+      items: [{ id: 11, title: 'CV Java Backend', isDefault: true }],
+    });
+
+    renderPanel();
+
+    await screen.findByRole('heading', { name: 'Kỹ sư Java Backend' });
+    const applyButton = screen.getByRole('button', { name: /^Ứng tuyển$/i });
+    expect(applyButton).toBeEnabled();
+
+    fireEvent.click(applyButton);
+
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog).toHaveTextContent('Nộp hồ sơ ứng tuyển');
+    expect(dialog).toHaveTextContent('Kỹ sư Java Backend — Rikkeisoft');
+    expect(await screen.findByText('CV Java Backend')).toBeInTheDocument();
   });
 });

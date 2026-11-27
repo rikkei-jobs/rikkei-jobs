@@ -459,6 +459,19 @@ When `SPRING_PROFILES_ACTIVE=dev` runs against an empty PostgreSQL 18.6 database
 
 ---
 
+### 7. Recruitment Module Addendum (`V19`, `V21`, `V23` & Dev `V22`, `V24`)
+
+Following the `V1`–`V14` baseline above, `UT-01` and `UT-02` activate the `recruitment` module (`4` production tables; `12` total odd prod migrations `V1..V23`, `9` total even dev seeds `V2..V24`, `21` combined in `dev`):
+
+| Table (`Migration`) | Key Columns & SQL Types | Constraints & Indexes |
+|---|---|---|
+| `applications` (`V19`, `V23`) | `id BIGSERIAL PK`, `job_id BIGINT NOT NULL`, `user_id BIGINT NOT NULL`, `cv_id BIGINT NOT NULL`, `cv_snapshot_url VARCHAR(500) NOT NULL`, `cover_letter TEXT`, `status VARCHAR(30) NOT NULL DEFAULT 'SUBMITTED'`, `version BIGINT NOT NULL DEFAULT 0`, `created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`, `updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()` | `uq_applications_active_job_user` (partial unique on open statuses), `V23` staff/HR composite indexes `idx_applications_created_at_id`, `idx_applications_status_created_at_id`, `idx_applications_job_id_status_created_at_id` |
+| `application_status_history` (`V19`) | `id BIGSERIAL PK`, `application_id BIGINT NOT NULL`, `from_status VARCHAR(30)`, `to_status VARCHAR(30) NOT NULL`, `actor_id BIGINT NOT NULL`, `note TEXT`, `created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()` | Intra-module FK `fk_application_status_history_application (application_id -> applications(id) ON DELETE CASCADE)` |
+| `application_cv_snapshots` (`V21`) | `application_id BIGINT PK`, `original_filename VARCHAR(255) NOT NULL`, `content_type VARCHAR(100) NOT NULL`, `file_data BYTEA NOT NULL`, `file_size BIGINT NOT NULL`, `sha256 VARCHAR(64) NOT NULL`, `created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()` | Intra-module FK `fk_application_cv_snapshots_application (application_id -> applications(id) ON DELETE CASCADE)`, `CHECK` on `application/pdf`, `1..5 MiB`, 64-hex `sha256` |
+| `interview_rounds` (`V23`) | `id BIGSERIAL PK`, `application_id BIGINT NOT NULL`, `round_no INTEGER NOT NULL`, `name VARCHAR(100) NOT NULL`, `interviewer_email VARCHAR(150) NOT NULL`, `scheduled_at TIMESTAMPTZ`, `result VARCHAR(20) NOT NULL DEFAULT 'PENDING'`, `score NUMERIC(5, 2)`, `note TEXT`, `version BIGINT NOT NULL DEFAULT 0`, `created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`, `updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()` | Intra-module FK `fk_interview_rounds_application (application_id -> applications(id) ON DELETE CASCADE)`, `uq_interview_rounds_app_round (application_id, round_no)`, `chk_interview_rounds_round_no`, `chk_interview_rounds_result`, `chk_interview_rounds_score`, `idx_interview_rounds_application_id (application_id, round_no ASC)` |
+
+---
+
 ## Part 2: Vietnamese Section / Bản dịch Tiếng Việt
 
 ### 1. Nguyên tắc Kiến trúc và Cô lập Dữ liệu
@@ -640,3 +653,13 @@ Khi chạy với `SPRING_PROFILES_ACTIVE=dev` trên một cơ sở dữ liệu P
   - `id = 1`: `tax_code = '0109283746'` (10 chữ số), `status = 'ACTIVE'`, `created_by = 7` (`staff1`) — khớp với `hr1.company_id = 1`.
   - `id = 2`: `tax_code = '0314829105001'` (13 chữ số), `status = 'ACTIVE'`, `created_by = 7` (`staff1`) — khớp với `hr2.company_id = 2`.
 - **Dữ liệu tham chiếu nghiệp vụ (`V2`, `V4`, `V8`, `V12`, `V14`)**: `20` kỹ năng chuẩn (`V2`), trạng thái hiển thị `candidate_profiles` (`candidate2` công khai với `is_public = true`; `candidate1` và `candidate3` riêng tư với `is_public = false` trong `V4`), `2` `evaluation_templates`, `3` `evaluations` và `12` `evaluation_scores` (`V8`), `12` tin tuyển dụng mẫu trong `jobs` (`10` tin `APPROVED` còn hạn, `1` tin `DRAFT`, `1` tin `APPROVED` đã hết hạn trong `V12`), cùng `4` `target_positions` (`JAVA_BACKEND_FRESHER`, `FRONTEND_REACTJS_FRESHER`, `TESTER`, `FULLSTACK`) và `21` ánh xạ `position_skills` (`V14`); các bảng `candidate_targets`, `gap_results` và `job_recommendations` không được nạp sẵn dữ liệu trong SQL.
+
+---
+
+### 7. Phụ lục Module Tuyển dụng (`V19`, `V21`, `V23` & Dev `V22`, `V24`)
+
+Tiếp nối nền `V1`–`V14`, `UT-01` và `UT-02` kích hoạt module `recruitment` (`4` bảng production; tổng `12` migration prod lẻ `V1..V23`, `9` seed dev chẵn `V2..V24`, `21` migration kết hợp ở môi trường `dev`):
+
+- `applications` (`V19`, `V23`): lưu đơn ứng tuyển với cột vô hướng `job_id`, `user_id`, `cv_id` (không có FK chéo module), partial unique index `uq_applications_active_job_user` và `3` chỉ mục tổng hợp trong `V23` phục vụ danh sách `STAFF`/`HR` (`idx_applications_created_at_id`, `idx_applications_status_created_at_id`, `idx_applications_job_id_status_created_at_id`).
+- `application_status_history` (`V19`) & `application_cv_snapshots` (`V21`): tham chiếu nội bộ module tới `applications(id)` với `ON DELETE CASCADE`.
+- `interview_rounds` (`V23`): tham chiếu nội bộ module `fk_interview_rounds_application` tới `applications(id) ON DELETE CASCADE`, khóa duy nhất `uq_interview_rounds_app_round (application_id, round_no)`, ràng buộc `round_no >= 1`, `result IN ('PENDING', 'PASS', 'FAIL')`, `score` trong `[0, 100]`, khóa lạc quan `version` và chỉ mục `idx_interview_rounds_application_id (application_id, round_no ASC)`. Dữ liệu mẫu dev (`6` vòng cho các đơn `3..6`) nằm tại `V24__dev_interview_rounds_seed.sql`.

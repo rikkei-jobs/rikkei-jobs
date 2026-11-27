@@ -189,6 +189,32 @@ public class RoutePolicyRegistry {
                             false,
                             "Dev-only external mock test probe"),
 
+                    // AI-05 administration
+                    RoutePolicy.roles(
+                            HttpMethod.GET,
+                            "/api/v1/admin/ai-config",
+                            true,
+                            "Read AI settings",
+                            "ADMIN"),
+                    RoutePolicy.roles(
+                            HttpMethod.PUT,
+                            "/api/v1/admin/ai-config",
+                            true,
+                            "Update AI settings",
+                            "ADMIN"),
+                    RoutePolicy.roles(
+                            HttpMethod.GET,
+                            "/api/v1/admin/ai-logs",
+                            true,
+                            "Read masked AI audit",
+                            "ADMIN"),
+                    RoutePolicy.roles(
+                            HttpMethod.GET,
+                            "/api/v1/admin/ai-usage/summary",
+                            true,
+                            "Read AI usage",
+                            "ADMIN"),
+
                     // 4. Authenticated Any (all 5 roles)
                     RoutePolicy.authenticatedAny(
                             HttpMethod.POST,
@@ -349,6 +375,103 @@ public class RoutePolicyRegistry {
                             false,
                             "HR reads own company (404 on mismatch), STAFF reads any (methodScoped=false preserves 405 on PUT)",
                             OwnershipGuard.ROLE_HR,
+                            OwnershipGuard.ROLE_STAFF),
+
+                    // 8. Recruitment Applications (UT-01: Candidate
+                    // apply/list/detail/withdraw/snapshot & HR read-only)
+                    RoutePolicy.roles(
+                            HttpMethod.POST,
+                            "/api/v1/jobs/{id}/apply",
+                            true,
+                            "Candidate submits CV application to an eligible job",
+                            OwnershipGuard.ROLE_CANDIDATE),
+                    RoutePolicy.roles(
+                            HttpMethod.GET,
+                            "/api/v1/me/applications",
+                            true,
+                            "Candidate lists own applications",
+                            OwnershipGuard.ROLE_CANDIDATE),
+                    RoutePolicy.roles(
+                            HttpMethod.GET,
+                            "/api/v1/me/applications/{id}",
+                            true,
+                            "Candidate views own application detail and history",
+                            OwnershipGuard.ROLE_CANDIDATE),
+                    RoutePolicy.roles(
+                            HttpMethod.POST,
+                            "/api/v1/me/applications/{id}/withdraw",
+                            true,
+                            "Candidate withdraws own application before OFFER",
+                            OwnershipGuard.ROLE_CANDIDATE),
+                    RoutePolicy.roles(
+                            HttpMethod.GET,
+                            "/api/v1/me/applications/{id}/cv-snapshot",
+                            true,
+                            "Candidate downloads own submitted CV PDF snapshot",
+                            OwnershipGuard.ROLE_CANDIDATE),
+                    RoutePolicy.roles(
+                            HttpMethod.GET,
+                            "/api/v1/hr/jobs",
+                            true,
+                            "HR lists jobs belonging to own company (Option 1A; extended by DN-04)",
+                            OwnershipGuard.ROLE_HR),
+                    RoutePolicy.roles(
+                            HttpMethod.GET,
+                            "/api/v1/hr/jobs/{jobId}/applications",
+                            true,
+                            "HR lists applications for own company job",
+                            OwnershipGuard.ROLE_HR),
+                    RoutePolicy.roles(
+                            HttpMethod.GET,
+                            "/api/v1/hr/jobs/{jobId}/applications/{applicationId}",
+                            true,
+                            "HR views application detail for own company job",
+                            OwnershipGuard.ROLE_HR),
+                    RoutePolicy.roles(
+                            HttpMethod.GET,
+                            "/api/v1/hr/jobs/{jobId}/applications/{applicationId}/cv-snapshot",
+                            true,
+                            "HR downloads submitted CV PDF snapshot for own company job",
+                            OwnershipGuard.ROLE_HR),
+
+                    // 9. Recruitment Process & Staff Oversight (UT-02 + Option 2A)
+                    RoutePolicy.roles(
+                            HttpMethod.GET,
+                            "/api/v1/applications/{id}",
+                            true,
+                            "HR (owning company -> else 404) or STAFF views full recruitment application process detail",
+                            OwnershipGuard.ROLE_HR,
+                            OwnershipGuard.ROLE_STAFF),
+                    RoutePolicy.roles(
+                            HttpMethod.GET,
+                            "/api/v1/applications/{id}/cv-snapshot",
+                            true,
+                            "HR (owning company -> else 404) or STAFF downloads CV PDF snapshot (Option 2A)",
+                            OwnershipGuard.ROLE_HR,
+                            OwnershipGuard.ROLE_STAFF),
+                    RoutePolicy.roles(
+                            HttpMethod.POST,
+                            "/api/v1/applications/{id}/transition",
+                            true,
+                            "HR transitions application status along strict UT-02 workflow",
+                            OwnershipGuard.ROLE_HR),
+                    RoutePolicy.roles(
+                            HttpMethod.POST,
+                            "/api/v1/applications/{id}/rounds",
+                            true,
+                            "HR creates an interview round for an application in SCREENING or INTERVIEW",
+                            OwnershipGuard.ROLE_HR),
+                    RoutePolicy.roles(
+                            HttpMethod.PUT,
+                            "/api/v1/applications/{id}/rounds/{roundId}",
+                            true,
+                            "HR updates interview round result, score, and feedback note in INTERVIEW",
+                            OwnershipGuard.ROLE_HR),
+                    RoutePolicy.roles(
+                            HttpMethod.GET,
+                            "/api/v1/staff/applications",
+                            true,
+                            "STAFF monitors paginated recruitment applications across companies",
                             OwnershipGuard.ROLE_STAFF));
 
     private static final PathPatternParser PATTERN_PARSER = new PathPatternParser();

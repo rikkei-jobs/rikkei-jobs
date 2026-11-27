@@ -200,7 +200,12 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
       await waitFor(
         () => {
           expect(screen.getByTestId('current-pathname')).toHaveTextContent('/candidate');
-          expect(screen.getByText('Hồ sơ ứng tuyển')).toBeInTheDocument();
+          expect(screen.queryByText('Hồ sơ ứng tuyển')).not.toBeInTheDocument();
+          expect(
+            screen.getByText(
+              'Góp ý cải thiện CV và luyện phỏng vấn thử theo yêu cầu tin tuyển dụng.',
+            ),
+          ).toBeInTheDocument();
         },
         { timeout: 8000 },
       );
@@ -538,7 +543,12 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
       await waitFor(
         () => {
           expect(screen.getByTestId('current-pathname')).toHaveTextContent('/candidate');
-          expect(screen.getByText('Hồ sơ ứng tuyển')).toBeInTheDocument();
+          expect(screen.queryByText('Hồ sơ ứng tuyển')).not.toBeInTheDocument();
+          expect(
+            screen.getByText(
+              'Góp ý cải thiện CV và luyện phỏng vấn thử theo yêu cầu tin tuyển dụng.',
+            ),
+          ).toBeInTheDocument();
         },
         { timeout: 8000 },
       );
@@ -558,7 +568,7 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
       await waitFor(
         () => {
           expect(screen.getByTestId('current-pathname')).toHaveTextContent('/candidate/skills');
-          expect(screen.getByRole('heading', { level: 2, name: /Hồ sơ năng lực/i })).toBeInTheDocument();
+          expect(screen.getByRole('heading', { level: 1, name: /Hồ sơ năng lực/i })).toBeInTheDocument();
         },
         { timeout: 8000 },
       );
@@ -780,7 +790,12 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
       await waitFor(
         () => {
           expect(screen.getByTestId('current-pathname')).toHaveTextContent('/candidate');
-          expect(screen.getByText('Hồ sơ ứng tuyển')).toBeInTheDocument();
+          expect(screen.queryByText('Hồ sơ ứng tuyển')).not.toBeInTheDocument();
+          expect(
+            screen.getByText(
+              'Góp ý cải thiện CV và luyện phỏng vấn thử theo yêu cầu tin tuyển dụng.',
+            ),
+          ).toBeInTheDocument();
         },
         { timeout: 8000 },
       );
@@ -973,7 +988,7 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
       await waitFor(
         () => {
           expect(screen.getByTestId('current-pathname')).toHaveTextContent('/candidate/skills');
-          expect(screen.getByRole('heading', { level: 2, name: /Hồ sơ năng lực/i })).toBeInTheDocument();
+          expect(screen.getByRole('heading', { level: 1, name: /Hồ sơ năng lực/i })).toBeInTheDocument();
         },
         { timeout: 8000 },
       );
@@ -1142,7 +1157,12 @@ describe('Post-Login state.from Redirect Integration (F1)', () => {
       await waitFor(
         () => {
           expect(screen.getByTestId('current-pathname')).toHaveTextContent('/candidate');
-          expect(screen.getByText('Hồ sơ ứng tuyển')).toBeInTheDocument();
+          expect(screen.queryByText('Hồ sơ ứng tuyển')).not.toBeInTheDocument();
+          expect(
+            screen.getByText(
+              'Góp ý cải thiện CV và luyện phỏng vấn thử theo yêu cầu tin tuyển dụng.',
+            ),
+          ).toBeInTheDocument();
         },
         { timeout: 8000 },
       );

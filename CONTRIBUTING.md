@@ -200,7 +200,7 @@ A task or pull request is considered complete ONLY when:
 
 To maintain engineering velocity and architectural integrity across our modular monolith, all AI coding agents (Claude Code, Gemini CLI, Antigravity) must adhere to the standardized configuration framework:
 
-- **Rules & Skills Framework**: Canonical rules (01-16) and skills (28 task-triggered workflows) are maintained in `agent-config/` and mirrored byte-identically to `.claude/` and `.gemini/`. Comprehensive architectural guidelines are documented in [`docs/agent-config/README.md`](docs/agent-config/README.md).
+- **Rules & Skills Framework**: Canonical rules (01-16) and skills (29 task-triggered workflows) are maintained in `agent-config/` and mirrored byte-identically to `.claude/` and `.gemini/`. Comprehensive architectural guidelines are documented in [`docs/agent-config/README.md`](docs/agent-config/README.md).
 - **Strict Git Read-Only Policy**: AI coding agents operate under a non-negotiable **Git Read-Only** constraint. Agents must NEVER execute `git commit`, `git push`, `git checkout -b`, `git stash`, or branch-switching commands. All modifications must remain uncommitted in the working copy.
 - **Commit Proposals**: Agent handoff reports must propose commit messages in English using the Conventional Commits format prefixed with the task code `T022DB0:` (e.g., `T022DB0: feat(skills): add backend module boundaries skill`). Only human team leads review and commit changes.
 - **Configuration Parity & Gate Verification**: Any modifications to agent rules or skills must be authored in `agent-config/`, synchronized via `node scripts/sync-agent-config.mjs`, and validated via `node scripts/validate-agent-config.mjs` (Quality Gate 25).

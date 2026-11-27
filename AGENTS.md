@@ -28,7 +28,7 @@ Rikkei Jobs is an enterprise education and recruitment platform engineered as a 
 
 - Canonical Source of Truth: agent-config/ directory inside the repository.
   - agent-config/rules/: 16 core single-topic rules (01 through 16).
-  - agent-config/skills/: 28 task-triggered domain and process skills.
+  - agent-config/skills/: 29 task-triggered domain and process skills (including `frontend-taste-anti-slop`).
   - agent-config/templates/: Root entrypoints and tool-specific configuration templates.
 - Active Tool Mirrors: Synchronized byte-identically to .claude/ and .gemini/ via scripts/sync-agent-config.mjs.
 - Execution Guidelines: Prior to writing any code, consult applicable rules and trigger matching skills using using-rikkei-skills.

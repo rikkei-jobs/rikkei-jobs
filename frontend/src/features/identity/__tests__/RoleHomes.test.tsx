@@ -85,7 +85,11 @@ describe('Role Home Pages', () => {
       expect(screen.getByText(/Chưa có điểm kỹ năng xác thực để vẽ biểu đồ/i)).toBeInTheDocument();
     });
 
-    expect(screen.getByText('Hồ sơ ứng tuyển')).toBeInTheDocument();
+    expect(screen.queryByText('Hồ sơ ứng tuyển')).not.toBeInTheDocument();
+    expect(screen.getAllByText('Trợ lý AI').length).toBeGreaterThanOrEqual(2);
+    expect(
+      screen.getByText('Góp ý cải thiện CV và luyện phỏng vấn thử theo yêu cầu tin tuyển dụng.'),
+    ).toBeInTheDocument();
     expect(screen.getAllByText('Hồ sơ năng lực').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('Sắp ra mắt').length).toBeGreaterThanOrEqual(2);
     const skillsLinks = screen.getAllByRole('link', { name: /Xem hồ sơ năng lực/i });
@@ -269,7 +273,7 @@ describe('Role Home Pages', () => {
     });
 
     const user = createUser('HR', 'Tran Thi HR');
-    render(
+    const { container } = render(
       <AuthProvider initialToken="token" initialUser={user}>
         <MemoryRouter>
           <HrHomePage />
@@ -283,10 +287,93 @@ describe('Role Home Pages', () => {
     expect(screen.queryByText(/User ID/i)).not.toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByText('Công ty Cổ phần Công nghệ Nam Phương')).toBeInTheDocument();
-      expect(screen.getByText(/Tải lên logo cho Công ty Cổ phần Công nghệ Nam Phương/i)).toBeInTheDocument();
     });
-    expect(screen.getByText('Đăng tin tuyển dụng')).toBeInTheDocument();
-    expect(screen.getAllByText('Sắp ra mắt').length).toBeGreaterThanOrEqual(3);
+    expect(
+      screen.getByText('Tải lên logo cho Công ty Cổ phần Công nghệ Nam Phương'),
+    ).toBeInTheDocument();
+    const main = screen.getByRole('main');
+    expect(main.querySelectorAll('a[href="/hr/company"]')).toHaveLength(2);
+    expect(main.querySelectorAll('a[href="/hr/recruitment"]')).toHaveLength(1);
+    const hero = main.querySelector('.rj-cand-hero') as HTMLElement;
+    expect(hero.querySelectorAll('.rj-btn-primary')).toHaveLength(1);
+    const companyNextCta = screen.getByRole('link', { name: /Mở hồ sơ công ty/i });
+    expect(companyNextCta).toHaveAttribute('href', '/hr/company');
+    expect(companyNextCta).toHaveClass('rj-btn-primary');
+    const roadmapAside = container.querySelector('aside[aria-labelledby="hr-roadmap-heading"]');
+    expect(roadmapAside).not.toBeNull();
+    expect(within(roadmapAside as HTMLElement).queryByText('Quản lý ứng viên')).not.toBeInTheDocument();
+    expect(
+      within(roadmapAside as HTMLElement).queryByRole('link', { name: /Mở tuyển dụng/i }),
+    ).not.toBeInTheDocument();
+    expect(within(roadmapAside as HTMLElement).getByText('Đăng tin tuyển dụng')).toBeInTheDocument();
+    expect(within(roadmapAside as HTMLElement).getByText('Thực tập sinh IOC')).toBeInTheDocument();
+    expect(within(roadmapAside as HTMLElement).getAllByText('Sắp ra mắt')).toHaveLength(2);
+    const recruitmentCta = screen.getByRole('link', { name: /Mở tuyển dụng/i });
+    expect(recruitmentCta).toHaveAttribute('href', '/hr/recruitment');
+    expect(recruitmentCta).toHaveClass('rj-btn-secondary');
+  });
+
+  it('shows both company logo prompt and live recruitment entry when company logo is missing', async () => {
+    globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+      if (String(url).includes('/api/v1/companies/me')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () =>
+            Promise.resolve({
+              id: 2,
+              name: 'Công ty Cổ phần Công nghệ Phương Đông',
+              taxCode: '0109998888',
+              industry: 'Phần mềm',
+              size: '51-200',
+              address: 'Hà Nội',
+              city: 'Hà Nội',
+              website: 'https://phuongdong.example.vn',
+              logoUrl: null,
+              description: 'Đối tác tuyển dụng kỹ sư.',
+              status: 'ACTIVE',
+              version: 1,
+            }),
+        } as unknown as Response);
+      }
+      return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({}) } as unknown as Response);
+    });
+
+    const user = createUser('HR', 'HR Missing Logo');
+    const { container } = render(
+      <AuthProvider initialToken="token" initialUser={user}>
+        <MemoryRouter>
+          <HrHomePage />
+        </MemoryRouter>
+      </AuthProvider>,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByText('Tải lên logo cho Công ty Cổ phần Công nghệ Phương Đông'),
+      ).toBeInTheDocument();
+    });
+
+    const nextBoxes = container.querySelectorAll('.rj-cand-hero .rj-stack-md > .rj-cand-next-box');
+    expect(nextBoxes).toHaveLength(2);
+
+    expect(
+      within(nextBoxes[0] as HTMLElement).getByText('Bước tiếp theo cho doanh nghiệp'),
+    ).toBeInTheDocument();
+    const companyLink = within(nextBoxes[0] as HTMLElement).getByRole('link', {
+      name: /Mở hồ sơ công ty/i,
+    });
+    expect(companyLink).toHaveAttribute('href', '/hr/company');
+    expect(companyLink).toHaveClass('rj-btn-primary');
+
+    expect(
+      within(nextBoxes[1] as HTMLElement).getByText('Hoạt động tuyển dụng'),
+    ).toBeInTheDocument();
+    const recruitLink = within(nextBoxes[1] as HTMLElement).getByRole('link', {
+      name: /Mở tuyển dụng/i,
+    });
+    expect(recruitLink).toHaveAttribute('href', '/hr/recruitment');
+    expect(recruitLink).toHaveClass('rj-btn-secondary');
   });
 
   it('renders MentorHomePage with real evaluation templates and airy layout', async () => {
@@ -381,6 +468,10 @@ describe('Role Home Pages', () => {
     await waitFor(() => {
       expect(screen.getByText('Java Backend Fresher')).toBeInTheDocument();
     });
+    expect(screen.getByRole('link', { name: /Theo dõi hồ sơ ứng tuyển/i })).toHaveAttribute(
+      'href',
+      '/staff/applications',
+    );
     expect(screen.getByText('Duyệt hồ sơ & doanh nghiệp')).toBeInTheDocument();
   });
 
@@ -399,7 +490,8 @@ describe('Role Home Pages', () => {
 
     expect(screen.getByText(/Chào mừng, Admin User!/i)).toBeInTheDocument();
     expect(screen.getByText('Danh mục kỹ năng & trọng số')).toBeInTheDocument();
-    expect(screen.getByText('Công cụ quản trị đang được xây dựng')).toBeInTheDocument();
+    expect(screen.getByText('Kiểm soát trợ lý AI')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Mở cấu hình AI' })).toHaveAttribute('href', '/admin/ai-config');
     expect(container.textContent).not.toMatch(/trạng thái kết nối backend|LMS SSO/i);
     expect(container.querySelectorAll('a[href="/change-password"]')).toHaveLength(0);
     expect(screen.queryByRole('link', { name: /Đổi mật khẩu/i })).not.toBeInTheDocument();
@@ -489,11 +581,53 @@ describe('Role Home Pages', () => {
       const main = screen.getByRole('main');
       expect(main).toHaveClass('rj-dashboard-content');
 
-      // Verify Candidate Skills content inside the container
-      expect(await screen.findByRole('heading', { name: 'Hồ sơ năng lực' })).toBeInTheDocument();
+      // Verify Candidate Skills content inside the container with single h1
+      const h1s = await screen.findAllByRole('heading', { level: 1 });
+      expect(h1s).toHaveLength(1);
+      expect(h1s[0]).toHaveTextContent('Hồ sơ năng lực');
       expect(screen.getByText(/Chỉ số 0 - 100 theo từng kỹ năng/i)).toBeInTheDocument();
     } finally {
       globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('renders "Mã học viên LMS" for CANDIDATE and "Mã tài khoản LMS" for non-candidate LMS roles', () => {
+    const candidateLms: UserDto = {
+      ...createUser('CANDIDATE', 'Ứng viên LMS'),
+      lmsUserId: 'lms-sv-001',
+    };
+    const { unmount } = render(
+      <AuthProvider initialToken="token" initialUser={candidateLms}>
+        <MemoryRouter>
+          <RoleHomeLayout
+            roleBadgeClass="rj-role-candidate"
+            roleIcon="user"
+          />
+        </MemoryRouter>
+      </AuthProvider>,
+    );
+    expect(screen.getByText('Mã học viên LMS')).toBeInTheDocument();
+    expect(screen.queryByText('Mã tài khoản LMS')).not.toBeInTheDocument();
+    unmount();
+
+    for (const role of ['MENTOR', 'STAFF', 'ADMIN'] as const) {
+      const nonCandidateLms: UserDto = {
+        ...createUser(role, `${role} LMS`),
+        lmsUserId: `lms-${role.toLowerCase()}-001`,
+      };
+      const { unmount: unmountRole } = render(
+        <AuthProvider initialToken="token" initialUser={nonCandidateLms}>
+          <MemoryRouter>
+            <RoleHomeLayout
+              roleBadgeClass={`rj-role-${role.toLowerCase()}`}
+              roleIcon="shield"
+            />
+          </MemoryRouter>
+        </AuthProvider>,
+      );
+      expect(screen.getByText('Mã tài khoản LMS')).toBeInTheDocument();
+      expect(screen.queryByText('Mã học viên LMS')).not.toBeInTheDocument();
+      unmountRole();
     }
   });
 

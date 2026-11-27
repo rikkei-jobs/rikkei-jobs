@@ -128,7 +128,9 @@ export const RoleHomeLayout: React.FC<RoleHomeLayoutProps> = ({
               </tr>
               {user?.lmsUserId && (
                 <tr>
-                  <th>Mã học viên LMS</th>
+                  <th>
+                    {user.role === 'CANDIDATE' ? 'Mã học viên LMS' : 'Mã tài khoản LMS'}
+                  </th>
                   <td className="rj-tabular-nums">{user.lmsUserId}</td>
                 </tr>
               )}

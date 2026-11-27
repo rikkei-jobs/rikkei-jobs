@@ -35,6 +35,9 @@ public class JobRecommendation {
     @Column(name = "ai_generated", nullable = false)
     private Boolean aiGenerated = Boolean.FALSE;
 
+    @Column(name = "quota_degraded", nullable = false)
+    private Boolean quotaDegraded = Boolean.FALSE;
+
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
 
@@ -113,6 +116,14 @@ public class JobRecommendation {
 
     public void setAiGenerated(Boolean aiGenerated) {
         this.aiGenerated = aiGenerated;
+    }
+
+    public Boolean getQuotaDegraded() {
+        return quotaDegraded;
+    }
+
+    public void setQuotaDegraded(Boolean quotaDegraded) {
+        this.quotaDegraded = quotaDegraded != null ? quotaDegraded : Boolean.FALSE;
     }
 
     public OffsetDateTime getCreatedAt() {

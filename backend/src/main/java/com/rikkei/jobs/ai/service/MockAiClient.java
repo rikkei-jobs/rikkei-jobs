@@ -1,6 +1,8 @@
 package com.rikkei.jobs.ai.service;
 
 import com.rikkei.jobs.ai.config.AiProperties;
+import com.rikkei.jobs.ai.dto.AiConfigDto;
+import com.rikkei.jobs.ai.dto.AiGenerationResult;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -18,7 +20,7 @@ public class MockAiClient implements AiClient {
     }
 
     @Override
-    public String generateExplanation(String prompt) {
-        return aiProperties.getMock().getExplanation();
+    public AiGenerationResult generate(String prompt, AiConfigDto config) {
+        return new AiGenerationResult(aiProperties.getMock().getExplanation(), 0, 0);
     }
 }

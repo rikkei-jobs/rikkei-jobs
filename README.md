@@ -239,7 +239,7 @@ Run all linting, static analysis, unit tests, and security path checks using the
 .\check.ps1
 ```
 
-Individual checks and verified baselines (`701` backend tests across `64` classes, `427` frontend tests across `36` files, `27` E2E suites / `329` cases / `2020` assertions, `120` contrast pairs, `26` active runtime quality gates):
+Individual checks and verified baselines (`1074` backend tests across `76` test classes, `459` frontend tests across `38` files, `28` E2E suites / `334` cases / `2078` assertions, `120` contrast pairs, `26` active runtime quality gates):
 
 - **Single Backend Permission Test Command (NT-02 RBAC & Policy Coverage, JDK 25)**: `cd backend && ./mvnw test -D "test=Rbac*IntegrationTest"` (PowerShell: `.\mvnw.cmd test -D "test=Rbac*IntegrationTest"`)
 - **Backend Full Gate (JDK 25)**: `cd backend && ./mvnw clean test spotless:check spotbugs:check`
@@ -293,4 +293,5 @@ For detailed architectural decisions and operational guides, consult the `docs/`
 - [NT-02 RBAC Guide & Permission Matrix](docs/nt02/README.md) — Declarative `RoutePolicyRegistry`, `OwnershipGuard`, OpenAPI `/api/docs`, shared role menu, and [35-endpoint permission matrix](docs/nt02/permission-matrix.md) *(Bilingual)*.
 - [NT-02 PR Description](docs/nt02/PR_DESCRIPTION.md) *(Bilingual)* — Complete reviewer checklist, Team Lead decisions `D1`–`D8`, and gate verification summary.
 - [Contributing Guidelines](CONTRIBUTING.md) — Git workflow and pull request process.
-- [AI Agent Configuration & Skills](docs/agent-config/README.md) *(Bilingual)* — Architecture, 16 enterprise rules, 28 task-triggered skills, validation tooling, and open-source attribution.
+- [AI Agent Configuration & Skills](docs/agent-config/README.md) *(Bilingual)* — Architecture, 16 enterprise rules, 29 task-triggered skills, validation tooling, and open-source attribution.
+- [ROUND PLATFORM-1 (`T022DB0`)](docs/platform1/README.md) *(Bilingual)* — Vendored `frontend-taste-anti-slop` skill, live UI/UX audit, whole-system & C1b load optimization, C2 security hardening, and operational configuration.

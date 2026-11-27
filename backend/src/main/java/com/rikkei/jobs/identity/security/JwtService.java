@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.UUID;
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,8 @@ import org.springframework.stereotype.Service;
 public final class JwtService {
 
     public static final long TOKEN_VALIDITY_HOURS = 8L;
+    public static final String EXPECTED_ISSUER = "rikkei-jobs";
+    public static final String EXPECTED_AUDIENCE = "rikkei-jobs-api";
 
     private final SecretKey key;
     private final Clock clock;
@@ -39,7 +42,10 @@ public final class JwtService {
     }
 
     /**
-     * Generates an 8-hour access token with userId, role, companyId, and mustChangePassword claims.
+     * Generates an 8-hour HS256 access token with {@code iss="rikkei-jobs"}, {@code
+     * aud="rikkei-jobs-api"}, a unique UUID {@code jti} for per-token audit/correlation (not
+     * checked for revocation), and {@code userId}, {@code role}, {@code companyId}, and {@code
+     * mustChangePassword} claims.
      */
     public String generateToken(User user) {
         Date issuedAt = Date.from(clock.instant());
@@ -47,6 +53,11 @@ public final class JwtService {
 
         var builder =
                 Jwts.builder()
+                        .issuer(EXPECTED_ISSUER)
+                        .audience()
+                        .add(EXPECTED_AUDIENCE)
+                        .and()
+                        .id(UUID.randomUUID().toString())
                         .subject(user.getEmail())
                         .claim("userId", user.getId())
                         .claim("role", user.getRole() != null ? user.getRole().getName() : "")
@@ -64,10 +75,17 @@ public final class JwtService {
         return builder.compact();
     }
 
-    /** Parses and validates signed JWT claims using injectable Clock. */
+    /**
+     * Parses and validates signed JWT claims using injectable {@link Clock}. Enforces HMAC-SHA256
+     * signature verification ({@code alg=HS256}), required {@code iss} ({@value #EXPECTED_ISSUER}),
+     * required {@code aud} ({@value #EXPECTED_AUDIENCE}), and {@code exp}/{@code nbf} validity.
+     * {@code jti} is not enforced for revocation.
+     */
     public Claims extractAllClaims(String token) {
         return Jwts.parser()
                 .verifyWith(key)
+                .requireIssuer(EXPECTED_ISSUER)
+                .requireAudience(EXPECTED_AUDIENCE)
                 .clock(() -> Date.from(clock.instant()))
                 .build()
                 .parseSignedClaims(token)

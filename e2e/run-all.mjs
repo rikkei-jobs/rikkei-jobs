@@ -41,7 +41,9 @@ const testTiers = [
       'test_evaluation_features.test.mjs',
       'test_company_features.test.mjs',
       'test_openapi_docs.test.mjs',
-      'test_internships.test.mjs'
+      'test_internships.test.mjs',
+      'test_applications.test.mjs',
+      'test_recruitment_process.test.mjs'
     ]
   },
   {
@@ -55,7 +57,8 @@ const testTiers = [
       'test_round_b_boundaries.test.mjs',
       'test_evaluation_boundaries.test.mjs',
       'test_company_boundaries.test.mjs',
-      'test_rbac_matrix_boundaries.test.mjs'
+      'test_rbac_matrix_boundaries.test.mjs',
+      'test_ai_governance_admin.test.mjs'
     ]
   },
   {
