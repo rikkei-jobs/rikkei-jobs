@@ -11,7 +11,7 @@ export const CandidateSkillsPage: React.FC = () => {
       description="Hồ sơ năng lực và chỉ số kỹ năng đã xác thực"
       hideAccountCard
     >
-      <SkillProfilePage showLogout={false} />
+      <SkillProfilePage showLogout={false} headingLevel={1} />
     </RoleHomeLayout>
   );
 };

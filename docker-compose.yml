@@ -121,6 +121,8 @@ services:
       CLOUDINARY_API_BASE_URL: ${CLOUDINARY_API_BASE_URL:-http://mock:9000/cloudinary/v1_1}
       CLOUDINARY_DELIVERY_BASE_URL: ${CLOUDINARY_DELIVERY_BASE_URL:-http://127.0.0.1:9000/cloudinary}
       CLOUDINARY_TIMEOUT_SECONDS: ${CLOUDINARY_TIMEOUT_SECONDS:-5}
+      APP_SECURITY_RATE_LIMIT_TRUST_PROXY_HEADERS: ${APP_SECURITY_RATE_LIMIT_TRUST_PROXY_HEADERS:-true}
+      APP_SECURITY_RATE_LIMIT_TRUSTED_PROXIES: ${APP_SECURITY_RATE_LIMIT_TRUSTED_PROXIES:-172.28.0.0/16}
     ports:
       - "127.0.0.1:${BACKEND_PORT:-8080}:8080"
     healthcheck:
@@ -144,6 +146,9 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+    environment:
+      CSP_DEV_IMG_SRC: "${CSP_DEV_IMG_SRC- http://127.0.0.1:9000 http://localhost:9000}"
+      CSP_DEV_CONNECT_SRC: "${CSP_DEV_CONNECT_SRC- http://127.0.0.1:9000 http://localhost:9000}"
     ports:
       - "127.0.0.1:${FRONTEND_PORT:-3000}:8080"
     healthcheck:
@@ -166,3 +171,6 @@ networks:
   rikkei-network:
     name: rikkei-network
     driver: bridge
+    ipam:
+      config:
+        - subnet: ${RIKKEI_NETWORK_SUBNET:-172.28.0.0/16}

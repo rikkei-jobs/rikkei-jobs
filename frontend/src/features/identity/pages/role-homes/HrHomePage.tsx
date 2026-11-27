@@ -143,7 +143,7 @@ export const HrHomePage: React.FC = () => {
       roleTitle="HR"
       roleBadgeClass="rj-role-hr"
       roleIcon="building"
-      description="Quản lý hồ sơ doanh nghiệp và chuẩn bị hoạt động tuyển dụng trên Rikkei Jobs."
+      description="Quản lý hồ sơ doanh nghiệp, sàng lọc ứng viên và điều phối quy trình tuyển dụng trên Rikkei Jobs."
       density="dense"
       isLoading={isLoading}
     >
@@ -158,7 +158,8 @@ export const HrHomePage: React.FC = () => {
               Chào mừng, {user?.fullName || 'Người dùng'}!
             </h1>
             <p className="rj-page-subtitle">
-              Quản lý hồ sơ doanh nghiệp và chuẩn bị hoạt động tuyển dụng trên Rikkei Jobs.
+              Quản lý hồ sơ doanh nghiệp, sàng lọc ứng viên và điều phối quy trình tuyển dụng trên
+              Rikkei Jobs.
             </p>
           </div>
 
@@ -195,6 +196,33 @@ export const HrHomePage: React.FC = () => {
               >
                 <Icon name="building" size={18} />
                 <span>Mở hồ sơ công ty</span>
+              </Link>
+            </div>
+
+            <div className="rj-cand-next-box">
+              <div className="rj-cand-next-content">
+                <span className="rj-cand-kicker">Hoạt động tuyển dụng</span>
+                <h2 className="rj-role-card-title">
+                  Quản lý quy trình tuyển dụng và vòng phỏng vấn
+                </h2>
+                <p className="rj-role-card-desc">
+                  Sàng lọc hồ sơ ứng tuyển theo từng tin tuyển dụng, cập nhật kết quả vòng phỏng
+                  vấn và theo dõi trạng thái xử lý ứng viên.
+                </p>
+              </div>
+              <Link
+                to="/hr/recruitment"
+                className="rj-btn rj-btn-secondary rj-cand-next-cta"
+                onMouseEnter={() => {
+                  void preloadRouteForPath('/hr/recruitment');
+                }}
+                onFocus={() => {
+                  void preloadRouteForPath('/hr/recruitment');
+                }}
+                onClick={(e) => handleRouteLink(e, '/hr/recruitment')}
+              >
+                <Icon name="user-check" size={18} />
+                <span>Mở tuyển dụng</span>
               </Link>
             </div>
           </div>
@@ -295,15 +323,6 @@ export const HrHomePage: React.FC = () => {
                   <strong className="rj-cand-skill">Đăng tin tuyển dụng</strong>
                   <p className="rj-cand-meta">
                     Tạo và quản lý tin tuyển dụng kết nối với học viên Rikkei.
-                  </p>
-                </div>
-                <span className="rj-card-soon-badge">Sắp ra mắt</span>
-              </li>
-              <li className="rj-cand-tile rj-row-between">
-                <div>
-                  <strong className="rj-cand-skill">Quản lý ứng viên</strong>
-                  <p className="rj-cand-meta">
-                    Duyệt hồ sơ, xem bảng điểm kỹ năng và cập nhật trạng thái phỏng vấn.
                   </p>
                 </div>
                 <span className="rj-card-soon-badge">Sắp ra mắt</span>

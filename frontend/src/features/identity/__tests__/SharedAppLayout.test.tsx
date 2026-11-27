@@ -1,7 +1,11 @@
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act, within, waitFor } from '@testing-library/react';
 import { MemoryRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { useScrollLock } from '../../../shared/hooks/useScrollLock';
 import { resetMotionRegistry } from '../../../shared/utils/motion';
+import { resetScrollLockForTests } from '../../../shared/utils/scrollLock';
 import { AuthProvider } from '../context/AuthContext';
 import { ROLE_MENU_CONFIG, getRoleMenuItems } from '../config/roleMenuConfig';
 import {
@@ -58,13 +62,88 @@ const HistoryNavigationControls = () => {
   );
 };
 
+const PortaledModalHost = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const cancelBtnRef = useRef<HTMLButtonElement | null>(null);
+  const confirmBtnRef = useRef<HTMLButtonElement | null>(null);
+
+  useScrollLock(isOpen);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return undefined;
+    }
+    cancelBtnRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) {
+        return;
+      }
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setIsOpen(false);
+        return;
+      }
+      if (event.key === 'Tab' && dialogRef.current) {
+        const first = cancelBtnRef.current;
+        const last = confirmBtnRef.current;
+        if (!first || !last) {
+          return;
+        }
+        const active = document.activeElement as HTMLElement | null;
+        const inside = active !== null && dialogRef.current.contains(active);
+        if (event.shiftKey) {
+          if (!inside || active === first) {
+            event.preventDefault();
+            last.focus();
+          }
+        } else if (!inside || active === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
+
+  return (
+    <div>
+      <button type="button" onClick={() => setIsOpen(true)}>
+        Mở hộp thoại
+      </button>
+      {isOpen &&
+        createPortal(
+          <div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Hộp thoại xác nhận"
+          >
+            <button ref={cancelBtnRef} type="button" onClick={() => setIsOpen(false)}>
+              Hủy bỏ
+            </button>
+            <button ref={confirmBtnRef} type="button" onClick={() => setIsOpen(false)}>
+              Xác nhận
+            </button>
+          </div>,
+          document.body,
+        )}
+    </div>
+  );
+};
+
 describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
   const originalInnerWidth = window.innerWidth;
 
   beforeEach(() => {
     resetMotionRegistry();
+    resetScrollLockForTests();
     localStorage.clear();
     document.body.style.overflow = '';
+    document.documentElement.removeAttribute('data-scroll-locked');
     document.documentElement.removeAttribute('data-theme');
     Object.defineProperty(window, 'innerWidth', {
       configurable: true,
@@ -75,8 +154,10 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    resetScrollLockForTests();
     localStorage.clear();
     document.body.style.overflow = '';
+    document.documentElement.removeAttribute('data-scroll-locked');
     document.documentElement.removeAttribute('data-theme');
     Object.defineProperty(window, 'innerWidth', {
       configurable: true,
@@ -98,7 +179,7 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
       expect(getRoleMenuItems('CANDIDATE').map((i) => ({ label: i.label, path: i.path, disabled: Boolean(i.disabled) }))).toEqual([
         { label: 'Hồ sơ', path: '/candidate/skills', disabled: false },
         { label: 'Việc làm', path: '/candidate/jobs', disabled: false },
-        { label: 'Ứng tuyển', path: undefined, disabled: true },
+        { label: 'Ứng tuyển', path: '/candidate/applications', disabled: false },
         { label: 'Lộ trình', path: '/candidate/gap-analysis', disabled: false },
         { label: 'Thực tập IOC', path: '/candidate/internships', disabled: false },
         { label: 'Trợ lý AI', path: undefined, disabled: true },
@@ -107,7 +188,7 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
       expect(getRoleMenuItems('HR').map((i) => ({ label: i.label, path: i.path, disabled: Boolean(i.disabled) }))).toEqual([
         { label: 'Công ty', path: '/hr/company', disabled: false },
         { label: 'JD', path: undefined, disabled: true },
-        { label: 'Tuyển dụng', path: undefined, disabled: true },
+        { label: 'Tuyển dụng', path: '/hr/recruitment', disabled: false },
         { label: 'Thực tập sinh', path: undefined, disabled: true },
       ]);
 
@@ -115,15 +196,18 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
         { label: 'Cần đánh giá', disabled: true },
       ]);
 
-      expect(getRoleMenuItems('STAFF').map((i) => ({ label: i.label, disabled: Boolean(i.disabled) }))).toEqual([
-        { label: 'Duyệt hồ sơ', disabled: true },
-        { label: 'Duyệt JD', disabled: true },
-        { label: 'Doanh nghiệp', disabled: true },
-        { label: 'Ghép thực tập', disabled: true },
-        { label: 'Báo cáo', disabled: true },
+      expect(getRoleMenuItems('STAFF').map((i) => ({ label: i.label, path: i.path, disabled: Boolean(i.disabled) }))).toEqual([
+        { label: 'Hồ sơ ứng tuyển', path: '/staff/applications', disabled: false },
+        { label: 'Duyệt hồ sơ', path: undefined, disabled: true },
+        { label: 'Duyệt JD', path: undefined, disabled: true },
+        { label: 'Doanh nghiệp', path: undefined, disabled: true },
+        { label: 'Ghép thực tập', path: undefined, disabled: true },
+        { label: 'Báo cáo', path: undefined, disabled: true },
       ]);
 
       expect(getRoleMenuItems('ADMIN').map((i) => ({ label: i.label, disabled: Boolean(i.disabled) }))).toEqual([
+        { label: 'Cấu hình AI', disabled: false },
+        { label: 'Nhật ký AI', disabled: false },
         { label: 'Quản trị', disabled: true },
       ]);
 
@@ -167,8 +251,15 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
         density: 'dense',
         badgeClass: 'rj-role-staff',
         icon: 'briefcase' as const,
-        expectedItems: ['Duyệt hồ sơ', 'Duyệt JD', 'Doanh nghiệp', 'Ghép thực tập', 'Báo cáo'],
-        forbiddenItems: ['Hồ sơ', 'Thực tập IOC', 'Công ty', 'Quản trị', 'Cần đánh giá'],
+        expectedItems: [
+          'Hồ sơ ứng tuyển',
+          'Duyệt hồ sơ',
+          'Duyệt JD',
+          'Doanh nghiệp',
+          'Ghép thực tập',
+          'Báo cáo',
+        ],
+        forbiddenItems: ['Việc làm', 'Thực tập IOC', 'Công ty', 'Quản trị', 'Cần đánh giá'],
       },
       {
         role: 'ADMIN',
@@ -176,7 +267,7 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
         density: 'dense',
         badgeClass: 'rj-role-admin',
         icon: 'shield' as const,
-        expectedItems: ['Quản trị'],
+        expectedItems: ['Cấu hình AI', 'Nhật ký AI', 'Quản trị'],
         forbiddenItems: ['Hồ sơ', 'Thực tập IOC', 'Công ty', 'Duyệt hồ sơ', 'Cần đánh giá'],
       },
     ];
@@ -234,7 +325,7 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
           </AuthProvider>,
         );
 
-        const disabledItem = screen.getByText('Ứng tuyển').closest('[aria-disabled="true"]');
+        const disabledItem = screen.getByText('Trợ lý AI').closest('[aria-disabled="true"]');
         expect(disabledItem).toBeInTheDocument();
         expect(disabledItem).toHaveAttribute('tabindex', '-1');
         expect(disabledItem?.tagName).not.toBe('A');
@@ -309,6 +400,38 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
       expect(screen.getByRole('link', { name: 'Trang chủ' })).not.toHaveAttribute('aria-current');
       unmountInternships();
 
+      const { unmount: unmountApplications } = render(
+        <AuthProvider initialToken="jwt" initialUser={createUser('CANDIDATE')}>
+          <MemoryRouter initialEntries={['/candidate/applications']}>
+            <SharedAppLayout roleBadgeClass="rj-role-candidate" roleIcon="user">
+              <div>Ứng tuyển</div>
+            </SharedAppLayout>
+          </MemoryRouter>
+        </AuthProvider>,
+      );
+
+      const applicationsLink = screen.getByRole('link', { name: 'Ứng tuyển' });
+      expect(applicationsLink).toHaveAttribute('aria-current', 'page');
+      expect(applicationsLink).toHaveAttribute('href', '/candidate/applications');
+      expect(screen.getByRole('link', { name: 'Trang chủ' })).not.toHaveAttribute('aria-current');
+      unmountApplications();
+
+      const { unmount: unmountApplicationDetailQuery } = render(
+        <AuthProvider initialToken="jwt" initialUser={createUser('CANDIDATE')}>
+          <MemoryRouter initialEntries={['/candidate/applications?id=42']}>
+            <SharedAppLayout roleBadgeClass="rj-role-candidate" roleIcon="user">
+              <div>Chi tiết đơn ứng tuyển</div>
+            </SharedAppLayout>
+          </MemoryRouter>
+        </AuthProvider>,
+      );
+
+      expect(screen.getByRole('link', { name: 'Ứng tuyển' })).toHaveAttribute(
+        'aria-current',
+        'page',
+      );
+      unmountApplicationDetailQuery();
+
       const { unmount: unmountHrCompany } = render(
         <AuthProvider initialToken="jwt" initialUser={createUser('HR')}>
           <MemoryRouter initialEntries={['/hr/company']}>
@@ -322,6 +445,44 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
       expect(screen.getByRole('link', { name: 'Công ty' })).toHaveAttribute('aria-current', 'page');
       expect(screen.getByRole('link', { name: 'Trang chủ' })).not.toHaveAttribute('aria-current');
       unmountHrCompany();
+
+      for (const hrRecPath of ['/hr/recruitment', '/hr/jobs/2/applications', '/hr/applications/10']) {
+        const { unmount: unmountHrRec } = render(
+          <AuthProvider initialToken="jwt" initialUser={createUser('HR')}>
+            <MemoryRouter initialEntries={[hrRecPath]}>
+              <SharedAppLayout roleBadgeClass="rj-role-hr" roleIcon="building">
+                <div>Tuyển dụng HR</div>
+              </SharedAppLayout>
+            </MemoryRouter>
+          </AuthProvider>,
+        );
+        expect(screen.getByRole('link', { name: 'Tuyển dụng' })).toHaveAttribute(
+          'aria-current',
+          'page',
+        );
+        expect(screen.getByRole('link', { name: 'Công ty' })).not.toHaveAttribute('aria-current');
+        unmountHrRec();
+      }
+
+      for (const staffAppPath of ['/staff/applications', '/staff/applications/10']) {
+        const { unmount: unmountStaffApp } = render(
+          <AuthProvider initialToken="jwt" initialUser={createUser('STAFF')}>
+            <MemoryRouter initialEntries={[staffAppPath]}>
+              <SharedAppLayout roleBadgeClass="rj-role-staff" roleIcon="briefcase">
+                <div>Hồ sơ ứng tuyển STAFF</div>
+              </SharedAppLayout>
+            </MemoryRouter>
+          </AuthProvider>,
+        );
+        expect(screen.getByRole('link', { name: 'Hồ sơ ứng tuyển' })).toHaveAttribute(
+          'aria-current',
+          'page',
+        );
+        expect(screen.getByRole('link', { name: 'Trang chủ' })).not.toHaveAttribute(
+          'aria-current',
+        );
+        unmountStaffApp();
+      }
 
       render(
         <AuthProvider initialToken="jwt" initialUser={createUser('CANDIDATE')}>
@@ -622,9 +783,9 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
       fireEvent.mouseLeave(profileLink);
       expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
 
-      const disabledItem = screen.getByText('Ứng tuyển').closest('[aria-disabled="true"]')!;
+      const disabledItem = screen.getByText('Trợ lý AI').closest('[aria-disabled="true"]')!;
       fireEvent.mouseEnter(disabledItem);
-      expect(screen.getByRole('tooltip')).toHaveTextContent('Ứng tuyển — Sắp ra mắt');
+      expect(screen.getByRole('tooltip')).toHaveTextContent('Trợ lý AI — Sắp ra mắt');
       fireEvent.mouseLeave(disabledItem);
       expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
     });
@@ -809,6 +970,7 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
       const sidebar = document.getElementById(controlsId!);
       expect(sidebar).toBeInTheDocument();
       expect(sidebar).toHaveAttribute('hidden');
+      expect(document.documentElement.getAttribute('data-scroll-locked')).toBeNull();
       expect(document.body.style.overflow).toBe('');
 
       // Open drawer
@@ -818,7 +980,8 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
       expect(sidebar).not.toHaveAttribute('hidden');
       expect(sidebar).toHaveAttribute('role', 'dialog');
       expect(sidebar).toHaveAttribute('aria-modal', 'true');
-      expect(document.body.style.overflow).toBe('hidden');
+      expect(document.documentElement.getAttribute('data-scroll-locked')).toBe('true');
+      expect(document.body.style.overflow).toBe('');
       expect(container.querySelector('.rj-sidebar-backdrop.is-open')).toBeInTheDocument();
 
       // Focus moves inside drawer (close button)
@@ -839,27 +1002,32 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
       });
       expect(toggleBtn).toHaveAttribute('aria-expanded', 'false');
       expect(sidebar).toHaveAttribute('hidden');
+      expect(document.documentElement.getAttribute('data-scroll-locked')).toBeNull();
       expect(document.body.style.overflow).toBe('');
       expect(toggleBtn).toHaveFocus();
 
       // Re-open and close via backdrop click
       fireEvent.click(toggleBtn);
-      expect(document.body.style.overflow).toBe('hidden');
+      expect(document.documentElement.getAttribute('data-scroll-locked')).toBe('true');
+      expect(document.body.style.overflow).toBe('');
       const backdrop = container.querySelector('.rj-sidebar-backdrop')!;
       fireEvent.click(backdrop);
       expect(sidebar).toHaveAttribute('hidden');
+      expect(document.documentElement.getAttribute('data-scroll-locked')).toBeNull();
       expect(document.body.style.overflow).toBe('');
       expect(toggleBtn).toHaveFocus();
 
       // Re-open and navigate via link -> auto-closes drawer and unlocks scroll
       fireEvent.click(toggleBtn);
-      expect(document.body.style.overflow).toBe('hidden');
+      expect(document.documentElement.getAttribute('data-scroll-locked')).toBe('true');
+      expect(document.body.style.overflow).toBe('');
       const profileLink = screen.getByRole('link', { name: 'Hồ sơ' });
       fireEvent.click(profileLink);
       await waitFor(() => {
         expect(screen.getByTestId('current-location')).toHaveTextContent('/candidate/skills');
       });
       expect(sidebar).toHaveAttribute('hidden');
+      expect(document.documentElement.getAttribute('data-scroll-locked')).toBeNull();
       expect(document.body.style.overflow).toBe('');
     });
 
@@ -897,13 +1065,15 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
       fireEvent.click(toggleBtn);
       expect(toggleBtn).toHaveAttribute('aria-expanded', 'true');
       expect(sidebar).not.toHaveAttribute('hidden');
-      expect(document.body.style.overflow).toBe('hidden');
+      expect(document.documentElement.getAttribute('data-scroll-locked')).toBe('true');
+      expect(document.body.style.overflow).toBe('');
 
       // Navigate back (navigate(-1)) to /candidate/jobs/2 -> drawer closes & unlocks scroll
       fireEvent.click(screen.getByRole('button', { name: 'Quay lại' }));
       expect(screen.getByTestId('current-location')).toHaveTextContent('/candidate/jobs/2');
       expect(toggleBtn).toHaveAttribute('aria-expanded', 'false');
       expect(sidebar).toHaveAttribute('hidden');
+      expect(document.documentElement.getAttribute('data-scroll-locked')).toBeNull();
       expect(document.body.style.overflow).toBe('');
 
       // Navigate forward (navigate(1)) back to /candidate/jobs/1 -> drawer MUST remain closed
@@ -911,6 +1081,7 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
       expect(screen.getByTestId('current-location')).toHaveTextContent('/candidate/jobs/1');
       expect(toggleBtn).toHaveAttribute('aria-expanded', 'false');
       expect(sidebar).toHaveAttribute('hidden');
+      expect(document.documentElement.getAttribute('data-scroll-locked')).toBeNull();
       expect(document.body.style.overflow).toBe('');
     });
 
@@ -955,7 +1126,8 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
       fireEvent.click(toggleBtn);
       expect(toggleBtn).toHaveAttribute('aria-expanded', 'true');
       expect(sidebar).not.toHaveAttribute('hidden');
-      expect(document.body.style.overflow).toBe('hidden');
+      expect(document.documentElement.getAttribute('data-scroll-locked')).toBe('true');
+      expect(document.body.style.overflow).toBe('');
 
       fireEvent.click(screen.getByRole('button', { name: 'Quay lại' }));
       expect(screen.getByTestId('current-location')).toHaveTextContent(
@@ -963,6 +1135,7 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
       );
       expect(toggleBtn).toHaveAttribute('aria-expanded', 'false');
       expect(sidebar).toHaveAttribute('hidden');
+      expect(document.documentElement.getAttribute('data-scroll-locked')).toBeNull();
       expect(document.body.style.overflow).toBe('');
 
       fireEvent.click(screen.getByRole('button', { name: 'Tiến tới' }));
@@ -971,7 +1144,77 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
       );
       expect(toggleBtn).toHaveAttribute('aria-expanded', 'false');
       expect(sidebar).toHaveAttribute('hidden');
+      expect(document.documentElement.getAttribute('data-scroll-locked')).toBeNull();
       expect(document.body.style.overflow).toBe('');
+    });
+
+    it('yields Tab trap and Escape to a portaled aria-modal dialog when mobile drawer and dialog are open simultaneously', () => {
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        writable: true,
+        value: 375,
+      });
+
+      render(
+        <AuthProvider initialToken="jwt" initialUser={createUser('CANDIDATE')}>
+          <MemoryRouter initialEntries={['/candidate']}>
+            <SharedAppLayout roleBadgeClass="rj-role-candidate" roleIcon="user">
+              <PortaledModalHost />
+            </SharedAppLayout>
+          </MemoryRouter>
+        </AuthProvider>,
+      );
+
+      const toggleBtn = screen.getByRole('button', { name: /Mở menu điều hướng/i });
+      const sidebar = document.getElementById(toggleBtn.getAttribute('aria-controls')!)!;
+
+      fireEvent.click(toggleBtn);
+      expect(toggleBtn).toHaveAttribute('aria-expanded', 'true');
+      expect(document.documentElement.getAttribute('data-scroll-locked')).toBe('true');
+
+      const drawerCloseBtn = screen.getByRole('button', { name: 'Đóng bảng điều hướng' });
+      expect(drawerCloseBtn).toHaveFocus();
+
+      // Open a portaled aria-modal="true" dialog on top of the open drawer
+      fireEvent.click(screen.getByRole('button', { name: 'Mở hộp thoại' }));
+
+      const modalDialog = screen.getByRole('dialog', { name: 'Hộp thoại xác nhận' });
+      expect(modalDialog.parentElement).toBe(document.body);
+      expect(sidebar.contains(modalDialog)).toBe(false);
+      expect(document.documentElement.getAttribute('data-scroll-locked')).toBe('true');
+
+      const cancelBtn = within(modalDialog).getByRole('button', { name: 'Hủy bỏ' });
+      const confirmBtn = within(modalDialog).getByRole('button', { name: 'Xác nhận' });
+      expect(cancelBtn).toHaveFocus();
+
+      // Pressing Tab inside the portaled dialog must NOT steal focus back to the drawer
+      fireEvent.keyDown(document, { key: 'Tab' });
+      expect(drawerCloseBtn).not.toHaveFocus();
+      expect(modalDialog.contains(document.activeElement)).toBe(true);
+
+      // Tab at last element of dialog wraps inside dialog rather than jumping to drawer
+      confirmBtn.focus();
+      fireEvent.keyDown(document, { key: 'Tab' });
+      expect(cancelBtn).toHaveFocus();
+      expect(drawerCloseBtn).not.toHaveFocus();
+
+      // First Escape closes ONLY the top-most portaled dialog; drawer and scroll lock remain active
+      act(() => {
+        fireEvent.keyDown(document, { key: 'Escape' });
+      });
+      expect(screen.queryByRole('dialog', { name: 'Hộp thoại xác nhận' })).not.toBeInTheDocument();
+      expect(toggleBtn).toHaveAttribute('aria-expanded', 'true');
+      expect(sidebar).not.toHaveAttribute('hidden');
+      expect(document.documentElement.getAttribute('data-scroll-locked')).toBe('true');
+
+      // Second Escape closes the drawer, removes scroll lock, and returns focus to the mobile toggle
+      act(() => {
+        fireEvent.keyDown(document, { key: 'Escape' });
+      });
+      expect(toggleBtn).toHaveAttribute('aria-expanded', 'false');
+      expect(sidebar).toHaveAttribute('hidden');
+      expect(document.documentElement.getAttribute('data-scroll-locked')).toBeNull();
+      expect(toggleBtn).toHaveFocus();
     });
   });
 

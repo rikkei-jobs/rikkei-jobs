@@ -18,6 +18,8 @@ export interface SkillProfilePageProps {
   readonly candidateName?: string;
   /** Toggle visibility of mentor evaluations block; defaults to true. */
   readonly showEvaluations?: boolean;
+  /** Heading level for the primary section title; defaults to 2 for embedded use. */
+  readonly headingLevel?: 1 | 2;
 }
 
 type LoadState =
@@ -43,6 +45,7 @@ export const SkillProfilePage: React.FC<SkillProfilePageProps> = ({
   userId,
   candidateName,
   showEvaluations = true,
+  headingLevel = 2,
 }) => {
   const authContext = useContext(AuthContext);
   const handleLogout = onLogout ?? authContext?.logout ?? (() => {});
@@ -51,6 +54,10 @@ export const SkillProfilePage: React.FC<SkillProfilePageProps> = ({
 
   const [state, setState] = useState<LoadState>({ kind: 'loading' });
   const [recomputing, setRecomputing] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+
+  const HeadingTag = headingLevel === 1 ? 'h1' : 'h2';
+  const SectionHeadingTag = headingLevel === 1 ? 'h2' : 'h3';
 
   const describeError = useCallback((err: unknown): string | null => {
     if (err instanceof Error && err.name === 'AbortError') {
@@ -66,17 +73,24 @@ export const SkillProfilePage: React.FC<SkillProfilePageProps> = ({
     const load = async () => {
       try {
         const items = await fetchMySkills(controller.signal);
-        setState({ kind: 'ready', items });
+        if (!controller.signal.aborted) {
+          setState({ kind: 'ready', items });
+        }
       } catch (err: unknown) {
         const message = describeError(err);
-        if (message) {
+        if (message && !controller.signal.aborted) {
           setState({ kind: 'error', message });
         }
       }
     };
     void load();
     return () => controller.abort();
-  }, [describeError]);
+  }, [describeError, retryCount]);
+
+  const handleRetry = useCallback(() => {
+    setState({ kind: 'loading' });
+    setRetryCount((count) => count + 1);
+  }, []);
 
   const recompute = useCallback(async () => {
     setRecomputing(true);
@@ -101,9 +115,9 @@ export const SkillProfilePage: React.FC<SkillProfilePageProps> = ({
     <section className="sp-page" aria-labelledby="sp-heading">
       <header className="sp-page-head">
         <div>
-          <h2 id="sp-heading" className="sp-heading">
+          <HeadingTag id="sp-heading" className="sp-heading">
             Hồ sơ năng lực
-          </h2>
+          </HeadingTag>
           <p className="sp-lead">
             Chỉ số 0 - 100 theo từng kỹ năng, tách rõ phần đã xác thực từ LMS, bài thi, thực tập và
             phần tự khai.
@@ -118,15 +132,54 @@ export const SkillProfilePage: React.FC<SkillProfilePageProps> = ({
       </header>
 
       {state.kind === 'loading' && (
-        <p className="sp-status" role="status">
-          Đang tải hồ sơ kỹ năng...
-        </p>
+        <div
+          className="sp-layout"
+          role="status"
+          aria-busy="true"
+          aria-live="polite"
+          aria-label="Đang tải hồ sơ kỹ năng"
+        >
+          <span className="sp-sr-only">Đang tải hồ sơ kỹ năng...</span>
+          <div className="sp-main" aria-hidden="true">
+            <div className="sp-group">
+              <div className="sp-skeleton sp-skeleton-heading" />
+              <div className="sp-skeleton sp-skeleton-row" />
+              <div className="sp-skeleton sp-skeleton-row" />
+              <div className="sp-skeleton sp-skeleton-row" />
+            </div>
+            <div className="sp-group">
+              <div className="sp-skeleton sp-skeleton-heading" />
+              <div className="sp-skeleton sp-skeleton-row" />
+              <div className="sp-skeleton sp-skeleton-row" />
+            </div>
+          </div>
+          <div className="sp-aside" aria-hidden="true">
+            <div className="sp-card sp-skeleton-card">
+              <div className="sp-skeleton sp-skeleton-heading" />
+              <div className="sp-skeleton sp-skeleton-line" />
+              <div className="sp-skeleton sp-skeleton-line" />
+              <div className="sp-skeleton sp-skeleton-btn" />
+            </div>
+            <div className="sp-card sp-skeleton-card">
+              <div className="sp-skeleton sp-skeleton-heading" />
+              <div className="sp-skeleton sp-skeleton-line" />
+              <div className="sp-skeleton sp-skeleton-line" />
+            </div>
+          </div>
+        </div>
       )}
 
       {state.kind === 'error' && (
-        <p className="sp-status sp-status-error" role="alert">
-          {state.message}
-        </p>
+        <div className="sp-status sp-status-error sp-status-alert" role="alert">
+          <Icon name="alert-circle" size={20} />
+          <div className="sp-status-body">
+            <p className="sp-status-message">{state.message}</p>
+            <button type="button" className="sp-btn" onClick={handleRetry}>
+              <Icon name="refresh" size={16} />
+              <span>Thử lại</span>
+            </button>
+          </div>
+        </div>
       )}
 
       {state.kind === 'ready' && (
@@ -134,18 +187,22 @@ export const SkillProfilePage: React.FC<SkillProfilePageProps> = ({
           <div className="sp-main">
             {groups.length === 0 && (
               <p className="sp-status">
-                Chưa có kỹ năng nào. Nhấn &quot;Tính lại từ LMS, Exam, PM&quot; để tổng hợp từ kết
-                quả học tập.
+                Chưa có kỹ năng nào. Nhấn &quot;Tính lại từ dữ liệu học tập&quot; để tổng hợp từ
+                kết quả học tập.
               </p>
             )}
             {groups.map(({ group, items: groupSkills }) => (
               <section key={group} className="sp-group" aria-labelledby={`sp-group-${group}`}>
-                <h3 id={`sp-group-${group}`} className="sp-group-title">
+                <SectionHeadingTag id={`sp-group-${group}`} className="sp-group-title">
                   {GROUP_LABELS[group] ?? group}
-                </h3>
+                </SectionHeadingTag>
                 <ul className="sp-skill-list">
                   {groupSkills.map((item) => (
-                    <SkillItem key={item.skill.code} item={item} />
+                    <SkillItem
+                      key={item.skill.code}
+                      item={item}
+                      headingLevel={headingLevel === 1 ? 3 : 4}
+                    />
                   ))}
                 </ul>
               </section>
@@ -155,13 +212,14 @@ export const SkillProfilePage: React.FC<SkillProfilePageProps> = ({
               <CandidateEvaluations
                 userId={resolvedUserId}
                 candidateName={resolvedCandidateName}
+                headingLevel={2}
               />
             )}
           </div>
 
           <aside className="sp-aside" aria-label="Tóm tắt hồ sơ">
             <div className="sp-card">
-              <h3 className="sp-card-title">Tóm tắt</h3>
+              <SectionHeadingTag className="sp-card-title">Tóm tắt</SectionHeadingTag>
               <dl className="sp-summary">
                 <div>
                   <dt>Tổng số kỹ năng</dt>
@@ -183,12 +241,12 @@ export const SkillProfilePage: React.FC<SkillProfilePageProps> = ({
                 disabled={recomputing}
               >
                 <Icon name="refresh" size={18} />
-                {recomputing ? 'Đang tính lại...' : 'Tính lại từ LMS, Exam, PM'}
+                {recomputing ? 'Đang tính lại...' : 'Tính lại từ dữ liệu học tập'}
               </button>
             </div>
 
             <div className="sp-card">
-              <h3 className="sp-card-title">Thang bậc</h3>
+              <SectionHeadingTag className="sp-card-title">Thang bậc</SectionHeadingTag>
               <ul className="sp-bands">
                 {LEVEL_RANGES.map(({ level, range }) => (
                   <li key={level}>

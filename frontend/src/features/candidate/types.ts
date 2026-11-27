@@ -85,6 +85,7 @@ export interface JobRecommendationsResponse {
   isCached: boolean;
   cachedAt: string;
   activeProvider: string;
+  message?: string | null;
 }
 
 export interface TargetPosition {

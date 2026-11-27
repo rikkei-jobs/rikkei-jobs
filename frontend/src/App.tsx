@@ -8,6 +8,7 @@ import {
   Outlet,
   useLocation,
   useNavigate,
+  useParams,
 } from 'react-router-dom';
 import './App.css';
 import { Header } from './shared/components/Header';
@@ -73,11 +74,23 @@ const CandidateEvaluationsPage = lazyRoute(
 const CandidateInternshipsPage = lazyRoute(
   () => import('./features/internship/pages/CandidateInternshipsPage'),
 );
+const MyApplicationsPage = lazyRoute(
+  () => import('./features/recruitment/pages/MyApplicationsPage'),
+);
 const HrHomePage = lazyRoute(() => import('./features/identity/pages/role-homes/HrHomePage'));
 const CompanyProfilePage = lazyRoute(async () => {
   const m = await import('./features/company/pages/CompanyProfilePage');
   return { default: m.CompanyProfilePage };
 });
+const HrRecruitmentPage = lazyRoute(
+  () => import('./features/recruitment/pages/HrRecruitmentPage'),
+);
+const StaffApplicationsPage = lazyRoute(
+  () => import('./features/recruitment/pages/StaffApplicationsPage'),
+);
+const ApplicationDetailPage = lazyRoute(
+  () => import('./features/recruitment/pages/ApplicationDetailPage'),
+);
 const MentorHomePage = lazyRoute(
   () => import('./features/identity/pages/role-homes/MentorHomePage'),
 );
@@ -87,6 +100,14 @@ const StaffHomePage = lazyRoute(
 const AdminHomePage = lazyRoute(
   () => import('./features/identity/pages/role-homes/AdminHomePage'),
 );
+const AiConfigPage = lazyRoute(async () => {
+  const m = await import('./features/ai');
+  return { default: m.AiConfigPage };
+});
+const AiLogsPage = lazyRoute(async () => {
+  const m = await import('./features/ai');
+  return { default: m.AiLogsPage };
+});
 
 registerRoutePreloader('/sso-callback', SsoCallbackPage.preload, SsoCallbackPage.isLoaded);
 registerRoutePreloader('/change-password', ChangePasswordPage.preload, ChangePasswordPage.isLoaded);
@@ -129,6 +150,16 @@ registerRoutePreloader(
   CandidateInternshipsPage.isLoaded,
 );
 registerRoutePreloader(
+  PROTECTED_ROUTE_POLICIES.candidateApplications.path,
+  MyApplicationsPage.preload,
+  MyApplicationsPage.isLoaded,
+);
+registerPrefixRoutePreloader(
+  '/candidate/applications/',
+  MyApplicationsPage.preload,
+  MyApplicationsPage.isLoaded,
+);
+registerRoutePreloader(
   PROTECTED_ROUTE_POLICIES.hrHome.path,
   HrHomePage.preload,
   HrHomePage.isLoaded,
@@ -137,6 +168,21 @@ registerRoutePreloader(
   PROTECTED_ROUTE_POLICIES.hrCompany.path,
   CompanyProfilePage.preload,
   CompanyProfilePage.isLoaded,
+);
+registerRoutePreloader(
+  PROTECTED_ROUTE_POLICIES.hrRecruitment.path,
+  HrRecruitmentPage.preload,
+  HrRecruitmentPage.isLoaded,
+);
+registerPrefixRoutePreloader(
+  '/hr/jobs/',
+  HrRecruitmentPage.preload,
+  HrRecruitmentPage.isLoaded,
+);
+registerPrefixRoutePreloader(
+  '/hr/applications/',
+  ApplicationDetailPage.preload,
+  ApplicationDetailPage.isLoaded,
 );
 registerRoutePreloader(
   PROTECTED_ROUTE_POLICIES.mentorHome.path,
@@ -149,10 +195,22 @@ registerRoutePreloader(
   StaffHomePage.isLoaded,
 );
 registerRoutePreloader(
+  PROTECTED_ROUTE_POLICIES.staffApplications.path,
+  StaffApplicationsPage.preload,
+  StaffApplicationsPage.isLoaded,
+);
+registerPrefixRoutePreloader(
+  '/staff/applications/',
+  ApplicationDetailPage.preload,
+  ApplicationDetailPage.isLoaded,
+);
+registerRoutePreloader(
   PROTECTED_ROUTE_POLICIES.adminHome.path,
   AdminHomePage.preload,
   AdminHomePage.isLoaded,
 );
+registerRoutePreloader('/admin/ai-config', AiConfigPage.preload, AiConfigPage.isLoaded);
+registerRoutePreloader('/admin/ai-logs', AiLogsPage.preload, AiLogsPage.isLoaded);
 
 export const APP_NAME = 'Rikkei Jobs - Nền tảng kết nối việc làm theo năng lực đã xác thực';
 export const APP_SUBTITLE =
@@ -446,6 +504,14 @@ const PersistentAppShell: React.FC = () => {
   );
 };
 
+const CandidateApplicationDetailRedirect: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const target = id
+    ? `/candidate/applications?id=${encodeURIComponent(id)}`
+    : '/candidate/applications';
+  return <Navigate to={target} replace />;
+};
+
 export const AppRoutes: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -580,6 +646,26 @@ export const AppRoutes: React.FC = () => {
               </RequireRole>
             }
           />
+          <Route
+            path={PROTECTED_ROUTE_POLICIES.candidateApplications.path}
+            element={
+              <RequireRole
+                allowedRoles={PROTECTED_ROUTE_POLICIES.candidateApplications.allowedRoles}
+              >
+                <MyApplicationsPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path={PROTECTED_ROUTE_POLICIES.candidateApplicationDetail.path}
+            element={
+              <RequireRole
+                allowedRoles={PROTECTED_ROUTE_POLICIES.candidateApplicationDetail.allowedRoles}
+              >
+                <CandidateApplicationDetailRedirect />
+              </RequireRole>
+            }
+          />
 
           {/* Protected role homes */}
           <Route
@@ -607,6 +693,30 @@ export const AppRoutes: React.FC = () => {
             }
           />
           <Route
+            path={PROTECTED_ROUTE_POLICIES.hrRecruitment.path}
+            element={
+              <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.hrRecruitment.allowedRoles}>
+                <HrRecruitmentPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path={PROTECTED_ROUTE_POLICIES.hrJobApplications.path}
+            element={
+              <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.hrJobApplications.allowedRoles}>
+                <HrRecruitmentPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path={PROTECTED_ROUTE_POLICIES.hrApplicationDetail.path}
+            element={
+              <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.hrApplicationDetail.allowedRoles}>
+                <ApplicationDetailPage />
+              </RequireRole>
+            }
+          />
+          <Route
             path={PROTECTED_ROUTE_POLICIES.mentorHome.path}
             element={
               <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.mentorHome.allowedRoles}>
@@ -623,10 +733,45 @@ export const AppRoutes: React.FC = () => {
             }
           />
           <Route
+            path={PROTECTED_ROUTE_POLICIES.staffApplications.path}
+            element={
+              <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.staffApplications.allowedRoles}>
+                <StaffApplicationsPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path={PROTECTED_ROUTE_POLICIES.staffApplicationDetail.path}
+            element={
+              <RequireRole
+                allowedRoles={PROTECTED_ROUTE_POLICIES.staffApplicationDetail.allowedRoles}
+              >
+                <ApplicationDetailPage />
+              </RequireRole>
+            }
+          />
+          <Route
             path={PROTECTED_ROUTE_POLICIES.adminHome.path}
             element={
               <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.adminHome.allowedRoles}>
                 <AdminHomePage />
+              </RequireRole>
+            }
+          />
+
+          <Route
+            path={PROTECTED_ROUTE_POLICIES.adminAiConfig.path}
+            element={
+              <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.adminAiConfig.allowedRoles}>
+                <AiConfigPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path={PROTECTED_ROUTE_POLICIES.adminAiLogs.path}
+            element={
+              <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.adminAiLogs.allowedRoles}>
+                <AiLogsPage />
               </RequireRole>
             }
           />

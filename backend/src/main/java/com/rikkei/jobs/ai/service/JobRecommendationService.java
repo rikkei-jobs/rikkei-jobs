@@ -37,6 +37,8 @@ public class JobRecommendationService {
     private static final int MAX_RECOMMENDATIONS = 10;
     private static final int AI_EXPLANATION_LIMIT = 5;
     private static final Duration REFRESH_COOLDOWN = Duration.ofMinutes(2);
+    public static final String QUOTA_REACHED_MESSAGE =
+            "Đã đạt hạn mức giải thích AI trong ngày. Đang hiển thị gợi ý phù hợp theo kỹ năng.";
 
     private final JobQueryService jobQueryService;
     private final CandidatePublicService candidatePublicService;
@@ -62,23 +64,41 @@ public class JobRecommendationService {
 
     /**
      * Returns the top job recommendations for a candidate. The 24-hour cache is reused unless it is
-     * stale or the candidate/job data changed; {@code refresh=true} forces a recomputation with a
-     * short cooldown to protect AI costs.
+     * stale, the candidate/job data changed, or the cached snapshot was degraded by daily AI quota
+     * exhaustion and quota is now available again; {@code refresh=true} forces a recomputation with
+     * a short cooldown to protect AI costs.
      */
     public JobRecommendationsResponse getRecommendations(
             Long userId, int limit, boolean forceRefresh) {
         int boundedLimit = Math.max(1, Math.min(limit, 100));
+        if (!aiService.isEnabled()) {
+            // Disabled AI must never leak stale generated explanations from the 24-hour cache
+            // and must not write BLOCKED audit rows on passive recommendation views.
+            return new JobRecommendationsResponse(
+                    List.of(),
+                    0,
+                    userId,
+                    false,
+                    OffsetDateTime.now(clock),
+                    aiService.getActiveProvider().name(),
+                    AiService.DISABLED_MESSAGE);
+        }
         OffsetDateTime now = OffsetDateTime.now(clock);
         List<JobRecommendation> cached =
                 jobRecommendationRepository.findByUserIdOrderByScoreDescJobIdAsc(userId);
         OffsetDateTime cacheTimestamp = cached.isEmpty() ? null : cached.getFirst().getCreatedAt();
+        boolean cacheQuotaDegraded =
+                cached.stream().anyMatch(rec -> Boolean.TRUE.equals(rec.getQuotaDegraded()));
 
-        if (!forceRefresh && cacheTimestamp != null && isCacheUsable(userId, cacheTimestamp, now)) {
+        if (!forceRefresh
+                && cacheTimestamp != null
+                && isCacheUsable(userId, cacheTimestamp, now, cacheQuotaDegraded)) {
             log.info(
                     "[JOB_REC_CACHE_HIT] Candidate {}, cached at {}, skipping AI invocation",
                     userId,
                     cacheTimestamp);
-            return buildResponseFromCache(userId, cached, boundedLimit, cacheTimestamp);
+            return buildResponseFromCache(
+                    userId, cached, boundedLimit, cacheTimestamp, cacheQuotaDegraded);
         }
 
         if (forceRefresh
@@ -95,8 +115,15 @@ public class JobRecommendationService {
         return computeRecommendations(userId, boundedLimit, now);
     }
 
-    private boolean isCacheUsable(Long userId, OffsetDateTime cacheTimestamp, OffsetDateTime now) {
+    private boolean isCacheUsable(
+            Long userId,
+            OffsetDateTime cacheTimestamp,
+            OffsetDateTime now,
+            boolean cacheQuotaDegraded) {
         if (!cacheTimestamp.isAfter(now.minusHours(24))) {
+            return false;
+        }
+        if (cacheQuotaDegraded && aiService.hasQuotaAvailable(userId)) {
             return false;
         }
         OffsetDateTime skillsUpdated = candidatePublicService.getSkillsUpdatedAt(userId);
@@ -134,18 +161,28 @@ public class JobRecommendationService {
 
         List<JobRecommendation> cacheEntries = new ArrayList<>();
         List<JobRecommendationDto> items = new ArrayList<>();
+        boolean quotaExhausted = false;
 
         for (int index = 0; index < ranked.size(); index++) {
             JobMatchResult match = ranked.get(index);
             int rank = index + 1;
             String fallbackExplanation = buildDefaultExplanation(match);
 
-            AiService.AiExplanation explanation =
-                    rank <= AI_EXPLANATION_LIMIT
-                            ? aiService.generateJobExplanation(
+            AiService.AiExplanation explanation;
+            if (rank <= AI_EXPLANATION_LIMIT && !quotaExhausted) {
+                try {
+                    explanation =
+                            aiService.generateJobExplanation(
+                                    userId,
                                     buildAnonymizedPrompt(match, candidateSkillMap),
-                                    fallbackExplanation)
-                            : new AiService.AiExplanation(fallbackExplanation, false);
+                                    fallbackExplanation);
+                } catch (RateLimitException ex) {
+                    quotaExhausted = true;
+                    explanation = new AiService.AiExplanation(fallbackExplanation, false);
+                }
+            } else {
+                explanation = new AiService.AiExplanation(fallbackExplanation, false);
+            }
 
             cacheEntries.add(
                     new JobRecommendation(
@@ -164,6 +201,10 @@ public class JobRecommendationService {
                             rank));
         }
 
+        if (quotaExhausted) {
+            cacheEntries.forEach(entry -> entry.setQuotaDegraded(true));
+        }
+
         cacheStore.replaceForUser(userId, cacheEntries);
 
         List<JobRecommendationDto> returned =
@@ -175,11 +216,16 @@ public class JobRecommendationService {
                 userId,
                 false,
                 now,
-                aiService.getActiveProvider().name());
+                aiService.getActiveProvider().name(),
+                quotaExhausted ? QUOTA_REACHED_MESSAGE : null);
     }
 
     private JobRecommendationsResponse buildResponseFromCache(
-            Long userId, List<JobRecommendation> cached, int limit, OffsetDateTime cacheTimestamp) {
+            Long userId,
+            List<JobRecommendation> cached,
+            int limit,
+            OffsetDateTime cacheTimestamp,
+            boolean cacheQuotaDegraded) {
         Map<Long, OpenJobDto> openJobs =
                 jobQueryService.findOpenJobs().stream()
                         .collect(Collectors.toMap(OpenJobDto::id, Function.identity()));
@@ -212,7 +258,8 @@ public class JobRecommendationService {
                 userId,
                 true,
                 cacheTimestamp,
-                aiService.getActiveProvider().name());
+                aiService.getActiveProvider().name(),
+                cacheQuotaDegraded ? QUOTA_REACHED_MESSAGE : null);
     }
 
     private Map<String, Integer> toSkillMap(Long userId) {

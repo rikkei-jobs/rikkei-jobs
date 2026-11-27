@@ -85,8 +85,10 @@
   transition: border-color var(--rj-motion-micro) ease-out;
 }
 
-.ce-card:hover {
-  border-color: var(--rj-color-border-hover, var(--rj-color-action));
+@media (hover: hover) and (pointer: fine) {
+  .ce-card:hover {
+    border-color: var(--rj-color-border-hover, var(--rj-color-action));
+  }
 }
 
 .ce-card-head {
@@ -193,8 +195,14 @@
     border-color var(--rj-motion-micro) ease-out;
 }
 
-.ce-btn:hover:not(:disabled) {
-  background: var(--rj-color-action-hover);
+@media (hover: hover) and (pointer: fine) {
+  .ce-btn:hover:not(:disabled) {
+    background: var(--rj-color-action-hover);
+  }
+}
+
+.ce-btn:active:not(:disabled) {
+  transform: scale(0.985);
 }
 
 .ce-btn:focus-visible {
@@ -208,9 +216,11 @@
   border-color: var(--rj-color-border-interactive);
 }
 
-.ce-btn-quiet:hover:not(:disabled) {
-  background: var(--rj-color-surface-subtle);
-  border-color: var(--rj-color-action);
+@media (hover: hover) and (pointer: fine) {
+  .ce-btn-quiet:hover:not(:disabled) {
+    background: var(--rj-color-surface-subtle);
+    border-color: var(--rj-color-action);
+  }
 }
 
 .ce-btn:disabled {
@@ -572,6 +582,10 @@
   .ce-progress-fill,
   .ce-card {
     transition-duration: 0.001ms !important;
+  }
+
+  .ce-btn:active:not(:disabled) {
+    transform: none;
   }
 
   .ce-spinner {

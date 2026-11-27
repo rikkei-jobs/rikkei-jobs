@@ -19,12 +19,13 @@ public class JobRecommendationCacheStore {
     private static final String UPSERT_SQL =
             """
             INSERT INTO job_recommendations
-                (user_id, job_id, score, explanation, ai_generated, created_at)
-            VALUES (?, ?, ?, ?, ?, ?)
+                (user_id, job_id, score, explanation, ai_generated, quota_degraded, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT (user_id, job_id) DO UPDATE SET
                 score = EXCLUDED.score,
                 explanation = EXCLUDED.explanation,
                 ai_generated = EXCLUDED.ai_generated,
+                quota_degraded = EXCLUDED.quota_degraded,
                 created_at = EXCLUDED.created_at
             """;
 
@@ -56,6 +57,7 @@ public class JobRecommendationCacheStore {
                                             recommendation.getScore(),
                                             recommendation.getExplanation(),
                                             recommendation.getAiGenerated(),
+                                            Boolean.TRUE.equals(recommendation.getQuotaDegraded()),
                                             Timestamp.from(
                                                     recommendation.getCreatedAt().toInstant())
                                         })

@@ -82,6 +82,7 @@ font-variant-numeric: tabular-nums;
 
 1. Validate layouts at 375px (mobile portrait), 768px (tablet portrait), 1024px (desktop), and 1440px (wide canvas) following [screenshot-protocol.md](references/screenshot-protocol.md).
 2. Ensure zero unwanted horizontal scrolling at 375px: assert `document.documentElement.scrollWidth <= document.documentElement.clientWidth`.
+3. Enforce the overlay layering and root scroll-lock contract (`docs/design/DESIGN_SYSTEM.md` section 14.6): portal modal dialogs (`createPortal(..., document.body)`) outside `<main>` and any `view-transition-name`, `transform`, `filter`, `contain`, or `will-change` ancestor; bind `--rj-z-*` semantic tokens (`--rj-z-popover > --rj-z-modal > --rj-z-drawer > --rj-z-sticky`); and lock scrolling via `useScrollLock` (`html[data-scroll-locked="true"]` + `scrollbar-gutter: stable`), never `document.body.style.overflow` (which turns `body` into a scroll container under `overflow-x: clip`, breaking `position: sticky` and shifting `clientWidth`).
 
 ### Step 7: Score Against the Anti-AI Review Rubric
 

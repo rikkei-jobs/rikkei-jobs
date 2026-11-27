@@ -1,6 +1,8 @@
 package com.rikkei.jobs.identity.controller;
 
 import com.rikkei.jobs.common.dto.ErrorResponse;
+import com.rikkei.jobs.common.exception.ApiException;
+import com.rikkei.jobs.common.exception.RateLimitException;
 import com.rikkei.jobs.identity.UserPrincipal;
 import com.rikkei.jobs.identity.dto.AuthResponse;
 import com.rikkei.jobs.identity.dto.ChangePasswordRequest;
@@ -10,6 +12,9 @@ import com.rikkei.jobs.identity.dto.MessageResponse;
 import com.rikkei.jobs.identity.dto.ResetPasswordRequest;
 import com.rikkei.jobs.identity.dto.SsoLoginRequest;
 import com.rikkei.jobs.identity.dto.UserDto;
+import com.rikkei.jobs.identity.security.AuthRateLimitInterceptor;
+import com.rikkei.jobs.identity.security.AuthRateLimitProperties;
+import com.rikkei.jobs.identity.security.AuthRateLimiter;
 import com.rikkei.jobs.identity.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
@@ -19,8 +24,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import java.util.Locale;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -47,9 +56,16 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final AuthRateLimiter authRateLimiter;
+    private final AuthRateLimitProperties rateLimitProperties;
 
-    public AuthController(AuthService authService) {
+    public AuthController(
+            AuthService authService,
+            AuthRateLimiter authRateLimiter,
+            AuthRateLimitProperties rateLimitProperties) {
         this.authService = authService;
+        this.authRateLimiter = authRateLimiter;
+        this.rateLimitProperties = rateLimitProperties;
     }
 
     @Operation(
@@ -97,11 +113,64 @@ public class AuthController {
                     "Sai thông tin đăng nhập hoặc tài khoản đang bị khóa: UNAUTHORIZED, ACCOUNT_LOCKED",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
-        AuthResponse response = authService.login(request);
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CACHE_CONTROL, "no-store, no-cache, must-revalidate")
-                .body(response);
+    public ResponseEntity<AuthResponse> login(
+            @Valid @RequestBody LoginRequest request,
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse) {
+        String clientIp = authRateLimiter.resolveClientIp(httpRequest);
+        String normalizedEmail = request.email().trim().toLowerCase(Locale.ROOT);
+        String ipEmailFailureKey =
+                AuthRateLimitInterceptor.loginIpEmailFailureKey(clientIp, normalizedEmail);
+
+        if (rateLimitProperties.isEnabled()) {
+            AuthRateLimiter.RateLimitDecision ipFailDecision =
+                    authRateLimiter.check(
+                            AuthRateLimitInterceptor.loginIpFailureKey(clientIp),
+                            rateLimitProperties.getLoginMaxFailuresPerIp());
+            if (!ipFailDecision.allowed()) {
+                httpResponse.setHeader(
+                        "Retry-After", String.valueOf(ipFailDecision.retryAfterSeconds()));
+                throw new RateLimitException(
+                        "Quá nhiều lần đăng nhập thất bại từ địa chỉ IP này. Vui lòng thử lại sau "
+                                + ipFailDecision.retryAfterSeconds()
+                                + " giây.");
+            }
+            AuthRateLimiter.RateLimitDecision emailFailDecision =
+                    authRateLimiter.check(
+                            ipEmailFailureKey,
+                            rateLimitProperties.getLoginMaxFailuresPerIpAndEmail());
+            if (!emailFailDecision.allowed()) {
+                httpResponse.setHeader(
+                        "Retry-After", String.valueOf(emailFailDecision.retryAfterSeconds()));
+                throw new RateLimitException(
+                        "Quá nhiều lần đăng nhập thất bại cho tài khoản này. Vui lòng thử lại sau "
+                                + emailFailDecision.retryAfterSeconds()
+                                + " giây.");
+            }
+        }
+
+        try {
+            AuthResponse response = authService.login(request);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CACHE_CONTROL, "no-store, no-cache, must-revalidate")
+                    .body(response);
+        } catch (ApiException ex) {
+            if (rateLimitProperties.isEnabled()
+                    && (ex.getStatus() == HttpStatus.UNAUTHORIZED
+                            || ex.getStatus() == HttpStatus.BAD_REQUEST)) {
+                authRateLimiter.consume(
+                        ipEmailFailureKey, rateLimitProperties.getLoginMaxFailuresPerIpAndEmail());
+                if (httpRequest == null
+                        || httpRequest.getAttribute(
+                                        AuthRateLimitInterceptor.RESOLVED_CLIENT_IP_ATTR)
+                                == null) {
+                    authRateLimiter.consume(
+                            AuthRateLimitInterceptor.loginIpFailureKey(clientIp),
+                            rateLimitProperties.getLoginMaxFailuresPerIp());
+                }
+            }
+            throw ex;
+        }
     }
 
     @Operation(
@@ -143,7 +212,24 @@ public class AuthController {
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @PostMapping("/forgot-password")
     public ResponseEntity<MessageResponse> forgotPassword(
-            @Valid @RequestBody ForgotPasswordRequest request) {
+            @Valid @RequestBody ForgotPasswordRequest request, HttpServletResponse httpResponse) {
+        if (rateLimitProperties.isEnabled() && request.email() != null) {
+            String normalizedEmail = request.email().trim().toLowerCase(Locale.ROOT);
+            AuthRateLimiter.RateLimitDecision decision =
+                    authRateLimiter.consume(
+                            "email:"
+                                    + AuthRateLimitInterceptor.FORGOT_PASSWORD_PATH
+                                    + ":"
+                                    + normalizedEmail,
+                            rateLimitProperties.getForgotPasswordMaxRequestsPerEmail());
+            if (!decision.allowed()) {
+                httpResponse.setHeader("Retry-After", String.valueOf(decision.retryAfterSeconds()));
+                throw new RateLimitException(
+                        "Quá nhiều yêu cầu đặt lại mật khẩu cho email này. Vui lòng thử lại sau "
+                                + decision.retryAfterSeconds()
+                                + " giây.");
+            }
+        }
         MessageResponse response = authService.forgotPassword(request);
         return ResponseEntity.ok(response);
     }

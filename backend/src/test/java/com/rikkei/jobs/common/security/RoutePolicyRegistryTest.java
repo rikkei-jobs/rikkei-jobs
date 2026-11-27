@@ -111,6 +111,118 @@ class RoutePolicyRegistryTest {
     }
 
     @Test
+    @DisplayName("UT-01 recruitment route policies enforce candidate and HR RBAC boundaries")
+    void ut01RecruitmentPoliciesAreDeclared() {
+        List<String> candidateRoutes =
+                List.of(
+                        "POST /api/v1/jobs/{id}/apply",
+                        "GET /api/v1/me/applications",
+                        "GET /api/v1/me/applications/{id}",
+                        "POST /api/v1/me/applications/{id}/withdraw",
+                        "GET /api/v1/me/applications/{id}/cv-snapshot");
+        for (String route : candidateRoutes) {
+            String[] parts = route.split(" ");
+            RoutePolicy policy =
+                    registry.findExactPolicy(HttpMethod.valueOf(parts[0]), parts[1]).orElseThrow();
+            assertEquals(PolicyAccessType.ROLES, policy.accessType());
+            assertEquals(Set.of("CANDIDATE"), policy.allowedRoles());
+            assertTrue(policy.methodScoped());
+        }
+
+        List<String> hrRoutes =
+                List.of(
+                        "GET /api/v1/hr/jobs/{jobId}/applications",
+                        "GET /api/v1/hr/jobs/{jobId}/applications/{applicationId}",
+                        "GET /api/v1/hr/jobs/{jobId}/applications/{applicationId}/cv-snapshot");
+        for (String route : hrRoutes) {
+            String[] parts = route.split(" ");
+            RoutePolicy policy =
+                    registry.findExactPolicy(HttpMethod.valueOf(parts[0]), parts[1]).orElseThrow();
+            assertEquals(PolicyAccessType.ROLES, policy.accessType());
+            assertEquals(Set.of("HR"), policy.allowedRoles());
+            assertTrue(policy.methodScoped());
+        }
+
+        assertEquals(
+                "/api/v1/jobs/{id}/apply",
+                registry.findMatchingPolicy(HttpMethod.POST, "/api/v1/jobs/1/apply")
+                        .orElseThrow()
+                        .pattern());
+        assertEquals(
+                "/api/v1/hr/jobs/{jobId}/applications/{applicationId}/cv-snapshot",
+                registry.findMatchingPolicy(
+                                HttpMethod.GET, "/api/v1/hr/jobs/2/applications/1/cv-snapshot")
+                        .orElseThrow()
+                        .pattern());
+    }
+
+    @Test
+    @DisplayName("UT-02, Option 1A, and Option 2A route policies enforce strict ordering and RBAC")
+    void ut02AndOptionPoliciesAreDeclared() {
+        List<RoutePolicy> policies = registry.policies();
+
+        int hrJobs = indexOf(policies, HttpMethod.GET, "/api/v1/hr/jobs");
+        int hrJobApps = indexOf(policies, HttpMethod.GET, "/api/v1/hr/jobs/{jobId}/applications");
+        assertTrue(hrJobs >= 0 && hrJobApps >= 0);
+        assertTrue(
+                hrJobs < hrJobApps,
+                "Option 1A /api/v1/hr/jobs must appear before /api/v1/hr/jobs/{jobId}/applications");
+
+        RoutePolicy hrJobsPolicy =
+                registry.findExactPolicy(HttpMethod.GET, "/api/v1/hr/jobs").orElseThrow();
+        assertEquals(PolicyAccessType.ROLES, hrJobsPolicy.accessType());
+        assertEquals(Set.of("HR"), hrJobsPolicy.allowedRoles());
+
+        RoutePolicy detailPolicy =
+                registry.findExactPolicy(HttpMethod.GET, "/api/v1/applications/{id}").orElseThrow();
+        assertEquals(Set.of("HR", "STAFF"), detailPolicy.allowedRoles());
+
+        RoutePolicy snapshotPolicy =
+                registry.findExactPolicy(HttpMethod.GET, "/api/v1/applications/{id}/cv-snapshot")
+                        .orElseThrow();
+        assertEquals(Set.of("HR", "STAFF"), snapshotPolicy.allowedRoles());
+
+        for (String hrMutation :
+                List.of(
+                        "POST /api/v1/applications/{id}/transition",
+                        "POST /api/v1/applications/{id}/rounds",
+                        "PUT /api/v1/applications/{id}/rounds/{roundId}")) {
+            String[] parts = hrMutation.split(" ");
+            RoutePolicy p =
+                    registry.findExactPolicy(HttpMethod.valueOf(parts[0]), parts[1]).orElseThrow();
+            assertEquals(PolicyAccessType.ROLES, p.accessType());
+            assertEquals(Set.of("HR"), p.allowedRoles());
+            assertTrue(p.methodScoped());
+        }
+
+        RoutePolicy staffApps =
+                registry.findExactPolicy(HttpMethod.GET, "/api/v1/staff/applications")
+                        .orElseThrow();
+        assertEquals(PolicyAccessType.ROLES, staffApps.accessType());
+        assertEquals(Set.of("STAFF"), staffApps.allowedRoles());
+    }
+
+    @Test
+    @DisplayName("AI-05 admin route policies enforce ADMIN RBAC boundaries")
+    void aiAdminPoliciesAreDeclared() {
+        List<String> adminRoutes =
+                List.of(
+                        "GET /api/v1/admin/ai-config",
+                        "PUT /api/v1/admin/ai-config",
+                        "GET /api/v1/admin/ai-logs",
+                        "GET /api/v1/admin/ai-usage/summary");
+        for (String route : adminRoutes) {
+            String[] parts = route.split(" ");
+            RoutePolicy policy =
+                    registry.findExactPolicy(HttpMethod.valueOf(parts[0]), parts[1]).orElseThrow();
+            assertEquals(PolicyAccessType.ROLES, policy.accessType());
+            assertEquals(Set.of("ADMIN"), policy.allowedRoles());
+            assertTrue(policy.methodScoped());
+            assertTrue(!policy.devOnly());
+        }
+    }
+
+    @Test
     @DisplayName("RoutePolicy constructor rejects invalid role configurations")
     void rejectsInvalidRolePolicies() {
         assertThrows(

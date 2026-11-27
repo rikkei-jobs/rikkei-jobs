@@ -14,9 +14,11 @@ import com.rikkei.jobs.common.exception.ConflictException;
 import com.rikkei.jobs.common.exception.ValidationException;
 import com.rikkei.jobs.identity.dto.CreateHrUserCommand;
 import com.rikkei.jobs.identity.dto.CreatedHrUserResult;
+import com.rikkei.jobs.identity.dto.HrRecipientDto;
 import com.rikkei.jobs.identity.dto.SendHrOnboardingEmailCommand;
 import com.rikkei.jobs.identity.model.Role;
 import com.rikkei.jobs.identity.model.User;
+import com.rikkei.jobs.identity.model.UserStatus;
 import com.rikkei.jobs.identity.repository.RoleRepository;
 import com.rikkei.jobs.identity.repository.UserRepository;
 import com.rikkei.jobs.identity.service.impl.IdentityPublicServiceImpl;
@@ -24,6 +26,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.BeforeEach;
@@ -229,5 +232,31 @@ class IdentityPublicServiceImplTest {
         assertFalse(mailCmd.toString().contains("Nhân Sự Bí Mật"));
         assertFalse(mailCmd.toString().contains("SampleTemp99AA"));
         assertTrue(mailCmd.toString().contains("***"));
+    }
+
+    @Test
+    @DisplayName(
+            "findActiveHrRecipientsByCompanyId returns empty for invalid ID and maps active HRs with masked toString")
+    void shouldFindActiveHrRecipientsByCompanyIdAndMaskToString() {
+        assertTrue(service.findActiveHrRecipientsByCompanyId(null).isEmpty());
+        assertTrue(service.findActiveHrRecipientsByCompanyId(0L).isEmpty());
+        verify(userRepository, never()).findByCompanyIdAndRoleNameAndStatus(any(), any(), any());
+
+        Role hrRole = new Role(Role.HR, "HR role");
+        User hr = new User("hr2@rikkeijobs.test", "hash", "Nguyễn HR", null, hrRole, 2L);
+        hr.setId(5L);
+        hr.setStatus(UserStatus.ACTIVE);
+        when(userRepository.findByCompanyIdAndRoleNameAndStatus(2L, Role.HR, UserStatus.ACTIVE))
+                .thenReturn(List.of(hr));
+
+        List<HrRecipientDto> recipients = service.findActiveHrRecipientsByCompanyId(2L);
+        assertEquals(1, recipients.size());
+        HrRecipientDto dto = recipients.get(0);
+        assertEquals(5L, dto.userId());
+        assertEquals("hr2@rikkeijobs.test", dto.email());
+        assertEquals("Nguyễn HR", dto.fullName());
+        assertFalse(dto.toString().contains("hr2@rikkeijobs.test"));
+        assertFalse(dto.toString().contains("Nguyễn HR"));
+        assertTrue(dto.toString().contains("***"));
     }
 }

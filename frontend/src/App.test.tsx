@@ -78,6 +78,7 @@ describe('App Component', () => {
     const devDetails = document.querySelector('details.rj-dev-tools');
     expect(devDetails).toBeInTheDocument();
     expect(devDetails).not.toHaveAttribute('open');
+    expect(screen.getByText('Trạng thái kết nối hệ thống:')).toBeInTheDocument();
 
     await waitFor(() => {
       expect(screen.getByTestId('backend-status-badge')).toHaveTextContent('UP');

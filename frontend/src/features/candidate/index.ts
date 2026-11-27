@@ -36,7 +36,10 @@ export {
 } from './api/skillProfile';
 
 // DT-01 gap analysis components and API
-export { GapAnalysisSection } from './components/GapAnalysisSection';
+export {
+  GapAnalysisSection,
+  type GapAnalysisSectionProps,
+} from './components/GapAnalysisSection';
 export { GapSkillsTable } from './components/GapSkillsTable';
 export { JobDetailPanel } from './components/JobDetailPanel';
 

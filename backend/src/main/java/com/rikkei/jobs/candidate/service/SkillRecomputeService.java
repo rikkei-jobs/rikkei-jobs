@@ -7,22 +7,24 @@ import com.rikkei.jobs.candidate.model.SkillEvidence;
 import com.rikkei.jobs.candidate.model.SkillLevel;
 import com.rikkei.jobs.candidate.model.SkillMapping;
 import com.rikkei.jobs.candidate.model.SkillScore;
-import com.rikkei.jobs.candidate.model.SkillScoreId;
 import com.rikkei.jobs.candidate.repository.ExternalRecordRepository;
 import com.rikkei.jobs.candidate.repository.SkillEvidenceRepository;
 import com.rikkei.jobs.candidate.repository.SkillMappingRepository;
-import com.rikkei.jobs.candidate.repository.SkillScoreRepository;
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,24 +37,46 @@ public class SkillRecomputeService {
 
     private static final Logger log = LoggerFactory.getLogger(SkillRecomputeService.class);
 
+    private static final String INSERT_EVIDENCE_SQL =
+            """
+            INSERT INTO skill_evidences
+                (user_id, skill_id, source, source_ref, title, score, weight, recorded_at, verified)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """;
+
+    private static final String UPSERT_SCORE_SQL =
+            """
+            INSERT INTO skill_scores
+                (user_id, skill_id, verified_score, self_score, level, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT (user_id, skill_id) DO UPDATE SET
+                verified_score = EXCLUDED.verified_score,
+                self_score = EXCLUDED.self_score,
+                level = EXCLUDED.level,
+                updated_at = EXCLUDED.updated_at
+            """;
+
+    private static final String DELETE_STALE_SCORE_SQL =
+            "DELETE FROM skill_scores WHERE user_id = ? AND skill_id = ?";
+
     private record MappingKey(ExternalSource source, String sourceCode) {}
 
     private final ExternalRecordRepository externalRecordRepository;
     private final SkillMappingRepository skillMappingRepository;
     private final SkillEvidenceRepository skillEvidenceRepository;
-    private final SkillScoreRepository skillScoreRepository;
+    private final JdbcTemplate jdbcTemplate;
     private final Clock clock;
 
     public SkillRecomputeService(
             ExternalRecordRepository externalRecordRepository,
             SkillMappingRepository skillMappingRepository,
             SkillEvidenceRepository skillEvidenceRepository,
-            SkillScoreRepository skillScoreRepository,
+            JdbcTemplate jdbcTemplate,
             Clock clock) {
         this.externalRecordRepository = externalRecordRepository;
         this.skillMappingRepository = skillMappingRepository;
         this.skillEvidenceRepository = skillEvidenceRepository;
-        this.skillScoreRepository = skillScoreRepository;
+        this.jdbcTemplate = jdbcTemplate;
         this.clock = clock;
     }
 
@@ -62,31 +86,66 @@ public class SkillRecomputeService {
         OffsetDateTime now = OffsetDateTime.now(clock);
 
         skillEvidenceRepository.deleteVerifiedBySources(userId, EvidenceSource.EXTERNAL_DERIVED);
-        skillEvidenceRepository.saveAll(buildVerifiedEvidences(userId));
+        List<SkillEvidence> newEvidences = buildVerifiedEvidences(userId);
+        if (!newEvidences.isEmpty()) {
+            // Batch-insert evidences because IDENTITY generation disables Hibernate JDBC batching.
+            jdbcTemplate.batchUpdate(
+                    INSERT_EVIDENCE_SQL,
+                    newEvidences.stream()
+                            .map(
+                                    e ->
+                                            new Object[] {
+                                                e.getUserId(),
+                                                e.getSkillId(),
+                                                e.getSource().name(),
+                                                e.getSourceRef(),
+                                                e.getTitle(),
+                                                e.getScore(),
+                                                e.getWeight(),
+                                                Timestamp.from(e.getRecordedAt().toInstant()),
+                                                e.isVerified()
+                                            })
+                            .toList());
+        }
 
         Map<Integer, List<SkillEvidence>> bySkill =
                 skillEvidenceRepository.findByUserIdOrderByRecordedAtDesc(userId).stream()
                         .collect(Collectors.groupingBy(SkillEvidence::getSkillId));
 
-        Map<Integer, SkillScore> existing =
-                skillScoreRepository.findByUserId(userId).stream()
-                        .collect(Collectors.toMap(SkillScore::getSkillId, s -> s));
+        Set<Integer> existingSkillIds =
+                new HashSet<>(
+                        jdbcTemplate.queryForList(
+                                "SELECT skill_id FROM skill_scores WHERE user_id = ?",
+                                Integer.class,
+                                userId));
 
-        List<SkillScore> toSave = new ArrayList<>();
-        for (Map.Entry<Integer, List<SkillEvidence>> entry : bySkill.entrySet()) {
-            SkillScore score =
-                    existing.getOrDefault(entry.getKey(), new SkillScore(userId, entry.getKey()));
-            applyScores(score, entry.getValue(), now);
-            toSave.add(score);
+        if (!bySkill.isEmpty()) {
+            Timestamp updatedAtTs = Timestamp.from(now.toInstant());
+            List<Object[]> upsertArgs = new ArrayList<>(bySkill.size());
+            for (Map.Entry<Integer, List<SkillEvidence>> entry : bySkill.entrySet()) {
+                SkillScore score = new SkillScore(userId, entry.getKey());
+                applyScores(score, entry.getValue(), now);
+                upsertArgs.add(
+                        new Object[] {
+                            userId,
+                            entry.getKey(),
+                            score.getVerifiedScore(),
+                            score.getSelfScore(),
+                            score.getLevel() == null ? null : score.getLevel().name(),
+                            updatedAtTs
+                        });
+            }
+            jdbcTemplate.batchUpdate(UPSERT_SCORE_SQL, upsertArgs);
         }
-        skillScoreRepository.saveAll(toSave);
 
-        List<SkillScoreId> stale =
-                existing.keySet().stream()
+        List<Object[]> staleArgs =
+                existingSkillIds.stream()
                         .filter(skillId -> !bySkill.containsKey(skillId))
-                        .map(skillId -> new SkillScoreId(userId, skillId))
+                        .map(skillId -> new Object[] {userId, skillId})
                         .toList();
-        skillScoreRepository.deleteAllById(stale);
+        if (!staleArgs.isEmpty()) {
+            jdbcTemplate.batchUpdate(DELETE_STALE_SCORE_SQL, staleArgs);
+        }
 
         log.info("Recomputed skill scores: userId={}, skills={}", userId, bySkill.size());
         return bySkill.size();

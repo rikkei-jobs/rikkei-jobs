@@ -254,6 +254,142 @@ class OpenApiCoverageIntegrationTest {
             assertTrue(schemas.has("InternshipResponse"));
             assertTrue(schemas.has("InternshipTaskResponse"));
             assertTrue(schemas.has("ErrorResponse"));
+
+            // Spot-check UT-01 recruitment endpoints & schemas
+            JsonNode applyPost = paths.path("/api/v1/jobs/{id}/apply").path("post");
+            assertErrorResponsesAnd403(
+                    applyPost, "CANDIDATE", "400", "401", "403", "404", "409", "503");
+            assertTrue(applyPost.path("responses").has("201"));
+
+            JsonNode myAppsGet = paths.path("/api/v1/me/applications").path("get");
+            assertErrorResponsesAnd403(myAppsGet, "CANDIDATE", "400", "401", "403");
+            assertTrue(myAppsGet.path("responses").has("200"));
+
+            JsonNode myAppDetailGet = paths.path("/api/v1/me/applications/{id}").path("get");
+            assertErrorResponsesAnd403(myAppDetailGet, "CANDIDATE", "400", "401", "403", "404");
+            assertTrue(myAppDetailGet.path("responses").has("200"));
+
+            JsonNode withdrawPost =
+                    paths.path("/api/v1/me/applications/{id}/withdraw").path("post");
+            assertErrorResponsesAnd403(
+                    withdrawPost, "CANDIDATE", "400", "401", "403", "404", "409");
+            assertTrue(withdrawPost.path("responses").has("200"));
+
+            JsonNode mySnapshotGet =
+                    paths.path("/api/v1/me/applications/{id}/cv-snapshot").path("get");
+            assertErrorResponsesAnd403(mySnapshotGet, "CANDIDATE", "400", "401", "403", "404");
+            assertTrue(
+                    mySnapshotGet
+                            .path("responses")
+                            .path("200")
+                            .path("content")
+                            .has("application/pdf"));
+
+            JsonNode hrAppsGet = paths.path("/api/v1/hr/jobs/{jobId}/applications").path("get");
+            assertErrorResponsesAnd403(hrAppsGet, "HR", "400", "401", "403", "404");
+            assertTrue(hrAppsGet.path("responses").has("200"));
+
+            JsonNode hrAppDetailGet =
+                    paths.path("/api/v1/hr/jobs/{jobId}/applications/{applicationId}").path("get");
+            assertErrorResponsesAnd403(hrAppDetailGet, "HR", "400", "401", "403", "404");
+            assertTrue(hrAppDetailGet.path("responses").has("200"));
+
+            JsonNode hrSnapshotGet =
+                    paths.path("/api/v1/hr/jobs/{jobId}/applications/{applicationId}/cv-snapshot")
+                            .path("get");
+            assertErrorResponsesAnd403(hrSnapshotGet, "HR", "400", "401", "403", "404");
+            assertTrue(
+                    hrSnapshotGet
+                            .path("responses")
+                            .path("200")
+                            .path("content")
+                            .has("application/pdf"));
+
+            assertTrue(schemas.has("ApplicationDetailResponse"));
+            assertTrue(schemas.has("ApplicationSummaryResponse"));
+            assertTrue(schemas.has("HrApplicationSummaryResponse"));
+            assertEquals(
+                    "/api/v1/me/applications/1/cv-snapshot",
+                    schemas.path("ApplicationDetailResponse")
+                            .path("properties")
+                            .path("cvSnapshotUrl")
+                            .path("example")
+                            .asText());
+
+            // Spot-check Option 1A, Option 2A, and UT-02 recruitment endpoints & schemas
+            JsonNode hrJobsGet = paths.path("/api/v1/hr/jobs").path("get");
+            assertErrorResponsesAnd403(hrJobsGet, "HR", "400", "401", "403", "404");
+            assertTrue(hrJobsGet.path("responses").has("200"));
+            assertTrue(hrJobsGet.path("description").asText().contains("DN-04"));
+
+            JsonNode appDetailGet = paths.path("/api/v1/applications/{id}").path("get");
+            assertErrorResponsesAnd403(appDetailGet, "HR", "400", "401", "403", "404");
+            assertErrorResponsesAnd403(appDetailGet, "STAFF", "400", "401", "403", "404");
+            assertTrue(appDetailGet.path("responses").has("200"));
+
+            JsonNode appSnapshotGet =
+                    paths.path("/api/v1/applications/{id}/cv-snapshot").path("get");
+            assertErrorResponsesAnd403(appSnapshotGet, "HR", "400", "401", "403", "404");
+            assertErrorResponsesAnd403(appSnapshotGet, "STAFF", "400", "401", "403", "404");
+            assertTrue(
+                    appSnapshotGet
+                            .path("responses")
+                            .path("200")
+                            .path("content")
+                            .has("application/pdf"));
+
+            JsonNode transitionPost =
+                    paths.path("/api/v1/applications/{id}/transition").path("post");
+            assertErrorResponsesAnd403(transitionPost, "HR", "400", "401", "403", "404", "409");
+            assertTrue(transitionPost.path("responses").has("200"));
+
+            JsonNode addRoundPost = paths.path("/api/v1/applications/{id}/rounds").path("post");
+            assertErrorResponsesAnd403(addRoundPost, "HR", "400", "401", "403", "404", "409");
+            assertTrue(addRoundPost.path("responses").has("201"));
+
+            JsonNode updateRoundPut =
+                    paths.path("/api/v1/applications/{id}/rounds/{roundId}").path("put");
+            assertErrorResponsesAnd403(updateRoundPut, "HR", "400", "401", "403", "404", "409");
+            assertTrue(updateRoundPut.path("responses").has("200"));
+
+            JsonNode staffAppsGet = paths.path("/api/v1/staff/applications").path("get");
+            assertErrorResponsesAnd403(staffAppsGet, "STAFF", "400", "401", "403");
+            assertTrue(staffAppsGet.path("responses").has("200"));
+
+            assertTrue(schemas.has("HrJobSummaryDto"));
+            assertTrue(
+                    schemas.path("HrJobSummaryDto").path("properties").has("expired"),
+                    "HrJobSummaryDto schema must expose expired boolean");
+            assertTrue(schemas.has("ApplicationProcessDetailResponse"));
+            assertTrue(schemas.has("InterviewRoundResponse"));
+            assertTrue(schemas.has("StaffApplicationSummaryResponse"));
+            assertTrue(schemas.has("UpdateInterviewRoundRequest"));
+            List<String> updateRoundRequired = new ArrayList<>();
+            schemas.path("UpdateInterviewRoundRequest")
+                    .path("required")
+                    .forEach(node -> updateRoundRequired.add(node.asText()));
+            assertTrue(
+                    updateRoundRequired.contains("version"),
+                    "UpdateInterviewRoundRequest OpenAPI schema must require version");
+            assertTrue(
+                    updateRoundRequired.contains("result"),
+                    "UpdateInterviewRoundRequest OpenAPI schema must require result");
+        }
+
+        private void assertErrorResponsesAnd403(
+                JsonNode operation, String expectedRole, String... codes) {
+            JsonNode responses = operation.path("responses");
+            for (String code : codes) {
+                assertTrue(responses.has(code), "Missing response code " + code);
+                assertEquals(
+                        "#/components/schemas/ErrorResponse",
+                        responseSchema(responses.path(code)).path("$ref").asText());
+            }
+            String desc403 = responses.path("403").path("description").asText();
+            assertTrue(desc403.contains(expectedRole), "403 must mention role " + expectedRole);
+            assertTrue(
+                    desc403.contains("MUST_CHANGE_PASSWORD"),
+                    "403 must mention MUST_CHANGE_PASSWORD");
         }
 
         private JsonNode responseSchema(JsonNode responseNode) {
@@ -310,7 +446,11 @@ class OpenApiCoverageIntegrationTest {
                 "CLOUDINARY_API_KEY=prod-cloudinary-key-123",
                 "CLOUDINARY_API_SECRET=prod-cloudinary-secret-xyz-987",
                 "CLOUDINARY_API_BASE_URL=https://api.cloudinary.com/v1_1",
-                "CLOUDINARY_DELIVERY_BASE_URL=https://res.cloudinary.com/prod-rikkei-cloud/image/upload"
+                "CLOUDINARY_DELIVERY_BASE_URL=https://res.cloudinary.com/prod-rikkei-cloud/image/upload",
+                "APP_FRONTEND_URL=https://rikkeijobs.com",
+                "APP_MAIL_FROM=no-reply@rikkeijobs.com",
+                "APP_SECURITY_RATE_LIMIT_TRUST_PROXY_HEADERS=true",
+                "APP_SECURITY_RATE_LIMIT_TRUSTED_PROXIES=127.0.0.1"
             })
     @Testcontainers
     @ActiveProfiles("prod")

@@ -1,7 +1,13 @@
 import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Icon } from '../../../../shared/components/Icon';
 import { formatDisplayValue } from '../../../../shared/i18n/enumLabels';
-import { hasPlayedMotionOnce, markMotionPlayed } from '../../../../shared/utils/motion';
+import {
+  hasPlayedMotionOnce,
+  markMotionPlayed,
+  navigateWithTransition,
+} from '../../../../shared/utils/motion';
+import { preloadRouteForPath } from '../../../../shared/utils/routeLazy';
 import { fetchTargetPositions } from '../../../candidate/api/gapAnalysis';
 import type { TargetPosition } from '../../../candidate/types';
 import { useAuth } from '../../context/useAuth';
@@ -9,6 +15,7 @@ import { RoleHomeLayout } from './RoleHomeLayout';
 
 export const StaffHomePage: React.FC = () => {
   const { user, accessToken } = useAuth();
+  const navigate = useNavigate();
 
   const [playEntrance] = useState<boolean>(() => !hasPlayedMotionOnce('staff-home-entrance'));
   useEffect(() => {
@@ -59,6 +66,24 @@ export const StaffHomePage: React.FC = () => {
     };
   }, [canFetchLiveData]);
 
+  const handleRouteLink = (event: React.MouseEvent<HTMLAnchorElement>, to: string) => {
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return;
+    }
+    event.preventDefault();
+    void navigateWithTransition(
+      () => navigate(to),
+      () => preloadRouteForPath(to),
+    );
+  };
+
   return (
     <RoleHomeLayout
       roleTitle="Nhân viên"
@@ -89,16 +114,29 @@ export const StaffHomePage: React.FC = () => {
           <div className="rj-stack-md">
             <div className="rj-cand-next-box">
               <div className="rj-cand-next-content">
-                <span className="rj-cand-kicker">Trạng thái vận hành</span>
+                <span className="rj-cand-kicker">Theo dõi vận hành tuyển dụng</span>
                 <h2 className="rj-role-card-title">
-                  Các màn hình duyệt hồ sơ và điều phối đang hoàn thiện
+                  Theo dõi toàn bộ hồ sơ ứng tuyển và tiến độ phỏng vấn
                 </h2>
                 <p className="rj-role-card-desc">
-                  Bạn có thể theo dõi danh mục vị trí chuẩn hiện hành bên dưới trong khi các công cụ
-                  duyệt doanh nghiệp, duyệt JD và ghép thực tập IOC đang được bổ sung.
+                  Tra cứu hồ sơ ứng tuyển trên toàn hệ thống theo doanh nghiệp, vị trí tuyển dụng và
+                  trạng thái xử lý, đồng thời theo dõi các vòng phỏng vấn theo thời gian thực.
                 </p>
               </div>
-              <span className="rj-card-soon-badge">Sắp ra mắt</span>
+              <Link
+                to="/staff/applications"
+                className="rj-btn rj-btn-primary rj-cand-next-cta"
+                onMouseEnter={() => {
+                  void preloadRouteForPath('/staff/applications');
+                }}
+                onFocus={() => {
+                  void preloadRouteForPath('/staff/applications');
+                }}
+                onClick={(e) => handleRouteLink(e, '/staff/applications')}
+              >
+                <Icon name="file-text" size={18} />
+                <span>Theo dõi hồ sơ ứng tuyển</span>
+              </Link>
             </div>
           </div>
         </section>

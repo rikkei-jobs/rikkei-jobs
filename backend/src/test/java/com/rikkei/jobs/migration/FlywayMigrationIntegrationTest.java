@@ -18,6 +18,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -48,6 +49,41 @@ public class FlywayMigrationIntegrationTest {
     @Autowired private UserRepository userRepository;
 
     @Autowired private PasswordEncoder passwordEncoder;
+
+    @Autowired private JdbcTemplate jdbcTemplate;
+
+    @Test
+    @DisplayName("Development seed data must include PDF snapshots for sample applications")
+    void testSampleApplicationSnapshotsSeeded() {
+        Integer snapshotCount =
+                jdbcTemplate.queryForObject(
+                        "SELECT count(*) FROM application_cv_snapshots", Integer.class);
+        assertEquals(7, snapshotCount);
+
+        String pdfHeader =
+                jdbcTemplate.queryForObject(
+                        "SELECT encode(substring(file_data FROM 1 FOR 5), 'hex') "
+                                + "FROM application_cv_snapshots WHERE application_id = 1",
+                        String.class);
+        assertEquals("255044462d", pdfHeader);
+
+        Long fileSize =
+                jdbcTemplate.queryForObject(
+                        "SELECT file_size FROM application_cv_snapshots WHERE application_id = 1",
+                        Long.class);
+        assertEquals(594L, fileSize);
+
+        String sha256 =
+                jdbcTemplate.queryForObject(
+                        "SELECT sha256 FROM application_cv_snapshots WHERE application_id = 1",
+                        String.class);
+        assertEquals("9b71184ae956dd96864598cc8abfffb29bcf23c9bff28aff431fd779ac564782", sha256);
+
+        Integer candidate2AppCount =
+                jdbcTemplate.queryForObject(
+                        "SELECT count(*) FROM applications WHERE user_id = 2", Integer.class);
+        assertEquals(0, candidate2AppCount);
+    }
 
     @Test
     @DisplayName("Dev profile must seed exactly 5 roles")

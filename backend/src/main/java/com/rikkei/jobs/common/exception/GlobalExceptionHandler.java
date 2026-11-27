@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.InvalidMediaTypeException;
@@ -170,8 +171,14 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
-    public ResponseEntity<ErrorResponse> handleOptimisticLocking(
+    public ResponseEntity<ErrorResponse> handleObjectOptimisticLocking(
             ObjectOptimisticLockingFailureException ex) {
+        return handleOptimisticLocking(ex);
+    }
+
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    public ResponseEntity<ErrorResponse> handleOptimisticLocking(
+            OptimisticLockingFailureException ex) {
         log.warn("Optimistic locking conflict: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(
