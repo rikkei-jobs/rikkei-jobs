@@ -313,7 +313,12 @@
     "reqs",
     "refetched",
     "sandboxed",
-    "securitypolicyviolation"
+    "securitypolicyviolation",
+    "projectlombok",
+    "jsonwebtoken",
+    "settimeout",
+    "Dtestcontainers",
+    "hado"
   ],
   "ignorePaths": [
     "**/node_modules/**",
@@ -321,6 +326,16 @@
     "**/dist/**",
     "**/.git/**",
     "**/.agents/**",
-    "**/package-lock.json"
+    "**/package-lock.json",
+    "**/build/**",
+    "**/coverage/**",
+    "**/mvnw",
+    "**/mvnw.cmd",
+    "**/*.svg",
+    "**/Dockerfile",
+    "**/*.Dockerfile",
+    "**/nginx.conf",
+    "**/nginx.conf.template",
+    "**/*.lock"
   ]
 }

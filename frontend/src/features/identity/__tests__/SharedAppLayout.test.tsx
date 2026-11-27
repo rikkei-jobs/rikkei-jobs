@@ -193,7 +193,7 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
       ]);
 
       expect(getRoleMenuItems('MENTOR').map((i) => ({ label: i.label, disabled: Boolean(i.disabled) }))).toEqual([
-        { label: 'Cần đánh giá', disabled: true },
+        { label: 'Cần đánh giá', disabled: false },
       ]);
 
       expect(getRoleMenuItems('STAFF').map((i) => ({ label: i.label, path: i.path, disabled: Boolean(i.disabled) }))).toEqual([

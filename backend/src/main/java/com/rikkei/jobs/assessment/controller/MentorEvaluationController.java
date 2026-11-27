@@ -27,9 +27,14 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/mentor")
 @Tag(name = "Assessment", description = "Các API quản lý và đánh giá năng lực ứng viên từ Mentor")
-@RequiredArgsConstructor
 public class MentorEvaluationController {
     private final MentorEvaluationService mentorEvaluationService;
+
+    public MentorEvaluationController(
+        MentorEvaluationService mentorEvaluationService
+    ) {
+        this.mentorEvaluationService = mentorEvaluationService;
+    }
 
     @Operation(
             summary = "Lấy danh sách đối tượng cần đánh giá",

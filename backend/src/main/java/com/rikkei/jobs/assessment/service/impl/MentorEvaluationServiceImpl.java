@@ -18,13 +18,11 @@ import com.rikkei.jobs.recruitment.repository.InterviewRoundRepository;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.*;
 import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class MentorEvaluationServiceImpl implements MentorEvaluationService {
 
@@ -33,6 +31,14 @@ public class MentorEvaluationServiceImpl implements MentorEvaluationService {
     private final EvaluationRepository evaluationRepository;
     private final ApplicationRepository applicationRepository;
     private final InterviewRoundRepository interviewRoundRepository;
+
+    public MentorEvaluationServiceImpl(InternshipRepository internshipRepository, UserRepository userRepository, EvaluationRepository evaluationRepository, ApplicationRepository applicationRepository, InterviewRoundRepository interviewRoundRepository) {
+        this.internshipRepository = internshipRepository;
+        this.userRepository = userRepository;
+        this.evaluationRepository = evaluationRepository;
+        this.applicationRepository = applicationRepository;
+        this.interviewRoundRepository = interviewRoundRepository;
+    }
 
     @Override
     public MentorEvaluationTasksResponse getEvaluationTasks(
