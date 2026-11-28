@@ -198,6 +198,7 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
 
       expect(getRoleMenuItems('STAFF').map((i) => ({ label: i.label, path: i.path, disabled: Boolean(i.disabled) }))).toEqual([
         { label: 'Hồ sơ ứng tuyển', path: '/staff/applications', disabled: false },
+        { label: 'Đồng bộ dữ liệu', path: '/staff/data-sync', disabled: false },
         { label: 'Duyệt hồ sơ', path: undefined, disabled: true },
         { label: 'Duyệt JD', path: undefined, disabled: true },
         { label: 'Doanh nghiệp', path: undefined, disabled: true },
@@ -253,6 +254,7 @@ describe('roleMenuConfig & SharedAppLayout (F1 + D5)', () => {
         icon: 'briefcase' as const,
         expectedItems: [
           'Hồ sơ ứng tuyển',
+          'Đồng bộ dữ liệu',
           'Duyệt hồ sơ',
           'Duyệt JD',
           'Doanh nghiệp',

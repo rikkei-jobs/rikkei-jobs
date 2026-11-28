@@ -397,6 +397,11 @@
 
 .sp-status-message {
   margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.sp-recompute-alert {
+  margin-top: 12px;
 }
 
 .sp-sr-only {
