@@ -1,6 +1,7 @@
 // Tier 2: Boundaries & Security — NT-02 5-Role RBAC Matrix (Opaque-Box)
 // Verifies declarative route policies and ownership guards across CANDIDATE, HR, MENTOR, STAFF, ADMIN, and Anonymous
 // via HTTP/Nginx/Mock/Mailpit only (never mutates hr1 password so must_change_password remains true)
+// Also verifies 401/403 RBAC matrix and Nginx :3000 parity across all 5 NT-05 D10 data-sync endpoints (TC-T2-RBAC-14)
 
 import { describe, it, before } from 'node:test';
 import assert from 'node:assert/strict';
@@ -760,6 +761,62 @@ describe('Tier 2: NT-02 5-Role RBAC Matrix & Ownership Boundaries', () => {
       assert.strictEqual(meRes.body?.role, roleName);
       assert.strictEqual(meRes.body?.email, actor.user.email);
       assert.strictEqual(meRes.body?.mustChangePassword, false);
+    }
+  });
+
+  it('TC-T2-RBAC-14: Should enforce 401/403 RBAC matrix and Nginx :3000 parity across all 5 NT-05 D10 endpoints', async () => {
+    assert.ok(backendOnline && frontendOnline, 'Backend and frontend proxy must be reachable');
+
+    const endpoints = [
+      { label: 'POST /staff/sync/1', method: 'post', path: '/api/v1/staff/sync/1', body: {} },
+      { label: 'GET /staff/sync-runs', method: 'get', path: '/api/v1/staff/sync-runs?page=1&size=20' },
+      {
+        label: 'PUT /staff/external-records/1/override',
+        method: 'put',
+        path: '/api/v1/staff/external-records/1/override',
+        body: { field: 'rpoint', value: 120, reason: 'Kiểm tra phân quyền' }
+      },
+      { label: 'GET /staff/external-records', method: 'get', path: '/api/v1/staff/external-records?page=1&size=20' },
+      { label: 'GET /staff/sync/candidates', method: 'get', path: '/api/v1/staff/sync/candidates?page=1&size=20' }
+    ];
+
+    const callEndpoint = (baseUrl, endpoint, headers = {}) => {
+      const url = `${baseUrl}${endpoint.path}`;
+      if (endpoint.method === 'get') {
+        return http.get(url, { headers });
+      }
+      if (endpoint.method === 'post') {
+        return http.post(url, endpoint.body, { headers });
+      }
+      return http.put(url, endpoint.body, { headers });
+    };
+
+    for (const [originLabel, baseUrl] of [
+      [':8080', BACKEND_BASE_URL],
+      [':3000', FRONTEND_BASE_URL]
+    ]) {
+      for (const ep of endpoints) {
+        const anonRes = await callEndpoint(baseUrl, ep);
+        assertErrorStatusAndCode(anonRes, 401, 'UNAUTHORIZED', `${originLabel} ${ep.label} (anonymous)`);
+
+        for (const [roleLabel, actor] of [
+          ['CANDIDATE', cand1],
+          ['HR', hr2],
+          ['MENTOR', mentor1],
+          ['ADMIN', admin1]
+        ]) {
+          const forbiddenRes = await callEndpoint(baseUrl, ep, authHeaders(actor.token));
+          assertErrorStatusAndCode(forbiddenRes, 403, 'FORBIDDEN', `${originLabel} ${ep.label} (${roleLabel})`);
+        }
+
+        const mustChangeRes = await callEndpoint(baseUrl, ep, authHeaders(hr1.token));
+        assertErrorStatusAndCode(
+          mustChangeRes,
+          403,
+          'MUST_CHANGE_PASSWORD',
+          `${originLabel} ${ep.label} (hr1 mustChangePassword)`
+        );
+      }
     }
   });
 });
