@@ -499,7 +499,7 @@ class AiGovernanceIntegrationTest {
         assertEquals(
                 List.of(
                         "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14",
-                        "15", "17", "19", "21", "22", "23", "24"),
+                        "15", "17", "19", "21", "22", "23", "24", "25"),
                 jdbc.queryForList(
                         "SELECT version FROM public.flyway_schema_history WHERE success = true AND version IS NOT NULL ORDER BY installed_rank",
                         String.class));
@@ -518,7 +518,7 @@ class AiGovernanceIntegrationTest {
                         latest
                                 ? List.of(
                                         "1", "3", "5", "7", "9", "11", "13", "15", "17", "19", "21",
-                                        "23")
+                                        "23", "25")
                                 : List.of("1", "3", "5", "7", "9", "11", "13", "15");
                 assertEquals(
                         expected,
@@ -547,13 +547,20 @@ class AiGovernanceIntegrationTest {
     void openApiContainsNewAdminContracts() throws Exception {
         mvc.perform(get("/api/api-docs"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.paths.length()").value(45))
+                .andExpect(jsonPath("$.paths.length()").value(50))
                 .andExpect(jsonPath("$.paths['/api/v1/admin/ai-config'].get").exists())
                 .andExpect(
                         jsonPath("$.paths['/api/v1/admin/ai-config'].put.responses['409']")
                                 .exists())
                 .andExpect(jsonPath("$.paths['/api/v1/admin/ai-logs'].get").exists())
-                .andExpect(jsonPath("$.paths['/api/v1/admin/ai-usage/summary'].get").exists());
+                .andExpect(jsonPath("$.paths['/api/v1/admin/ai-usage/summary'].get").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/staff/sync/{userId}'].post").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/staff/sync-runs'].get").exists())
+                .andExpect(
+                        jsonPath("$.paths['/api/v1/staff/external-records/{id}/override'].put")
+                                .exists())
+                .andExpect(jsonPath("$.paths['/api/v1/staff/external-records'].get").exists())
+                .andExpect(jsonPath("$.paths['/api/v1/staff/sync/candidates'].get").exists());
     }
 
     private static UpdateAiConfigRequest settings(

@@ -51,7 +51,9 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = {"app.sync.on-open-enabled=false", "app.sync.nightly-cron=-"})
 @Testcontainers
 @ActiveProfiles("dev")
 @DisplayName("B4 5-Role RBAC Permission Matrix, Ownership & Clock Expiry Integration Tests")

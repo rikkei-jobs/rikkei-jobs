@@ -1,7 +1,10 @@
 package com.rikkei.jobs.identity.service.impl;
 
+import com.rikkei.jobs.common.dto.PageResponse;
 import com.rikkei.jobs.common.exception.ConflictException;
 import com.rikkei.jobs.common.exception.ValidationException;
+import com.rikkei.jobs.identity.dto.CandidateSyncSummaryDto;
+import com.rikkei.jobs.identity.dto.CandidateSyncTargetDto;
 import com.rikkei.jobs.identity.dto.CreateHrUserCommand;
 import com.rikkei.jobs.identity.dto.CreatedHrUserResult;
 import com.rikkei.jobs.identity.dto.HrRecipientDto;
@@ -29,6 +32,9 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -272,6 +278,94 @@ public class IdentityPublicServiceImpl implements IdentityPublicService {
                 .stream()
                 .map(u -> new HrRecipientDto(u.getId(), u.getEmail(), u.getFullName()))
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<CandidateSyncTargetDto> findCandidateSyncTargetByUserId(Long userId) {
+        if (userId == null || userId <= 0) {
+            return Optional.empty();
+        }
+        return userRepository
+                .findByIdWithRole(userId)
+                .filter(
+                        u ->
+                                u.getRole() != null
+                                        && Role.CANDIDATE.equalsIgnoreCase(u.getRole().getName()))
+                .map(
+                        u ->
+                                new CandidateSyncTargetDto(
+                                        u.getId(),
+                                        u.getFullName(),
+                                        u.getEmail(),
+                                        u.getLmsUserId() == null ? null : u.getLmsUserId().trim(),
+                                        u.getStatus() == UserStatus.ACTIVE));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<CandidateSyncTargetDto> findActiveSyncCandidates(int page, int size) {
+        Pageable pageable = toPageable(page, size);
+        Page<User> result = userRepository.findActiveSyncCandidates(pageable);
+        List<CandidateSyncTargetDto> items =
+                result.getContent().stream()
+                        .map(
+                                u ->
+                                        new CandidateSyncTargetDto(
+                                                u.getId(),
+                                                u.getFullName(),
+                                                u.getEmail(),
+                                                u.getLmsUserId().trim(),
+                                                true))
+                        .toList();
+        return new PageResponse<>(
+                items, page, size, result.getTotalElements(), result.getTotalPages());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<CandidateSyncSummaryDto> searchCandidatesForSync(
+            String q, int page, int size) {
+        Pageable pageable = toPageable(page, size);
+        String trimmed = q == null ? "" : q.trim();
+        if (trimmed.length() > MAX_USER_FIELD_LENGTH) {
+            throw new ValidationException("Từ khóa tìm kiếm không được vượt quá 100 ký tự");
+        }
+
+        Page<User> result;
+        if (trimmed.isEmpty()) {
+            result = userRepository.findAllCandidatesForSync(pageable);
+        } else {
+            String escaped =
+                    trimmed.toLowerCase(Locale.ROOT)
+                            .replace("!", "!!")
+                            .replace("%", "!%")
+                            .replace("_", "!_");
+            result = userRepository.searchCandidatesForSync("%" + escaped + "%", pageable);
+        }
+
+        List<CandidateSyncSummaryDto> items =
+                result.getContent().stream()
+                        .map(
+                                u ->
+                                        new CandidateSyncSummaryDto(
+                                                u.getId(),
+                                                u.getFullName(),
+                                                u.getEmail(),
+                                                u.getLmsUserId()))
+                        .toList();
+        return new PageResponse<>(
+                items, page, size, result.getTotalElements(), result.getTotalPages());
+    }
+
+    private static Pageable toPageable(int page, int size) {
+        if (page < 1) {
+            throw new ValidationException("Số trang phải lớn hơn hoặc bằng 1");
+        }
+        if (size < 1 || size > 100) {
+            throw new ValidationException("Kích thước trang phải trong khoảng từ 1 đến 100");
+        }
+        return PageRequest.of(page - 1, size);
     }
 
     private static boolean containsForbiddenCharacters(String value) {

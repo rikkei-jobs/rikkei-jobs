@@ -362,34 +362,51 @@ public class ExternalApiClient {
         }
     }
 
+    /**
+     * Fetches student LMS course results via GET /lms/students/{lmsUserId}/results using the
+     * 5-second timeout and 2 network retries policy.
+     */
+    public String getStudentLmsResults(String lmsUserId) {
+        String path = "/lms/students/" + encodeLmsUserId(lmsUserId) + "/results";
+        return executeRequest("GET", path, null, null);
+    }
+
+    /**
+     * Fetches student standardized exam results via GET /exam/students/{lmsUserId}/results using
+     * the 5-second timeout and 2 network retries policy.
+     */
+    public String getStudentExamResults(String lmsUserId) {
+        String path = "/exam/students/" + encodeLmsUserId(lmsUserId) + "/results";
+        return executeRequest("GET", path, null, null);
+    }
+
+    /**
+     * Fetches student internships from PM via GET /pm/students/{lmsUserId}/internships using the
+     * 5-second timeout and 2 network retries policy (NT-05 sync).
+     */
     public String getStudentInternships(String lmsUserId) {
-        if (lmsUserId == null || lmsUserId.isBlank()) {
-            throw new ValidationException("LMS User ID không được để trống");
-        }
-
-        String encodedLmsUserId =
-                URLEncoder.encode(lmsUserId.trim(), StandardCharsets.UTF_8).replace("+", "%20");
-
-        String path = "/pm/students/" + encodedLmsUserId + "/internships";
-
+        String path = "/pm/students/" + encodeLmsUserId(lmsUserId) + "/internships";
         return executeRequest("GET", path, null, null);
     }
 
     /**
      * Fetches student internships from PM with a bounded fast-fail timeout and zero retries so
-     * callers can degrade quickly to locally stored internship data.
+     * callers can degrade quickly to locally stored internship data (TT-01 read flow).
      */
     public String getStudentInternshipsFastFail(String lmsUserId) {
+        String path = "/pm/students/" + encodeLmsUserId(lmsUserId) + "/internships";
+        return executeRequest(fastFailHttpClient, "GET", path, null, null, fastFailTimeout, 0);
+    }
+
+    private static String encodeLmsUserId(String lmsUserId) {
         if (lmsUserId == null || lmsUserId.isBlank()) {
             throw new ValidationException("LMS User ID không được để trống");
         }
-
-        String encodedLmsUserId =
-                URLEncoder.encode(lmsUserId.trim(), StandardCharsets.UTF_8).replace("+", "%20");
-
-        String path = "/pm/students/" + encodedLmsUserId + "/internships";
-
-        return executeRequest(fastFailHttpClient, "GET", path, null, null, fastFailTimeout, 0);
+        String trimmed = lmsUserId.trim();
+        if (".".equals(trimmed) || "..".equals(trimmed)) {
+            throw new ValidationException("LMS User ID không hợp lệ");
+        }
+        return URLEncoder.encode(trimmed, StandardCharsets.UTF_8).replace("+", "%20");
     }
 
     /**

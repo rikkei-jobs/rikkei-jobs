@@ -1,5 +1,8 @@
 package com.rikkei.jobs.identity.service;
 
+import com.rikkei.jobs.common.dto.PageResponse;
+import com.rikkei.jobs.identity.dto.CandidateSyncSummaryDto;
+import com.rikkei.jobs.identity.dto.CandidateSyncTargetDto;
 import com.rikkei.jobs.identity.dto.CreateHrUserCommand;
 import com.rikkei.jobs.identity.dto.CreatedHrUserResult;
 import com.rikkei.jobs.identity.dto.HrRecipientDto;
@@ -33,4 +36,10 @@ public interface IdentityPublicService {
     void sendHrOnboardingEmail(SendHrOnboardingEmailCommand command);
 
     List<HrRecipientDto> findActiveHrRecipientsByCompanyId(Long companyId);
+
+    Optional<CandidateSyncTargetDto> findCandidateSyncTargetByUserId(Long userId);
+
+    PageResponse<CandidateSyncTargetDto> findActiveSyncCandidates(int page, int size);
+
+    PageResponse<CandidateSyncSummaryDto> searchCandidatesForSync(String q, int page, int size);
 }

@@ -93,6 +93,12 @@ app:
     log-retention-time-budget-ms: ${AI_LOG_RETENTION_TIME_BUDGET_MS:10000}
     log-retention-cron: ${AI_LOG_RETENTION_CRON:0 15 2 * * *}
     log-retention-max-batches: ${AI_LOG_RETENTION_MAX_BATCHES:1000}
+  sync:
+    nightly-cron: ${APP_SYNC_NIGHTLY_CRON:0 0 1 * * *}
+    nightly-zone: ${APP_SYNC_NIGHTLY_ZONE:Asia/Ho_Chi_Minh}
+    on-open-enabled: ${APP_SYNC_ON_OPEN_ENABLED:true}
+    on-open-staleness-minutes: ${APP_SYNC_ON_OPEN_STALENESS_MINUTES:60}
+    nightly-page-size: ${APP_SYNC_NIGHTLY_PAGE_SIZE:50}
   server:
     tomcat:
       # Must stay > nginx upstream keepalive_timeout (60s in frontend/nginx.conf) so nginx closes
@@ -119,3 +125,8 @@ management:
   endpoint:
     health:
       show-details: never
+
+logging:
+  level:
+    # Suppress Hibernate JDBC error log so PostgreSQL Detail: row payloads/PII never reach logs.
+    org.hibernate.orm.jdbc.error: OFF
