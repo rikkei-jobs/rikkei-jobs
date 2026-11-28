@@ -55,9 +55,9 @@ describe('roleUtils', () => {
   });
 
   describe('routePolicies (SSOT)', () => {
-    it('covers all 22 protected routes (including /403) with exact allowedRoles', () => {
+    it('covers all 23 protected routes (including /403) with exact allowedRoles', () => {
       const policies = Object.values(PROTECTED_ROUTE_POLICIES);
-      expect(policies).toHaveLength(22);
+      expect(policies).toHaveLength(23);
       expect(policies.map((p) => [p.path, [...p.allowedRoles]])).toEqual([
         ['/candidate', ['CANDIDATE']],
         ['/candidate/skills', ['CANDIDATE']],
@@ -77,6 +77,7 @@ describe('roleUtils', () => {
         ['/staff', ['STAFF']],
         ['/staff/applications', ['STAFF']],
         ['/staff/applications/:id', ['STAFF']],
+        ['/staff/data-sync', ['STAFF']],
         ['/admin', ['ADMIN']],
         ['/admin/ai-config', ['ADMIN']],
         ['/admin/ai-logs', ['ADMIN']],

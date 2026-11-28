@@ -123,6 +123,94 @@ describe('SkillProfilePage', () => {
     expect(init.method).toBe('POST');
   });
 
+  it('keeps loaded skills intact on recompute failure, focuses inline alert retry, re-runs recompute, and restores focus on recovery', async () => {
+    const updated: SkillProfileItem[] = [
+      { ...SAMPLE[0]!, verifiedScore: 84.21 },
+      SAMPLE[1]!,
+    ];
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(okResponse(SAMPLE))
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 503,
+        json: () =>
+          Promise.resolve({
+            code: 'EXTERNAL_UNAVAILABLE',
+            message: 'Hệ thống dữ liệu đào tạo tạm thời không khả dụng.',
+          }),
+      } as unknown as Response)
+      .mockResolvedValueOnce(okResponse(updated));
+    globalThis.fetch = fetchMock;
+
+    render(<SkillProfilePage showLogout={false} showEvaluations={false} />);
+
+    await screen.findByTestId('skill-JAVA');
+    const recomputeBtn = screen.getByRole('button', { name: /Tính lại từ dữ liệu học tập/i });
+    fireEvent.click(recomputeBtn);
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(/Hệ thống dữ liệu đào tạo tạm thời không khả dụng/i);
+
+    // Loaded skills and summary remain rendered (H3)
+    expect(screen.getByTestId('skill-JAVA')).toBeInTheDocument();
+    expect(screen.getByTestId('skill-COMMUNICATION')).toBeInTheDocument();
+    expect(screen.getByText('79.07')).toBeInTheDocument();
+    expect(screen.getByTestId('summary-total')).toHaveTextContent('2');
+    expect(screen.getByTestId('summary-verified')).toHaveTextContent('1');
+    expect(screen.getByTestId('summary-self')).toHaveTextContent('1');
+
+    const retryBtn = within(alert).getByRole('button', { name: /Thử lại/i });
+    expect(retryBtn).toHaveFocus();
+
+    fireEvent.click(retryBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText('84.21')).toBeInTheDocument();
+    });
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    const [retryUrl, retryInit] = fetchMock.mock.calls[2] as [string, RequestInit];
+    expect(retryUrl).toContain('/api/v1/profiles/me/skills/recompute');
+    expect(retryInit.method).toBe('POST');
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Tính lại từ dữ liệu học tập/i })).toHaveFocus();
+    });
+  });
+
+  it('keeps loaded skills intact when recompute rejects with a 504/network error and aborts in-flight recompute on unmount', async () => {
+    let seenSignal: AbortSignal | null | undefined;
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(okResponse(SAMPLE))
+      .mockRejectedValueOnce(new Error('504 Gateway Timeout'))
+      .mockImplementationOnce((_url: string, init?: RequestInit) => {
+        seenSignal = init?.signal;
+        return new Promise<Response>(() => {});
+      });
+    globalThis.fetch = fetchMock;
+
+    const { unmount } = render(<SkillProfilePage showLogout={false} showEvaluations={false} />);
+
+    await screen.findByTestId('skill-JAVA');
+    fireEvent.click(screen.getByRole('button', { name: /Tính lại từ dữ liệu học tập/i }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(/504 Gateway Timeout/i);
+    expect(screen.getByTestId('skill-JAVA')).toBeInTheDocument();
+    expect(screen.getByTestId('summary-total')).toHaveTextContent('2');
+
+    fireEvent.click(within(alert).getByRole('button', { name: /Thử lại/i }));
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+    });
+    expect(seenSignal).toBeDefined();
+    expect(seenSignal?.aborted).toBe(false);
+
+    unmount();
+    expect(seenSignal?.aborted).toBe(true);
+  });
+
   it('renders loading skeleton with aria-busy and supports retry recovery on error', async () => {
     let rejectFirst!: (err: Error) => void;
     const fetchMock = vi

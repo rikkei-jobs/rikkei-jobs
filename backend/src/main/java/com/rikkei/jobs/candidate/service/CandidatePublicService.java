@@ -14,6 +14,8 @@ import java.util.Set;
  */
 public interface CandidatePublicService {
 
+    void acquireCandidateSkillLock(Long candidateUserId);
+
     void recordMentorEvidences(Long candidateUserId, List<MentorSkillEvidenceDto> evidences);
 
     /**

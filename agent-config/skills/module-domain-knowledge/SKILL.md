@@ -71,7 +71,7 @@ The core principle of this skill is absolute fidelity to documented specificatio
 ### Business Card 2: Candidate Profile Module (`candidate`)
 
 - Domain Responsibilities: Comprehensive Skill Profile management, evidence uploads, CV PDF generation, privacy controls.
-- Exclusively Owned Tables: `candidate_profiles`, `external_records`, `skill_mappings`, `skill_evidences`, `skill_scores`, `target_positions`, `position_skills`, `candidate_targets`, `gap_results`, `candidate_cvs`, `portfolios`.
+- Exclusively Owned Tables: `candidate_profiles`, `external_records`, `skill_mappings`, `skill_evidences`, `skill_scores`, `target_positions`, `position_skills`, `candidate_targets`, `gap_results`, `manual_overrides`, `sync_runs`, `candidate_cvs`, `portfolios`.
 - Actor Roles: `CANDIDATE` (owner), `STAFF` (auditor), `HR` (viewer with PII masked).
 - Core Entities: `SkillProfile`, `ProfileEvidence` (score, source, status, manuallyLocked), `CandidateCv`, `Portfolio`.
 - State Lifecycles:

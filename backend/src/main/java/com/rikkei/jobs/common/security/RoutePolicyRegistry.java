@@ -459,6 +459,38 @@ public class RoutePolicyRegistry {
                             "/api/v1/staff/applications",
                             true,
                             "STAFF monitors paginated recruitment applications across companies",
+                            OwnershipGuard.ROLE_STAFF),
+
+                    // 10. NT-05 Staff External Data Sync & Manual Overrides
+                    RoutePolicy.roles(
+                            HttpMethod.POST,
+                            "/api/v1/staff/sync/{userId}",
+                            true,
+                            "STAFF triggers manual external sync for one candidate",
+                            OwnershipGuard.ROLE_STAFF),
+                    RoutePolicy.roles(
+                            HttpMethod.GET,
+                            "/api/v1/staff/sync-runs",
+                            true,
+                            "STAFF lists external sync runs with filters and pagination",
+                            OwnershipGuard.ROLE_STAFF),
+                    RoutePolicy.roles(
+                            HttpMethod.PUT,
+                            "/api/v1/staff/external-records/{id}/override",
+                            true,
+                            "STAFF applies a manual override on an external record",
+                            OwnershipGuard.ROLE_STAFF),
+                    RoutePolicy.roles(
+                            HttpMethod.GET,
+                            "/api/v1/staff/external-records",
+                            true,
+                            "STAFF lists synced external records and manual override history",
+                            OwnershipGuard.ROLE_STAFF),
+                    RoutePolicy.roles(
+                            HttpMethod.GET,
+                            "/api/v1/staff/sync/candidates",
+                            true,
+                            "STAFF searches candidates eligible for external sync",
                             OwnershipGuard.ROLE_STAFF));
 
     private static final PathPatternParser PATTERN_PARSER = new PathPatternParser();

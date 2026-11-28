@@ -12,6 +12,7 @@ import com.rikkei.jobs.candidate.repository.SkillEvidenceRepository;
 import com.rikkei.jobs.candidate.repository.SkillMappingRepository;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -40,9 +41,22 @@ public class SkillRecomputeService {
     private static final String INSERT_EVIDENCE_SQL =
             """
             INSERT INTO skill_evidences
-                (user_id, skill_id, source, source_ref, title, score, weight, recorded_at, verified)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (user_id, skill_id, source, source_ref, title, score, weight, recorded_at, verified, external_record_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
+
+    private static final int[] INSERT_EVIDENCE_TYPES = {
+        Types.BIGINT,
+        Types.INTEGER,
+        Types.VARCHAR,
+        Types.VARCHAR,
+        Types.VARCHAR,
+        Types.DECIMAL,
+        Types.DECIMAL,
+        Types.TIMESTAMP,
+        Types.BOOLEAN,
+        Types.BIGINT
+    };
 
     private static final String UPSERT_SCORE_SQL =
             """
@@ -66,23 +80,27 @@ public class SkillRecomputeService {
     private final SkillEvidenceRepository skillEvidenceRepository;
     private final JdbcTemplate jdbcTemplate;
     private final Clock clock;
+    private final CandidateSkillLockService candidateSkillLockService;
 
     public SkillRecomputeService(
             ExternalRecordRepository externalRecordRepository,
             SkillMappingRepository skillMappingRepository,
             SkillEvidenceRepository skillEvidenceRepository,
             JdbcTemplate jdbcTemplate,
-            Clock clock) {
+            Clock clock,
+            CandidateSkillLockService candidateSkillLockService) {
         this.externalRecordRepository = externalRecordRepository;
         this.skillMappingRepository = skillMappingRepository;
         this.skillEvidenceRepository = skillEvidenceRepository;
         this.jdbcTemplate = jdbcTemplate;
         this.clock = clock;
+        this.candidateSkillLockService = candidateSkillLockService;
     }
 
     /** Recomputes evidences and scores of one candidate. Returns the number of scored skills. */
     @Transactional(rollbackFor = Exception.class)
     public int recomputeSkills(Long userId) {
+        candidateSkillLockService.acquireUserLock(userId);
         OffsetDateTime now = OffsetDateTime.now(clock);
 
         skillEvidenceRepository.deleteVerifiedBySources(userId, EvidenceSource.EXTERNAL_DERIVED);
@@ -103,9 +121,11 @@ public class SkillRecomputeService {
                                                 e.getScore(),
                                                 e.getWeight(),
                                                 Timestamp.from(e.getRecordedAt().toInstant()),
-                                                e.isVerified()
+                                                e.isVerified(),
+                                                e.getExternalRecordId()
                                             })
-                            .toList());
+                            .toList(),
+                    INSERT_EVIDENCE_TYPES);
         }
 
         Map<Integer, List<SkillEvidence>> bySkill =
@@ -174,7 +194,8 @@ public class SkillRecomputeService {
                                 record.getScore(),
                                 mapping.getWeight(),
                                 record.getRecordedAt(),
-                                true));
+                                true,
+                                record.getId()));
             }
         }
         return evidences;

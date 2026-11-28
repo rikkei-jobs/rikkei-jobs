@@ -95,6 +95,12 @@ export const ROLE_MENU_CONFIG: Readonly<Record<UserRole, readonly RoleMenuItem[]
       icon: 'file-text',
     },
     {
+      id: 'staff-data-sync',
+      label: 'Đồng bộ dữ liệu',
+      path: '/staff/data-sync',
+      icon: 'refresh',
+    },
+    {
       id: 'staff-profiles',
       label: 'Duyệt hồ sơ',
       icon: 'user-check',

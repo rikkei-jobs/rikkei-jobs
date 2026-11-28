@@ -66,7 +66,8 @@ public class RecruitmentMigrationIntegrationTest {
         }
 
         @Test
-        @DisplayName("Prod migrations V19, V21 and V23 apply cleanly from empty DB with 0 rows")
+        @DisplayName(
+                "Prod migrations V19, V21, V23 and V25 apply cleanly from empty DB with 0 rows")
         void testProdMigrationsApplyCleanlyFromEmptyDatabase() {
             try (PostgreSQLContainer db = new PostgreSQLContainer(POSTGRES_IMAGE)) {
                 db.start();
@@ -80,7 +81,7 @@ public class RecruitmentMigrationIntegrationTest {
 
                 JdbcTemplate jdbc = new JdbcTemplate(dataSource);
                 assertEquals(
-                        Integer.valueOf(12),
+                        Integer.valueOf(13),
                         jdbc.queryForObject(
                                 "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                                 Integer.class));
@@ -104,7 +105,7 @@ public class RecruitmentMigrationIntegrationTest {
 
         @Test
         @DisplayName(
-                "Dev migrations apply 21 scripts, 7 applications, 6 interview rounds, and advance sequences")
+                "Dev migrations apply 22 scripts, 7 applications, 6 interview rounds, and advance sequences")
         void testDevMigrationsApplyCleanlyFromEmptyDatabase() {
             try (PostgreSQLContainer db = new PostgreSQLContainer(POSTGRES_IMAGE)) {
                 db.start();
@@ -118,7 +119,7 @@ public class RecruitmentMigrationIntegrationTest {
 
                 JdbcTemplate jdbc = new JdbcTemplate(dataSource);
                 assertEquals(
-                        Integer.valueOf(21),
+                        Integer.valueOf(22),
                         jdbc.queryForObject(
                                 "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                                 Integer.class));
@@ -153,7 +154,7 @@ public class RecruitmentMigrationIntegrationTest {
         }
 
         @Test
-        @DisplayName("V19..V24 upgrade cleanly on top of V1..V17 baseline")
+        @DisplayName("V19..V25 upgrade cleanly on top of V1..V17 baseline")
         void testUpgradesCleanlyOnTopOfOriginDevelopBaseline() {
             try (PostgreSQLContainer prodDb = new PostgreSQLContainer(POSTGRES_IMAGE)) {
                 prodDb.start();
@@ -174,11 +175,11 @@ public class RecruitmentMigrationIntegrationTest {
                                 .load()
                                 .migrate()
                                 .migrationsExecuted;
-                assertEquals(3, prodExecuted);
+                assertEquals(4, prodExecuted);
 
                 JdbcTemplate prodJdbc = new JdbcTemplate(prodDataSource);
                 assertEquals(
-                        Integer.valueOf(12),
+                        Integer.valueOf(13),
                         prodJdbc.queryForObject(
                                 "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                                 Integer.class));
@@ -203,11 +204,11 @@ public class RecruitmentMigrationIntegrationTest {
                                 .load()
                                 .migrate()
                                 .migrationsExecuted;
-                assertEquals(5, devExecuted);
+                assertEquals(6, devExecuted);
 
                 JdbcTemplate devJdbc = new JdbcTemplate(devDataSource);
                 assertEquals(
-                        Integer.valueOf(21),
+                        Integer.valueOf(22),
                         devJdbc.queryForObject(
                                 "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                                 Integer.class));
@@ -222,7 +223,7 @@ public class RecruitmentMigrationIntegrationTest {
         }
 
         @Test
-        @DisplayName("V23 and V24 upgrade cleanly on top of current develop V1..V22 baseline")
+        @DisplayName("V23, V24 and V25 upgrade cleanly on top of current develop V1..V22 baseline")
         void testV23AndV24UpgradeCleanlyOnTopOfDevelopV22Baseline() {
             try (PostgreSQLContainer prodDb = new PostgreSQLContainer(POSTGRES_IMAGE)) {
                 prodDb.start();
@@ -255,9 +256,9 @@ public class RecruitmentMigrationIntegrationTest {
                                 .load()
                                 .migrate()
                                 .migrationsExecuted;
-                assertEquals(1, prodExecuted);
+                assertEquals(2, prodExecuted);
                 assertEquals(
-                        Integer.valueOf(12),
+                        Integer.valueOf(13),
                         prodJdbc.queryForObject(
                                 "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                                 Integer.class));
@@ -298,9 +299,9 @@ public class RecruitmentMigrationIntegrationTest {
                                 .load()
                                 .migrate()
                                 .migrationsExecuted;
-                assertEquals(2, devExecuted);
+                assertEquals(3, devExecuted);
                 assertEquals(
-                        Integer.valueOf(21),
+                        Integer.valueOf(22),
                         devJdbc.queryForObject(
                                 "SELECT count(*) FROM flyway_schema_history WHERE success = true",
                                 Integer.class));

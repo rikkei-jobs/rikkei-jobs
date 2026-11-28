@@ -40,7 +40,7 @@ The Modular Monolith architecture prevents architectural erosion by enforcing:
 
 1. Consult `docs/01-architecture-overview.md` to identify table ownership:
    - `identity`: `roles`, `users`, `used_sso_tickets`, `password_reset_tokens`.
-   - `candidate`: `candidate_profiles`, `external_records`, `skill_mappings`, `skill_evidences`, `skill_scores`, `target_positions`, `position_skills`, `candidate_targets`, `gap_results`, `candidate_cvs`, `portfolios`.
+   - `candidate`: `candidate_profiles`, `external_records`, `skill_mappings`, `skill_evidences`, `skill_scores`, `target_positions`, `position_skills`, `candidate_targets`, `gap_results`, `manual_overrides`, `sync_runs`, `candidate_cvs`, `portfolios`.
    - `company`, `job`: `companies`, `jobs`, `job_skills`, `company_hr_profiles`, `job_descriptions`.
    - `internship`: `internship_batches`, `internship_members`, `internship_tasks`.
    - `assessment`: `skills`, `evaluation_templates`, `evaluation_criteria`, `evaluations`, `evaluation_scores`, `skill_badges`.

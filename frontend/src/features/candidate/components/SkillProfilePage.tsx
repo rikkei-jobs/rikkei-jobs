@@ -1,4 +1,12 @@
-import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { ApiError } from '../../../shared/api/auth';
 import { Icon } from '../../../shared/components/Icon';
 import { fetchMySkills, recomputeMySkills, type SkillProfileItem } from '../api/skillProfile';
@@ -54,7 +62,15 @@ export const SkillProfilePage: React.FC<SkillProfilePageProps> = ({
 
   const [state, setState] = useState<LoadState>({ kind: 'loading' });
   const [recomputing, setRecomputing] = useState(false);
+  const [recomputeError, setRecomputeError] = useState<string | null>(null);
+  const [recomputeErrorSeq, setRecomputeErrorSeq] = useState(0);
   const [retryCount, setRetryCount] = useState(0);
+
+  const isMountedRef = useRef(true);
+  const recomputeAbortRef = useRef<AbortController | null>(null);
+  const recomputeBtnRef = useRef<HTMLButtonElement | null>(null);
+  const recomputeRetryBtnRef = useRef<HTMLButtonElement | null>(null);
+  const shouldRestoreFocusToRecomputeRef = useRef(false);
 
   const HeadingTag = headingLevel === 1 ? 'h1' : 'h2';
   const SectionHeadingTag = headingLevel === 1 ? 'h2' : 'h3';
@@ -66,6 +82,23 @@ export const SkillProfilePage: React.FC<SkillProfilePageProps> = ({
     return err instanceof ApiError || err instanceof Error
       ? `Không tải được hồ sơ kỹ năng (${err.message})`
       : 'Không thể kết nối đến máy chủ. Vui lòng thử lại.';
+  }, []);
+
+  const describeRecomputeError = useCallback((err: unknown): string | null => {
+    if (err instanceof Error && err.name === 'AbortError') {
+      return null;
+    }
+    return err instanceof ApiError || err instanceof Error
+      ? `Không tính lại được hồ sơ kỹ năng (${err.message})`
+      : 'Không thể kết nối đến máy chủ. Vui lòng thử lại.';
+  }, []);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      recomputeAbortRef.current?.abort();
+    };
   }, []);
 
   useEffect(() => {
@@ -87,25 +120,58 @@ export const SkillProfilePage: React.FC<SkillProfilePageProps> = ({
     return () => controller.abort();
   }, [describeError, retryCount]);
 
+  useLayoutEffect(() => {
+    if (recomputeErrorSeq > 0 && recomputeError !== null) {
+      recomputeRetryBtnRef.current?.focus();
+    }
+  }, [recomputeErrorSeq, recomputeError]);
+
+  useLayoutEffect(() => {
+    if (!recomputing && recomputeError === null && shouldRestoreFocusToRecomputeRef.current) {
+      shouldRestoreFocusToRecomputeRef.current = false;
+      recomputeBtnRef.current?.focus();
+    }
+  }, [recomputing, recomputeError]);
+
   const handleRetry = useCallback(() => {
     setState({ kind: 'loading' });
     setRetryCount((count) => count + 1);
   }, []);
 
-  const recompute = useCallback(async () => {
-    setRecomputing(true);
-    try {
-      const items = await recomputeMySkills();
-      setState({ kind: 'ready', items });
-    } catch (err: unknown) {
-      const message = describeError(err);
-      if (message) {
-        setState({ kind: 'error', message });
+  const recompute = useCallback(
+    async (fromRetryButton = false) => {
+      if (fromRetryButton) {
+        shouldRestoreFocusToRecomputeRef.current = true;
       }
-    } finally {
-      setRecomputing(false);
-    }
-  }, [describeError]);
+      recomputeAbortRef.current?.abort();
+      const controller = new AbortController();
+      recomputeAbortRef.current = controller;
+
+      setRecomputing(true);
+      setRecomputeError(null);
+      try {
+        const items = await recomputeMySkills(controller.signal);
+        if (!controller.signal.aborted && isMountedRef.current) {
+          setState({ kind: 'ready', items });
+          setRecomputeError(null);
+        }
+      } catch (err: unknown) {
+        if (controller.signal.aborted || !isMountedRef.current) {
+          return;
+        }
+        const message = describeRecomputeError(err);
+        if (message) {
+          setRecomputeError(message);
+          setRecomputeErrorSeq((seq) => seq + 1);
+        }
+      } finally {
+        if (isMountedRef.current && recomputeAbortRef.current === controller) {
+          setRecomputing(false);
+        }
+      }
+    },
+    [describeRecomputeError],
+  );
 
   const items = useMemo(() => (state.kind === 'ready' ? state.items : []), [state]);
   const groups = useMemo(() => groupItems(items), [items]);
@@ -235,14 +301,36 @@ export const SkillProfilePage: React.FC<SkillProfilePageProps> = ({
                 </div>
               </dl>
               <button
+                ref={recomputeBtnRef}
                 type="button"
                 className="sp-btn"
-                onClick={() => void recompute()}
+                onClick={() => void recompute(false)}
                 disabled={recomputing}
               >
                 <Icon name="refresh" size={18} />
                 {recomputing ? 'Đang tính lại...' : 'Tính lại từ dữ liệu học tập'}
               </button>
+              {recomputeError && (
+                <div
+                  className="sp-status sp-status-error sp-status-alert sp-recompute-alert"
+                  role="alert"
+                >
+                  <Icon name="alert-circle" size={20} />
+                  <div className="sp-status-body">
+                    <p className="sp-status-message">{recomputeError}</p>
+                    <button
+                      ref={recomputeRetryBtnRef}
+                      type="button"
+                      className="sp-btn"
+                      onClick={() => void recompute(true)}
+                      disabled={recomputing}
+                    >
+                      <Icon name="refresh" size={16} />
+                      <span>Thử lại</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="sp-card">

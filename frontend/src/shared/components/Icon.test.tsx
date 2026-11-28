@@ -44,6 +44,7 @@ describe('Icon Component', () => {
     'download',
     'send',
     'file-text',
+    'search',
   ];
 
   it('renders all icons without crashing', () => {

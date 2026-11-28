@@ -1,6 +1,6 @@
 // Tier 1: Feature Coverage — OpenAPI /api/docs, Swagger UI Assets & Legacy Routes
 // Verifies /api/docs redirect and HTML rendering, Swagger UI CSS/JS/PNG/config assets on :8080 and :3000,
-// full OpenAPI 45-path / 48-operation contract, @Hidden exclusion of TestErrorController, and hr1 allow-list
+// full OpenAPI 50-path / 53-operation contract, @Hidden exclusion of TestErrorController, and hr1 allow-list
 
 import { describe, it, before } from 'node:test';
 import assert from 'node:assert/strict';
@@ -59,7 +59,12 @@ const EXPECTED_OPERATIONS = new Map([
   ['/api/v1/applications/{id}/transition', ['post']],
   ['/api/v1/applications/{id}/rounds', ['post']],
   ['/api/v1/applications/{id}/rounds/{roundId}', ['put']],
-  ['/api/v1/staff/applications', ['get']]
+  ['/api/v1/staff/applications', ['get']],
+  ['/api/v1/staff/sync/{userId}', ['post']],
+  ['/api/v1/staff/sync-runs', ['get']],
+  ['/api/v1/staff/external-records/{id}/override', ['put']],
+  ['/api/v1/staff/external-records', ['get']],
+  ['/api/v1/staff/sync/candidates', ['get']]
 ]);
 
 const PUBLIC_OPERATIONS = new Set([
@@ -227,7 +232,7 @@ describe('Tier 1: OpenAPI /api/docs & Swagger UI Verification', () => {
     }
   });
 
-  it('TC-T1-DOCS-03: Should expose identical OpenAPI 3 contract with bearerAuth and all 45 paths / 48 operations across :8080 and :3000', async () => {
+  it('TC-T1-DOCS-03: Should expose identical OpenAPI 3 contract with bearerAuth and all 50 paths / 53 operations across :8080 and :3000', async () => {
     assert.ok(backendOnline, 'Backend service must be reachable');
     assert.ok(frontendOnline, 'Frontend Nginx proxy must be reachable');
 
@@ -258,7 +263,7 @@ describe('Tier 1: OpenAPI /api/docs & Swagger UI Verification', () => {
     const paths = backendApiRes.body.paths || {};
     const actualPathKeys = Object.keys(paths).sort();
     const expectedPathKeys = [...EXPECTED_OPERATIONS.keys()].sort();
-    assert.deepStrictEqual(actualPathKeys, expectedPathKeys, 'OpenAPI paths must match all 45 merged module endpoints');
+    assert.deepStrictEqual(actualPathKeys, expectedPathKeys, 'OpenAPI paths must match all 50 merged module endpoints');
 
     let totalOperations = 0;
     const rootSecurity = backendApiRes.body.security || [];
@@ -285,7 +290,7 @@ describe('Tier 1: OpenAPI /api/docs & Swagger UI Verification', () => {
       }
     }
 
-    assert.strictEqual(totalOperations, 48, `Expected 48 OpenAPI operations, got ${totalOperations}`);
+    assert.strictEqual(totalOperations, 53, `Expected 53 OpenAPI operations, got ${totalOperations}`);
 
     const getCompanyByIdOp = paths['/api/v1/companies/{id}']?.get;
     assert.ok(getCompanyByIdOp, 'GET /api/v1/companies/{id} must exist in OpenAPI');
@@ -449,6 +454,40 @@ describe('Tier 1: OpenAPI /api/docs & Swagger UI Verification', () => {
         schemas.UpdateInterviewRoundRequest.required.includes('version'),
       'OpenAPI UpdateInterviewRoundRequest schema must require version'
     );
+
+    const staffSyncPost = paths['/api/v1/staff/sync/{userId}']?.post;
+    assertErrorResponsesAnd403(staffSyncPost, 'POST /api/v1/staff/sync/{userId}', 'STAFF', ['400', '401', '403', '404', '503']);
+    const staffSync200 = staffSyncPost.responses?.['200']?.content?.['application/json'] ?? staffSyncPost.responses?.['200']?.content?.['*/*'];
+    assert.strictEqual(staffSync200?.schema?.$ref, '#/components/schemas/SyncRunResponse');
+
+    const staffSyncRunsGet = paths['/api/v1/staff/sync-runs']?.get;
+    assertErrorResponsesAnd403(staffSyncRunsGet, 'GET /api/v1/staff/sync-runs', 'STAFF', ['400', '401', '403']);
+    assert.ok(staffSyncRunsGet.responses?.['200'], 'GET /api/v1/staff/sync-runs must document 200');
+
+    const staffOverridePut = paths['/api/v1/staff/external-records/{id}/override']?.put;
+    assertErrorResponsesAnd403(staffOverridePut, 'PUT /api/v1/staff/external-records/{id}/override', 'STAFF', ['400', '401', '403', '404']);
+    const staffOverride200 = staffOverridePut.responses?.['200']?.content?.['application/json'] ?? staffOverridePut.responses?.['200']?.content?.['*/*'];
+    assert.strictEqual(staffOverride200?.schema?.$ref, '#/components/schemas/ExternalRecordResponse');
+
+    const staffExternalRecordsGet = paths['/api/v1/staff/external-records']?.get;
+    assertErrorResponsesAnd403(staffExternalRecordsGet, 'GET /api/v1/staff/external-records', 'STAFF', ['400', '401', '403']);
+    assert.ok(staffExternalRecordsGet.responses?.['200'], 'GET /api/v1/staff/external-records must document 200');
+
+    const staffSyncCandidatesGet = paths['/api/v1/staff/sync/candidates']?.get;
+    assertErrorResponsesAnd403(staffSyncCandidatesGet, 'GET /api/v1/staff/sync/candidates', 'STAFF', ['400', '401', '403']);
+    assert.ok(staffSyncCandidatesGet.responses?.['200'], 'GET /api/v1/staff/sync/candidates must document 200');
+
+    for (const nt05SchemaName of [
+      'SyncRunResponse',
+      'SyncCounts',
+      'SourceSyncCounts',
+      'ExternalRecordResponse',
+      'ManualOverrideDto',
+      'ManualOverrideRequest',
+      'CandidateSyncSummaryDto'
+    ]) {
+      assert.ok(schemas[nt05SchemaName], `OpenAPI components.schemas must include ${nt05SchemaName}`);
+    }
 
     // Legacy UT-02 PATCH status, unprefixed/stray routes, and out-of-scope HS-04 paths must stay absent
     assert.strictEqual(paths['/api/v1/hr/jobs/{jobId}/applications/{applicationId}/status'], undefined, 'Legacy UT-02 PATCH status endpoint must not be exposed');

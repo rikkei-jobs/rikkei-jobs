@@ -1,8 +1,10 @@
 package com.rikkei.jobs.candidate.controller;
 
 import com.rikkei.jobs.candidate.dto.SkillProfileItemDto;
+import com.rikkei.jobs.candidate.service.OnOpenSyncService;
 import com.rikkei.jobs.candidate.service.SkillProfileService;
 import com.rikkei.jobs.candidate.service.SkillRecomputeService;
+import com.rikkei.jobs.candidate.service.SyncFailureLogger;
 import com.rikkei.jobs.common.dto.ErrorResponse;
 import com.rikkei.jobs.identity.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,6 +15,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,13 +34,19 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/profiles")
 public class SkillProfileController {
 
+    private static final Logger log = LoggerFactory.getLogger(SkillProfileController.class);
+
     private final SkillProfileService skillProfileService;
     private final SkillRecomputeService skillRecomputeService;
+    private final OnOpenSyncService onOpenSyncService;
 
     public SkillProfileController(
-            SkillProfileService skillProfileService, SkillRecomputeService skillRecomputeService) {
+            SkillProfileService skillProfileService,
+            SkillRecomputeService skillRecomputeService,
+            OnOpenSyncService onOpenSyncService) {
         this.skillProfileService = skillProfileService;
         this.skillRecomputeService = skillRecomputeService;
+        this.onOpenSyncService = onOpenSyncService;
     }
 
     @Operation(
@@ -69,7 +79,16 @@ public class SkillProfileController {
     @PreAuthorize("hasRole('CANDIDATE')")
     @GetMapping("/me/skills")
     public List<SkillProfileItemDto> mySkills(@AuthenticationPrincipal UserPrincipal user) {
-        return skillProfileService.getSkills(user.getId(), user.getRoleName(), user.getId());
+        List<SkillProfileItemDto> result =
+                skillProfileService.getSkills(user.getId(), user.getRoleName(), user.getId());
+        try {
+            onOpenSyncService.triggerIfStale(user.getId());
+        } catch (RuntimeException ex) {
+            // Never block or fail /me/skills due to background sync scheduling errors.
+            SyncFailureLogger.logTriggerFailure(
+                    log, "On-open sync scheduling failed", user.getId(), ex);
+        }
+        return result;
     }
 
     @Operation(

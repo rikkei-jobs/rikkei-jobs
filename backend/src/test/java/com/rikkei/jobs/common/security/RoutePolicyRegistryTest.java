@@ -223,6 +223,27 @@ class RoutePolicyRegistryTest {
     }
 
     @Test
+    @DisplayName("NT-05 STAFF data sync route policies enforce STAFF RBAC boundaries")
+    void nt05StaffSyncPoliciesAreDeclared() {
+        List<String> staffRoutes =
+                List.of(
+                        "POST /api/v1/staff/sync/{userId}",
+                        "GET /api/v1/staff/sync-runs",
+                        "PUT /api/v1/staff/external-records/{id}/override",
+                        "GET /api/v1/staff/external-records",
+                        "GET /api/v1/staff/sync/candidates");
+        for (String route : staffRoutes) {
+            String[] parts = route.split(" ");
+            RoutePolicy policy =
+                    registry.findExactPolicy(HttpMethod.valueOf(parts[0]), parts[1]).orElseThrow();
+            assertEquals(PolicyAccessType.ROLES, policy.accessType());
+            assertEquals(Set.of("STAFF"), policy.allowedRoles());
+            assertTrue(policy.methodScoped());
+            assertTrue(!policy.devOnly());
+        }
+    }
+
+    @Test
     @DisplayName("RoutePolicy constructor rejects invalid role configurations")
     void rejectsInvalidRolePolicies() {
         assertThrows(

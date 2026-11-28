@@ -10,6 +10,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 /** Normalized result from LMS / Exam / PM (0-100). Table: external_records. */
 @Entity
@@ -30,6 +32,9 @@ public class ExternalRecord {
     @Column(name = "source_code", nullable = false, length = 100)
     private String sourceCode;
 
+    @Column(name = "source_key", nullable = false, length = 160)
+    private String sourceKey;
+
     @Column(nullable = false)
     private String title;
 
@@ -38,6 +43,13 @@ public class ExternalRecord {
 
     @Column(name = "recorded_at", nullable = false)
     private OffsetDateTime recordedAt;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "payload", nullable = false, columnDefinition = "jsonb")
+    private String payload;
+
+    @Column(name = "synced_at", nullable = false)
+    private OffsetDateTime syncedAt;
 
     protected ExternalRecord() {}
 
@@ -48,18 +60,54 @@ public class ExternalRecord {
             BigDecimal score,
             OffsetDateTime recordedAt,
             Long userId) {
+        this(
+                externalSource,
+                sourceCode,
+                userId + ":" + sourceCode,
+                title,
+                score,
+                recordedAt,
+                "{}",
+                recordedAt,
+                userId);
+    }
+
+    public ExternalRecord(
+            ExternalSource externalSource,
+            String sourceCode,
+            String sourceKey,
+            String title,
+            BigDecimal score,
+            OffsetDateTime recordedAt,
+            String payload,
+            OffsetDateTime syncedAt,
+            Long userId) {
         this.source = externalSource;
         this.sourceCode = sourceCode;
+        this.sourceKey = sourceKey;
         this.title = title;
         this.score = score;
         this.recordedAt = recordedAt;
+        this.payload = payload;
+        this.syncedAt = syncedAt;
         this.userId = userId;
     }
 
-    public void updateResult(String title, BigDecimal score, OffsetDateTime recordedAt) {
+    public void updateResult(
+            String title,
+            BigDecimal score,
+            OffsetDateTime recordedAt,
+            String payload,
+            OffsetDateTime syncedAt) {
         this.title = title;
         this.score = score;
         this.recordedAt = recordedAt;
+        this.payload = payload;
+        this.syncedAt = syncedAt;
+    }
+
+    public Long getId() {
+        return id;
     }
 
     public Long getUserId() {
@@ -74,6 +122,10 @@ public class ExternalRecord {
         return sourceCode;
     }
 
+    public String getSourceKey() {
+        return sourceKey;
+    }
+
     public String getTitle() {
         return title;
     }
@@ -84,5 +136,13 @@ public class ExternalRecord {
 
     public OffsetDateTime getRecordedAt() {
         return recordedAt;
+    }
+
+    public String getPayload() {
+        return payload;
+    }
+
+    public OffsetDateTime getSyncedAt() {
+        return syncedAt;
     }
 }

@@ -51,3 +51,20 @@ export {
 export { EvaluationCard, type EvaluationCardProps } from './components/EvaluationCard';
 export { EvaluationScoreItem, type EvaluationScoreItemProps } from './components/EvaluationScoreItem';
 export { fetchCandidateEvaluations, getProfileEvaluations } from './api/candidateEvaluations';
+
+// NT-05 staff data synchronization and manual override components
+export { StaffDataSyncPage } from './pages/StaffDataSyncPage';
+export { staffDataSyncApi } from './api/staffDataSyncApi';
+export type {
+  CandidateSyncSummaryDto,
+  ExternalRecordResponse,
+  ExternalSource,
+  ManualOverrideDto,
+  ManualOverrideRequest,
+  PageResponse as DataSyncPageResponse,
+  SourceSyncCounts,
+  SyncCounts,
+  SyncRunResponse,
+  SyncStatus,
+  SyncTrigger,
+} from './types/dataSync.types';

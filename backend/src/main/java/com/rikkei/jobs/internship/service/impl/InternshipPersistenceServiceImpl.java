@@ -51,7 +51,10 @@ public class InternshipPersistenceServiceImpl implements InternshipPersistenceSe
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public int saveSyncedInternships(Long userId, List<PMInternshipResponse> pmInternships) {
+    public int saveSyncedInternships(
+            Long userId,
+            List<PMInternshipResponse> pmInternships,
+            Map<String, String> sourcePayloadsByBatchId) {
         if (userId == null || userId <= 0) {
             throw new ValidationException("User ID không hợp lệ");
         }
@@ -66,6 +69,10 @@ public class InternshipPersistenceServiceImpl implements InternshipPersistenceSe
             }
             deduplicatedBatches.put(pmData.batchId().trim(), pmData);
         }
+
+        // Acquire the per-user advisory lock before reading internships to serialize concurrent
+        // first-time syncs.
+        candidatePublicService.acquireCandidateSkillLock(userId);
 
         OffsetDateTime now = OffsetDateTime.now(clock);
         List<PmInternshipResultCommand> commands = new ArrayList<>();
@@ -139,9 +146,15 @@ public class InternshipPersistenceServiceImpl implements InternshipPersistenceSe
                 }
             }
 
+            String sourcePayload =
+                    sourcePayloadsByBatchId != null ? sourcePayloadsByBatchId.get(batchId) : null;
             commands.add(
                     new PmInternshipResultCommand(
-                            batchId, pmData.topicName(), pmData.finalScore()));
+                            batchId,
+                            pmData.topicName(),
+                            pmData.finalScore(),
+                            pmData.endDate(),
+                            sourcePayload));
             syncedCount++;
         }
 

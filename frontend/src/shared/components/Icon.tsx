@@ -42,7 +42,8 @@ export type IconName =
   | 'play'
   | 'download'
   | 'send'
-  | 'file-text';
+  | 'file-text'
+  | 'search';
 
 export interface IconProps extends React.SVGAttributes<SVGSVGElement> {
   name: IconName;
@@ -319,6 +320,12 @@ const iconPaths: Record<IconName, React.ReactNode> = {
       <line x1="16" y1="13" x2="8" y2="13" />
       <line x1="16" y1="17" x2="8" y2="17" />
       <line x1="10" y1="9" x2="8" y2="9" />
+    </>
+  ),
+  search: (
+    <>
+      <circle cx="11" cy="11" r="8" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
     </>
   ),
 };

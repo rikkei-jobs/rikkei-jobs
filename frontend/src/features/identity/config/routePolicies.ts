@@ -98,6 +98,11 @@ export const PROTECTED_ROUTE_POLICIES = {
     path: '/staff/applications/:id',
     allowedRoles: ['STAFF'],
   },
+  staffDataSync: {
+    id: 'staffDataSync',
+    path: '/staff/data-sync',
+    allowedRoles: ['STAFF'],
+  },
   adminHome: {
     id: 'adminHome',
     path: '/admin',

@@ -3,6 +3,7 @@ package com.rikkei.jobs.internship.service;
 import com.rikkei.jobs.internship.dto.InternshipResponse;
 import com.rikkei.jobs.internship.dto.PMInternshipResponse;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Transactional persistence boundary for internship entities and cross-module skill evidence
@@ -11,7 +12,10 @@ import java.util.List;
  */
 public interface InternshipPersistenceService {
 
-    int saveSyncedInternships(Long userId, List<PMInternshipResponse> pmInternships);
+    int saveSyncedInternships(
+            Long userId,
+            List<PMInternshipResponse> pmInternships,
+            Map<String, String> sourcePayloadsByBatchId);
 
     List<InternshipResponse> getStoredInternships(Long userId);
 }

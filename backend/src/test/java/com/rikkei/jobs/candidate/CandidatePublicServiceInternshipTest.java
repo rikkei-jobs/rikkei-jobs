@@ -22,17 +22,23 @@ import com.rikkei.jobs.candidate.model.ExternalRecord;
 import com.rikkei.jobs.candidate.model.ExternalSource;
 import com.rikkei.jobs.candidate.repository.CandidateProfileRepository;
 import com.rikkei.jobs.candidate.repository.ExternalRecordRepository;
+import com.rikkei.jobs.candidate.repository.ManualOverrideRepository;
 import com.rikkei.jobs.candidate.repository.SkillEvidenceRepository;
 import com.rikkei.jobs.candidate.repository.SkillScoreRepository;
 import com.rikkei.jobs.candidate.service.CandidatePublicService;
+import com.rikkei.jobs.candidate.service.CandidateSkillLockService;
+import com.rikkei.jobs.candidate.service.ExternalRecordNormalizer;
 import com.rikkei.jobs.candidate.service.SkillRecomputeService;
 import com.rikkei.jobs.candidate.service.impl.CandidatePublicServiceImpl;
+import com.rikkei.jobs.common.config.JacksonConfig;
 import com.rikkei.jobs.common.exception.ValidationException;
 import com.rikkei.jobs.identity.MutableClock;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
@@ -71,6 +77,8 @@ class CandidatePublicServiceInternshipTest {
         @Mock private SkillScoreRepository skillScoreRepository;
         @Mock private SkillCatalogService skillCatalogService;
         @Mock private ExternalRecordRepository externalRecordRepository;
+        @Mock private ManualOverrideRepository manualOverrideRepository;
+        @Mock private CandidateSkillLockService candidateSkillLockService;
 
         private MutableClock clock;
         private CandidatePublicServiceImpl service;
@@ -80,6 +88,11 @@ class CandidatePublicServiceInternshipTest {
         @BeforeEach
         void setUp() {
             clock = new MutableClock(BASE_INSTANT, ZoneOffset.UTC);
+            ExternalRecordNormalizer normalizer =
+                    new ExternalRecordNormalizer(
+                            externalRecordRepository,
+                            manualOverrideRepository,
+                            new JacksonConfig().objectMapper());
             service =
                     new CandidatePublicServiceImpl(
                             skillEvidenceRepository,
@@ -87,8 +100,9 @@ class CandidatePublicServiceInternshipTest {
                             candidateProfileRepository,
                             skillScoreRepository,
                             skillCatalogService,
-                            externalRecordRepository,
-                            clock);
+                            clock,
+                            candidateSkillLockService,
+                            normalizer);
             serviceLogger = (Logger) LoggerFactory.getLogger(CandidatePublicServiceImpl.class);
             logAppender = new ListAppender<>();
             logAppender.start();
@@ -361,8 +375,8 @@ class CandidatePublicServiceInternshipTest {
 
         @Test
         @DisplayName(
-                "Changing only PM topic title (same score) triggers save, updates recordedAt, and"
-                        + " recomputes skills")
+                "Changing only PM topic title (same score, no endDate) triggers save, preserves"
+                        + " recordedAt, and recomputes skills")
         void titleOnlyChangeTriggersSaveAndRecompute() {
             OffsetDateTime originalRecordedAt = OffsetDateTime.now(clock).minusDays(3);
             ExternalRecord existing =
@@ -388,8 +402,40 @@ class CandidatePublicServiceInternshipTest {
                                     new BigDecimal("8.5"))));
 
             assertEquals("Updated Topic Title", existing.getTitle());
-            assertEquals(OffsetDateTime.now(clock), existing.getRecordedAt());
+            assertEquals(originalRecordedAt, existing.getRecordedAt());
             verify(externalRecordRepository).save(existing);
+            verify(skillRecomputeService, times(1)).recomputeSkills(10L);
+        }
+
+        @Test
+        @DisplayName(
+                "PM record with endDate sets recordedAt to 00:00 on endDate in Asia/Ho_Chi_Minh")
+        void endDateSetsRecordedAtToStartOfDayHoChiMinh() {
+            when(externalRecordRepository.findByUserIdAndSourceAndSourceCodeOrderByRecordedAtDesc(
+                            10L, ExternalSource.PM, "IOC-JB-2026-09"))
+                    .thenReturn(List.of());
+
+            LocalDate endDate = LocalDate.of(2026, 10, 30);
+            OffsetDateTime expectedRecordedAt =
+                    endDate.atStartOfDay(ZoneId.of("Asia/Ho_Chi_Minh")).toOffsetDateTime();
+
+            service.recordPmInternshipResults(
+                    10L,
+                    List.of(
+                            new PmInternshipResultCommand(
+                                    "IOC-JB-2026-09",
+                                    "Hệ thống đặt lịch phòng họp",
+                                    new BigDecimal("8.5"),
+                                    endDate,
+                                    "{\"batchId\":\"IOC-JB-2026-09\",\"topicName\":\"Hệ thống đặt lịch phòng họp\",\"endDate\":\"2026-10-30\",\"finalScore\":8.5}")));
+
+            ArgumentCaptor<ExternalRecord> captor = ArgumentCaptor.forClass(ExternalRecord.class);
+            verify(externalRecordRepository).save(captor.capture());
+            assertEquals(
+                    expectedRecordedAt.toInstant(), captor.getValue().getRecordedAt().toInstant());
+            assertEquals(
+                    OffsetDateTime.parse("2026-10-30T00:00:00+07:00").toInstant(),
+                    captor.getValue().getRecordedAt().toInstant());
             verify(skillRecomputeService, times(1)).recomputeSkills(10L);
         }
     }

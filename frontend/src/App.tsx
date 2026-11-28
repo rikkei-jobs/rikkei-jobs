@@ -88,6 +88,9 @@ const HrRecruitmentPage = lazyRoute(
 const StaffApplicationsPage = lazyRoute(
   () => import('./features/recruitment/pages/StaffApplicationsPage'),
 );
+const StaffDataSyncPage = lazyRoute(
+  () => import('./features/candidate/pages/StaffDataSyncPage'),
+);
 const ApplicationDetailPage = lazyRoute(
   () => import('./features/recruitment/pages/ApplicationDetailPage'),
 );
@@ -203,6 +206,11 @@ registerPrefixRoutePreloader(
   '/staff/applications/',
   ApplicationDetailPage.preload,
   ApplicationDetailPage.isLoaded,
+);
+registerRoutePreloader(
+  PROTECTED_ROUTE_POLICIES.staffDataSync.path,
+  StaffDataSyncPage.preload,
+  StaffDataSyncPage.isLoaded,
 );
 registerRoutePreloader(
   PROTECTED_ROUTE_POLICIES.adminHome.path,
@@ -747,6 +755,14 @@ export const AppRoutes: React.FC = () => {
                 allowedRoles={PROTECTED_ROUTE_POLICIES.staffApplicationDetail.allowedRoles}
               >
                 <ApplicationDetailPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path={PROTECTED_ROUTE_POLICIES.staffDataSync.path}
+            element={
+              <RequireRole allowedRoles={PROTECTED_ROUTE_POLICIES.staffDataSync.allowedRoles}>
+                <StaffDataSyncPage />
               </RequireRole>
             }
           />

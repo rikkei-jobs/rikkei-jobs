@@ -48,6 +48,9 @@ public class SkillEvidence {
     @Column(nullable = false)
     private boolean verified;
 
+    @Column(name = "external_record_id")
+    private Long externalRecordId;
+
     protected SkillEvidence() {}
 
     public SkillEvidence(
@@ -60,6 +63,20 @@ public class SkillEvidence {
             BigDecimal weight,
             OffsetDateTime recordedAt,
             boolean verified) {
+        this(userId, skillId, source, sourceRef, title, score, weight, recordedAt, verified, null);
+    }
+
+    public SkillEvidence(
+            Long userId,
+            Integer skillId,
+            EvidenceSource source,
+            String sourceRef,
+            String title,
+            BigDecimal score,
+            BigDecimal weight,
+            OffsetDateTime recordedAt,
+            boolean verified,
+            Long externalRecordId) {
         this.userId = userId;
         this.skillId = skillId;
         this.source = source;
@@ -69,6 +86,11 @@ public class SkillEvidence {
         this.weight = weight;
         this.recordedAt = recordedAt;
         this.verified = verified;
+        this.externalRecordId = externalRecordId;
+    }
+
+    public Long getId() {
+        return id;
     }
 
     public Long getUserId() {
@@ -105,5 +127,9 @@ public class SkillEvidence {
 
     public boolean isVerified() {
         return verified;
+    }
+
+    public Long getExternalRecordId() {
+        return externalRecordId;
     }
 }

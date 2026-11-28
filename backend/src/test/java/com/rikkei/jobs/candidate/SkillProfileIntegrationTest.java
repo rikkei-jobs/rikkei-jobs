@@ -39,7 +39,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
-@SpringBootTest
+@SpringBootTest(properties = {"app.sync.on-open-enabled=false", "app.sync.nightly-cron=-"})
 @Testcontainers
 @ActiveProfiles("dev")
 @DisplayName("HS-01 Skill Profile API (dev seed - JWT Authentication)")
@@ -201,9 +201,10 @@ class SkillProfileIntegrationTest {
     @DisplayName("Adding a course result and recomputing changes JAVA to the hand-calculated 84.21")
     void recomputeChangesScore() throws Exception {
         jdbcTemplate.update(
-                "INSERT INTO external_records (user_id, source, source_code, title, score,"
-                        + " recorded_at) VALUES (1, 'LMS', 'JAVA01', 'Lập trình Java (bổ sung)',"
-                        + " 100, NOW() - INTERVAL '1 day')");
+                "INSERT INTO external_records (user_id, source, source_code, source_key, title,"
+                        + " score, recorded_at, payload, synced_at) VALUES (1, 'LMS', 'JAVA01',"
+                        + " '1:JAVA01#test-supplement', 'Lập trình Java (bổ sung)', 100,"
+                        + " NOW() - INTERVAL '1 day', '{}'::jsonb, NOW())");
         try {
             // numerator = 170 + 100*0.7 = 240; denominator = 2.15 + 0.7 = 2.85; 240/2.85 = 84.21
             mockMvc.perform(post("/api/v1/profiles/me/skills/recompute").with(candidate(1)))
@@ -226,9 +227,10 @@ class SkillProfileIntegrationTest {
                 "INSERT INTO skill_mappings (source, source_code, skill_id, weight) SELECT 'LMS',"
                         + " 'DOCKER01', id, 1.0 FROM skills WHERE code = 'DOCKER'");
         jdbcTemplate.update(
-                "INSERT INTO external_records (user_id, source, source_code, title, score,"
-                        + " recorded_at) VALUES (1, 'LMS', 'DOCKER01', 'Docker căn bản', 60, NOW()"
-                        + " - INTERVAL '2 days')");
+                "INSERT INTO external_records (user_id, source, source_code, source_key, title,"
+                        + " score, recorded_at, payload, synced_at) VALUES (1, 'LMS', 'DOCKER01',"
+                        + " '1:DOCKER01', 'Docker căn bản', 60, NOW() - INTERVAL '2 days',"
+                        + " '{}'::jsonb, NOW())");
         try {
             mockMvc.perform(post("/api/v1/profiles/me/skills/recompute").with(candidate(1)))
                     .andExpect(status().isOk())
