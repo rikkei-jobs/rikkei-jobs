@@ -69,6 +69,8 @@
     "configurer",
     "configurers",
     "conname",
+    "conrelid",
+    "regclass",
     "subpaths",
     "unmigrated",
     "unkeyed",
@@ -313,7 +315,14 @@
     "reqs",
     "refetched",
     "sandboxed",
-    "securitypolicyviolation"
+    "securitypolicyviolation",
+    "khongtontai",
+    "rksk",
+    "upserts",
+    "logback",
+    "databind",
+    "ctxt",
+    "lpad"
   ],
   "ignorePaths": [
     "**/node_modules/**",

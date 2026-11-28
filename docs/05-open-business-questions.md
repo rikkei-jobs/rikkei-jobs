@@ -81,6 +81,7 @@ All questions include citations, context, proposed options, and architectural im
 - **Proposed Options**:
   - *Option A (Manual Lock Flag)*: Set a `manually_locked = true` flag on overridden records; the automated sync flags discrepancies for Staff review in an admin queue rather than updating automatically.
   - *Option B (Timestamp Precedence)*: Include a `source_updated_at` timestamp; if the upstream system updates the grade at a timestamp newer than the Staff manual override, accept the upstream correction.
+- **Authoritative Resolution (Round NT-05 / D9)**: The "override wins" model is formally adopted. Every Staff manual adjustment inserts an immutable append-only row into `manual_overrides` (`record_id`, `field`, `value`, `reason`, `staff_id`, `created_at`), where the effective value is the latest override per `(record_id, field)`. The override is applied immediately to `external_records` (`payload`, and `title`/`score` when affected) and triggers `recomputeSkills(userId)` under the per-user database lock. All subsequent syncs across both NT-05 (`syncUser`) and TT-01 (`recordPmInternshipResults`) strictly preserve every manually overridden field while updating only non-overridden fields. The TT-01 internship screen (`GET /api/v1/profiles/me/internships`) continues to display the `internship` module's own source data (`internships` and `internship_tasks`).
 - **Architectural Impact**: Defines the state attributes of the `profile_evidences` table and night-time sync error handling.
 
 ---
@@ -227,6 +228,7 @@ Mỗi câu hỏi đều có trích dẫn văn bản, ngữ cảnh phát sinh, c�
 - **Các phương án đề xuất**:
   - *Phương án A (Khóa thủ công)*: Đánh dấu cờ `manually_locked = true` cho bản ghi; khi tiến trình đồng bộ ban đêm phát hiện sai khác, hệ thống sẽ đưa vào hàng đợi cảnh báo cho Cán bộ duyệt thay vì tự động ghi đè.
   - *Phương án B (Dựa vào mốc thời gian)*: Lưu trường `source_updated_at`; nếu thời điểm cập nhật tại LMS mới hơn thời điểm cán bộ sửa tay, hệ thống sẽ cho phép ghi nhận dữ liệu mới.
+- **Quyết định chính thức (Vòng NT-05 / D9)**: Chính thức áp dụng mô hình **bảo toàn phần cán bộ sửa tay (override wins)**. Mỗi lần cán bộ sửa tay ghi thêm một bản ghi kiểm toán chỉ nối tiếp (append-only) vào `manual_overrides` (`record_id`, `field`, `value`, `reason`, `staff_id`, `created_at`); giá trị hiệu lực là bản ghi mới nhất theo `(record_id, field)`. Thay đổi được áp dụng ngay vào `external_records` (`payload`, đồng thời cập nhật `title`/`score` nếu trường liên quan bị sửa) và kích hoạt `recomputeSkills(userId)` dưới khóa tuần tự hóa theo ứng viên ở mức CSDL. Mọi lần đồng bộ về sau của cả NT-05 (`syncUser`) lẫn TT-01 (`recordPmInternshipResults`) đều giữ nguyên mọi trường đã sửa tay và chỉ cập nhật các trường còn lại. Màn hình thực tập TT-01 (`GET /api/v1/profiles/me/internships`) vẫn tiếp tục hiển thị dữ liệu nguồn riêng của module `internship` (`internships` và `internship_tasks`).
 - **Tác động kiến trúc**: Định hình cấu trúc bảng `profile_evidences` và logic nghiệp vụ của tiến trình đồng bộ dữ liệu ban đêm.
 
 ---

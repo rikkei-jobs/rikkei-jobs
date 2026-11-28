@@ -239,7 +239,7 @@ Run all linting, static analysis, unit tests, and security path checks using the
 .\check.ps1
 ```
 
-Individual checks and verified baselines (`1074` backend tests across `76` test classes, `459` frontend tests across `38` files, `28` E2E suites / `334` cases / `2078` assertions, `120` contrast pairs, `26` active runtime quality gates):
+Individual checks and verified baselines (`1453` backend tests across `105` test classes, `637` frontend tests across `51` files, `31` E2E suites / `366` cases / `2486` assertions, `120` contrast pairs, `26` active runtime quality gates):
 
 - **Single Backend Permission Test Command (NT-02 RBAC & Policy Coverage, JDK 25)**: `cd backend && ./mvnw test -D "test=Rbac*IntegrationTest"` (PowerShell: `.\mvnw.cmd test -D "test=Rbac*IntegrationTest"`)
 - **Backend Full Gate (JDK 25)**: `cd backend && ./mvnw clean test spotless:check spotbugs:check`
@@ -289,9 +289,10 @@ For detailed architectural decisions and operational guides, consult the `docs/`
 - [03 — Version Table](docs/03-version-table.md) *(Bilingual)* — Verified toolchain versions and official source registries.
 - [04 — Security & Secrets Policy](docs/04-security-secrets-policy.md) *(Bilingual)* — Zero real secrets rules and RBAC matrix.
 - [05 — Open Business Questions](docs/05-open-business-questions.md) *(Bilingual)* — Critical questions with citations from project PDFs.
-- [Entity Relationship Diagram (ERD)](docs/erd/README.md) *(Bilingual)* — All 22 production tables (`V1..V13`), module ownership, and scalar cross-module relations.
+- [Entity Relationship Diagram (ERD)](docs/erd/README.md) *(Bilingual)* — All 33 production tables (`V1..V25`), module ownership, and scalar cross-module relations.
 - [NT-02 RBAC Guide & Permission Matrix](docs/nt02/README.md) — Declarative `RoutePolicyRegistry`, `OwnershipGuard`, OpenAPI `/api/docs`, shared role menu, and [35-endpoint permission matrix](docs/nt02/permission-matrix.md) *(Bilingual)*.
 - [NT-02 PR Description](docs/nt02/PR_DESCRIPTION.md) *(Bilingual)* — Complete reviewer checklist, Team Lead decisions `D1`–`D8`, and gate verification summary.
+- [NT-05 External Data Sync (`T022C02`)](docs/nt05/README.md) *(Bilingual)* — LMS/Exam/PM sync pipeline, H1–H3 fixes, manual overrides, nightly/on-open jobs, and verification guide.
 - [Contributing Guidelines](CONTRIBUTING.md) — Git workflow and pull request process.
 - [AI Agent Configuration & Skills](docs/agent-config/README.md) *(Bilingual)* — Architecture, 16 enterprise rules, 29 task-triggered skills, validation tooling, and open-source attribution.
 - [ROUND PLATFORM-1 (`T022DB0`)](docs/platform1/README.md) *(Bilingual)* — Vendored `frontend-taste-anti-slop` skill, live UI/UX audit, whole-system & C1b load optimization, C2 security hardening, and operational configuration.
