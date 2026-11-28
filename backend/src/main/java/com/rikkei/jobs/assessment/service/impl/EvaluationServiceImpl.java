@@ -341,7 +341,8 @@ public class EvaluationServiceImpl implements EvaluationService {
                             evaluatedAt));
         }
 
-        // 7. Ghi nhận bằng chứng kỹ năng qua CandidatePublicService
+        // 7. Acquire per-user skill lock, then record mentor evidences and recompute skills
+        candidatePublicService.acquireCandidateSkillLock(evaluation.getUserId());
         candidatePublicService.recordMentorEvidences(evaluation.getUserId(), evidences);
 
         // 8. Kích hoạt tính toán lại điểm kỹ năng ứng viên

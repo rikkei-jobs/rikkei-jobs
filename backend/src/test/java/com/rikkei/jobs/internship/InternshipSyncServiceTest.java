@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
@@ -42,6 +43,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.BeforeEach;
@@ -109,14 +111,16 @@ class InternshipSyncServiceTest {
                     ]
                     """;
             when(externalApiClient.getStudentInternshipsFastFail("lms-sv-001")).thenReturn(payload);
-            when(internshipPersistenceService.saveSyncedInternships(eq(1L), anyList()))
+            when(internshipPersistenceService.saveSyncedInternships(eq(1L), anyList(), anyMap()))
                     .thenReturn(1);
 
             int synced = syncService.syncInternships(1L, "lms-sv-001");
 
             assertEquals(1, synced);
             ArgumentCaptor<List<PMInternshipResponse>> captor = ArgumentCaptor.forClass(List.class);
-            verify(internshipPersistenceService).saveSyncedInternships(eq(1L), captor.capture());
+            ArgumentCaptor<Map<String, String>> payloadCaptor = ArgumentCaptor.forClass(Map.class);
+            verify(internshipPersistenceService)
+                    .saveSyncedInternships(eq(1L), captor.capture(), payloadCaptor.capture());
             List<PMInternshipResponse> parsed = captor.getValue();
             assertEquals(1, parsed.size());
             PMInternshipResponse batch = parsed.getFirst();
@@ -128,6 +132,15 @@ class InternshipSyncServiceTest {
             assertEquals(
                     OffsetDateTime.parse("2026-09-25T17:00:00+07:00").toInstant(),
                     batch.tasks().getFirst().acceptedAt().toInstant());
+            String capturedSourceJson = payloadCaptor.getValue().get("IOC-JB-2026-09");
+            assertNotNull(capturedSourceJson);
+            try {
+                assertEquals(
+                        objectMapper.readTree(payload).get(0),
+                        objectMapper.readTree(capturedSourceJson));
+            } catch (Exception ex) {
+                throw new RuntimeException(ex);
+            }
         }
 
         @Test
@@ -315,7 +328,7 @@ class InternshipSyncServiceTest {
         @DisplayName(
                 "New batch persists batch, tasks, Clock syncedAt, and invokes CandidatePublicService")
         @SuppressWarnings("unchecked")
-        void newBatchPersistsTasksAndInvokesCandidateService() {
+        void newBatchPersistsTasksAndInvokesCandidateService() throws Exception {
             String json =
                     """
                     [
@@ -372,13 +385,25 @@ class InternshipSyncServiceTest {
             ArgumentCaptor<List<PmInternshipResultCommand>> cmdCaptor =
                     ArgumentCaptor.forClass(List.class);
             verify(candidatePublicService).recordPmInternshipResults(eq(1L), cmdCaptor.capture());
+            List<PmInternshipResultCommand> capturedCommands = cmdCaptor.getValue();
+            assertEquals(1, capturedCommands.size());
+            PmInternshipResultCommand actualCommand = capturedCommands.getFirst();
+            String expectedPayload =
+                    objectMapper.writeValueAsString(objectMapper.readTree(json).get(0));
+            PmInternshipResultCommand expectedCommand =
+                    new PmInternshipResultCommand(
+                            "IOC-JB-2026-09",
+                            "Hệ thống đặt lịch phòng họp",
+                            new BigDecimal("8.5"),
+                            LocalDate.of(2026, 10, 30),
+                            expectedPayload);
+            assertEquals(expectedCommand.batchId(), actualCommand.batchId());
+            assertEquals(expectedCommand.topicName(), actualCommand.topicName());
+            assertEquals(expectedCommand.finalScore(), actualCommand.finalScore());
+            assertEquals(expectedCommand.endDate(), actualCommand.endDate());
             assertEquals(
-                    List.of(
-                            new PmInternshipResultCommand(
-                                    "IOC-JB-2026-09",
-                                    "Hệ thống đặt lịch phòng họp",
-                                    new BigDecimal("8.5"))),
-                    cmdCaptor.getValue());
+                    objectMapper.readTree(expectedPayload),
+                    objectMapper.readTree(actualCommand.payload()));
         }
 
         @Test
